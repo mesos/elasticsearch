@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.apache.mesos</groupId>
+    <artifactId>elasticsearch</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+
+    <packaging>pom</packaging>
+
+    <name>Elasticsearch Mesos</name>
+    <url>https://github.com/mesos/elasticsearch</url>
+    <inceptionYear>2015</inceptionYear>
+
+    <scm>
+        <connection>scm:git:git@github.com:mesos/elasticsearch.git</connection>
+        <developerConnection>scm:git:git@github.com:mesos/elasticsearch.git
+        </developerConnection>
+        <url>http://github.com/mesos/elasticsearch</url>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/mesos/elasticsearch/issues/</url>
+    </issueManagement>
+
+    <modules>
+        <module>scheduler</module>
+        <module>elasticsearch-cloud-mesos</module>
+        <module>executor</module>
+    </modules>
+
+    <properties>
+        <mesos.version>0.21.1</mesos.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.apache.mesos</groupId>
+                <artifactId>mesos</artifactId>
+                <version>${mesos.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+</project>
