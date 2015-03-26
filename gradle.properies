@@ -1,0 +1,5 @@
+org.gradle.jvmargs=-Xmx1024 -XX:MaxPermSize=256 -XX:+HeapDumpOnOutOfMemoryError -Dfile.encoding=UTF-8
+org.gradle.parallel=true
+
+# faster builds:  gradle build -x findBugsM
+

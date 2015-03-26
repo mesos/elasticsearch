@@ -1,0 +1,9 @@
+
+rootProject.name = 'elastic-search'
+
+/*include "mesos-commons"*/
+/*include "elasticsearch-commons"*/
+include "elasticsearch-cloud-mesos"
+include "commons"
+include "scheduler"
+include "executor"
