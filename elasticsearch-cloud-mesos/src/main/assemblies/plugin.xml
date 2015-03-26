@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<assembly>
+    <id>plugin</id>
+    <formats>
+        <format>zip</format>
+    </formats>
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <dependencySets>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <excludes>
+                <exclude>org.elasticsearch:elasticsearch</exclude>
+            </excludes>
+        </dependencySet>
+        <dependencySet>
+            <outputDirectory>/</outputDirectory>
+            <useProjectArtifact>true</useProjectArtifact>
+            <useTransitiveFiltering>true</useTransitiveFiltering>
+            <includes>
+                <include>com.mashape.unirest:unirest-java</include>
+                <!--TODO: Add all Mesos dependencies, like https://github.com/elastic/elasticsearch-cloud-gce/blob/master/src/main/assemblies/plugin.xml#L33-36-->
+            </includes>
+        </dependencySet>
+    </dependencySets>
+</assembly>
