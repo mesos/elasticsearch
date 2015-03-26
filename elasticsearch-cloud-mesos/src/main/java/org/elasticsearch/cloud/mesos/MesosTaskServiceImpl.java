@@ -5,6 +5,9 @@ import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 
+/**
+ *  Service that manages the lifecycle of Mesos Tasks.
+ */
 public class MesosTaskServiceImpl extends AbstractLifecycleComponent<MesosTaskServiceImpl> implements MesosTaskService {
 
     @Inject
