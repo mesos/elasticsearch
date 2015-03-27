@@ -1,2 +1,4 @@
 # elasticsearch
-ElasticSearch on Mesos
+*Coming soon!* Elasticsearch on Mesos
+
+

@@ -18,8 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Arrays.asList;
-
+/**
+ * Provides a list of discovery nodes from the state.json data at the Mesos master.
+ */
 public class MesosUnicastHostsProvider extends AbstractComponent implements UnicastHostsProvider {
 
     private final TransportService transportService;
@@ -34,6 +35,7 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
         this.transportService = transportService;
         this.version = version;
 
+      // todo: (kensipe) no hardcoded IP
         master = settings.get("cloud.mesos.master", "http://10.186.201.243:5050");
     }
 
@@ -72,7 +74,6 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
 
         } catch (UnirestException e) {
             logger.warn("Failed to fetch cluster state", e);
-            e.printStackTrace();
         }
 
 

@@ -1,0 +1,47 @@
+allprojects {
+    apply plugin: 'idea'
+}
+
+idea {
+    project {
+        languageLevel = '1.7'
+        vcs = 'Git'
+    }
+}
+
+subprojects {
+
+    apply plugin: 'java'
+    apply from: "$rootDir/gradle/spock.gradle"
+    apply from: "$rootDir/gradle/quality.gradle"
+
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
+
+    [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+/*    mainClassName = "com.ebay.myriad.Main"*/
+
+    group = "org.apache.mesos"
+    version = "0.0.1-SNAPSHOT"
+
+    ext {
+        mesosVer = "0.21.1"
+		elasticsearchVersion="1.4.0"
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    dependencies {
+
+        compile "org.apache.mesos:mesos:${mesosVer}"
+        compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
+
+
+        testCompile 'junit:junit:4.11'
+        testCompile 'commons-collections:commons-collections:3.2.1'
+    }
+}
