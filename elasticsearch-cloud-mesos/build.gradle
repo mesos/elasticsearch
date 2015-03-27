@@ -3,4 +3,5 @@ dependencies {
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "com.mashape.unirest:unirest-java:1.4.5"
+    compile "dnsjava:dnsjava:2.1.7"
 }
