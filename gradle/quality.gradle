@@ -1,0 +1,18 @@
+apply plugin: 'findbugs'
+apply plugin: 'checkstyle'
+apply plugin: 'pmd'
+
+tasks.withType(FindBugs) {
+  excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
+}
+
+pmd {
+    ruleSets = [
+            'java-basic',
+            'java-braces',
+            'java-clone',
+            'java-codesize',
+	        'java-finalizers',
+            'java-imports',
+    ]
+}

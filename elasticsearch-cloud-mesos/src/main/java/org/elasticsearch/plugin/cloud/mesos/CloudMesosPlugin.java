@@ -9,6 +9,9 @@ import org.elasticsearch.plugins.AbstractPlugin;
 import java.util.ArrayList;
 import java.util.Collection;
 
+/**
+ * ES Plugin for Mesos.
+ */
 public class CloudMesosPlugin extends AbstractPlugin {
     private final Settings settings;
 

@@ -17,10 +17,18 @@ import org.elasticsearch.node.settings.NodeSettingsService;
 import org.elasticsearch.threadpool.ThreadPool;
 import org.elasticsearch.transport.TransportService;
 
+/**
+ *  ES discovery implementation for Mesos.
+ */
 public class MesosDiscovery extends ZenDiscovery {
     @Inject
-    public MesosDiscovery(Settings settings, ClusterName clusterName, ThreadPool threadPool, TransportService transportService, ClusterService clusterService, NodeSettingsService nodeSettingsService, DiscoveryNodeService discoveryNodeService, ZenPingService pingService, ElectMasterService electMasterService, DiscoverySettings discoverySettings) {
-        super(settings, clusterName, threadPool, transportService, clusterService, nodeSettingsService, discoveryNodeService, pingService, electMasterService, discoverySettings);
+    public MesosDiscovery(Settings settings,
+        ClusterName clusterName, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
+        NodeSettingsService nodeSettingsService, DiscoveryNodeService discoveryNodeService, ZenPingService pingService,
+        ElectMasterService electMasterService, DiscoverySettings discoverySettings) {
+
+        super(settings, clusterName, threadPool, transportService, clusterService, nodeSettingsService,
+            discoveryNodeService, pingService, electMasterService, discoverySettings);
 
         if (settings.getAsBoolean("cloud.enabled", true)) {
             ImmutableList<? extends ZenPing> zenPings = pingService.zenPings();

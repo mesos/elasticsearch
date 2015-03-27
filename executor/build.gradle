@@ -1,0 +1,7 @@
+apply plugin: 'application'
+
+mainClassName = "org.apache.mesos.elasticsearch.scheduler.Main"
+
+dependencies {
+    compile project(':commons')
+}

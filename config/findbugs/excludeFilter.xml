@@ -1,0 +1,25 @@
+<FindBugsFilter>
+    <!-- All bugs in test classes, except for JUnit-specific bugs -->
+    <!-- <Match>
+     <Class name="~.*\.*Test" />
+     <Not>
+         <Bug code="IJU" />
+     </Not>
+    </Match>
+    <Match>
+     <Class name="~.*Spec$"/>
+     <Not>
+         <Bug code="IJU" />
+     </Not>
+    </Match> -->
+
+    <Match>
+        <!-- generated packages-->
+        <Package name="com.ebay.myriad.scheduler.event"/>
+    </Match>
+
+    <Match>
+        <Bug code="SnVI"/>
+    </Match>
+
+</FindBugsFilter>
