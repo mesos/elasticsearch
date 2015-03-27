@@ -20,7 +20,9 @@ import org.elasticsearch.transport.TransportService;
 /**
  *  ES discovery implementation for Mesos.
  */
+@SuppressWarnings("PMD.ExcessiveParameterList")
 public class MesosDiscovery extends ZenDiscovery {
+
     @Inject
     public MesosDiscovery(Settings settings,
         ClusterName clusterName, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
