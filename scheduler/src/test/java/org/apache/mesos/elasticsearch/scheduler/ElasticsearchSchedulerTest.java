@@ -57,7 +57,7 @@ public class ElasticsearchSchedulerTest {
         Clock clock = Mockito.mock(Clock.class);
         Mockito.when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
-        scheduler = new ElasticsearchScheduler(3);
+        scheduler = new ElasticsearchScheduler("http://master:5050", 3);
         scheduler.clock = clock;
 
         driver = Mockito.mock(SchedulerDriver.class);

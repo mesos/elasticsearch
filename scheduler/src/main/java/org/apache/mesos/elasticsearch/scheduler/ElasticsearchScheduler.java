@@ -1,22 +1,31 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
 /**
  * Scheduler for Elasticsearch.
  */
 @SuppressWarnings("PMD.TooManyMethods")
-public class ElasticsearchScheduler implements Scheduler {
+public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
@@ -26,10 +35,76 @@ public class ElasticsearchScheduler implements Scheduler {
 
     Set<Task> tasks = new HashSet<>();
 
+    private CountDownLatch initialized = new CountDownLatch(1);
+
     private int numberOfHwNodes;
 
-    public ElasticsearchScheduler(int numberOfHwNodes) {
+    private String masterUrl;
+
+    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes) {
+        this.masterUrl = masterUrl;
         this.numberOfHwNodes = numberOfHwNodes;
+    }
+
+    public static void main(String[] args) {
+        Options options = new Options();
+        options.addOption("m", "masterUrl", true, "master url");
+        options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
+        CommandLineParser parser = new BasicParser();
+        try {
+            CommandLine cmd = parser.parse(options, args);
+            String masterUrl = cmd.getOptionValue("m");
+            String numberOfHwNodesString = cmd.getOptionValue("n");
+            if (masterUrl == null || numberOfHwNodesString == null) {
+                printUsage(options);
+                return;
+            }
+            int numberOfHwNodes = 1;
+            try {
+                numberOfHwNodes = Integer.parseInt(numberOfHwNodesString);
+            } catch (IllegalArgumentException e) {
+                printUsage(options);
+                return;
+            }
+
+            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + "]");
+
+            ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes);
+
+            Thread schedThred = new Thread(scheduler);
+            schedThred.start();
+            scheduler.waitUntilInit();
+
+            Set<Task> tasks = scheduler.getTasks();
+            List<String> nodes = new ArrayList<>();
+            for (Task task : tasks) {
+                nodes.add(task.getHostname());
+            }
+
+            LOGGER.info("ElasticSearch nodes starting on: " + nodes);
+        } catch (ParseException e) {
+            printUsage(options);
+        }
+    }
+
+    private void waitUntilInit() {
+        try {
+            initialized.await();
+        } catch (InterruptedException e) {
+            LOGGER.severe("Elasticsearch framework interrupted");
+        }
+    }
+
+    private static void printUsage(Options options) {
+        HelpFormatter formatter = new HelpFormatter();
+        formatter.printHelp("elasticsearch-scheduler", options);
+    }
+
+    @Override
+    public void run() {
+        LOGGER.info("Starting up...");
+        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName("ElasticSearch").build(), masterUrl);
+        driver.run();
     }
 
     @Override
@@ -111,6 +186,10 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.info("Declined offer: " + offer.getHostname());
             }
         }
+
+        if (haveEnoughNodes()) {
+            initialized.countDown();
+        }
     }
 
     @Override
@@ -169,4 +248,7 @@ public class ElasticsearchScheduler implements Scheduler {
         return tasks.size() == numberOfHwNodes;
     }
 
+    public Set<Task> getTasks() {
+        return tasks;
+    }
 }
