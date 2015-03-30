@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.matcher;
+package org.apache.mesos.elasticsearch.scheduler.matcher;
 
 import org.apache.mesos.Protos;
 import org.hamcrest.BaseMatcher;

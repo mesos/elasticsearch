@@ -1,22 +1,21 @@
-package org.apache.mesos.elasticsearch;
+package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Logger;
 
-import static java.lang.String.format;
-import static java.util.Arrays.asList;
-
 /**
  * Scheduler for Elasticsearch.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchScheduler implements Scheduler {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
@@ -76,7 +75,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 .setScalar(Protos.Value.Scalar.newBuilder().setValue(1000).build())
                 .build();
 
-        List<Protos.Resource> resources = asList(cpus, mem, disk);
+        List<Protos.Resource> resources = Arrays.asList(cpus, mem, disk);
 
         for (Protos.Offer offer : offers) {
             if (isOfferGood(offer) && !haveEnoughNodes()) {
@@ -153,7 +152,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private String taskId(Protos.Offer offer) {
         String date = new SimpleDateFormat(TASK_DATE_FORMAT).format(clock.now());
-        return format("elasticsearch_%s_%s", offer.getHostname(), date);
+        return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
     }
 
     private boolean isOfferGood(Protos.Offer offer) {

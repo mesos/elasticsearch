@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch;
+package org.apache.mesos.elasticsearch.executor;
 
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;

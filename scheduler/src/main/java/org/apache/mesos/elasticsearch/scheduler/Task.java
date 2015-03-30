@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch;
+package org.apache.mesos.elasticsearch.scheduler;
 
 /**
  * Task on a host.

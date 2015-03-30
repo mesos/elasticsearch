@@ -1,26 +1,27 @@
-package org.apache.mesos.elasticsearch;
+package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.matcher.OfferIDMatcher;
-import org.apache.mesos.elasticsearch.matcher.RequestMatcher;
-import org.apache.mesos.elasticsearch.matcher.TaskInfoMatcher;
+import org.apache.mesos.elasticsearch.scheduler.matcher.OfferIDMatcher;
+import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
+import org.apache.mesos.elasticsearch.scheduler.matcher.TaskInfoMatcher;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Matchers;
+import org.mockito.Mockito;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-import static java.util.Arrays.asList;
-import static java.util.Collections.singletonList;
-import static org.hamcrest.Matchers.contains;
-import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.*;
-
+/**
+ * Tests Scheduler API.
+ */
 public class ElasticsearchSchedulerTest {
 
     private static final int LOCALHOST_IP = 2130706433;
@@ -53,13 +54,13 @@ public class ElasticsearchSchedulerTest {
 
     @Before
     public void before() {
-        Clock clock = mock(Clock.class);
-        when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
+        Clock clock = Mockito.mock(Clock.class);
+        Mockito.when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
         scheduler = new ElasticsearchScheduler(3);
         scheduler.clock = clock;
 
-        driver = mock(SchedulerDriver.class);
+        driver = Mockito.mock(SchedulerDriver.class);
         frameworkID = newFrameworkId();
         masterInfo = newMasterInfo();
     }
@@ -68,7 +69,7 @@ public class ElasticsearchSchedulerTest {
     public void testRegistered() {
         scheduler.registered(driver, frameworkID, masterInfo);
 
-        verify(driver).requestResources(argThat(new RequestMatcher().cpus(1.0)));
+        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(1.0)));
     }
 
     @SuppressWarnings("unchecked")
@@ -76,13 +77,13 @@ public class ElasticsearchSchedulerTest {
     public void testResourceOffers_singleOffer() {
         Protos.Offer offer = newOffer("offer1", "host1", "slave1");
 
-        scheduler.resourceOffers(driver, singletonList(offer));
+        scheduler.resourceOffers(driver, Collections.singletonList(offer));
 
         OfferIDMatcher offerIdMatcher = new OfferIDMatcher("offer1");
         TaskInfoMatcher taskInfoMatcher = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
 
-        verify(driver).launchTasks((Collection<Protos.OfferID>) argThat(contains(offerIdMatcher)),
-                (Collection<Protos.TaskInfo>) argThat(contains(taskInfoMatcher)));
+        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Matchers.argThat(org.hamcrest.Matchers.contains(offerIdMatcher)),
+                (Collection<Protos.TaskInfo>) Matchers.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher)));
     }
 
     @SuppressWarnings("unchecked")
@@ -91,7 +92,7 @@ public class ElasticsearchSchedulerTest {
         Protos.Offer offer1 = newOffer("offer1", "host1", "slave1");
         Protos.Offer offer2 = newOffer("offer2", "host2", "slave2");
 
-        scheduler.resourceOffers(driver, asList(offer1, offer2));
+        scheduler.resourceOffers(driver, Arrays.asList(offer1, offer2));
 
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
         OfferIDMatcher offerIdMatcher2 = new OfferIDMatcher("offer2");
@@ -99,8 +100,8 @@ public class ElasticsearchSchedulerTest {
         TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
         TaskInfoMatcher taskInfoMatcher2 = new TaskInfoMatcher("elasticsearch_host2_20150306T102040.900Z").slaveId("slave2").cpus(1.0).mem(2048).disk(1000d);
 
-        verify(driver).launchTasks((Collection<Protos.OfferID>) argThat(contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) argThat(contains(taskInfoMatcher1)));
-        verify(driver).launchTasks((Collection<Protos.OfferID>) argThat(contains(offerIdMatcher2)) ,(Collection<Protos.TaskInfo>) argThat(contains(taskInfoMatcher2)));
+        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
+        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher2)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher2)));
     }
 
     @SuppressWarnings("unchecked")
@@ -114,13 +115,13 @@ public class ElasticsearchSchedulerTest {
         Protos.Offer offer1 = newOffer("offer1", "host3", "slave1");
         Protos.Offer offer2 = newOffer("offer2", "host3", "slave2");
 
-        scheduler.resourceOffers(driver, asList(offer1, offer2));
+        scheduler.resourceOffers(driver, Arrays.asList(offer1, offer2));
 
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
         TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host3_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
 
-        verify(driver).launchTasks((Collection<Protos.OfferID>) argThat(contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) argThat(contains(taskInfoMatcher1)));
-        verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer2").build());
+        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
+        Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer2").build());
     }
 
     @SuppressWarnings("unchecked")
@@ -132,9 +133,9 @@ public class ElasticsearchSchedulerTest {
 
         Protos.Offer offer1 = newOffer("offer1", "host1", "slave1");
 
-        scheduler.resourceOffers(driver, singletonList(offer1));
+        scheduler.resourceOffers(driver, Collections.singletonList(offer1));
 
-        verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer1").build());
+        Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer1").build());
     }
 
     private String uuid() {
