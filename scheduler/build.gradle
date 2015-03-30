@@ -1,6 +1,16 @@
 apply plugin: 'application'
+apply plugin: 'docker'
 
 mainClassName = "org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler"
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'se.transmode.gradle:gradle-docker:1.2'
+    }
+}
 
 dependencies {
 
@@ -14,6 +24,28 @@ dependencies {
 }
 
 jar {
+    baseName = "es-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
 }
+
+task copyJar(type: Copy) {
+    dependsOn   'jar'
+    from        "build/libs/es-scheduler-${project.version}.jar"
+    into        'build/docker'
+    rename { String fileName ->
+        fileName.replace("-${project.version}", "")
+    }
+}
+
+task esSchedDocker(type: Docker) {
+    dependsOn   copyJar
+    dockerfile  'Dockerfile'
+    contextDir  '.'
+    useApi      true
+    hostUrl     'http://localhost:4243'
+    tag         'elasticsearch-scheduler'
+    tagVersion  "$project.version"
+}
+
+build.dependsOn esSchedDocker
