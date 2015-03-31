@@ -1,6 +1,7 @@
 package org.elasticsearch.discovery.mesos;
 
 import org.elasticsearch.Version;
+import org.elasticsearch.cloud.mesos.MesosMasterStateService;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.ClusterService;
 import org.elasticsearch.cluster.node.DiscoveryNodeService;
@@ -26,7 +27,7 @@ public class MesosDiscovery extends ZenDiscovery {
     @Inject
     public MesosDiscovery(Settings settings,
         ClusterName clusterName, ThreadPool threadPool, TransportService transportService, ClusterService clusterService,
-        NodeSettingsService nodeSettingsService, DiscoveryNodeService discoveryNodeService, ZenPingService pingService,
+        NodeSettingsService nodeSettingsService, DiscoveryNodeService discoveryNodeService, MesosMasterStateService mesosMasterStateService, ZenPingService pingService,
         ElectMasterService electMasterService, DiscoverySettings discoverySettings) {
 
         super(settings, clusterName, threadPool, transportService, clusterService, nodeSettingsService,
@@ -45,7 +46,7 @@ public class MesosDiscovery extends ZenDiscovery {
             if (unicastZenPing != null) {
                 // update the unicast zen ping to add cloud hosts provider
                 // and, while we are at it, use only it and not the multicast for example
-                unicastZenPing.addHostsProvider(new MesosUnicastHostsProvider(settings, transportService, Version.V_1_4_0));
+                unicastZenPing.addHostsProvider(new MesosUnicastHostsProvider(settings, mesosMasterStateService, transportService, Version.V_1_4_0));
                 pingService.zenPings(ImmutableList.of(unicastZenPing));
             } else {
                 logger.warn("failed to apply gce unicast discovery, no unicast ping found");

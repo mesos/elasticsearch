@@ -17,6 +17,6 @@ public class MesosModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(MesosTaskService.class).to(MesosTaskServiceImpl.class).asEagerSingleton();
+        bind(MesosMasterStateService.class).to(MesosMasterStateServiceImpl.class).asEagerSingleton();
     }
 }
