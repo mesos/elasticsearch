@@ -19,7 +19,7 @@ public class MesosModule extends AbstractModule {
     protected void configure() {
         bind(MesosStateService.class).to(
                 settings.get("cloud.mesos.discovery", "mesos-dns").equals("mesos-dns") ?
-                        null : MesosStateServiceRest.class
+                        MesosStateServiceMesosDns.class : MesosStateServiceRest.class
         ).asEagerSingleton();
     }
 }
