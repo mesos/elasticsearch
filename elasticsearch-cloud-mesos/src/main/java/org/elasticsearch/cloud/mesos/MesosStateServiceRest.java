@@ -18,12 +18,12 @@ import java.util.Map;
 /**
  *  Service that manages the lifecycle of Mesos Tasks.
  */
-public class MesosMasterStateServiceImpl extends AbstractLifecycleComponent<MesosMasterStateServiceImpl> implements MesosMasterStateService {
+public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosStateServiceRest> implements MesosStateService {
 
     private final String master;
 
     @Inject
-    public MesosMasterStateServiceImpl(Settings settings) {
+    public MesosStateServiceRest(Settings settings) {
         super(settings);
         master = settings.get("cloud.mesos.master");
     }

@@ -7,6 +7,6 @@ import java.util.List;
 /**
  * A singleton to manage all the tasks from mesos.
  */
-public interface MesosMasterStateService {
+public interface MesosStateService {
     List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider);
 }

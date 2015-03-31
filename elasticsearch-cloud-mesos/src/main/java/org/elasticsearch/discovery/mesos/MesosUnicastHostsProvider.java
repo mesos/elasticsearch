@@ -1,7 +1,7 @@
 package org.elasticsearch.discovery.mesos;
 
 import org.elasticsearch.Version;
-import org.elasticsearch.cloud.mesos.MesosMasterStateService;
+import org.elasticsearch.cloud.mesos.MesosStateService;
 import org.elasticsearch.cluster.node.DiscoveryNode;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.AbstractComponent;
@@ -17,7 +17,7 @@ import java.util.List;
  * Provides a list of discovery nodes from the state.json data at the Mesos master.
  */
 public class MesosUnicastHostsProvider extends AbstractComponent implements UnicastHostsProvider {
-    private final MesosMasterStateService mesosMasterStateService;
+    private final MesosStateService mesosStateService;
 
     private final TransportService transportService;
 
@@ -25,16 +25,16 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
 
 
     @Inject
-    public MesosUnicastHostsProvider(Settings settings, MesosMasterStateService mesosMasterStateService, TransportService transportService, Version version) {
+    public MesosUnicastHostsProvider(Settings settings, MesosStateService mesosStateService, TransportService transportService, Version version) {
         super(settings);
-        this.mesosMasterStateService = mesosMasterStateService;
+        this.mesosStateService = mesosStateService;
         this.transportService = transportService;
         this.version = version;
     }
 
     @Override
     public List<DiscoveryNode> buildDynamicNodes() {
-        List<String> nodeIps = mesosMasterStateService.getNodeIpsAndPorts(this);
+        List<String> nodeIps = mesosStateService.getNodeIpsAndPorts(this);
 
         ArrayList<DiscoveryNode> discoveryNodes = Lists.newArrayList();
         logger.debug("slave ip={}", nodeIps);
