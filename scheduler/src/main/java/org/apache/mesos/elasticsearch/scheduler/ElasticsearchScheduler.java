@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
@@ -41,21 +42,31 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private String masterUrl;
 
-    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes) {
+    private boolean useDocker;
+
+    private String namenode;
+
+    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes, boolean useDocker, String namenode) {
         this.masterUrl = masterUrl;
         this.numberOfHwNodes = numberOfHwNodes;
+        this.useDocker = useDocker;
+        this.namenode = namenode;
     }
 
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption("m", "masterUrl", true, "master url");
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
+        options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
+        options.addOption("nn", "namenode", true, "name node hostname + port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
             String masterUrl = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
-            if (masterUrl == null || numberOfHwNodesString == null) {
+            String useDockerString = cmd.getOptionValue("d");
+            String nameNode = cmd.getOptionValue("nn");
+            if (masterUrl == null || numberOfHwNodesString == null || nameNode == null) {
                 printUsage(options);
                 return;
             }
@@ -67,9 +78,11 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return;
             }
 
+            boolean useDocker = Boolean.parseBoolean(useDockerString);
+
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + "]");
 
-            ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes);
+            ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes, useDocker, nameNode);
 
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
@@ -160,26 +173,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
                 String id = taskId(offer);
 
-                Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
-                        .setImage("mesos/elasticsearch-cloud-mesos").build();
-
-                Protos.ContainerInfo.Builder container = Protos.ContainerInfo.newBuilder()
-                        .setDocker(docker)
-                        .setType(Protos.ContainerInfo.Type.DOCKER);
-
-                Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
-                        .setName(id)
-                        .setTaskId(Protos.TaskID.newBuilder().setValue(id))
-                        .setSlaveId(offer.getSlaveId())
-                        .addAllResources(resources)
-                        .setContainer(container)
-                        .setCommand(Protos.CommandInfo.newBuilder()
-                                .addArguments("elasticsearch")
-                                .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
-                                .addArguments("--logger.discovery").addArguments("INFO")
-                                .addArguments("--discovery.type").addArguments("mesos")
-                                .setShell(false))
-                        .build();
+                Protos.TaskInfo taskInfo = buildTask(resources, offer, id);
 
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), id));
@@ -192,6 +186,48 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         if (haveEnoughNodes()) {
             initialized.countDown();
         }
+    }
+
+    private Protos.TaskInfo buildTask(List<Protos.Resource> resources, Protos.Offer offer, String id) {
+        Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
+                .setName(id)
+                .setTaskId(Protos.TaskID.newBuilder().setValue(id))
+                .setSlaveId(offer.getSlaveId())
+                .addAllResources(resources);
+
+        if (useDocker) {
+            LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");
+            Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
+                    .setImage("mesos/elasticsearch-cloud-mesos").build();
+
+            Protos.ContainerInfo.Builder container = Protos.ContainerInfo.newBuilder()
+                    .setDocker(docker)
+                    .setType(Protos.ContainerInfo.Type.DOCKER);
+
+            taskInfoBuilder
+                    .setContainer(container)
+                    .setCommand(Protos.CommandInfo.newBuilder()
+                            .addArguments("elasticsearch")
+                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+                            .addArguments("--logger.discovery").addArguments("DEBUG")
+                            .addArguments("--discovery.type").addArguments("mesos")
+                            .setShell(false))
+                    .build();
+        } else {
+            LOGGER.info("NOT using Docker to start Elasticsearch cloud mesos on slaves");
+            Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder()
+                    .setExecutorId(Protos.ExecutorID.newBuilder().setValue("" + UUID.randomUUID()))
+                    .setCommand(Protos.CommandInfo.newBuilder()
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + "/executor/es-executor-0.0.1-SNAPSHOT.jar"))
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + "/elasticsearch-cloud-mesos/es-cloud-mesos-0.0.1-SNAPSHOT.zip"))
+                            .setValue("java -jar es-executor-0.0.1-SNAPSHOT.jar"))
+                    .setName("ElasticsearchExecutor")
+                    .build();
+
+            taskInfoBuilder.setExecutor(executorInfo);
+        }
+
+        return taskInfoBuilder.build();
     }
 
     @Override
