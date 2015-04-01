@@ -161,7 +161,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 String id = taskId(offer);
 
                 Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
-                        .setImage("mesos/elasticsearch-node").build();
+                        .setImage("mesos/elasticsearch-cloud-mesos").build();
 
                 Protos.ContainerInfo.Builder container = Protos.ContainerInfo.newBuilder()
                         .setDocker(docker)
@@ -175,7 +175,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                         .setContainer(container)
                         .setCommand(Protos.CommandInfo.newBuilder()
                                 .addArguments("elasticsearch")
+                                .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
                                 .addArguments("--logger.discovery").addArguments("INFO")
+                                .addArguments("--discovery.type").addArguments("mesos")
                                 .setShell(false))
                         .build();
 

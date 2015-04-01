@@ -15,6 +15,7 @@ buildscript {
 dependencies {
 
     compile project(':commons')
+    compile project(':elasticsearch-cloud-mesos')
 
     compile "commons-cli:commons-cli:1.0"
 
