@@ -18,13 +18,11 @@ import java.util.List;
  *
  */
 public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosStateService> implements MesosStateService {
-    private final String resolver;
     private final DirContext ctx;
 
     @Inject
     public MesosStateServiceMesosDns(Settings settings, DirContext ctx) {
         super(settings);
-        resolver = settings.get("cloud.mesos.resolver", "");
         this.ctx = ctx;
     }
 
@@ -42,7 +40,6 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
     @Override
     public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
-        logger.debug("Using resolver: {}", resolver);
         //TODO: (MWL) remove hardcoded framework name
         String taskHostName = "_elasticsearch-mesos._tcp.marathon.mesos";
         final ArrayList<String> nodes = Lists.newArrayList();
