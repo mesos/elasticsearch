@@ -14,14 +14,17 @@ import javax.naming.directory.DirContext;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ *
+ */
 public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosStateService> implements MesosStateService {
-    private final String dnsServer;
+    private final String resolver;
     private final DirContext ctx;
 
     @Inject
     public MesosStateServiceMesosDns(Settings settings, DirContext ctx) {
         super(settings);
-        dnsServer = settings.get("cloud.mesos.resolver", "localhost");
+        resolver = settings.get("cloud.mesos.resolver", "");
         this.ctx = ctx;
     }
 
@@ -39,7 +42,7 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
     @Override
     public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
-        logger.warn("Using resolver: {}", dnsServer);
+        logger.debug("Using resolver: {}", resolver);
         //TODO: (MWL) remove hardcoded framework name
         String taskHostName = "_elasticsearch-mesos._tcp.marathon.mesos";
         final ArrayList<String> nodes = Lists.newArrayList();
@@ -49,6 +52,8 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
         try {
             attrs = ctx.getAttributes(taskHostName, new String[]{"SRV"});
             enumeration = attrs.get("SRV").getAll();
+            //TODO: (MWL) Error handling when no records are found
+
             while (enumeration.hasMore()) {
                 SrvRecord record = new SrvRecord((String) enumeration.next());
 
