@@ -28,9 +28,11 @@ public class MesosModule extends AbstractModule {
         if (discoverySetting.equals("rest")) {
             bind(MesosStateService.class).to(MesosStateServiceRest.class).asEagerSingleton();
         } else {
+            String resolver = settings.get("cloud.mesos.resolver", "");
+
             Hashtable<String, String> env = new Hashtable<>();
             env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.dns.DnsContextFactory");
-            env.put(Context.PROVIDER_URL, "dns://192.168.99.100");
+            env.put(Context.PROVIDER_URL, "dns://" + resolver);
             try {
                 bind(DirContext.class).toInstance(new InitialDirContext(env));
             } catch (NamingException e) {
