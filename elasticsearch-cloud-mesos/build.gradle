@@ -37,14 +37,17 @@ task copyZip(type: Copy, dependsOn: zip) {
     }
 }
 
-task esCloudMesosDocker(type: Docker) {
-    dependsOn   copyZip
-    dockerfile  'Dockerfile'
-    contextDir  '.'
-    useApi      true
-    hostUrl     'http://localhost:4243'
-    tag         'elasticsearch-cloud-mesos'
-    tagVersion  "$project.version"
-}
+# Temporarily commenting out the Docker section to see if we can get a TravisCI build through
 
-build.dependsOn esCloudMesosDocker
+#task esCloudMesosDocker(type: Docker) {
+#    dependsOn   copyZip
+#    dockerfile  'Dockerfile'
+#    contextDir  '.'
+#    useApi      true
+#    hostUrl     'http://localhost:4243'
+#    tag         'elasticsearch-cloud-mesos'
+#    tagVersion  "$project.version"
+#}
+#
+#build.dependsOn esCloudMesosDocker
+build.dependsOn copyZip

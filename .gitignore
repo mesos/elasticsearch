@@ -3,6 +3,7 @@
 # IDEA files
 *.i??
 out/
+.idea/
 
 #gradle
 .gradle/

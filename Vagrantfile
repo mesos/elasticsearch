@@ -12,6 +12,6 @@ Vagrant.configure('2') do |config|
   end
 
   config.vm.provision :shell do |external_shell|
-    external_shell.path = 'setup.sh'
+    external_shell.path = 'vagrant_files/setup.sh'
   end
 end
