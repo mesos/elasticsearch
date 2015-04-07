@@ -39,15 +39,13 @@ task copyJar(type: Copy) {
     }
 }
 
-// task esSchedDocker(type: Docker) {
-//     dependsOn   copyJar
-//     dockerfile  'Dockerfile'
-//     contextDir  '.'
-//     useApi      true
-//     hostUrl     'http://localhost:4243'
-//     tag         'elasticsearch-scheduler'
-//     tagVersion  "$project.version"
-// }
-// 
-// build.dependsOn esSchedDocker
+task esSchedDocker(type: Docker) {
+    dependsOn   copyJar
+    dockerfile  'Dockerfile'
+    contextDir  '.'
+    useApi      false
+    tag         'elasticsearch-scheduler'
+    tagVersion  "$project.version"
+}
+build.dependsOn esSchedDocker
 build.dependsOn copyJar
