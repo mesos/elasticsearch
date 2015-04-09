@@ -2,7 +2,7 @@ machine:
   services:
     - docker
   java:
-    version: openjdk8
+    version: oraclejdk8
 
 test:
   override:
