@@ -40,12 +40,11 @@ task copyJar(type: Copy) {
 }
 
 task esSchedDocker(type: Docker) {
-    applicationName 'elasticsearch-scheduler'
     dependsOn   copyJar
     dockerfile  'Dockerfile'
     contextDir  '.'
     useApi      false
-    tag         'mesosphere/elasticsearch-scheduler'
+    tag         'mesos/elasticsearch-scheduler'
     tagVersion  "$project.version"
 }
 build.dependsOn esSchedDocker
