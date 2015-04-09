@@ -44,7 +44,7 @@ task copyZip(type: Copy, dependsOn: zip) {
      dockerfile  'Dockerfile'
      contextDir  '.'
      useApi      false
-     tag         'elasticsearch-cloud-mesos'
+     tag         'mesos/elasticsearch-cloud-mesos'
      tagVersion  "$project.version"
  }
 

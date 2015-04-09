@@ -15,3 +15,4 @@ deployment:
       - docker images
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push mesos/elasticsearch-scheduler
+      - docker push mesos/elasticsearch-cloud-mesos
