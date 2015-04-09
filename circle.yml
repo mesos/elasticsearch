@@ -8,3 +8,10 @@ test:
   override:
     - ./gradlew build
 
+deployment:
+  hub: 
+    branch: executor
+    commands:
+      - docker tag elasticsearch-scheduler mrmrcoleman/elasticsearch-scheduler
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push mrmrcoleman/elasticsearch-scheduler
