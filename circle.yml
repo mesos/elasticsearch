@@ -12,6 +12,7 @@ deployment:
   hub: 
     branch: executor
     commands:
+      - echo $DOCKER_EMAIL
       - docker images
       - docker tag mesosphere/elasticsearch-scheduler:0.0.1-SNAPSHOT mrmrcoleman/elasticsearch-scheduler
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
