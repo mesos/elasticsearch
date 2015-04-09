@@ -45,7 +45,7 @@ task esSchedDocker(type: Docker) {
     dockerfile  'Dockerfile'
     contextDir  '.'
     useApi      false
-    tag         'elasticsearch-scheduler'
+    tag         'mesosphere/elasticsearch-scheduler'
     tagVersion  "$project.version"
 }
 build.dependsOn esSchedDocker
