@@ -1,10 +1,10 @@
 machine:
   services:
     - docker
+  java:
+    version: openjdk8
 
-## Deployment options
-deployment:
-  default:
-    branch: [executor]
-    commands:
-      - gradlew build
+test:
+  override:
+    - ./gradlew build
+
