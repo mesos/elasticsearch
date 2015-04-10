@@ -25,14 +25,14 @@ dependencies {
 }
 
 jar {
-    baseName = "es-scheduler"
+    baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
 }
 
 task copyJar(type: Copy) {
     dependsOn   'jar'
-    from        "build/libs/es-scheduler-${project.version}.jar"
+    from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"
     into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")

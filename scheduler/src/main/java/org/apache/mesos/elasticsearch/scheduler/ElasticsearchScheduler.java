@@ -10,6 +10,7 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Binaries;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -218,9 +219,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder()
                     .setExecutorId(Protos.ExecutorID.newBuilder().setValue("" + UUID.randomUUID()))
                     .setCommand(Protos.CommandInfo.newBuilder()
-                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + "/executor/es-executor-0.0.1-SNAPSHOT.jar"))
-                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + "/elasticsearch-cloud-mesos/es-cloud-mesos-0.0.1-SNAPSHOT.zip"))
-                            .setValue("java -jar es-executor-0.0.1-SNAPSHOT.jar"))
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_EXECUTOR_HDFS_PATH))
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_CLOUD_MESOS_HDFS_PATH))
+                            .setValue("java -jar " + Binaries.ES_EXECUTOR_JAR))
                     .setName("ElasticsearchExecutor")
                     .build();
 

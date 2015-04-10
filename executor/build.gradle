@@ -11,9 +11,18 @@ dependencies {
 }
 
 jar {
-    baseName = "es-executor"
+    baseName = "elasticsearch-mesos-executor"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor' }
 }
 
-build.dependsOn jar
+task copyJar(type: Copy) {
+    dependsOn   'jar'
+    from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
+    into        'build/libs'
+    rename { String fileName ->
+        fileName.replace("-${project.version}", "")
+    }
+}
+
+build.dependsOn copyJar
