@@ -77,6 +77,7 @@ public class ElasticsearchSchedulerTest {
     public void testResourceOffers_singleOffer() {
         Protos.Offer offer = newOffer("offer1", "host1", "slave1");
 
+        scheduler.registered(driver, frameworkID, masterInfo);
         scheduler.resourceOffers(driver, Collections.singletonList(offer));
 
         OfferIDMatcher offerIdMatcher = new OfferIDMatcher("offer1");
@@ -92,6 +93,7 @@ public class ElasticsearchSchedulerTest {
         Protos.Offer offer1 = newOffer("offer1", "host1", "slave1");
         Protos.Offer offer2 = newOffer("offer2", "host2", "slave2");
 
+        scheduler.registered(driver, frameworkID, masterInfo);
         scheduler.resourceOffers(driver, Arrays.asList(offer1, offer2));
 
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
@@ -115,6 +117,7 @@ public class ElasticsearchSchedulerTest {
         Protos.Offer offer1 = newOffer("offer1", "host3", "slave1");
         Protos.Offer offer2 = newOffer("offer2", "host3", "slave2");
 
+        scheduler.registered(driver, frameworkID, masterInfo);
         scheduler.resourceOffers(driver, Arrays.asList(offer1, offer2));
 
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
