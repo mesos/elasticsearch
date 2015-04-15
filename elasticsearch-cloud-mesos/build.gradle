@@ -37,8 +37,6 @@ task copyZip(type: Copy, dependsOn: zip) {
     }
 }
 
-//  Temporarily commenting out the Docker section to see if we can get a TravisCI build through
-
  task esCloudMesosDocker(type: Docker) {
      dependsOn   copyZip
      dockerfile  'Dockerfile'
