@@ -233,17 +233,17 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void offerRescinded(SchedulerDriver driver, Protos.OfferID offerId) {
-        LOGGER.warning("Offer " + offerId.getValue() + " rescinded");
+        LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-        LOGGER.fine("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
+        LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
     }
 
     @Override
     public void frameworkMessage(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, byte[] data) {
-        LOGGER.fine("Framework Message - Executor: " + executorId.getValue() + ", SlaveID: " + slaveId.getValue());
+        LOGGER.info("Framework Message - Executor: " + executorId.getValue() + ", SlaveID: " + slaveId.getValue());
     }
 
     @Override
@@ -253,12 +253,12 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void slaveLost(SchedulerDriver driver, Protos.SlaveID slaveId) {
-        LOGGER.warning("Slave lost: " + slaveId.getValue());
+        LOGGER.info("Slave lost: " + slaveId.getValue());
     }
 
     @Override
     public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
-        LOGGER.warning("Executor lost: " + executorId.getValue() +
+        LOGGER.info("Executor lost: " + executorId.getValue() +
                 "on slave " + slaveId.getValue() +
                 "with status " + status);
     }

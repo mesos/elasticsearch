@@ -61,24 +61,18 @@ public class ElasticsearchExecutor implements Executor {
 
         LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
-        System.setProperty("es.discovery.type", "cloud-mesos");
-        System.setProperty("es.cloud.enabled", "true");
-        System.setProperty("es.logger.discovery", "DEBUG");
-        System.setProperty("es.foreground", "true");
-
         Thread thread = new Thread() {
             @Override
             public void run() {
                 driver.sendStatusUpdate(Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId()).setState(Protos.TaskState.TASK_RUNNING).build());
 
-                NodeBuilder nodeBuilder = NodeBuilder.nodeBuilder().clusterName("elasticsearch");
-                ImmutableSettings.Builder settings = nodeBuilder.settings();
+                ImmutableSettings.Builder settings = NodeBuilder.nodeBuilder().settings();
                 settings.put("--discovery.type", "cloud-mesos");
                 settings.put("--cloud.enabled", "true");
                 settings.put("--logger.discovery", "DEBUG");
                 settings.put("--foreground", "true");
 
-                Node node = nodeBuilder.settings(settings).node();
+                Node node = NodeBuilder.nodeBuilder().clusterName("elasticsearch").settings(settings).build();
                 node.start();
 
                 driver.sendStatusUpdate(Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId()).setState(Protos.TaskState.TASK_FINISHED).build());
@@ -99,11 +93,11 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void shutdown(ExecutorDriver driver) {
-
+        LOGGER.info("Shutting down framework...");
     }
 
     @Override
     public void error(ExecutorDriver driver, String message) {
-
+        LOGGER.info("Error in executor: " + message);
     }
 }
