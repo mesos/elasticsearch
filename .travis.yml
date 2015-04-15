@@ -1,5 +1,0 @@
-language: java
-sudo: required
-script: "./gradlew clean build"
-jdk:
-  - oraclejdk8
