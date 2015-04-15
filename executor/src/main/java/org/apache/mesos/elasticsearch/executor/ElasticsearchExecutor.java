@@ -35,8 +35,6 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
         LOGGER.info("Executor Elasticsearch registered on slave " + slaveInfo.getHostname());
-
-
     }
 
     @Override
@@ -61,34 +59,36 @@ public class ElasticsearchExecutor implements Executor {
 
         LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
-        Thread thread = new Thread() {
-            @Override
-            public void run() {
-                driver.sendStatusUpdate(Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId()).setState(Protos.TaskState.TASK_RUNNING).build());
+        Protos.TaskStatus.Builder status = Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId());
+        status.setState(Protos.TaskState.TASK_RUNNING);
+        driver.sendStatusUpdate(status.build());
 
-                ImmutableSettings.Builder settings = NodeBuilder.nodeBuilder().settings();
-                settings.put("--discovery.type", "cloud-mesos");
-                settings.put("--cloud.enabled", "true");
-                settings.put("--logger.discovery", "DEBUG");
-                settings.put("--foreground", "true");
+        try {
+            ImmutableSettings.Builder settings = NodeBuilder.nodeBuilder().settings();
+            settings.put("--discovery.type", "cloud-mesos");
+            settings.put("--cloud.enabled", "true");
+            settings.put("--logger.discovery", "DEBUG");
+            settings.put("--foreground", "true");
 
-                Node node = NodeBuilder.nodeBuilder().clusterName("elasticsearch").settings(settings).build();
-                node.start();
+            Node node = NodeBuilder.nodeBuilder().clusterName("elasticsearch").settings(settings).build();
+            node.start();
 
-                driver.sendStatusUpdate(Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId()).setState(Protos.TaskState.TASK_FINISHED).build());
-            }
-        };
-        thread.start();
+            status.setState(Protos.TaskState.TASK_FINISHED);
+        } catch (Exception e) {
+            status.setState(Protos.TaskState.TASK_FAILED);
+        }
+
+        driver.sendStatusUpdate(status.build());
     }
 
     @Override
     public void killTask(ExecutorDriver driver, Protos.TaskID taskId) {
-
+        LOGGER.info("Kill task: " + taskId.getValue());
     }
 
     @Override
     public void frameworkMessage(ExecutorDriver driver, byte[] data) {
-        LOGGER.info("Framework message " + Arrays.toString(data));
+        LOGGER.info("Framework message: " + Arrays.toString(data));
     }
 
     @Override
