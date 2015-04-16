@@ -24,7 +24,7 @@ DOCKER_CERT_PATH=/etc/docker
 
 # On an SELinux system, if you remove the --selinux-enabled option, you
 # also need to turn on the docker_transition_unconfined boolean.
-# setsebool -P docker_transition_unconfined 1
+setsebool -P docker_transition_unconfined 1
 
 # Location used for temporary files, such as those created by
 # docker load and build operations. Default is /var/lib/docker/tmp
