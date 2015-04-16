@@ -221,14 +221,15 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources);
 
-        Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
-
         if (useDocker) {
             LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");
+            Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
+
             Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setImage("mesos/elasticsearch-cloud-mesos").build();
             containerInfo.setDocker(docker);
             containerInfo.setType(Protos.ContainerInfo.Type.DOCKER);
+            taskInfoBuilder.setContainer(containerInfo);
 
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
@@ -251,11 +252,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                     .build();
 
             taskInfoBuilder.setExecutor(executorInfo);
-
-            containerInfo.setType(Protos.ContainerInfo.Type.MESOS);
         }
-
-        taskInfoBuilder.setContainer(containerInfo);
 
         return taskInfoBuilder.build();
     }
