@@ -248,7 +248,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                             .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_EXECUTOR_HDFS_PATH))
                             .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_CLOUD_MESOS_HDFS_PATH))
                             .setValue("java -jar " + Binaries.ES_EXECUTOR_JAR))
-                    .setName("ElasticsearchExecutor")
+                    .setName("" + UUID.randomUUID())
+                    .addAllResources(resources)
                     .build();
 
             taskInfoBuilder.setExecutor(executorInfo);
