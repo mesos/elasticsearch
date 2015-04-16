@@ -12,7 +12,7 @@ deployment:
   hub: 
     branch: executor
     commands:
-      - docker images
+      - docker version
       - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
       - docker push mesos/elasticsearch-scheduler
       - docker push mesos/elasticsearch-cloud-mesos
