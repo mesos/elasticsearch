@@ -33,7 +33,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
-    public static final String FRAMEWORK_NAME = "ElasticSearch";
+    public static final String FRAMEWORK_NAME = "elasticsearch-mesos";
 
     Clock clock = new Clock();
 
