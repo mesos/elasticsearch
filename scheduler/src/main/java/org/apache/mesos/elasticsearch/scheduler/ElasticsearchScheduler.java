@@ -10,6 +10,7 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Binaries;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -18,6 +19,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.logging.Logger;
 
@@ -31,6 +33,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
+    public static final String FRAMEWORK_NAME = "elasticsearch-mesos";
+
     Clock clock = new Clock();
 
     Set<Task> tasks = new HashSet<>();
@@ -41,25 +45,37 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private String masterUrl;
 
-    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes) {
+    private boolean useDocker;
+
+    private String namenode;
+
+    private Protos.FrameworkID frameworkId;
+
+    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes, boolean useDocker, String namenode) {
         this.masterUrl = masterUrl;
         this.numberOfHwNodes = numberOfHwNodes;
+        this.useDocker = useDocker;
+        this.namenode = namenode;
     }
 
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption("m", "masterUrl", true, "master url");
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
+        options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
+        options.addOption("nn", "namenode", true, "name node hostname + port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
             String masterUrl = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
-            if (masterUrl == null || numberOfHwNodesString == null) {
+            String useDockerString = cmd.getOptionValue("d");
+            String nameNode = cmd.getOptionValue("nn");
+            if (masterUrl == null || numberOfHwNodesString == null || nameNode == null) {
                 printUsage(options);
                 return;
             }
-            int numberOfHwNodes = 1;
+            int numberOfHwNodes;
             try {
                 numberOfHwNodes = Integer.parseInt(numberOfHwNodesString);
             } catch (IllegalArgumentException e) {
@@ -67,9 +83,26 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return;
             }
 
+            boolean useDocker = Boolean.parseBoolean(useDockerString);
+
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + "]");
 
-            ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes, useDocker, nameNode);
+
+            final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
+            frameworkBuilder.setUser("jclouds");
+            frameworkBuilder.setName(FRAMEWORK_NAME);
+            frameworkBuilder.setCheckpoint(true);
+
+            final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
+
+            Runtime.getRuntime().addShutdownHook(new Thread() {
+                @Override
+                public void run() {
+                    driver.stop();
+                    scheduler.onShutdown();
+                }
+            });
 
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
@@ -85,6 +118,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         } catch (ParseException e) {
             printUsage(options);
         }
+    }
+
+    private void onShutdown() {
+        LOGGER.info("On shutdown...");
     }
 
     private void waitUntilInit() {
@@ -109,6 +146,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
+        this.frameworkId = frameworkId;
+
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         Protos.Resource cpuResource = Protos.Resource.newBuilder()
@@ -160,26 +199,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
                 String id = taskId(offer);
 
-                Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
-                        .setImage("mesos/elasticsearch-cloud-mesos").build();
-
-                Protos.ContainerInfo.Builder container = Protos.ContainerInfo.newBuilder()
-                        .setDocker(docker)
-                        .setType(Protos.ContainerInfo.Type.DOCKER);
-
-                Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
-                        .setName(id)
-                        .setTaskId(Protos.TaskID.newBuilder().setValue(id))
-                        .setSlaveId(offer.getSlaveId())
-                        .addAllResources(resources)
-                        .setContainer(container)
-                        .setCommand(Protos.CommandInfo.newBuilder()
-                                .addArguments("elasticsearch")
-                                .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
-                                .addArguments("--logger.discovery").addArguments("INFO")
-                                .addArguments("--discovery.type").addArguments("mesos")
-                                .setShell(false))
-                        .build();
+                Protos.TaskInfo taskInfo = buildTask(resources, offer, id);
 
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), id));
@@ -194,19 +214,63 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         }
     }
 
+    private Protos.TaskInfo buildTask(List<Protos.Resource> resources, Protos.Offer offer, String id) {
+        Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
+                .setName(id)
+                .setTaskId(Protos.TaskID.newBuilder().setValue(id))
+                .setSlaveId(offer.getSlaveId())
+                .addAllResources(resources);
+
+        if (useDocker) {
+            LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");
+            Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
+
+            Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
+                    .setImage("mesos/elasticsearch-cloud-mesos").build();
+            containerInfo.setDocker(docker);
+            containerInfo.setType(Protos.ContainerInfo.Type.DOCKER);
+            taskInfoBuilder.setContainer(containerInfo);
+
+            taskInfoBuilder
+                    .setCommand(Protos.CommandInfo.newBuilder()
+                            .addArguments("elasticsearch")
+                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+                            .addArguments("--logger.discovery").addArguments("DEBUG")
+                            .addArguments("--discovery.type").addArguments("mesos")
+                            .setShell(false))
+                    .build();
+        } else {
+            LOGGER.info("NOT using Docker to start Elasticsearch cloud mesos on slaves");
+            Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder()
+                    .setExecutorId(Protos.ExecutorID.newBuilder().setValue("" + UUID.randomUUID()))
+                    .setFrameworkId(frameworkId)
+                    .setCommand(Protos.CommandInfo.newBuilder()
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_EXECUTOR_HDFS_PATH))
+                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_CLOUD_MESOS_HDFS_PATH))
+                            .setValue("java -jar " + Binaries.ES_EXECUTOR_JAR))
+                    .setName("" + UUID.randomUUID())
+                    .addAllResources(resources)
+                    .build();
+
+            taskInfoBuilder.setExecutor(executorInfo);
+        }
+
+        return taskInfoBuilder.build();
+    }
+
     @Override
     public void offerRescinded(SchedulerDriver driver, Protos.OfferID offerId) {
-        LOGGER.warning("Offer " + offerId.getValue() + " rescinded");
+        LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-        LOGGER.fine("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
+        LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
     }
 
     @Override
     public void frameworkMessage(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, byte[] data) {
-        LOGGER.fine("Framework Message - Executor: " + executorId.getValue() + ", SlaveID: " + slaveId.getValue());
+        LOGGER.info("Framework Message - Executor: " + executorId.getValue() + ", SlaveID: " + slaveId.getValue());
     }
 
     @Override
@@ -216,12 +280,12 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void slaveLost(SchedulerDriver driver, Protos.SlaveID slaveId) {
-        LOGGER.warning("Slave lost: " + slaveId.getValue());
+        LOGGER.info("Slave lost: " + slaveId.getValue());
     }
 
     @Override
     public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
-        LOGGER.warning("Executor lost: " + executorId.getValue() +
+        LOGGER.info("Executor lost: " + executorId.getValue() +
                 "on slave " + slaveId.getValue() +
                 "with status " + status);
     }
