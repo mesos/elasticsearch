@@ -36,7 +36,7 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
         this.version = version;
 
       // todo: (kensipe) no hardcoded IP
-        master = settings.get("cloud.mesos.master", "http://10.186.201.243:5050");
+        master = settings.get("cloud.mesos.master", "http://10.11.142.163:5050");
     }
 
     @Override

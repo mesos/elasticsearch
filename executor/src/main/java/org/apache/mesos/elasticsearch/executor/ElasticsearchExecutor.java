@@ -5,17 +5,20 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Binaries;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.node.Node;
+import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.unit.TimeValue;
+import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.plugins.PluginManager;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.logging.Logger;
 
 /**
  * Executor for Elasticsearch.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
@@ -49,36 +52,54 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        Protos.TaskStatus.Builder status = Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId());
-        status.setState(Protos.TaskState.TASK_RUNNING);
-        driver.sendStatusUpdate(status.build());
+        new Thread() {
 
-        try {
-            String[] pluginArgs = new String[]{
-                    "--url", String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir")),
-                    "--install", Binaries.ES_CLOUD_MESOS_PLUGIN_NAME,
-                    "--verbose",
-                    "--timeout", "20000"
-            };
-            PluginManager.main(pluginArgs);
+            @Override
+            public void interrupt() {
+                Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
+                        .setTaskId(task.getTaskId())
+                        .setState(Protos.TaskState.TASK_FINISHED).build();
+                driver.sendStatusUpdate(status);
+            }
 
-            LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
+            @Override
+            public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+                Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
+                        .setTaskId(task.getTaskId())
+                        .setState(Protos.TaskState.TASK_FAILED).build();
+                driver.sendStatusUpdate(status);
+            }
 
-            ImmutableSettings.Builder settings = NodeBuilder.nodeBuilder().settings();
-            settings.put("--discovery.type", "cloud-mesos");
-            settings.put("--cloud.enabled", "true");
-            settings.put("--logger.discovery", "DEBUG");
-            settings.put("--foreground", "true");
+            @Override
+            public void run() {
+                try {
+                    Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
+                            .setTaskId(task.getTaskId())
+                            .setState(Protos.TaskState.TASK_RUNNING).build();
+                    driver.sendStatusUpdate(status);
 
-            Node node = NodeBuilder.nodeBuilder().clusterName("elasticsearch").settings(settings).build();
-            node.start();
+                    FileSystemUtils.mkdirs(new File("plugins"));
+                    String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
+                    Environment environment = new Environment();
+                    PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
+                    manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
 
-            status.setState(Protos.TaskState.TASK_FINISHED);
-        } catch (Exception e) {
-            status.setState(Protos.TaskState.TASK_FAILED);
-        }
+                    LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
-        driver.sendStatusUpdate(status.build());
+                    System.setProperty("es.discovery.type", "mesos");
+                    System.setProperty("es.cloud.enabled", "true");
+                    System.setProperty("es.foreground", "true");
+                    System.setProperty("es.logger.discovery", "DEBUG");
+
+                    NodeBuilder.nodeBuilder().build().start();
+                } catch (Exception e) {
+                    Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
+                            .setTaskId(task.getTaskId())
+                            .setState(Protos.TaskState.TASK_FAILED).build();
+                    driver.sendStatusUpdate(status);
+                }
+            }
+        }.start();
     }
 
     @Override
