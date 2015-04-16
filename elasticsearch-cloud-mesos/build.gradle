@@ -10,7 +10,6 @@ buildscript {
 }
 
 dependencies {
-
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "com.mashape.unirest:unirest-java:1.4.5"
 }
