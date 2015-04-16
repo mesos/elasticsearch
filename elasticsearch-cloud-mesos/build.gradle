@@ -40,7 +40,7 @@ task copyZip(type: Copy, dependsOn: zip) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyZip
-    url = 'http://127.0.0.1:4243'
+    url = 'unix:///var/run/docker.sock'
     inputDir = file('.')
     tag = 'mesos/elasticsearch-cloud-mesos'
 }
