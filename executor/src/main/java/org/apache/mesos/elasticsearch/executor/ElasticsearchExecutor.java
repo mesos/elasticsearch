@@ -49,21 +49,21 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        String[] pluginArgs = new String[]{
-                "--url", String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir")),
-                "--install", Binaries.ES_CLOUD_MESOS_PLUGIN_NAME,
-                "--verbose",
-                "--timeout", "20000"
-        };
-        PluginManager.main(pluginArgs);
-
-        LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
-
         Protos.TaskStatus.Builder status = Protos.TaskStatus.newBuilder().setTaskId(task.getTaskId());
         status.setState(Protos.TaskState.TASK_RUNNING);
         driver.sendStatusUpdate(status.build());
 
         try {
+            String[] pluginArgs = new String[]{
+                    "--url", String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir")),
+                    "--install", Binaries.ES_CLOUD_MESOS_PLUGIN_NAME,
+                    "--verbose",
+                    "--timeout", "20000"
+            };
+            PluginManager.main(pluginArgs);
+
+            LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
+
             ImmutableSettings.Builder settings = NodeBuilder.nodeBuilder().settings();
             settings.put("--discovery.type", "cloud-mesos");
             settings.put("--cloud.enabled", "true");
