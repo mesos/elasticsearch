@@ -43,5 +43,27 @@ subprojects {
 
         testCompile 'junit:junit:4.11'
         testCompile 'commons-collections:commons-collections:3.2.1'
+        testCompile "org.mockito:mockito-all:1.9.5"
+
     }
 }
+
+// TODO: Deploy tasks below should only be available when script is running from a mesos cluster
+
+task deployExecutorHDFS(type: Exec) {
+    commandLine 'hdfs', 'dfs', '-put', '-f', 'executor/build/libs/elasticsearch-mesos-executor.jar', '/elasticsearch-mesos'
+}
+deployExecutorHDFS.description="Deploys the mesos elasticsearch scheduler to HDFS"
+
+task deployCloudMesosHDFS(type: Exec) {
+    dependsOn deployExecutorHDFS
+    commandLine 'hdfs', 'dfs', '-put', '-f', 'elasticsearch-cloud-mesos/build/docker/elasticsearch-cloud-mesos.zip', '/elasticsearch-mesos'
+}
+deployCloudMesosHDFS.description="Deploys the elasticsearch cloud mesos plugin to HDFS"
+
+task deploy(type: Exec) {
+    dependsOn deployCloudMesosHDFS
+    commandLine 'java', '-jar', 'scheduler/build/docker/elasticsearch-mesos-scheduler.jar', '-m', '10.11.142.163:5050', '-n', '3', '-nn', '10.11.142.163:8020'
+}
+deploy.description="Runs the mesos elasticsearch framework on the clsuter"
+

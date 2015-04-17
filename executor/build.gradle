@@ -1,7 +1,28 @@
 apply plugin: 'application'
 
-mainClassName = "org.apache.mesos.elasticsearch.scheduler.Main"
+mainClassName = "org.apache.mesos.elasticsearch.executor.Main"
 
 dependencies {
+
     compile project(':commons')
+
+    compile "org.elasticsearch:elasticsearch:1.4.0"
+
 }
+
+jar {
+    baseName = "elasticsearch-mesos-executor"
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor' }
+}
+
+task copyJar(type: Copy) {
+    dependsOn   'jar'
+    from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
+    into        'build/libs'
+    rename { String fileName ->
+        fileName.replace("-${project.version}", "")
+    }
+}
+
+build.dependsOn copyJar

@@ -1,0 +1,12 @@
+{
+  "id": "elasticsearch-mesos-scheduler",
+  "container": {
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler",
+      "network": "BRIDGE"
+    }
+  },
+  "cpus": 0.2,
+  "mem": 512.0,
+  "instances": 1
+}
