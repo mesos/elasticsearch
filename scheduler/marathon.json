@@ -1,0 +1,13 @@
+{
+  "id": "elasticsearch-mesos-scheduler",
+  "container": {
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler",
+      "network": "BRIDGE"
+    }
+  },
+  "args": ["-Djava.library.path=/usr/local/lib", "-d", "-m", "10.11.142.163:5050", "-n", "3", "-nn", "10.11.142.163:8020"],
+  "cpus": 0.2,
+  "mem": 512.0,
+  "instances": 1
+}

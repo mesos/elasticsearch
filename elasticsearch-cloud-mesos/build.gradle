@@ -1,11 +1,13 @@
-apply plugin: 'docker'
+apply plugin: 'com.bmuschko.docker-remote-api'
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'se.transmode.gradle:gradle-docker:1.2'
+        classpath 'com.bmuschko:gradle-docker-plugin:2.2'
     }
 }
 
@@ -36,14 +38,20 @@ task copyZip(type: Copy, dependsOn: zip) {
     }
 }
 
-task esCloudMesosDocker(type: Docker) {
+task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyZip
-    dockerfile  'Dockerfile'
-    contextDir  '.'
-    useApi      true
-    hostUrl     'http://localhost:4243'
-    tag         'elasticsearch-cloud-mesos'
-    tagVersion  "$project.version"
+    url = 'unix:///var/run/docker.sock'
+    inputDir = file('.')
+    tag = 'mesos/elasticsearch-cloud-mesos'
 }
 
-build.dependsOn esCloudMesosDocker
+task pushDockerImage(type: DockerPushImage) {
+    dependsOn buildDockerImage
+    url = 'http://127.0.0.1:4243'
+    imageName   'mesos/elasticsearch-cloud-mesos'
+    tag         'latest'
+}
+
+
+build.dependsOn buildDockerImage
+build.dependsOn copyZip

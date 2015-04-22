@@ -1,5 +1,7 @@
 apply plugin: 'application'
-apply plugin: 'docker'
+apply plugin: 'com.bmuschko.docker-remote-api'
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 
 mainClassName = "org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler"
 
@@ -8,7 +10,7 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath 'se.transmode.gradle:gradle-docker:1.2'
+        classpath 'com.bmuschko:gradle-docker-plugin:2.2'
     }
 }
 
@@ -25,28 +27,26 @@ dependencies {
 }
 
 jar {
-    baseName = "es-scheduler"
+    baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
 }
 
 task copyJar(type: Copy) {
     dependsOn   'jar'
-    from        "build/libs/es-scheduler-${project.version}.jar"
+    from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"
     into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
 }
 
-task esSchedDocker(type: Docker) {
+task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyJar
-    dockerfile  'Dockerfile'
-    contextDir  '.'
-    useApi      true
-    hostUrl     'http://localhost:4243'
-    tag         'elasticsearch-scheduler'
-    tagVersion  "$project.version"
+    url = 'unix:///var/run/docker.sock'
+    inputDir = file('.')
+    tag = 'mesos/elasticsearch-scheduler'
 }
 
-build.dependsOn esSchedDocker
+build.dependsOn buildDockerImage
+build.dependsOn copyJar

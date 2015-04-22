@@ -1,0 +1,24 @@
+machine:
+  services:
+    - docker
+  java:
+    version: oraclejdk8
+
+test:
+  override:
+    - ./gradlew build
+
+deployment:
+  hub: 
+    branch: executor
+    commands:
+      - docker version
+      - docker login -e $DOCKER_EMAIL -u $DOCKER_USER -p $DOCKER_PASS
+      - docker push mesos/elasticsearch-scheduler
+      - docker push mesos/elasticsearch-cloud-mesos
+
+general:
+  artifacts:
+    - "./commons/build/libs/commons-0.0.1-SNAPSHOT.jar"
+    - "./elasticsearch-cloud-mesos/build/libs/elasticsearch-cloud-mesos-0.0.1-SNAPSHOT.jar"
+    - "./executor/build/libs/elasticsearch-mesos-executor-0.0.1-SNAPSHOT.jar"

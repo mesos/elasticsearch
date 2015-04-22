@@ -9,6 +9,7 @@ import org.elasticsearch.discovery.mesos.MesosUnicastHostsProvider;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 import java.util.ArrayList;
@@ -48,13 +49,16 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
         NamingEnumeration<?> enumeration;
         try {
             attrs = ctx.getAttributes(taskHostName, new String[]{"SRV"});
-            enumeration = attrs.get("SRV").getAll();
-            //TODO: (MWL) Error handling when no records are found
 
-            while (enumeration.hasMore()) {
-                SrvRecord record = new SrvRecord((String) enumeration.next());
+            final Attribute srvRecords = attrs.get("SRV");
+            if (srvRecords != null && srvRecords.size() > 0) {
+                enumeration = srvRecords.getAll();
 
-                nodes.add(record.getHostAndPort());
+                while (enumeration.hasMore()) {
+                    SrvRecord record = new SrvRecord((String) enumeration.next());
+
+                    nodes.add(record.getHostAndPort());
+                }
             }
         } catch (NamingException e) {
             throw new RuntimeException("Failed to resolve hostname", e);
