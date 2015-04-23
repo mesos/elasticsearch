@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.matcher;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.Configuration;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -42,7 +43,7 @@ public class TaskInfoMatcher extends BaseMatcher<Protos.TaskInfo> {
         return taskInfo.getResourcesList().containsAll(resources) &&
                 taskInfo.getSlaveId().equals(slaveId) &&
                 taskInfo.getTaskId().getValue().equals(id) &&
-                taskInfo.getName().equals(id);
+                taskInfo.getName().equals(Configuration.TASK_NAME);
     }
 
     private Protos.Resource newResource(String name, Double value) {
