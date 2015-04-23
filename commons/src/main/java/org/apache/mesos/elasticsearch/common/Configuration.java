@@ -9,4 +9,5 @@ public class Configuration {
 
     public static final String TASK_NAME = "esdemo";
 
+    public static final String DOMAIN = "mesos";
 }

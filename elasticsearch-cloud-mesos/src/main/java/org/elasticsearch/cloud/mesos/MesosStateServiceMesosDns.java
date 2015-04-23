@@ -42,7 +42,7 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
     @Override
     public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
-        String taskHostName = "_" + Configuration.TASK_NAME + "._tcp." + Configuration.FRAMEWORK_NAME + ".mesos";
+        String taskHostName = "_" + Configuration.TASK_NAME + "._tcp." + Configuration.FRAMEWORK_NAME + "." + Configuration.DOMAIN;
         final ArrayList<String> nodes = Lists.newArrayList();
 
         Attributes attrs;
