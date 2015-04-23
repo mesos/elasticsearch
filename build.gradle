@@ -51,13 +51,13 @@ subprojects {
 // TODO: Deploy tasks below should only be available when script is running from a mesos cluster
 
 task deployExecutorHDFS(type: Exec) {
-    commandLine 'hdfs', 'dfs', '-put', '-f', 'executor/build/libs/elasticsearch-mesos-executor.jar', '/elasticsearch-mesos'
+    commandLine 'hdfs', 'dfs', '-put', '-f', 'executor/build/libs/elasticsearch-mesos-executor.jar', '/elasticsearch'
 }
 deployExecutorHDFS.description="Deploys the mesos elasticsearch scheduler to HDFS"
 
 task deployCloudMesosHDFS(type: Exec) {
     dependsOn deployExecutorHDFS
-    commandLine 'hdfs', 'dfs', '-put', '-f', 'elasticsearch-cloud-mesos/build/docker/elasticsearch-cloud-mesos.zip', '/elasticsearch-mesos'
+    commandLine 'hdfs', 'dfs', '-put', '-f', 'elasticsearch-cloud-mesos/build/docker/elasticsearch-cloud-mesos.zip', '/elasticsearch'
 }
 deployCloudMesosHDFS.description="Deploys the elasticsearch cloud mesos plugin to HDFS"
 

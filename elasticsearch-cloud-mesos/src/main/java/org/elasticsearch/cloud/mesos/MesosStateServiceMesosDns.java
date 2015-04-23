@@ -1,5 +1,6 @@
 package org.elasticsearch.cloud.mesos;
 
+import org.apache.mesos.elasticsearch.common.Configuration;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
@@ -41,8 +42,7 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
     @Override
     public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
-        //TODO: (MWL) remove hardcoded framework name
-        String taskHostName = "_elasticsearch-mesos._tcp.marathon.mesos";
+        String taskHostName = "_" + Configuration.TASK_NAME + "._tcp." + Configuration.FRAMEWORK_NAME + ".mesos";
         final ArrayList<String> nodes = Lists.newArrayList();
 
         Attributes attrs;
