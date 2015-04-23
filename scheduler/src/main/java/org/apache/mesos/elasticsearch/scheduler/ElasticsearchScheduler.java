@@ -11,6 +11,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
+import org.apache.mesos.elasticsearch.common.Configuration;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,8 +33,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
-    public static final String FRAMEWORK_NAME = "elasticsearch-mesos";
 
     Clock clock = new Clock();
 
@@ -91,7 +90,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
-            frameworkBuilder.setName(FRAMEWORK_NAME);
+            frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
@@ -216,7 +215,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.TaskInfo buildTask(List<Protos.Resource> resources, Protos.Offer offer, String id) {
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
-                .setName(id)
+                .setName(Configuration.TASK_NAME)
                 .setTaskId(Protos.TaskID.newBuilder().setValue(id))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources);

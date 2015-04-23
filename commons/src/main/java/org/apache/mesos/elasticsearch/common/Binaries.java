@@ -7,7 +7,7 @@ public class Binaries {
 
     // Elasticsearch HDFS path
 
-    public static final String ES_HDFS_PATH = "/elasticsearch-mesos/";
+    public static final String ES_HDFS_PATH = "/elasticsearch/";
 
     // Elasticsearch cloud plugin constants
 
