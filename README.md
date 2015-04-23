@@ -27,7 +27,7 @@ Actions to perform to start in Mac:
 	> $ cd /vagrant
 
  5. Start the build with Gradle:
-	>$ gradlew build
+	>$ ./gradlew build
 
 If you get the following failure 
 >What went wrong:
