@@ -34,10 +34,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
-    public static final int ELASTICSEARCH_CLIENT_PORT = 9200;
-
-    public static final int ELASTICSEARCH_TRANSPORT_PORT = 9300;
-
     Clock clock = new Clock();
 
     Set<Task> tasks = new HashSet<>();
@@ -167,23 +163,23 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         Protos.Resource cpus = Protos.Resource.newBuilder()
                 .setName("cpus")
                 .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(0.2).build())
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.CPUS).build())
                 .build();
 
         Protos.Resource mem = Protos.Resource.newBuilder()
                 .setName("mem")
                 .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(512).build())
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.MEM).build())
                 .build();
 
         Protos.Resource disk = Protos.Resource.newBuilder()
                 .setName("disk")
                 .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(250).build())
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.DISK).build())
                 .build();
 
-        Protos.Value.Range clientPortRange = Protos.Value.Range.newBuilder().setBegin(ELASTICSEARCH_CLIENT_PORT).setEnd(ELASTICSEARCH_CLIENT_PORT).build();
-        Protos.Value.Range transportPortRange = Protos.Value.Range.newBuilder().setBegin(ELASTICSEARCH_TRANSPORT_PORT).setEnd(ELASTICSEARCH_TRANSPORT_PORT).build();
+        Protos.Value.Range clientPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_CLIENT_PORT).setEnd(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
+        Protos.Value.Range transportPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setEnd(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
 
         Protos.Resource ports = Protos.Resource.newBuilder()
                 .setName("ports")
