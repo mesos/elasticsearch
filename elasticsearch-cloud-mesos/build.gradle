@@ -42,7 +42,11 @@ task copyZip(type: Copy, dependsOn: zip) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyZip
-    url = 'unix:///var/run/docker.sock'
+    if (file("/var/run/docker.sock").exists()) {
+       url = 'unix:///var/run/docker.sock'
+    } else {
+       url = "$System.env.DOCKER_HOST".replace("tcp","https")
+    }
     inputDir = file('.')
     tag = 'mesos/elasticsearch-cloud-mesos'
 }
