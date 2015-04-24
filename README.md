@@ -78,18 +78,13 @@ $ sudo ../gradlew build
 Add a host entry to your /etc/hosts which is called 'master' and points to your Mesos master. Now run
 
 ````
-$ deploy.sh
+$ deploy-executor.sh
+$ deploy-scheduler.sh
+$ deploy-cloud-mesos.sh
 ````
-
-This script performs the following actions:
-
-* Transfers the <i>scheduler</i> jar to the master node
-* Transfers the <i>executor</i> jar to the master node
-* Puts the <i>executor</i> jar in HDFS under /elasticsearch-mesos
-* Transfers the <i>elasticsearch-cloud-mesos</i> zip to the master node
-* Puts the zip in HDFS under /elasticsearch-mesos
-
-After the script has run now you can start the <i>scheduler</i> by SSHing into the master and running:
+These scripts transfer the jars and the cloud-mesos zip to the master node. Also, the <i>executor</i> jar and 
+cloud-mesos are put in HDFS onder /elasticsearch because they are used to launch the elasticsearch task. Now you can SSH
+into the master node and run the <i>scheduler</i>
 
 ````
 $ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_IP:8020
