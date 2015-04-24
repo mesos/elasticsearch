@@ -1,4 +1,4 @@
-# elasticsearch
+# Elasticsearch
 *Coming soon!* Elasticsearch on Mesos
 
 # Getting Started
@@ -38,19 +38,19 @@ then run the following command to make sure that docker is running:
 	> $ systemctl restart docker
 
 and finally run gradlew build again:
-	> $ gradlew build
+	> $ ./gradlew build
 
 ## How to build
 
-> $ gradlew build
+> $ ./gradlew build
 
 Optionally run <a href="https://github.com/dougborg/gdub">gdub</a> which runs the gradle wrapper from any subdirectory.
 
 ## How to install on Mesos
 
-Add a host entry to your /etc/hosts which is called 'master' and points to your Mesos master. Now run
+Add a host entry to your /etc/hosts which is called 'master' and points to your Mesos master, see "Find Mesos master" to identify the master. Now run
 
-> $ deploy.sh
+> $ ./deploy.sh
 
 This script performs the following actions:
 
@@ -63,6 +63,22 @@ This script performs the following actions:
 After the script has run now you can start the <i>scheduler</i> by SSHing into the master and running:
 
 > $ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_IP:8020
+
+## Find Mesos master
+
+1. Open Mesos website
+	* Get the DCOS public DNS, 
+	* Copy it into another browser instance and
+	* Use port 5050 by adding at the end of the DNS public address :5050.
+This will show the Mesos website for your instance.
+2. Select from the Mesos website the 'Slaves' view
+3. Make node of all the 'Hosts' (slave hosts)
+4. In AWS Services select 'EC2'
+5. In the lefthand side menu select 'Instances'
+6. Find the instance with a 'Public DNS' which is not any of the ones belonging to the slaves and which belong to the DCOS installation
+	*  An instance belonging to the DCOS installation should have a 'Security groups' with a name that contains the word DCOS
+7.  The 'Public DNS' for that instance is what you need to ssh (run the deploy script)
+
 
 ## How to install on Marathon
 
