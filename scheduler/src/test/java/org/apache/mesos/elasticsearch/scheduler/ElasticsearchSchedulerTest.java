@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.matcher.OfferIDMatcher;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.matcher.TaskInfoMatcher;
@@ -69,7 +70,7 @@ public class ElasticsearchSchedulerTest {
     public void testRegistered() {
         scheduler.registered(driver, frameworkID, masterInfo);
 
-        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(1.0)));
+        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK)));
     }
 
     @SuppressWarnings("unchecked")
@@ -81,7 +82,7 @@ public class ElasticsearchSchedulerTest {
         scheduler.resourceOffers(driver, Collections.singletonList(offer));
 
         OfferIDMatcher offerIdMatcher = new OfferIDMatcher("offer1");
-        TaskInfoMatcher taskInfoMatcher = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
+        TaskInfoMatcher taskInfoMatcher = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
 
         Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Matchers.argThat(org.hamcrest.Matchers.contains(offerIdMatcher)),
                 (Collection<Protos.TaskInfo>) Matchers.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher)));
@@ -99,8 +100,8 @@ public class ElasticsearchSchedulerTest {
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
         OfferIDMatcher offerIdMatcher2 = new OfferIDMatcher("offer2");
 
-        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
-        TaskInfoMatcher taskInfoMatcher2 = new TaskInfoMatcher("elasticsearch_host2_20150306T102040.900Z").slaveId("slave2").cpus(1.0).mem(2048).disk(1000d);
+        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
+        TaskInfoMatcher taskInfoMatcher2 = new TaskInfoMatcher("elasticsearch_host2_20150306T102040.900Z").slaveId("slave2").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
 
         Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
         Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher2)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher2)));
@@ -121,7 +122,7 @@ public class ElasticsearchSchedulerTest {
         scheduler.resourceOffers(driver, Arrays.asList(offer1, offer2));
 
         OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
-        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host3_20150306T102040.789Z").slaveId("slave1").cpus(1.0).mem(2048).disk(1000d);
+        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host3_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
 
         Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
         Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer2").build());

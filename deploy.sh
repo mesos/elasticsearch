@@ -1,10 +1,17 @@
 #!/bin/bash
 
-scp executor/build/libs/elasticsearch-mesos-executor.jar master:
-ssh master "hdfs dfs -put -f elasticsearch-mesos-executor.jar /elasticsearch"
+gw clean build -x test
 
-scp scheduler/build/docker/elasticsearch-mesos-scheduler.jar master:
+./deploy-executor.sh &
+./deploy-cloud-mesos.sh &
 
-scp elasticsearch-cloud-mesos/build/docker/elasticsearch-cloud-mesos.zip master:
-ssh master "hdfs dfs -put -f elasticsearch-cloud-mesos.zip /elasticsearch"
+wait
 
+docker push mesos/elasticsearch-scheduler
+ssh slave1 "docker pull mesos/elasticsearch-scheduler" &
+ssh slave2 "docker pull mesos/elasticsearch-scheduler" &
+ssh slave3 "docker pull mesos/elasticsearch-scheduler" &
+
+wait
+
+cd scheduler; ./deploy-to-marathon.sh
