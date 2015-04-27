@@ -66,11 +66,13 @@ After the script has run now you can start the <i>scheduler</i> by SSHing into t
 
 ## How to install on Mesos from Mac
 
-If you have followed the steps described in "Full steps to build on Mac" then  to deploy execute the steps described in "How to install on Mesos" but use script file deployDcos.sh instead of deplay.sh.
+If you have followed the steps described in "Full steps to build on Mac" then  to deploy execute the following steps.
 
 > $ ./deployDcos.sh
 
-Follow the other steps described in <a href="#deploy">"How to install on Mesos"</a>.
+After the script has run now you can start the <i>scheduler</i> by SSHing into the master and running:
+
+> $ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_IP:8020
 
 ## Find Mesos master
 
