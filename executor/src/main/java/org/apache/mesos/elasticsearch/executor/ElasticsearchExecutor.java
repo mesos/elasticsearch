@@ -73,7 +73,10 @@ public class ElasticsearchExecutor implements Executor {
                                     .put("discovery.type", "mesos")
                                     .put("cloud.enabled", "true")
                                     .put("foreground", "true")
-                                    .put("logger.discovery", "DEBUG").build();
+                                    .put("master", "true")
+                                    .put("data", "true")
+                                    .put("logger.discovery", "DEBUG")
+                                    .put("logger.org.elasticsearch.cloud.mesos", "DEBUG").build();
 
             final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
             node.start();
