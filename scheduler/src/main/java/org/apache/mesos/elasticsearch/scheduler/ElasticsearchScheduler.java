@@ -11,6 +11,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
+import org.apache.mesos.elasticsearch.common.Configuration;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -32,8 +33,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
-    public static final String FRAMEWORK_NAME = "elasticsearch-mesos";
 
     Clock clock = new Clock();
 
@@ -91,7 +90,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
-            frameworkBuilder.setName(FRAMEWORK_NAME);
+            frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
@@ -134,13 +133,13 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private static void printUsage(Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp("elasticsearch-scheduler", options);
+        formatter.printHelp(Configuration.FRAMEWORK_NAME, options);
     }
 
     @Override
     public void run() {
         LOGGER.info("Starting up...");
-        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName("ElasticSearch").build(), masterUrl);
+        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName(Configuration.FRAMEWORK_NAME).build(), masterUrl);
         driver.run();
     }
 
@@ -150,18 +149,45 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        Protos.Resource cpuResource = Protos.Resource.newBuilder()
-                .setName("cpus")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(1.0).build())
-                .build();
+        List<Protos.Resource> resources = buildResources();
 
         Protos.Request request = Protos.Request.newBuilder()
-                .addResources(cpuResource)
+                .addAllResources(resources)
                 .build();
 
         List<Protos.Request> requests = Collections.singletonList(request);
         driver.requestResources(requests);
+    }
+
+    private static List<Protos.Resource> buildResources() {
+        Protos.Resource cpus = Protos.Resource.newBuilder()
+                .setName("cpus")
+                .setType(Protos.Value.Type.SCALAR)
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.CPUS).build())
+                .build();
+
+        Protos.Resource mem = Protos.Resource.newBuilder()
+                .setName("mem")
+                .setType(Protos.Value.Type.SCALAR)
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.MEM).build())
+                .build();
+
+        Protos.Resource disk = Protos.Resource.newBuilder()
+                .setName("disk")
+                .setType(Protos.Value.Type.SCALAR)
+                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.DISK).build())
+                .build();
+
+        Protos.Value.Range clientPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_CLIENT_PORT).setEnd(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
+        Protos.Value.Range transportPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setEnd(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
+
+        Protos.Resource ports = Protos.Resource.newBuilder()
+                .setName("ports")
+                .setType(Protos.Value.Type.RANGES)
+                .setRanges(Protos.Value.Ranges.newBuilder().addRange(clientPortRange).addRange(transportPortRange))
+                .build();
+
+        return Arrays.asList(cpus, mem, disk, ports);
     }
 
     @Override
@@ -171,25 +197,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
-        Protos.Resource cpus = Protos.Resource.newBuilder()
-                .setName("cpus")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(1.0).build())
-                .build();
-
-        Protos.Resource mem = Protos.Resource.newBuilder()
-                .setName("mem")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(2048).build())
-                .build();
-
-        Protos.Resource disk = Protos.Resource.newBuilder()
-                .setName("disk")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(1000).build())
-                .build();
-
-        List<Protos.Resource> resources = Arrays.asList(cpus, mem, disk);
+        List<Protos.Resource> resources = buildResources();
 
         for (Protos.Offer offer : offers) {
             if (isOfferGood(offer) && !haveEnoughNodes()) {
@@ -216,7 +224,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.TaskInfo buildTask(List<Protos.Resource> resources, Protos.Offer offer, String id) {
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
-                .setName(id)
+                .setName(Configuration.TASK_NAME)
                 .setTaskId(Protos.TaskID.newBuilder().setValue(id))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources);

@@ -3,9 +3,10 @@
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "BRIDGE"
+      "network": "HOST"
     }
   },
+  "args": ["-m", "10.11.142.163:5050", "-n", "3", "-nn", "10.11.142.163:8020"],
   "cpus": 0.2,
   "mem": 512.0,
   "instances": 1
