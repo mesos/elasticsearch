@@ -6,6 +6,8 @@ import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.Node;
@@ -67,12 +69,13 @@ public class ElasticsearchExecutor implements Executor {
 
             LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
-            System.setProperty("es.discovery.type", "mesos");
-            System.setProperty("es.cloud.enabled", "true");
-            System.setProperty("es.foreground", "true");
-            System.setProperty("es.logger.discovery", "DEBUG");
+            Settings settings = ImmutableSettings.settingsBuilder()
+                                    .put("discovery.type", "mesos")
+                                    .put("cloud.enabled", "true")
+                                    .put("foreground", "true")
+                                    .put("logger.discovery", "DEBUG").build();
 
-            final Node node = NodeBuilder.nodeBuilder().build();
+            final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
             node.start();
 
             Runtime.getRuntime().addShutdownHook(new Thread() {

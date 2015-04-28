@@ -37,14 +37,15 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
         List<String> nodeIps = mesosStateService.getNodeIpsAndPorts(this);
 
         ArrayList<DiscoveryNode> discoveryNodes = Lists.newArrayList();
-        logger.debug("slave ip={}", nodeIps);
         for (String nodeIp : nodeIps) {
             try {
                 discoveryNodes.add(new DiscoveryNode("node-" + nodeIp, transportService.addressesFromString(nodeIp)[0], version.minimumCompatibilityVersion()));
             } catch (Exception e) {
-                throw new RuntimeException("Could not create discoverynode", e);
+                logger.error("Could not create discoverynode", e);
             }
         }
+
+        logger.debug("buildDynamicNodes - ", discoveryNodes);
 
         return discoveryNodes;
     }
