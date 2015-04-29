@@ -64,7 +64,7 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
                 }
             }
         } catch (NamingException e) {
-            logger.debug("Failed to resolve hostname", e.getCause());
+            logger.debug("Failed to resolve hostname", e);
         }
 
         logger.debug("getNodeIpsAndPorts - " + taskHostName + " -> " + nodes);
