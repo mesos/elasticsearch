@@ -1,6 +1,14 @@
 apply plugin: 'application'
+apply plugin: 'com.github.johnrengelman.shadow'
 
-mainClassName = "org.apache.mesos.elasticsearch.executor.Main"
+mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
+
+buildscript {
+    repositories { jcenter() }
+    dependencies {
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+    }
+}
 
 dependencies {
 
@@ -10,14 +18,14 @@ dependencies {
 
 }
 
-jar {
+shadowJar {
     baseName = "elasticsearch-mesos-executor"
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor' }
+    mergeServiceFiles()
+    classifier = ''
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'jar'
+    dependsOn   'shadowJar'
     from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
     into        'build/libs'
     rename { String fileName ->
