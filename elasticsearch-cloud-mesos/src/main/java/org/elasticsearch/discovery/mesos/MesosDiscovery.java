@@ -49,7 +49,7 @@ public class MesosDiscovery extends ZenDiscovery {
                 unicastZenPing.addHostsProvider(new MesosUnicastHostsProvider(settings, mesosStateService, transportService, Version.V_1_4_0));
                 pingService.zenPings(ImmutableList.of(unicastZenPing));
             } else {
-                logger.warn("failed to apply gce unicast discovery, no unicast ping found");
+                logger.warn("Failed to apply gce unicast discovery, no unicast ping found");
             }
         }
     }

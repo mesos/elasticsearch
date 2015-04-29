@@ -1,11 +1,14 @@
 package org.apache.mesos.elasticsearch.executor;
 
+import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.elasticsearch.common.io.FileSystemUtils;
+import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.Node;
@@ -13,8 +16,8 @@ import org.elasticsearch.node.NodeBuilder;
 import org.elasticsearch.plugins.PluginManager;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
-import java.util.logging.Logger;
 
 /**
  * Executor for Elasticsearch.
@@ -24,15 +27,27 @@ public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
 
+    /*
+     * Elasticsearch can be launched via Mesos (default) or using -nomesos. In the latter case
+     * the elasticsearch-cloud-mesos plugin is installed and elasticsearch is launched without using Mesos APIs
+     */
     public static void main(String[] args) {
-        System.out.println("Started Executor...");
-
-        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
-        Protos.Status status = driver.run();
-        if (status.equals(Protos.Status.DRIVER_STOPPED)) {
-            System.exit(0);
+        if (args != null && args.length >= 1 && args[0].equals("-nomesos")) {
+            try {
+                launchElasticsearchNode();
+            } catch (IOException e) {
+                LOGGER.error("Could not launch Elasticsearch node: " + e.getMessage());
+            }
         } else {
-            System.exit(1);
+            LOGGER.info("Started ElasticsearchExecutor");
+
+            MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
+            Protos.Status status = driver.run();
+            if (status.equals(Protos.Status.DRIVER_STOPPED)) {
+                System.exit(0);
+            } else {
+                System.exit(1);
+            }
         }
     }
 
@@ -59,22 +74,7 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(status);
 
         try {
-            FileSystemUtils.mkdirs(new File("plugins"));
-            String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
-            Environment environment = new Environment();
-            PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
-            manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
-
-            LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
-
-            System.setProperty("es.discovery.type", "mesos");
-            System.setProperty("es.cloud.enabled", "true");
-            System.setProperty("es.foreground", "true");
-            System.setProperty("es.logger.discovery", "DEBUG");
-
-            final Node node = NodeBuilder.nodeBuilder().build();
-            node.start();
-
+            final Node node = launchElasticsearchNode();
             Runtime.getRuntime().addShutdownHook(new Thread() {
                 @Override
                 public void run() {
@@ -91,6 +91,30 @@ public class ElasticsearchExecutor implements Executor {
                     .setState(Protos.TaskState.TASK_FAILED).build();
             driver.sendStatusUpdate(status);
         }
+    }
+
+    private static Node launchElasticsearchNode() throws IOException {
+        FileSystemUtils.mkdirs(new File("plugins"));
+        String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
+        Environment environment = new Environment();
+        PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
+        manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
+
+        LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
+
+        Settings settings = ImmutableSettings.settingsBuilder()
+                                .put("discovery.type", "mesos")
+                                .put("cloud.enabled", "true")
+                                .put("foreground", "true")
+                                .put("master", "true")
+                                .put("data", "true")
+                                .put("script.disable_dynamic", "false")
+                                .put("logger.discovery", "debug")
+                                .put("logger.cloud.mesos", "debug").build();
+
+        final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
+        node.start();
+        return node;
     }
 
     @Override
