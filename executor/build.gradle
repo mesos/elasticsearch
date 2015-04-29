@@ -15,6 +15,7 @@ dependencies {
     compile project(':commons')
 
     compile "org.elasticsearch:elasticsearch:1.4.0"
+    compile "log4j:log4j:1.2.16"
 
 }
 
