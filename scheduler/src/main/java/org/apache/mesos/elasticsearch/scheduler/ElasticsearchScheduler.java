@@ -6,6 +6,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
@@ -22,7 +23,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
-import java.util.logging.Logger;
 
 /**
  * Scheduler for Elasticsearch.
@@ -127,7 +127,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         try {
             initialized.await();
         } catch (InterruptedException e) {
-            LOGGER.severe("Elasticsearch framework interrupted");
+            LOGGER.error("Elasticsearch framework interrupted");
         }
     }
 
@@ -201,9 +201,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
         for (Protos.Offer offer : offers) {
             if (isOfferGood(offer) && !haveEnoughNodes()) {
-                LOGGER.fine("Offer: " + offer);
-
-                LOGGER.info("Accepted offer: " + offer.getHostname());
+                LOGGER.info("Accepted offer: " + offer.getHostname() + " - " + offer.toString());
 
                 String id = taskId(offer);
 
@@ -213,7 +211,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 tasks.add(new Task(offer.getHostname(), id));
             } else {
                 driver.declineOffer(offer.getId());
-                LOGGER.info("Declined offer: " + offer.getHostname());
+                LOGGER.info("Declined offer: " + offer.getHostname() + " - " + offer.toString());
             }
         }
 
@@ -283,7 +281,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void disconnected(SchedulerDriver driver) {
-        LOGGER.warning("Disconnected");
+        LOGGER.warn("Disconnected");
     }
 
     @Override
@@ -300,7 +298,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void error(SchedulerDriver driver, String message) {
-        LOGGER.severe("Error: " + message);
+        LOGGER.error("Error: " + message);
     }
 
     private String taskId(Protos.Offer offer) {

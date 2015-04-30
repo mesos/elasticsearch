@@ -15,7 +15,9 @@ dependencies {
     compile project(':commons')
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+    compile "log4j:log4j:1.2.16"
     compile "com.mashape.unirest:unirest-java:1.4.5"
+
 }
 
 jar {
