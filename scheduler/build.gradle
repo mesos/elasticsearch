@@ -44,10 +44,15 @@ task copyJar(type: Copy) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyJar
-    if (file("/var/run/docker.sock").exists()){
-       url = 'unix:///var/run/docker.sock'
-    } else {
-       url = "$System.env.DOCKER_HOST".replace("tcp","https")
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
     }
     inputDir = file('.')
     tag = 'mesos/elasticsearch-scheduler'
