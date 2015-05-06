@@ -6,7 +6,12 @@ tasks.withType(FindBugs) {
   excludeFilter = file("$rootProject.projectDir/config/findbugs/excludeFilter.xml")
 }
 
+checkstyle {
+    toolVersion = "6.6"
+}
+
 pmd {
+    toolVersion = "5.1.3"
     ruleSets = [
             'java-basic',
             'java-braces',
