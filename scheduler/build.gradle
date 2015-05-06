@@ -20,6 +20,7 @@ dependencies {
     compile project(':elasticsearch-cloud-mesos')
 
     compile "commons-cli:commons-cli:1.0"
+    compile "log4j:log4j:1.2.16"
 
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     testCompile 'joda-time:joda-time:2.3'
@@ -43,7 +44,16 @@ task copyJar(type: Copy) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyJar
-    url = 'unix:///var/run/docker.sock'
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
+    }
     inputDir = file('.')
     tag = 'mesos/elasticsearch-scheduler'
 }

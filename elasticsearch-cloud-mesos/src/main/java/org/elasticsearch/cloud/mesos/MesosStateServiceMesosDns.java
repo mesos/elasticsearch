@@ -30,19 +30,23 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
     @Override
     protected void doStart() throws ElasticsearchException {
+        logger.info("Starting Mesos DNS state service");
     }
 
     @Override
     protected void doStop() throws ElasticsearchException {
+        logger.info("Stopping Mesos DNS state service");
     }
 
     @Override
     protected void doClose() throws ElasticsearchException {
+        logger.info("Closing Mesos DNS state service");
     }
 
     @Override
     public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
         String taskHostName = "_" + Configuration.TASK_NAME + "._tcp." + Configuration.FRAMEWORK_NAME + "." + Configuration.DOMAIN;
+
         final ArrayList<String> nodes = Lists.newArrayList();
 
         Attributes attrs;
@@ -56,13 +60,14 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
                 while (enumeration.hasMore()) {
                     SrvRecord record = new SrvRecord((String) enumeration.next());
-
                     nodes.add(record.getHostAndPort());
                 }
             }
         } catch (NamingException e) {
-            throw new RuntimeException("Failed to resolve hostname", e);
+            logger.debug("Failed to resolve hostname", e);
         }
+
+        logger.debug("getNodeIpsAndPorts - " + taskHostName + " -> " + nodes);
 
         return nodes;
     }

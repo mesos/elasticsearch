@@ -15,7 +15,9 @@ dependencies {
     compile project(':commons')
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
+    compile "log4j:log4j:1.2.16"
     compile "com.mashape.unirest:unirest-java:1.4.5"
+
 }
 
 jar {
@@ -42,7 +44,15 @@ task copyZip(type: Copy, dependsOn: zip) {
 
 task buildDockerImage(type: DockerBuildImage) {
     dependsOn   copyZip
-    url = 'unix:///var/run/docker.sock'
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
+    }
     inputDir = file('.')
     tag = 'mesos/elasticsearch-cloud-mesos'
 }
