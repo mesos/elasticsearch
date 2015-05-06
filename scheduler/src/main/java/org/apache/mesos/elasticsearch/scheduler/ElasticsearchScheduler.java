@@ -15,7 +15,6 @@ import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
 
@@ -303,7 +303,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private boolean isOfferGood(Protos.Offer offer) {
         // Don't start the same framework multiple times on the same host
-        return tasks.stream().anyMatch(task1 -> task1.getHostname().equals(offer.getHostname()));
+        return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
     }
 
     private boolean haveEnoughNodes() {
