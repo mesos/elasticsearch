@@ -75,15 +75,13 @@ public class ElasticsearchExecutor implements Executor {
 
         try {
             final Node node = launchElasticsearchNode();
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
-                            .setTaskId(task.getTaskId())
-                            .setState(Protos.TaskState.TASK_FINISHED).build();
-                    driver.sendStatusUpdate(status);
-                    node.close();
-                }
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
+                        .setTaskId(task.getTaskId())
+                        .setState(Protos.TaskState.TASK_FINISHED).build();
+                driver.sendStatusUpdate(taskStatus);
+                node.close();
+            }) {
             });
         } catch (Exception e) {
             status = Protos.TaskStatus.newBuilder()

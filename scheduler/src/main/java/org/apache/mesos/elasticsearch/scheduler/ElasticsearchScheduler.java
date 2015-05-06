@@ -24,6 +24,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 
+import static java.util.stream.Collectors.toList;
+
 /**
  * Scheduler for Elasticsearch.
  */
@@ -95,23 +97,16 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
 
-            Runtime.getRuntime().addShutdownHook(new Thread() {
-                @Override
-                public void run() {
-                    driver.stop();
-                    scheduler.onShutdown();
-                }
-            });
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                driver.stop();
+                scheduler.onShutdown();
+            }));
 
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
 
-            Set<Task> tasks = scheduler.getTasks();
-            List<String> nodes = new ArrayList<>();
-            for (Task task : tasks) {
-                nodes.add(task.getHostname());
-            }
+            final List<String> nodes = scheduler.getTasks().stream().map(Task::getHostname).collect(toList());
 
             LOGGER.info("ElasticSearch nodes starting on: " + nodes);
         } catch (ParseException e) {
@@ -308,12 +303,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private boolean isOfferGood(Protos.Offer offer) {
         // Don't start the same framework multiple times on the same host
-        for (Task task : tasks) {
-            if (task.getHostname().equals(offer.getHostname())) {
-                return false;
-            }
-        }
-        return true;
+        return tasks.stream().anyMatch(task1 -> task1.getHostname().equals(offer.getHostname()));
     }
 
     private boolean haveEnoughNodes() {
