@@ -92,7 +92,11 @@ $ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_
 
 If you have followed the steps described in "Full steps to build on Mac" then  to deploy execute the following steps.
 
-> $ ./deployDcos.sh
+```bash
+$ ./deployDcos.sh --master=MASTER_IP
+```
+
+Replace `MASTER_IP` in `--master=MASTER_IP` with a reference to a host recognisable by your `ssh` command.
 
 ## How to find theMesos master on AWS
 
