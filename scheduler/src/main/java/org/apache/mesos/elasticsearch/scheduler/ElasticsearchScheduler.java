@@ -36,6 +36,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
+    // As per the DCOS Service Specification, setting the failover timeout to a large value;
+    private static final double FAILOVER_TIMEOUT = 86400000;
+
     Clock clock = new Clock();
 
     Set<Task> tasks = new HashSet<>();
@@ -94,6 +97,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             frameworkBuilder.setUser("jclouds");
             frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
+            frameworkBuilder.setFailoverTimeout(FAILOVER_TIMEOUT);
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
 
