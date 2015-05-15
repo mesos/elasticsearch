@@ -27,7 +27,7 @@ subprojects {
 
     ext {
         mesosVer = "0.21.1"
-		elasticsearchVersion="1.4.0"
+		elasticsearchVersion="1.4.5"
     }
 
     repositories {

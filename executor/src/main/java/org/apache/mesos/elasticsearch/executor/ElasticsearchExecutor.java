@@ -101,7 +101,7 @@ public class ElasticsearchExecutor implements Executor {
         LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
         Settings settings = ImmutableSettings.settingsBuilder()
-                                .put("discovery.type", "mesos")
+                                .put("discovery.type", "auto")
                                 .put("cloud.enabled", "true")
                                 .put("foreground", "true")
                                 .put("master", "true")

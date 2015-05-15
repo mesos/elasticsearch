@@ -235,7 +235,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
-                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+//                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))

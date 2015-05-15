@@ -33,8 +33,9 @@ docker push mesos/elasticsearch-scheduler
 for slave in $SLAVES;
 do
     ssh $slave "docker pull mesos/elasticsearch-scheduler"
+    ssh $slave "docker pull mesos/elasticsearch-cloud-mesos"
 done
 
 wait
 
-cd scheduler; echo ./deploy-to-marathon.sh
+cd scheduler; ./deploy-to-marathon.sh
