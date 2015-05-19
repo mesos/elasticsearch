@@ -63,7 +63,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             CommandLine cmd = parser.parse(options, args);
             String masterUrl = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
-            String useDockerString = cmd.getOptionValue("d");
             String nameNode = cmd.getOptionValue("nn");
             if (masterUrl == null || numberOfHwNodesString == null || nameNode == null) {
                 printUsage(options);
@@ -77,9 +76,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return;
             }
 
-            boolean useDocker = Boolean.parseBoolean(useDockerString);
+            boolean useDocker = cmd.hasOption('d');
 
-            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + "]");
+            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + "]");
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes, useDocker, nameNode);
 
