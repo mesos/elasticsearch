@@ -30,6 +30,7 @@ gw clean build -x test
 wait
 
 docker push mesos/elasticsearch-scheduler
+docker push mesos/elasticsearch-cloud-mesos
 for slave in $SLAVES;
 do
     ssh $slave "docker pull mesos/elasticsearch-scheduler"

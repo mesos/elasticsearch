@@ -4,7 +4,7 @@ allprojects {
 
 idea {
     project {
-        languageLevel = '1.8'
+        languageLevel = '1.7'
         vcs = 'Git'
     }
 }
@@ -15,8 +15,8 @@ subprojects {
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
 
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    sourceCompatibility = '1.7'
+    targetCompatibility = '1.7'
 
     [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
