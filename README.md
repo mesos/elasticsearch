@@ -11,15 +11,11 @@ launching the framework <i>scheduler</i>.
 
 The framework can be run by building the code, the docker images, transferring the code to the Mesos cluster and launching the framework <i>scheduler</i>.
 
-> $ gradlew build
-
-Optionally run <a href="https://github.com/dougborg/gdub">gdub</a> which runs the gradle wrapper from any subdirectory.
-
 ## How to build
 
 ```
-$ docker run --rm -v ~/.gradle/:/root/.gradle/ \
-      -v /var/run/docker.sock:/var/run/docker.sock \
+$ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+      -v ~/.gradle/:/root/.gradle/ \
       -v `pwd`:/app:rw pierrevincent/gradle-java8 build
 ```
 
