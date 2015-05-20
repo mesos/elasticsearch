@@ -17,11 +17,10 @@ Optionally run <a href="https://github.com/dougborg/gdub">gdub</a> which runs th
 
 ## How to build
 
-Actions to perform
-
 ```
-cd project_directory
-docker run --rm -v ~/.gradle/:/root/.gradle/ -v /var/run/docker.sock:/var/run/docker.sock  -v `pwd`:/app:rw pierrevincent/gradle-java8 build
+$ docker run --rm -v ~/.gradle/:/root/.gradle/ \
+      -v /var/run/docker.sock:/var/run/docker.sock \
+      -v `pwd`:/app:rw pierrevincent/gradle-java8 build
 ```
 
 ## How to install on Mesos
