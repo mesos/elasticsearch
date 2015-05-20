@@ -1,4 +1,4 @@
-FROM elasticsearch:1.4
+FROM trifork/elasticsearch:1.4
 
 ADD build/docker/elasticsearch-cloud-mesos.zip /tmp/elasticsearch-cloud-mesos.zip
 

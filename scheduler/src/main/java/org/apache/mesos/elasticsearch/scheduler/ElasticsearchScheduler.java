@@ -13,18 +13,11 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
+import org.elasticsearch.common.collect.Lists;
 
 import java.text.SimpleDateFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Predicate;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Scheduler for Elasticsearch.
@@ -70,7 +63,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             CommandLine cmd = parser.parse(options, args);
             String masterUrl = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
-            String useDockerString = cmd.getOptionValue("d");
             String nameNode = cmd.getOptionValue("nn");
             if (masterUrl == null || numberOfHwNodesString == null || nameNode == null) {
                 printUsage(options);
@@ -84,9 +76,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return;
             }
 
-            boolean useDocker = Boolean.parseBoolean(useDockerString);
+            boolean useDocker = cmd.hasOption('d');
 
-            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + "]");
+            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + "]");
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes, useDocker, nameNode);
 
@@ -97,16 +89,23 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
 
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                driver.stop();
-                scheduler.onShutdown();
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    driver.stop();
+                    scheduler.onShutdown();
+                }
             }));
 
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
 
-            final List<String> nodes = scheduler.getTasks().stream().map(Task::getHostname).collect(toList());
+            final List<String> nodes = Lists.newArrayList(); //.stream().map(Task::getHostname).collect(toList());
+
+            for (Task task : scheduler.getTasks()) {
+                nodes.add(task.getHostname());
+            }
 
             LOGGER.info("ElasticSearch nodes starting on: " + nodes);
         } catch (ParseException e) {
@@ -235,7 +234,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
-                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+//                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))
@@ -303,7 +302,14 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private boolean isOfferGood(Protos.Offer offer) {
         // Don't start the same framework multiple times on the same host
-        return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
+        for (Task task : tasks) {
+            if (task.getHostname().equals(offer.getHostname())) {
+                return false;
+            }
+        }
+        return true;
+
+        //TODO: return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
     }
 
     private boolean haveEnoughNodes() {
