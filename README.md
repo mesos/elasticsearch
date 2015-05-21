@@ -94,19 +94,19 @@ Actions to perform to start in Mac:
 
 1. Start Vagrant from project directory:
 
-    ```
+    ```bash
     $ vagrant up
     ```
 
 2. When completed SSH into the VM:
 
-    ```
+    ```bash
     $ vagrant ssh
     ```
 
 3. Build 
 
-    ```
+    ```bash
     $ cd /vagrant
     $ sudo ./gradlew build
     ```
