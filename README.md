@@ -18,8 +18,8 @@ $ ./gradlew build
 
 Alteratively:
 * Use [gdub](https://github.com/dougborg/gdub) which runs the gradle wrapper from any subdirectory, so that you don't need to deal with relative paths
-* Use [Vagrant](#Building with Vagrant)
-* Use [Docker](#Building with Docker)
+* Use [Vagrant](#building-with-vagrant)
+* Use [Docker](#building-with-docker)
 
 ## How to install on Mesos
 
