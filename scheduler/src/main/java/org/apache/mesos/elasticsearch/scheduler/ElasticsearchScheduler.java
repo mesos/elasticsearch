@@ -9,6 +9,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
+import org.apache.mesos.Protos.ContainerInfo.DockerInfo.PortMapping;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
@@ -224,17 +225,20 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         if (useDocker) {
             LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");
             Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
-
+            PortMapping clientPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_CLIENT_PORT).setHostPort(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
+            PortMapping transportPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setHostPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
             Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
-                    .setImage("mesos/elasticsearch-cloud-mesos").build();
+                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
+                    .setImage("mesos/elasticsearch-cloud-mesos")
+                    .addPortMappings(clientPortMapping)
+                    .addPortMappings(transportPortMapping).build();
             containerInfo.setDocker(docker);
             containerInfo.setType(Protos.ContainerInfo.Type.DOCKER);
             taskInfoBuilder.setContainer(containerInfo);
-
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
-//                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))
