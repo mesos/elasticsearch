@@ -91,19 +91,19 @@ Prerequisites:
 **Note:** Currently you need to sudo the build command or the Docker part will fail. This will be fixed shortly.
 
 Actions to perform to start in Mac:
- 1. Start Vagrant from project directory:
-	```bash
-	$ vagrant up
-	```
- 1. When completed SSH into the VM:
-	```bash
-	$ vagrant ssh
-	```
- 1. Build 
-	```bash
-	$ cd /vagrant
-	$ sudo ./gradlew build
-	```
+1. Start Vagrant from project directory:
+    ```
+    $ vagrant up
+    ```
+1. When completed SSH into the VM:
+    ```
+    $ vagrant ssh
+    ```
+1. Build 
+    ```
+    $ cd /vagrant
+    $ sudo ./gradlew build
+    ```
 
 ### Building with Docker
 ```bash
