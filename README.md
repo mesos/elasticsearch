@@ -6,8 +6,6 @@
 This framework requires a running <a href="http://mesos.apache.org">Mesos</a> cluster
 with <a href="https://hadoop.apache.org/docs/r1.2.1/hdfs_user_guide.html">HDFS</a>.  The HDFS dependency is not at a code level.  It is used as  local repository for the elastic search executor.  This requirement will be removed over time but will likely remain is one of the options for executor fetching.
 The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is optional.
-The framework can be run by building the code, the docker images, transferring the code to the Mesos cluster and
-launching the framework <i>scheduler</i>.
 
 The framework can be run by building the code, the docker images, transferring the code to the Mesos cluster and launching the framework <i>scheduler</i>.
 
@@ -92,7 +90,11 @@ $ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_
 
 If you have followed the steps described in "Full steps to build on Mac" then  to deploy execute the following steps.
 
-> $ ./deployDcos.sh
+```bash
+$ ./deployDcos.sh --master=MASTER_IP
+```
+
+Replace `MASTER_IP` in `--master=MASTER_IP` with a reference to a host recognisable by your `ssh` command.
 
 ## How to find theMesos master on AWS
 
@@ -117,6 +119,16 @@ Run the deploy.sh script from the root directory to install all the components. 
 
 This scripts loads the marathon.json file and runs the scheduler in a container on one of the slaves. Note that it 
 requires host networking.
+
+## How to import demo data
+
+The [Sharekespeare dataset](http://www.elastic.co/guide/en/kibana/3.0/import-some-data.html) from Elastic.co can be
+imported with the [mwldk/shakespeare-import](https://registry.hub.docker.com/u/mwldk/shakespeare-import/) Docker image.
+Just point the `ELASTIC_SEARCH_URL` environment variable at one of your Elastic nodes.
+
+```bash
+$ docker run --rm -e ELASTIC_SEARCH_URL=http://${MASTER_IP}:9200 mwldk/shakespeare-import
+```
 
 ## Sponsors
 This project is sponsored by Cisco Cloud Services

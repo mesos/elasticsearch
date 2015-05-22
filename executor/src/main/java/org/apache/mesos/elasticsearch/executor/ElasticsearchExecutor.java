@@ -75,12 +75,15 @@ public class ElasticsearchExecutor implements Executor {
 
         try {
             final Node node = launchElasticsearchNode();
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
-                        .setTaskId(task.getTaskId())
-                        .setState(Protos.TaskState.TASK_FINISHED).build();
-                driver.sendStatusUpdate(taskStatus);
-                node.close();
+            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
+                            .setTaskId(task.getTaskId())
+                            .setState(Protos.TaskState.TASK_FINISHED).build();
+                    driver.sendStatusUpdate(taskStatus);
+                    node.close();
+                }
             }) {
             });
         } catch (Exception e) {
@@ -101,7 +104,7 @@ public class ElasticsearchExecutor implements Executor {
         LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
         Settings settings = ImmutableSettings.settingsBuilder()
-                                .put("discovery.type", "mesos")
+                                .put("discovery.type", "auto")
                                 .put("cloud.enabled", "true")
                                 .put("foreground", "true")
                                 .put("master", "true")

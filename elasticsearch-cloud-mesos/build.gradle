@@ -2,6 +2,12 @@ apply plugin: 'com.bmuschko.docker-remote-api'
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 
+compileJava {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+
+}
+
 buildscript {
     repositories {
         jcenter()
