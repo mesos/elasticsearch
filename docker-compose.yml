@@ -1,6 +1,6 @@
-master:
+mesosmaster:
   image: redjack/mesos-master:0.21.0
-  hostname: master
+  hostname: mesosmaster
   environment:
     - MESOS_QUORUM=1
     - MESOS_WORK_DIR=/var/lib/mesos
@@ -13,9 +13,9 @@ slave1:
   image: redjack/mesos-slave:0.21.0
   hostname: slave1
   links:
-   - master
+   - mesosmaster
   environment:
-    - MESOS_MASTER=master:5050
+    - MESOS_MASTER=mesosmaster:5050
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
     - MESOS_CONTAINERIZERS=docker,mesos
     - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
@@ -23,13 +23,13 @@ slave1:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
-    - /usr/local/bin/docker:/usr/local/bin/docker:ro
+    - /usr/bin/docker:/usr/bin/docker:ro
     - /sys:/sys:ro
     - /var/log/mesos:/var/log/mesos
   ports:
     - "5051:5051"
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-d -m master:5050 -n 1 -nn localhost"
+  command: "-d -m mesosmaster -n 1 -nn localhost"
   links:
-   - master
+   - mesosmaster

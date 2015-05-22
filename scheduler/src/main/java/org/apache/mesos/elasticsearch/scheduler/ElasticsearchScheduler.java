@@ -16,6 +16,8 @@ import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.elasticsearch.common.collect.Lists;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -30,6 +32,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
+    public static final int MESOS_PORT = 5050;
+
     Clock clock = new Clock();
 
     Set<Task> tasks = new HashSet<>();
@@ -38,7 +42,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private int numberOfHwNodes;
 
-    private String masterUrl;
+    private String masterHost;
 
     private boolean useDocker;
 
@@ -46,8 +50,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String masterUrl, int numberOfHwNodes, boolean useDocker, String namenode) {
-        this.masterUrl = masterUrl;
+    public ElasticsearchScheduler(String masterHost, int numberOfHwNodes, boolean useDocker, String namenode) {
+        this.masterHost = masterHost;
         this.numberOfHwNodes = numberOfHwNodes;
         this.useDocker = useDocker;
         this.namenode = namenode;
@@ -55,17 +59,17 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static void main(String[] args) {
         Options options = new Options();
-        options.addOption("m", "masterUrl", true, "master url");
+        options.addOption("m", "master host", true, "master host");
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
         options.addOption("nn", "namenode", true, "name node hostname + port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
-            String masterUrl = cmd.getOptionValue("m");
+            String masterHost = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
             String nameNode = cmd.getOptionValue("nn");
-            if (masterUrl == null || numberOfHwNodesString == null || nameNode == null) {
+            if (masterHost == null || numberOfHwNodesString == null || nameNode == null) {
                 printUsage(options);
                 return;
             }
@@ -79,16 +83,16 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             boolean useDocker = cmd.hasOption('d');
 
-            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterUrl + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + "]");
+            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + "]");
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterUrl, numberOfHwNodes, useDocker, nameNode);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, numberOfHwNodes, useDocker, nameNode);
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
             frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
 
-            final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterUrl);
+            final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterHost + ":" + MESOS_PORT);
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
@@ -102,7 +106,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             schedThred.start();
             scheduler.waitUntilInit();
 
-            final List<String> nodes = Lists.newArrayList(); //.stream().map(Task::getHostname).collect(toList());
+            final List<String> nodes = Lists.newArrayList();
 
             for (Task task : scheduler.getTasks()) {
                 nodes.add(task.getHostname());
@@ -133,8 +137,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void run() {
-        LOGGER.info("Starting up...");
-        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName(Configuration.FRAMEWORK_NAME).build(), masterUrl);
+        LOGGER.info("Starting up ...");
+        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName(Configuration.FRAMEWORK_NAME).build(), masterHost + ":" + MESOS_PORT);
         driver.run();
     }
 
@@ -192,6 +196,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
+        LOGGER.trace("Resource Offers: " + offers);
         List<Protos.Resource> resources = buildResources();
 
         for (Protos.Offer offer : offers) {
@@ -227,9 +232,24 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
             PortMapping clientPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_CLIENT_PORT).setHostPort(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
             PortMapping transportPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setHostPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
+
+            InetAddress masterAddress = null;
+            try {
+                masterAddress = InetAddress.getByName(masterHost);
+                LOGGER.info("Resolving " + masterHost + " to " + masterAddress);
+            } catch (UnknownHostException e) {
+                LOGGER.error("Could not resolve IP address for hostname " + masterHost);
+
+                return taskInfoBuilder.build();
+            }
+
+            if (masterAddress == null) {
+                return taskInfoBuilder.build();
+            }
+
             Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
-                    .setImage("mesos/elasticsearch-cloud-mesos")
+                            .setImage("mesos/elasticsearch-cloud-mesos")
                     .addPortMappings(clientPortMapping)
                     .addPortMappings(transportPortMapping).build();
             containerInfo.setDocker(docker);
@@ -238,7 +258,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
-                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterUrl)
+                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + 5050)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))
