@@ -9,11 +9,13 @@ master:
     - /var/log/mesos:/var/log/mesos
   ports:
     - "5050:5050"
-  net: "host"
 slave1:
   image: redjack/mesos-slave:0.21.0
+  hostname: slave1
+  links:
+   - master
   environment:
-    - MESOS_MASTER=localhost:5050
+    - MESOS_MASTER=master:5050
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
     - MESOS_CONTAINERIZERS=docker,mesos
     - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
@@ -26,8 +28,8 @@ slave1:
     - /var/log/mesos:/var/log/mesos
   ports:
     - "5051:5051"
-  net: "host"
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-d -m localhost:5050 -n 1 -nn localhost"
-  net: "host"
+  command: "-d -m master:5050 -n 1 -nn localhost"
+  links:
+   - master
