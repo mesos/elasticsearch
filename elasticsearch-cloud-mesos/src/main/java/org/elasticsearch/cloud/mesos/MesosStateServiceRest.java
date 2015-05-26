@@ -10,6 +10,7 @@ import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.discovery.mesos.MesosUnicastHostsProvider;
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -51,8 +52,12 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
         try {
             JSONObject state = Unirest.get(master + "/master/state.json").asJson().getBody().getObject();
 
-            String clusterName = state.getString("cluster");
-            logger.debug("received state for cluster name={}", clusterName);
+            try {
+                String clusterName = state.getString("cluster");
+                logger.debug("received state for cluster name={}", clusterName);
+            } catch (JSONException e){
+                logger.warn("Mesos 'cluster' property not set");
+            }
 
             JSONArray slaves = state.getJSONArray("slaves");
             Map<String, JSONObject> slaveIdMap = Maps.newHashMap();
