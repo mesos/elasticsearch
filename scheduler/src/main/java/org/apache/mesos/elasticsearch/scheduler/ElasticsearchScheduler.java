@@ -32,8 +32,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
-    public static final int MESOS_PORT = 5050;
-
     Clock clock = new Clock();
 
     Set<Task> tasks = new HashSet<>();
@@ -92,7 +90,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
 
-            final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterHost + ":" + MESOS_PORT);
+            final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterHost + ":" + Configuration.MESOS_PORT);
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
@@ -138,7 +136,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     @Override
     public void run() {
         LOGGER.info("Starting up ...");
-        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName(Configuration.FRAMEWORK_NAME).build(), masterHost + ":" + MESOS_PORT);
+        SchedulerDriver driver = new MesosSchedulerDriver(this, Protos.FrameworkInfo.newBuilder().setUser("").setName(Configuration.FRAMEWORK_NAME).build(), masterHost + ":" + Configuration.MESOS_PORT);
         driver.run();
     }
 
@@ -258,7 +256,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
-                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + 5050)
+                            .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + Configuration.MESOS_PORT)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))
