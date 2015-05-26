@@ -47,7 +47,7 @@ public class MesosModule extends AbstractModule {
                     setupRestDiscovery();
                 }
             } catch (NamingException e) {
-                logger.info("Naming exception asking for 'leader.mesos'. Choosing Rest discovery strategy", e);
+                logger.info("Naming exception asking for 'leader.mesos'. Choosing Rest discovery strategy");
                 setupRestDiscovery();
             }
         }
