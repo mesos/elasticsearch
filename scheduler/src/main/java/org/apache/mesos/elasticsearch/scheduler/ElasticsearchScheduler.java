@@ -14,7 +14,7 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
-import org.elasticsearch.common.collect.Lists;
+import org.apache.mesos.elasticsearch.common.Resources;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -42,14 +42,17 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private String masterHost;
 
+    private String dnsHost;
+
     private boolean useDocker;
 
     private String namenode;
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String masterHost, int numberOfHwNodes, boolean useDocker, String namenode) {
+    public ElasticsearchScheduler(String masterHost, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode) {
         this.masterHost = masterHost;
+        this.dnsHost = dnsHost;
         this.numberOfHwNodes = numberOfHwNodes;
         this.useDocker = useDocker;
         this.namenode = namenode;
@@ -58,6 +61,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption("m", "master host", true, "master host");
+        options.addOption("dns", "DNS host", true, "DNS host");
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
         options.addOption("nn", "namenode", true, "name node hostname + port");
@@ -65,6 +69,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         try {
             CommandLine cmd = parser.parse(options, args);
             String masterHost = cmd.getOptionValue("m");
+            String dnsHost = cmd.getOptionValue("dns");
             String numberOfHwNodesString = cmd.getOptionValue("n");
             String nameNode = cmd.getOptionValue("nn");
             if (masterHost == null || numberOfHwNodesString == null || nameNode == null) {
@@ -81,9 +86,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             boolean useDocker = cmd.hasOption('d');
 
-            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + "]");
+            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, numberOfHwNodes, useDocker, nameNode);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode);
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
@@ -103,14 +108,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
-
-            final List<String> nodes = Lists.newArrayList();
-
-            for (Task task : scheduler.getTasks()) {
-                nodes.add(task.getHostname());
-            }
-
-            LOGGER.info("ElasticSearch nodes starting on: " + nodes);
         } catch (ParseException e) {
             printUsage(options);
         }
@@ -157,33 +154,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     }
 
     private static List<Protos.Resource> buildResources() {
-        Protos.Resource cpus = Protos.Resource.newBuilder()
-                .setName("cpus")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.CPUS).build())
-                .build();
-
-        Protos.Resource mem = Protos.Resource.newBuilder()
-                .setName("mem")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.MEM).build())
-                .build();
-
-        Protos.Resource disk = Protos.Resource.newBuilder()
-                .setName("disk")
-                .setType(Protos.Value.Type.SCALAR)
-                .setScalar(Protos.Value.Scalar.newBuilder().setValue(Configuration.DISK).build())
-                .build();
-
-        Protos.Value.Range clientPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_CLIENT_PORT).setEnd(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
-        Protos.Value.Range transportPortRange = Protos.Value.Range.newBuilder().setBegin(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setEnd(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
-
-        Protos.Resource ports = Protos.Resource.newBuilder()
-                .setName("ports")
-                .setType(Protos.Value.Type.RANGES)
-                .setRanges(Protos.Value.Ranges.newBuilder().addRange(clientPortRange).addRange(transportPortRange))
-                .build();
-
+        Protos.Resource cpus = Resources.cpus(Configuration.CPUS);
+        Protos.Resource mem = Resources.mem(Configuration.MEM);
+        Protos.Resource disk = Resources.disk(Configuration.DISK);
+        Protos.Resource ports = Resources.portRange(Configuration.BEGIN_PORT, Configuration.END_PORT);
         return Arrays.asList(cpus, mem, disk, ports);
     }
 
@@ -194,22 +168,22 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
-        LOGGER.trace("Resource Offers: " + offers);
-        List<Protos.Resource> resources = buildResources();
-
         for (Protos.Offer offer : offers) {
-            if (isOfferGood(offer) && !haveEnoughNodes()) {
-                LOGGER.info("Accepted offer: " + offer.getHostname() + " - " + offer.toString());
+            if (!isOfferGood(offer)) {
+                driver.declineOffer(offer.getId());
+                LOGGER.info("Declined offer: Offer is not sufficient");
+            } else if (haveEnoughNodes()) {
+                driver.declineOffer(offer.getId());
+                LOGGER.info("Declined offer: Node " + offer.getHostname() + " already has an Elasticsearch task");
+            } else {
+                LOGGER.info("Accepted offer: " + offer.getHostname());
 
                 String id = taskId(offer);
 
-                Protos.TaskInfo taskInfo = buildTask(resources, offer, id);
+                Protos.TaskInfo taskInfo = buildTask(driver, offer.getResourcesList(), offer, id);
 
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), id));
-            } else {
-                driver.declineOffer(offer.getId());
-                LOGGER.info("Declined offer: " + offer.getHostname() + " - " + offer.toString());
             }
         }
 
@@ -218,39 +192,60 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         }
     }
 
-    private Protos.TaskInfo buildTask(List<Protos.Resource> resources, Protos.Offer offer, String id) {
+    private Protos.TaskInfo buildTask(SchedulerDriver driver, List<Protos.Resource> offeredResources, Protos.Offer offer, String id) {
+        List<Protos.Resource> acceptedResources = new ArrayList<>();
+
+        addAllScalarResources(offeredResources, acceptedResources);
+
+        List<Integer> ports = selectPorts(offeredResources);
+
+        if (ports.size() != 2) {
+            LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
+            driver.declineOffer(offer.getId());
+        } else {
+            LOGGER.info("Elasticsearch client port " + ports.get(0));
+            LOGGER.info("Elasticsearch transport port " + ports.get(1));
+            acceptedResources.add(Resources.singlePortRange(ports.get(0)));
+            acceptedResources.add(Resources.singlePortRange(ports.get(1)));
+        }
+
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
                 .setName(Configuration.TASK_NAME)
                 .setTaskId(Protos.TaskID.newBuilder().setValue(id))
                 .setSlaveId(offer.getSlaveId())
-                .addAllResources(resources);
+                .addAllResources(acceptedResources);
 
         if (useDocker) {
             LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");
             Protos.ContainerInfo.Builder containerInfo = Protos.ContainerInfo.newBuilder();
-            PortMapping clientPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_CLIENT_PORT).setHostPort(Configuration.ELASTICSEARCH_CLIENT_PORT).build();
-            PortMapping transportPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setHostPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).build();
+            PortMapping clientPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_CLIENT_PORT).setHostPort(ports.get(0)).build();
+            PortMapping transportPortMapping = PortMapping.newBuilder().setContainerPort(Configuration.ELASTICSEARCH_TRANSPORT_PORT).setHostPort(ports.get(1)).build();
 
             InetAddress masterAddress = null;
-            try {
-                masterAddress = InetAddress.getByName(masterHost);
-                LOGGER.info("Resolving " + masterHost + " to " + masterAddress);
-            } catch (UnknownHostException e) {
-                LOGGER.error("Could not resolve IP address for hostname " + masterHost);
-
-                return taskInfoBuilder.build();
-            }
-
+            masterAddress = resolveHost(masterAddress, masterHost);
             if (masterAddress == null) {
+                LOGGER.error("Could not resolve master host : " + masterHost);
                 return taskInfoBuilder.build();
             }
 
-            Protos.ContainerInfo.DockerInfo docker = Protos.ContainerInfo.DockerInfo.newBuilder()
+            InetAddress dnsAddress = null;
+            dnsAddress = resolveHost(dnsAddress, dnsHost);
+            if (dnsAddress == null) {
+                LOGGER.error("Could not resolve DNS host: " + dnsHost);
+                return taskInfoBuilder.build();
+            }
+
+            Protos.ContainerInfo.DockerInfo.Builder docker = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
-                            .setImage("mesos/elasticsearch-cloud-mesos")
+                    .setImage("mesos/elasticsearch-cloud-mesos")
                     .addPortMappings(clientPortMapping)
-                    .addPortMappings(transportPortMapping).build();
-            containerInfo.setDocker(docker);
+                    .addPortMappings(transportPortMapping);
+
+            if (dnsHost != null) {
+                docker.addParameters(Protos.Parameter.newBuilder().setKey("dns").setValue(dnsAddress.getHostAddress()));
+            }
+
+            containerInfo.setDocker(docker.build());
             containerInfo.setType(Protos.ContainerInfo.Type.DOCKER);
             taskInfoBuilder.setContainer(containerInfo);
             taskInfoBuilder
@@ -258,26 +253,62 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                             .addArguments("elasticsearch")
                             .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + Configuration.MESOS_PORT)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
+                            .addArguments("--logger.cloud.mesos").addArguments("DEBUG")
                             .addArguments("--discovery.type").addArguments("mesos")
                             .setShell(false))
                     .build();
         } else {
-            LOGGER.info("NOT using Docker to start Elasticsearch cloud mesos on slaves");
+            LOGGER.info("Using Executor to start Elasticsearch cloud mesos on slaves");
             Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder()
-                    .setExecutorId(Protos.ExecutorID.newBuilder().setValue("" + UUID.randomUUID()))
+                    .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                     .setFrameworkId(frameworkId)
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_EXECUTOR_HDFS_PATH))
                             .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_CLOUD_MESOS_HDFS_PATH))
                             .setValue("java -jar " + Binaries.ES_EXECUTOR_JAR))
                     .setName("" + UUID.randomUUID())
-                    .addAllResources(resources)
+                    .addAllResources(acceptedResources)
                     .build();
 
             taskInfoBuilder.setExecutor(executorInfo);
         }
 
         return taskInfoBuilder.build();
+    }
+
+    private InetAddress resolveHost(InetAddress masterAddress, String host) {
+        try {
+            masterAddress = InetAddress.getByName(host);
+            LOGGER.info("Resolving " + host + " to " + masterAddress);
+        } catch (UnknownHostException e) {
+            LOGGER.error("Could not resolve IP address for hostname " + host);
+        }
+        return masterAddress;
+    }
+
+    private List<Integer> selectPorts(List<Protos.Resource> offeredResources) {
+        List<Integer> ports = new ArrayList<>();
+        for (Protos.Resource resource : offeredResources) {
+            if (resource.getType().equals(Protos.Value.Type.RANGES)) {
+                for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
+                    if (ports.size() < 2) {
+                        ports.add((int) range.getBegin());
+                        if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
+                            ports.add((int) range.getBegin() + 1);
+                        }
+                    }
+                }
+            }
+        }
+        return ports;
+    }
+
+    private void addAllScalarResources(List<Protos.Resource> offeredResources, List<Protos.Resource> acceptedResources) {
+        for (Protos.Resource resource : offeredResources) {
+            if (resource.getType().equals(Protos.Value.Type.SCALAR)) {
+                acceptedResources.add(resource);
+            }
+        }
     }
 
     @Override

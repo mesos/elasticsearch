@@ -23,4 +23,7 @@ public class Configuration {
 
     public static final double DISK = 250;
 
+    public static final long BEGIN_PORT = 31000;
+
+    public static final long END_PORT = 32000;
 }

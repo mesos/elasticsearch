@@ -8,6 +8,8 @@ import org.hamcrest.Description;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.apache.mesos.elasticsearch.common.Resources.singlePortRange;
+
 /**
  * Matcher for {@link org.apache.mesos.Protos.TaskInfo}s
  */
@@ -18,6 +20,8 @@ public class TaskInfoMatcher extends BaseMatcher<Protos.TaskInfo> {
     private Double cpus;
     private Double mem;
     private Double disk;
+    private int beginPort;
+    private int endPort;
 
     public TaskInfoMatcher(String id) {
         this.id = id;
@@ -38,6 +42,11 @@ public class TaskInfoMatcher extends BaseMatcher<Protos.TaskInfo> {
 
         if (disk != null) {
             resources.add(newResource("disk", disk));
+        }
+
+        if (beginPort != 0 && endPort != 0) {
+            resources.add(singlePortRange(beginPort));
+            resources.add(singlePortRange(endPort));
         }
 
         return taskInfo.getResourcesList().containsAll(resources) &&
@@ -87,4 +96,13 @@ public class TaskInfoMatcher extends BaseMatcher<Protos.TaskInfo> {
         return this;
     }
 
+    public TaskInfoMatcher beginPort(int beginPort) {
+        this.beginPort = beginPort;
+        return this;
+    }
+
+    public TaskInfoMatcher endPort(int endPort) {
+        this.endPort = endPort;
+        return this;
+    }
 }

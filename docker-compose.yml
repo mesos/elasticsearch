@@ -3,6 +3,8 @@ dns:
   links:
   - mesosmaster
   - slave1
+  - slave2
+  - slave3
 mesosmaster:
   image: redjack/mesos-master:0.21.0
   hostname: mesosmaster
@@ -25,17 +27,49 @@ slave1:
     - MESOS_CONTAINERIZERS=docker,mesos
     - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
     - MESOS_LOG_DIR=/var/log
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+    - MESOS_RESOURCES=ports(*):[31000-31100]
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - /usr/bin/docker:/usr/bin/docker:ro
     - /sys:/sys:ro
     - /var/log/mesos:/var/log/mesos
-  ports:
-    - "5051:5051"
+slave2:
+  image: redjack/mesos-slave:0.21.0
+  hostname: slave2
+  links:
+   - mesosmaster
+  environment:
+    - MESOS_MASTER=mesosmaster:5050
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
+    - MESOS_RESOURCES=ports(*):[31200-31300]
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /usr/bin/docker:/usr/bin/docker:ro
+    - /sys:/sys:ro
+    - /var/log/mesos:/var/log/mesos
+slave3:
+  image: redjack/mesos-slave:0.21.0
+  hostname: slave3
+  links:
+   - mesosmaster
+  environment:
+    - MESOS_MASTER=mesosmaster:5050
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
+    - MESOS_RESOURCES=ports(*):[31400-31500]
+  volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /usr/bin/docker:/usr/bin/docker:ro
+    - /sys:/sys:ro
+    - /var/log/mesos:/var/log/mesos
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-d -m mesosmaster -dns dns -n 1 -nn localhost"
+  command: "-d -m mesosmaster -dns dns -n 3 -nn localhost"
   links:
    - mesosmaster
    - dns

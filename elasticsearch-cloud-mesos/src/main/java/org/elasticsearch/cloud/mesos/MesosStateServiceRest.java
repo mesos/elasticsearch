@@ -54,7 +54,7 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
 
             try {
                 String clusterName = state.getString("cluster");
-                logger.debug("received state for cluster name={}", clusterName);
+                logger.info("received state for cluster name={}", clusterName);
             } catch (JSONException e){
                 logger.warn("Mesos 'cluster' property not set");
             }
@@ -65,6 +65,7 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
                 JSONObject slave = slaves.getJSONObject(i);
                 slaveIdMap.put(slave.getString("id"), slave);
             }
+            logger.info("Found slaves " + slaveIdMap);
 
             JSONArray frameworks = state.getJSONArray("frameworks");
             for (int i = 0; i < frameworks.length(); i++) {
@@ -75,7 +76,9 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
 
                     for (int j = 0; j < tasks.length(); j++) {
                         JSONObject task = tasks.getJSONObject(j);
-                        nodeIps.add(slaveIdMap.get(task.getString("slave_id")).getString("hostname"));
+                        String hostname = slaveIdMap.get(task.getString("slave_id")).getString("hostname");
+                        nodeIps.add(hostname);
+                        logger.info("Found slave hostname " + hostname);
                     }
                 }
             }
