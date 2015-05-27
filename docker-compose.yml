@@ -1,3 +1,8 @@
+dns:
+  image: devries/dnsmasq
+  links:
+  - mesosmaster
+  - slave1
 mesosmaster:
   image: redjack/mesos-master:0.21.0
   hostname: mesosmaster
@@ -30,6 +35,8 @@ slave1:
     - "5051:5051"
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-d -m mesosmaster -n 1 -nn localhost"
+  command: "-d -m mesosmaster -dns dns -n 1 -nn localhost"
   links:
    - mesosmaster
+   - dns
+
