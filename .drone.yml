@@ -1,6 +1,6 @@
 image: pierrevincent/gradle-java8
 script:
-  - -p /var/cache/drone build
+  - -p /var/cache/drone/src/github.com/ContainerSolutions/elasticsearch build
 
 cache:
   - .gradle
