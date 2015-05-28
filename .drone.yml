@@ -1,5 +1,6 @@
 image: pierrevincent/gradle-java8
 script:
   - -p /var/cache/drone build
+
 cache:
   - .gradle
