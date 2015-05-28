@@ -1,6 +1,5 @@
-image: pierrevincent/gradle-java8
+image: ubuntu
 script:
-  - -p /var/cache/drone/src/github.com/ContainerSolutions/elasticsearch build
-
+  - find /
 cache:
   - .gradle
