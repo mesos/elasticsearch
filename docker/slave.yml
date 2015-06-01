@@ -4,7 +4,6 @@ slave:
   volumes:
     - /var/log/mesos:/var/log/mesos
     - /var/lib/docker:/var/lib/docker
-    - /var/lib/docker/containers/
   environment:
     - MESOS_MASTER=mesosmaster:5050
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
