@@ -1,0 +1,14 @@
+slave:
+  build: dind
+  privileged: true
+  volumes:
+    - /var/log/mesos:/var/log/mesos
+    - /var/lib/docker:/var/lib/docker
+    - /var/lib/docker/containers/
+  environment:
+    - MESOS_MASTER=mesosmaster:5050
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
+    - MESOS_RESOURCES=ports(*):[31000-31100]
