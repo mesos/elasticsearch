@@ -235,6 +235,13 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return taskInfoBuilder.build();
             }
 
+            InetAddress slaveAddress = null;
+            slaveAddress = resolveHost(slaveAddress, offer.getHostname());
+            if (slaveAddress == null) {
+                LOGGER.error("Could not resolve slave host: " + offer.getHostname());
+                return taskInfoBuilder.build();
+            }
+
             Protos.ContainerInfo.DockerInfo.Builder docker = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
                     .setImage("mesos/elasticsearch-cloud-mesos")
@@ -251,6 +258,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
+                            .addArguments("--network.publish_host").addArguments(offer.getHostname())
+                            .addArguments("--node.master").addArguments("true")
                             .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + Configuration.MESOS_PORT)
                             .addArguments("--logger.discovery").addArguments("DEBUG")
                             .addArguments("--logger.cloud.mesos").addArguments("DEBUG")
