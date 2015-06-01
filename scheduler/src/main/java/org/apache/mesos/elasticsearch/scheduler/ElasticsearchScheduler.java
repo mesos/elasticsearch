@@ -259,6 +259,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                     .setCommand(Protos.CommandInfo.newBuilder()
                             .addArguments("elasticsearch")
                             .addArguments("--network.publish_host").addArguments(slaveAddress.getHostAddress())
+                            .addArguments("--transport.publish_port").addArguments(String.valueOf(ports.get(1)))
                             .addArguments("--node.master").addArguments("true")
                             .addArguments("--cloud.mesos.master").addArguments("http://" + masterAddress.getHostAddress() + ":" + Configuration.MESOS_PORT)
                             .addArguments("--logger.discovery").addArguments("DEBUG")

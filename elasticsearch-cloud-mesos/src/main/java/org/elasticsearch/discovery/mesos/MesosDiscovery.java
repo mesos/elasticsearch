@@ -45,7 +45,7 @@ public class MesosDiscovery extends ZenDiscovery {
             if (unicastZenPing.isPresent()) {
                 // update the unicast zen ping to add cloud hosts provider
                 // and, while we are at it, use only it and not the multicast for example
-                unicastZenPing.get().addHostsProvider(new MesosUnicastHostsProvider(settings, mesosStateService, transportService, Version.V_1_4_0));
+                unicastZenPing.get().addHostsProvider(new MesosUnicastHostsProvider(settings, mesosStateService, Version.V_1_4_0));
                 pingService.zenPings(ImmutableList.of(unicastZenPing.get()));
             } else {
                 logger.warn("Failed to apply gce unicast discovery, no unicast ping found");

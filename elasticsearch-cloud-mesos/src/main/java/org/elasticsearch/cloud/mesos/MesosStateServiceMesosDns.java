@@ -5,6 +5,7 @@ import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.lang3.tuple.Pair;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.discovery.mesos.MesosUnicastHostsProvider;
 
@@ -13,7 +14,6 @@ import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -44,10 +44,10 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
     }
 
     @Override
-    public List<String> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
+    public List<Pair<String, Integer>> getNodeIpsAndPorts(MesosUnicastHostsProvider mesosUnicastHostsProvider) {
         String taskHostName = "_" + Configuration.TASK_NAME + "._tcp." + Configuration.FRAMEWORK_NAME + "." + Configuration.DOMAIN;
 
-        final ArrayList<String> nodes = Lists.newArrayList();
+        final List<Pair<String, Integer>> nodes = Lists.newArrayList();
 
         Attributes attrs;
         NamingEnumeration<?> enumeration;
@@ -60,7 +60,7 @@ public class MesosStateServiceMesosDns extends AbstractLifecycleComponent<MesosS
 
                 while (enumeration.hasMore()) {
                     SrvRecord record = new SrvRecord((String) enumeration.next());
-                    nodes.add(record.getHostAndPort());
+                    nodes.add(Pair.of(record.getHost(), Integer.valueOf(record.getPort())));
                 }
             }
         } catch (NamingException e) {
