@@ -27,7 +27,7 @@ public class MesosModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        String discoverySetting = settings.get("cloud.mesos.discovery", "auto");
+        String discoverySetting = settings.get("cloud.mesos.discovery", "rest");
 
         final InitialDirContext dirContext = createDirContext(settings.get("cloud.mesos.resolver", ""));
         logger.info("Discovery setting: {}", discoverySetting);
