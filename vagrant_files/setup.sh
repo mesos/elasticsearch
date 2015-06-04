@@ -23,6 +23,10 @@ cp -f /vagrant/vagrant_files/etc/profile.d/env_vars.sh /etc/profile.d/
 echo "Restarting docker"
 systemctl restart docker
 
+echo "Installing docker-compose"
+curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
+chmod +x /usr/bin/docker-compose
+
 echo "Installing jdk"
 yum install -y java-1.8.0-openjdk-devel.x86_64
 
