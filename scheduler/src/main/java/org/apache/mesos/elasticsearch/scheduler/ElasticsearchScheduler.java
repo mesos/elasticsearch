@@ -64,7 +64,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode) {
+    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode, String zknode) {
         this.master = master;
         this.dnsHost = dnsHost;
         this.numberOfHwNodes = numberOfHwNodes;
@@ -72,7 +72,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         this.namenode = namenode;
 
         ZooKeeperState zkState = new ZooKeeperState(
-                master,
+                zknode,
                 ZK_TIMEOUT,
                 TimeUnit.MILLISECONDS,
                 FRAMEWORK_NAME + CLUSTER_NAME);
@@ -86,6 +86,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
         options.addOption("nn", "namenode", true, "name node hostname + port");
+        options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
@@ -93,7 +94,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             String dnsHost = cmd.getOptionValue("dns");
             String numberOfHwNodesString = cmd.getOptionValue("n");
             String nameNode = cmd.getOptionValue("nn");
-            if (masterHost == null || numberOfHwNodesString == null || nameNode == null) {
+            String zkNode = cmd.getOptionValue("zk");
+            if (masterHost == null || numberOfHwNodesString == null || nameNode == null || zkNode == null) {
                 printUsage(options);
                 return;
             }
@@ -109,7 +111,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, zkNode);
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
@@ -121,7 +123,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             try {
                 Protos.FrameworkID frameworkID = scheduler.getState().getFrameworkID(); // DCOS certification 02
                 if (frameworkID != null) {
-                    frameworkBuilder.setId(frameworkID);
+                    LOGGER.info("Found previous frameworkID: " + frameworkID);
+                    frameworkBuilder.setId(frameworkID);    // TODO: This doesn't appear to work. The response framework ID will not be the same. Is that right?
                 }
             } catch (InterruptedException | ExecutionException
                     | InvalidProtocolBufferException e) {
