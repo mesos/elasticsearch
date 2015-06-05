@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -15,25 +16,35 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Resources;
+import org.apache.mesos.state.ZooKeeperState;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduler for Elasticsearch.
  */
-@SuppressWarnings("PMD.TooManyMethods")
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
 public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
-    // As per the DCOS Service Specification, setting the failover timeout to a large value;
-    private static final double FAILOVER_TIMEOUT = 86400000;
+    // DCOS Certification requirement 01
+    // The time before Mesos kills a scheduler and tasks if it has not recovered.
+    // Mesos will kill framework after 24 Hours if marathon does not restart.
+    private static final double FAILOVER_TIMEOUT = 86400;
+    public static final long ZK_TIMEOUT = 20000L;
+    public static final String CLUSTER_NAME = "/mesos-ha";
+    public static final String FRAMEWORK_NAME = "/elasticsearc-mesos";
+
+    private final State state;
 
     Clock clock = new Clock();
 
@@ -53,12 +64,19 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode) {
+    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode, String zknode) {
         this.master = master;
         this.dnsHost = dnsHost;
         this.numberOfHwNodes = numberOfHwNodes;
         this.useDocker = useDocker;
         this.namenode = namenode;
+
+        ZooKeeperState zkState = new ZooKeeperState(
+                zknode,
+                ZK_TIMEOUT,
+                TimeUnit.MILLISECONDS,
+                FRAMEWORK_NAME + CLUSTER_NAME);
+        state = new State(zkState);
     }
 
     public static void main(String[] args) {
@@ -68,6 +86,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("d", "useDocker", false, "use docker to launch Elasticsearch");
         options.addOption("nn", "namenode", true, "name node hostname + port");
+        options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
@@ -75,7 +94,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             String dnsHost = cmd.getOptionValue("dns");
             String numberOfHwNodesString = cmd.getOptionValue("n");
             String nameNode = cmd.getOptionValue("nn");
-            if (masterHost == null || numberOfHwNodesString == null || nameNode == null) {
+            String zkNode = cmd.getOptionValue("zk");
+            if (masterHost == null || numberOfHwNodesString == null || nameNode == null || zkNode == null) {
                 printUsage(options);
                 return;
             }
@@ -91,13 +111,25 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, zkNode);
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");
             frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
             frameworkBuilder.setCheckpoint(true);
             frameworkBuilder.setFailoverTimeout(FAILOVER_TIMEOUT);
+            frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
+
+            try {
+                Protos.FrameworkID frameworkID = scheduler.getState().getFrameworkID(); // DCOS certification 02
+                if (frameworkID != null) {
+                    LOGGER.info("Found previous frameworkID: " + frameworkID);
+                    frameworkBuilder.setId(frameworkID);    // TODO: This doesn't appear to work. The response framework ID will not be the same. Is that right?
+                }
+            } catch (InterruptedException | ExecutionException
+                    | InvalidProtocolBufferException e) {
+                throw new RuntimeException(e);
+            }
 
             final MesosSchedulerDriver driver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), masterHost + ":" + Configuration.MESOS_PORT);
 
@@ -144,7 +176,11 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
         this.frameworkId = frameworkId;
-
+        try {
+            getState().setFrameworkId(frameworkId); // DCOS certification 02
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         List<Protos.Resource> resources = buildResources();
@@ -174,10 +210,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         for (Protos.Offer offer : offers) {
             if (!isOfferGood(offer)) {
-                driver.declineOffer(offer.getId());
+                driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Offer is not sufficient");
             } else if (haveEnoughNodes()) {
-                driver.declineOffer(offer.getId());
+                driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Node " + offer.getHostname() + " already has an Elasticsearch task");
             } else {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
@@ -384,5 +420,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public Set<Task> getTasks() {
         return tasks;
+    }
+
+    public State getState() {
+        return state;
     }
 }
