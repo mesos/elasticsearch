@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.state.Variable;
-import org.apache.mesos.state.ZooKeeperState;
 
 import java.io.*;
 import java.util.concurrent.ExecutionException;
@@ -17,9 +16,9 @@ import java.util.concurrent.ExecutionException;
  */
 public class State {
     private static String FRAMEWORK_ID_KEY = "frameworkId";
-    private ZooKeeperState zkState;
+    private ZooKeeperStateInterface zkState;
 
-    public State(ZooKeeperState zkState) {
+    public State(ZooKeeperStateInterface zkState) {
         this.zkState = zkState;
     }
 

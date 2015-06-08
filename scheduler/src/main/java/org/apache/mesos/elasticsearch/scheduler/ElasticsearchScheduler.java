@@ -1,12 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import com.google.protobuf.InvalidProtocolBufferException;
-import org.apache.commons.cli.BasicParser;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
@@ -16,7 +11,6 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Resources;
-import org.apache.mesos.state.ZooKeeperState;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -24,7 +18,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduler for Elasticsearch.
@@ -40,9 +33,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     // The time before Mesos kills a scheduler and tasks if it has not recovered.
     // Mesos will kill framework after 24 Hours if marathon does not restart.
     private static final double FAILOVER_TIMEOUT = 86400;
-    public static final long ZK_TIMEOUT = 20000L;
-    public static final String CLUSTER_NAME = "/mesos-ha";
-    public static final String FRAMEWORK_NAME = "/elasticsearc-mesos";
+
 
     private final State state;
 
@@ -64,19 +55,13 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode, String zknode) {
+    public ElasticsearchScheduler(String master, String dnsHost, int numberOfHwNodes, boolean useDocker, String namenode, State state) {
         this.master = master;
         this.dnsHost = dnsHost;
         this.numberOfHwNodes = numberOfHwNodes;
         this.useDocker = useDocker;
         this.namenode = namenode;
-
-        ZooKeeperState zkState = new ZooKeeperState(
-                zknode,
-                ZK_TIMEOUT,
-                TimeUnit.MILLISECONDS,
-                FRAMEWORK_NAME + CLUSTER_NAME);
-        state = new State(zkState);
+        this.state = state;
     }
 
     public static void main(String[] args) {
@@ -110,8 +95,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             boolean useDocker = cmd.hasOption('d');
 
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
+            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkNode);
+            State state = new State(zkState);
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, zkNode);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, state);
 
             final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
             frameworkBuilder.setUser("jclouds");

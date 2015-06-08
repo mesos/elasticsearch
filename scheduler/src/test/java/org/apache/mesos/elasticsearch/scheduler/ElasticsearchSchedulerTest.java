@@ -12,13 +12,7 @@ import org.junit.Test;
 import org.mockito.Matchers;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.apache.mesos.elasticsearch.common.Resources.*;
@@ -52,6 +46,7 @@ public class ElasticsearchSchedulerTest {
 
     private ElasticsearchScheduler scheduler;
     private SchedulerDriver driver;
+    private State state;
 
     private Protos.FrameworkID frameworkID;
     private Protos.MasterInfo masterInfo;
@@ -61,7 +56,8 @@ public class ElasticsearchSchedulerTest {
         Clock clock = Mockito.mock(Clock.class);
         Mockito.when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
-        scheduler = new ElasticsearchScheduler("http://master:5050", "dns", 3, false, "master:8020");
+        state = Mockito.mock(State.class);
+        scheduler = new ElasticsearchScheduler("http://master:5050", "dns", 3, false, "master:8020", state);
         scheduler.clock = clock;
 
         driver = Mockito.mock(SchedulerDriver.class);
