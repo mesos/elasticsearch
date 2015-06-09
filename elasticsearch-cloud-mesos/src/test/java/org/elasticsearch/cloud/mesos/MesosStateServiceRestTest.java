@@ -36,14 +36,14 @@ public class MesosStateServiceRestTest {
 
         List<Pair<String, Integer>> nodeIpsAndPorts = mesosStateServiceRest.getNodeIpsAndPorts(new MesosUnicastHostsProvider(settings, mesosStateServiceRest, Version.V_1_4_0));
 
-        assertThat(nodeIpsAndPorts.get(0).getKey(), is("slave1"));
-        assertThat(nodeIpsAndPorts.get(0).getValue(), is(9300));
+        assertThat(nodeIpsAndPorts.get(0).getKey(), is("ip-10-0-0-134.eu-west-1.compute.internal"));
+        assertThat(nodeIpsAndPorts.get(0).getValue(), is(5053));
 
-        assertThat(nodeIpsAndPorts.get(1).getKey(), is("slave2"));
-        assertThat(nodeIpsAndPorts.get(1).getValue(), is(9300));
+        assertThat(nodeIpsAndPorts.get(1).getKey(), is("ip-10-0-0-135.eu-west-1.compute.internal"));
+        assertThat(nodeIpsAndPorts.get(1).getValue(), is(5053));
 
-        assertThat(nodeIpsAndPorts.get(2).getKey(), is("slave3"));
-        assertThat(nodeIpsAndPorts.get(2).getValue(), is(9300));
+        assertThat(nodeIpsAndPorts.get(2).getKey(), is("ip-10-0-0-136.eu-west-1.compute.internal"));
+        assertThat(nodeIpsAndPorts.get(2).getValue(), is(5053));
     }
 
 }

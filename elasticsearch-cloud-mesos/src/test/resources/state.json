@@ -1,50 +1,12 @@
 {
-  "activated_slaves": 3,
-  "build_date": "2014-11-22 05:29:57",
-  "build_time": 1416634197,
-  "build_user": "root",
-  "completed_frameworks": [],
-  "deactivated_slaves": 0,
-  "elected_time": 1433342773.20243,
-  "failed_tasks": 0,
-  "finished_tasks": 0,
-  "flags": {
-    "allocation_interval": "1secs",
-    "authenticate": "false",
-    "authenticate_slaves": "false",
-    "authenticators": "crammd5",
-    "framework_sorter": "drf",
-    "help": "false",
-    "initialize_driver_logging": "true",
-    "log_auto_initialize": "true",
-    "log_dir": "\/var\/log",
-    "logbufsecs": "0",
-    "logging_level": "INFO",
-    "port": "5050",
-    "quiet": "false",
-    "quorum": "1",
-    "recovery_slave_removal_limit": "100%",
-    "registry": "replicated_log",
-    "registry_fetch_timeout": "1mins",
-    "registry_store_timeout": "5secs",
-    "registry_strict": "false",
-    "root_submissions": "true",
-    "slave_reregister_timeout": "10mins",
-    "user_sorter": "drf",
-    "version": "false",
-    "webui_dir": "\/usr\/local\/share\/mesos\/webui",
-    "whitelist": "*",
-    "work_dir": "\/var\/lib\/mesos",
-    "zk_session_timeout": "10secs"
-  },
   "frameworks": [
     {
       "active": true,
       "checkpoint": false,
       "completed_tasks": [],
       "failover_timeout": 0,
-      "hostname": "3ec97e6cf93b",
-      "id": "20150603-144613-1073746348-5050-1-0000",
+      "hostname": "ip-10-0-6-243.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-0022",
       "name": "elasticsearch",
       "offered_resources": {
         "cpus": 0,
@@ -52,141 +14,284 @@
         "mem": 0
       },
       "offers": [],
-      "registered_time": 1433342776.84938,
+      "pid": "scheduler-cf6e363d-59df-42bc-8172-43e41500bb14@10.0.6.243:51732",
+      "registered_time": 1433856281.04821,
       "resources": {
-        "cpus": 12,
-        "disk": 658155,
-        "mem": 44745,
-        "ports": "[9200-9200, 9300-9300]"
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[5052-5053]"
       },
       "role": "*",
       "tasks": [
         {
+          "discovery": {
+            "ports": {
+              "ports": [
+                {
+                  "name": "CLIENT_PORT",
+                  "number": 5052
+                },
+                {
+                  "name": "TRANSPORT_PORT",
+                  "number": 5053
+                }
+              ]
+            },
+            "visibility": "EXTERNAL"
+          },
           "executor_id": "",
-          "framework_id": "20150603-144613-1073746348-5050-1-0000",
-          "id": "elasticsearch_slave1_20150603T144619.393Z",
+          "framework_id": "20150608-130324-4077256714-5050-1155-0022",
+          "id": "elasticsearch_ip-10-0-0-134.eu-west-1.compute.internal_20150609T132441.086Z",
+          "labels": [],
           "name": "esdemo",
           "resources": {
             "cpus": 4,
-            "disk": 219385,
-            "mem": 14915,
-            "ports": "[9200-9200, 9300-9300]"
+            "disk": 32541,
+            "mem": 14019,
+            "ports": "[5052-5053]"
           },
-          "slave_id": "20150603-144613-1073746348-5050-1-S2",
+          "slave_id": "20150608-130324-4077256714-5050-1155-S1",
           "state": "TASK_RUNNING",
           "statuses": [
             {
               "state": "TASK_RUNNING",
-              "timestamp": 1433342780.08734
+              "timestamp": 1433856281.4771
             }
           ]
         },
         {
+          "discovery": {
+            "ports": {
+              "ports": [
+                {
+                  "name": "CLIENT_PORT",
+                  "number": 5052
+                },
+                {
+                  "name": "TRANSPORT_PORT",
+                  "number": 5053
+                }
+              ]
+            },
+            "visibility": "EXTERNAL"
+          },
           "executor_id": "",
-          "framework_id": "20150603-144613-1073746348-5050-1-0000",
-          "id": "elasticsearch_slave2_20150603T144618.065Z",
+          "framework_id": "20150608-130324-4077256714-5050-1155-0022",
+          "id": "elasticsearch_ip-10-0-0-135.eu-west-1.compute.internal_20150609T132441.086Z",
+          "labels": [],
           "name": "esdemo",
           "resources": {
             "cpus": 4,
-            "disk": 219385,
-            "mem": 14915,
-            "ports": "[9200-9200, 9300-9300]"
+            "disk": 32541,
+            "mem": 14019,
+            "ports": "[5052-5053]"
           },
-          "slave_id": "20150603-144613-1073746348-5050-1-S1",
+          "slave_id": "20150608-130324-4077256714-5050-1155-S0",
           "state": "TASK_RUNNING",
           "statuses": [
             {
               "state": "TASK_RUNNING",
-              "timestamp": 1433342778.53673
+              "timestamp": 1433856281.4771
             }
           ]
         },
         {
+          "discovery": {
+            "ports": {
+              "ports": [
+                {
+                  "name": "CLIENT_PORT",
+                  "number": 5052
+                },
+                {
+                  "name": "TRANSPORT_PORT",
+                  "number": 5053
+                }
+              ]
+            },
+            "visibility": "EXTERNAL"
+          },
           "executor_id": "",
-          "framework_id": "20150603-144613-1073746348-5050-1-0000",
-          "id": "elasticsearch_slave3_20150603T144617.723Z",
+          "framework_id": "20150608-130324-4077256714-5050-1155-0022",
+          "id": "elasticsearch_ip-10-0-0-136.eu-west-1.compute.internal_20150609T132441.086Z",
+          "labels": [],
           "name": "esdemo",
           "resources": {
             "cpus": 4,
-            "disk": 219385,
-            "mem": 14915,
-            "ports": "[9200-9200, 9300-9300]"
+            "disk": 32541,
+            "mem": 14019,
+            "ports": "[5052-5053]"
           },
-          "slave_id": "20150603-144613-1073746348-5050-1-S0",
+          "slave_id": "20150608-130324-4077256714-5050-1155-S2",
           "state": "TASK_RUNNING",
           "statuses": [
             {
               "state": "TASK_RUNNING",
-              "timestamp": 1433342778.07133
+              "timestamp": 1433856281.4771
             }
           ]
         }
       ],
       "unregistered_time": 0,
       "used_resources": {
-        "cpus": 12,
-        "disk": 658155,
-        "mem": 44745,
-        "ports": "[9200-9200, 9300-9300]"
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[5052-5053]"
       },
-      "user": "root",
+      "user": "core",
       "webui_url": ""
     }
   ],
-  "git_sha": "ab8fa655d34e8e15a4290422df38a18db1c09b5b",
-  "git_tag": "0.21.0",
-  "hostname": "mesosmaster",
-  "id": "20150603-144613-1073746348-5050-1",
-  "killed_tasks": 0,
-  "leader": "master@172.17.0.64:5050",
-  "log_dir": "\/var\/log",
-  "lost_tasks": 0,
-  "orphan_tasks": [],
-  "pid": "master@172.17.0.64:5050",
   "slaves": [
     {
+      "active": true,
       "attributes": {},
-      "hostname": "slave1",
-      "id": "20150603-144613-1073746348-5050-1-S2",
-      "pid": "slave(1)@172.17.0.70:5051",
-      "registered_time": 1433342779.38066,
+      "hostname": "ip-10-0-0-137.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S4",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.0.137:5051",
+      "registered_time": 1433768690.83454,
       "resources": {
         "cpus": 4,
-        "disk": 219385,
-        "mem": 14915,
-        "ports": "[9200-9200, 9300-9300]"
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-8079, 8082-8180, 8182-65535]"
+      },
+      "used_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
       }
     },
     {
+      "active": true,
       "attributes": {},
-      "hostname": "slave2",
-      "id": "20150603-144613-1073746348-5050-1-S1",
-      "pid": "slave(1)@172.17.0.66:5051",
-      "registered_time": 1433342778.05907,
+      "hostname": "ip-10-0-0-138.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S3",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.0.138:5051",
+      "registered_time": 1433768686.76969,
       "resources": {
         "cpus": 4,
-        "disk": 219385,
-        "mem": 14915,
-        "ports": "[9200-9200, 9300-9300]"
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-8079, 8082-8180, 8182-65535]"
+      },
+      "used_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
       }
     },
     {
-      "attributes": {},
-      "hostname": "slave3",
-      "id": "20150603-144613-1073746348-5050-1-S0",
-      "pid": "slave(1)@172.17.0.68:5051",
-      "registered_time": 1433342777.70689,
+      "active": true,
+      "attributes": {
+        "public_ip": "true"
+      },
+      "hostname": "ip-10-0-7-130.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S5",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.7.130:5051",
+      "registered_time": 1433768712.00938,
       "resources": {
         "cpus": 4,
-        "disk": 219385,
-        "mem": 14915,
-        "ports": "[9200-9200, 9300-9300]"
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1-21, 23-5050, 5052-65535]"
+      },
+      "used_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      }
+    },
+    {
+      "active": true,
+      "attributes": {},
+      "hostname": "ip-10-0-0-136.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S2",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.0.136:5051",
+      "registered_time": 1433768686.24507,
+      "resources": {
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-8079, 8082-8180, 8182-65535]"
+      },
+      "used_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      }
+    },
+    {
+      "active": true,
+      "attributes": {},
+      "hostname": "ip-10-0-0-134.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S1",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.0.134:5051",
+      "registered_time": 1433768682.9784,
+      "resources": {
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-8079, 8082-8180, 8182-65535]"
+      },
+      "used_resources": {
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[5052-5053]"
+      }
+    },
+    {
+      "active": true,
+      "attributes": {},
+      "hostname": "ip-10-0-0-135.eu-west-1.compute.internal",
+      "id": "20150608-130324-4077256714-5050-1155-S0",
+      "offered_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
+      },
+      "pid": "slave(1)@10.0.0.135:5051",
+      "registered_time": 1433768681.46199,
+      "resources": {
+        "cpus": 4,
+        "disk": 32541,
+        "mem": 14019,
+        "ports": "[1025-2180, 2182-3887, 3889-5049, 5052-8079, 8082-8180, 8182-65535]"
+      },
+      "used_resources": {
+        "cpus": 0,
+        "disk": 0,
+        "mem": 0
       }
     }
   ],
-  "staged_tasks": 3,
-  "start_time": 1433342773.1929,
-  "started_tasks": 0,
-  "unregistered_frameworks": [],
-  "version": "0.21.0"
+  "version": "0.22.1"
 }
