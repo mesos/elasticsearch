@@ -110,6 +110,13 @@ Actions to perform to start in Mac:
     $ cd /vagrant
     $ sudo ./gradlew build
     ```
+    
+### Build performance
+When building multi-project projects, you can force gradle to re-use the cached versions of previous libraries with the “-a” parameter. (see https://docs.gradle.org/current/userguide/multi_project_builds.html). The first time the build will take 45 minutes, but subsequent builds will be much faster with the -a.
+E.g. sudo ./gradlew -a :scheduler:build -x :scheduler:buildDockerImage
+Only takes 10 minutes on vagrant, rather than 45.
+
+Also, you can improve speed by giving vagrant more CPUs and memory in the Vagrantfile.
 
 ### Building with Docker
 ```bash
