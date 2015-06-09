@@ -6,7 +6,6 @@ import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
-import org.elasticsearch.common.lang3.ObjectUtils;
 import org.elasticsearch.common.lang3.tuple.Pair;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.discovery.mesos.MesosUnicastHostsProvider;
