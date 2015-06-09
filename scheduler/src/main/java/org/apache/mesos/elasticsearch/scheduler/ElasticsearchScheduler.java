@@ -10,6 +10,7 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
 import java.net.InetAddress;
@@ -225,7 +226,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         addAllScalarResources(offeredResources, acceptedResources);
 
         List<Integer> ports = selectPorts(offeredResources);
-
+        Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
+        Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
         if (ports.size() != 2) {
             LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
             driver.declineOffer(offer.getId());
@@ -234,13 +236,18 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             LOGGER.info("Elasticsearch transport port " + ports.get(1));
             acceptedResources.add(Resources.singlePortRange(ports.get(0)));
             acceptedResources.add(Resources.singlePortRange(ports.get(1)));
+            discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
+            discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
+            discovery.setPorts(discoveryPorts);
+            discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
         }
 
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
                 .setName(Configuration.TASK_NAME)
                 .setTaskId(Protos.TaskID.newBuilder().setValue(id))
                 .setSlaveId(offer.getSlaveId())
-                .addAllResources(acceptedResources);
+                .addAllResources(acceptedResources)
+                .setDiscovery(discovery);
 
         if (useDocker) {
             LOGGER.info("Using Docker to start Elasticsearch cloud mesos on slaves");

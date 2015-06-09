@@ -1,10 +1,12 @@
 package org.elasticsearch.cloud.mesos;
 
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
 import org.elasticsearch.common.component.AbstractLifecycleComponent;
 import org.elasticsearch.common.inject.Inject;
+import org.elasticsearch.common.lang3.ObjectUtils;
 import org.elasticsearch.common.lang3.tuple.Pair;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.discovery.mesos.MesosUnicastHostsProvider;
@@ -15,16 +17,11 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Service that manages the lifecycle of Mesos Tasks.
  */
 public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosStateServiceRest> implements MesosStateService {
-
-    // An elasticsearch task has 2 ports, client port and transport port.
-    public static final int TRANSPORT_PORT_INDEX = 1;
 
     private final String master;
 
@@ -82,33 +79,29 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
                 JSONArray tasks = framework.getJSONArray("tasks");
 
                 for (int j = 0; j < tasks.length(); j++) {
-                    JSONObject task = tasks.getJSONObject(j);
-                    String hostname = slaveIdMap.get(task.getString("slave_id")).getString("hostname");
-                    logger.info("Found slave hostname " + hostname);
-                    JSONObject resources = task.getJSONObject("resources");
+                    try {
+                        JSONObject task = tasks.getJSONObject(j);
+                        String hostname = slaveIdMap.get(task.getString("slave_id")).getString("hostname");
+                        logger.info("Found slave hostname " + hostname);
 
-                    String portRanges = resources.getString("ports");
-                    logger.info("Ports " + portRanges);
-
-                    Pattern pattern = Pattern.compile("\\[(\\d+)\\-(\\d+)(, (\\d+)\\-(\\d+))*\\]");
-                    Matcher matcher = pattern.matcher(portRanges);
-                    if (!matcher.matches()) {
-                        throw new RuntimeException("Could not parse port ranges: " + portRanges);
-                    }
-                    logger.info("Found " + matcher.groupCount() + " groups");
-
-                    List<Integer> portNumbers = new ArrayList<>();
-                    int numberOfRanges = (matcher.groupCount() - 1) / 2;
-                    for (int k = 0; k < numberOfRanges; k += 1) {
-                        int beginPort = Integer.parseInt(matcher.group(3 * k + 1));
-                        int endPort = Integer.parseInt(matcher.group(3 * k + 2));
-                        for (int l = beginPort; l <= endPort; l++) {
-                             portNumbers.add(l);
+                        JSONObject discovery = task.optJSONObject("discovery");
+                        logger.info("Found discovery: " + discovery.toString());
+                        JSONObject portsOuter = discovery.optJSONObject("ports");
+                        JSONArray portsInner = portsOuter.optJSONArray("ports");
+                        logger.info("Found ports: " + portsInner.toString());
+                        List<Integer> portNumbers = new ArrayList<>();
+                        for (int k = 0; k < portsInner.length(); k++) {
+                            JSONObject port = portsInner.optJSONObject(k);
+                            Integer portNumber = port.getInt("number");
+                            logger.info("Found port [" + Integer.toString(k) + "]: " + Integer.toString(portNumber));
+                            portNumbers.add(portNumber);
                         }
-                    }
 
-                    Pair<String, Integer> ipAndPort = Pair.of(hostname, portNumbers.get(TRANSPORT_PORT_INDEX));
-                    nodeIps.add(ipAndPort);
+                        Pair<String, Integer> ipAndPort = Pair.of(hostname, portNumbers.get(Discovery.TRANSPORT_PORT_INDEX));
+                        nodeIps.add(ipAndPort);
+                    } catch (Exception ex) {
+                        logger.warn("There was an issue parsing port numbers from state.json." + ex);
+                    }
                 }
             }
         }
