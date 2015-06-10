@@ -1,4 +1,4 @@
-FROM redjack/mesos-slave:0.21.0
+FROM mesosphere/mesos-slave:0.22.1-1.0.ubuntu1404
 
 # TODO Optimize
 

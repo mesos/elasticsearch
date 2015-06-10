@@ -5,13 +5,18 @@ dns:
   - slave1
   - slave2
   - slave3
+zookeeper:
+  image: jplock/zookeeper:3.4.5
+  links:
+    - mesosmaster
 mesosmaster:
-  image: redjack/mesos-master:0.21.0
+  image: mesosphere/mesos-master:0.22.1-1.0.ubuntu1404
   hostname: mesosmaster
   environment:
     - MESOS_QUORUM=1
     - MESOS_WORK_DIR=/var/lib/mesos
     - MESOS_LOG_DIR=/var/log
+    - MESOS_ZK=zk://zookeeper:2181
   volumes:
     - /var/log/mesos:/var/log/mesos
   ports:
@@ -45,10 +50,11 @@ slave3:
    - mesosmaster
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-d -m mesosmaster -dns dns -n 3 -nn localhost"
+  command: "-d -zk zookeeper -m mesosmaster -dns dns -n 3 -nn localhost"
   links:
    - mesosmaster
    - slave1
    - slave2
    - slave3
    - dns
+   - zookeeper

@@ -65,6 +65,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         this.state = state;
     }
 
+    @SuppressWarnings("PMD.NPathComplexity")
     public static void main(String[] args) {
         Options options = new Options();
         options.addOption("m", "master host or IP", true, "master host or IP");
@@ -96,7 +97,15 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             boolean useDocker = cmd.hasOption('d');
 
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkNode);
+
+            InetAddress zookeeperAddress = null;
+            zookeeperAddress = resolveHost(zookeeperAddress, zkNode);
+            if (zookeeperAddress == null) {
+                LOGGER.error("Could not resolve zookeeper host : " + zkNode);
+                System.exit(-1);
+            }
+
+            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkNode + ":" + 2181);
             State state = new State(zkState);
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, state);
@@ -318,7 +327,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         return taskInfoBuilder.build();
     }
 
-    private InetAddress resolveHost(InetAddress masterAddress, String host) {
+    private static InetAddress resolveHost(InetAddress masterAddress, String host) {
         try {
             masterAddress = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
@@ -402,8 +411,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             }
         }
         return true;
-
-        //TODO: return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
     }
 
     private boolean haveEnoughNodes() {
