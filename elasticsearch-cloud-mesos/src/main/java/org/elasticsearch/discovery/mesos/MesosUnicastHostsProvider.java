@@ -12,6 +12,7 @@ import org.elasticsearch.common.transport.InetSocketTransportAddress;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.discovery.zen.ping.unicast.UnicastHostsProvider;
 
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,8 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
         for (Pair<String, Integer> nodeIpAndPort : nodeIpsAndPorts) {
             try {
                 logger.debug("Creating discovery node from IP " + nodeIpAndPort);
-                TransportAddress transportAddress = new InetSocketTransportAddress(nodeIpAndPort.getKey(), nodeIpAndPort.getValue());
+                InetSocketAddress inetSocketAddress = InetSocketAddress.createUnresolved(nodeIpAndPort.getKey(), nodeIpAndPort.getValue());
+                TransportAddress transportAddress = new InetSocketTransportAddress(inetSocketAddress);
                 discoveryNodes.add(new DiscoveryNode("node-" + nodeIpAndPort, transportAddress, version.minimumCompatibilityVersion()));
             } catch (Exception e) {
                 logger.debug("Could not create discoverynode", e);
