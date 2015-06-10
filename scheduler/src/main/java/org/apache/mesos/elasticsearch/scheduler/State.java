@@ -15,7 +15,7 @@ import java.util.concurrent.ExecutionException;
  * In the future, we can also persist other state information to be more resilient.
  */
 public class State {
-    private static String FRAMEWORK_ID_KEY = "frameworkId";
+    private static String FRAMEWORK_ID = "frameworkId";
     private ZooKeeperStateInterface zkState;
 
     public State(ZooKeeperStateInterface zkState) {
@@ -30,7 +30,7 @@ public class State {
      * @throws InvalidProtocolBufferException
      */
     public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException, InvalidProtocolBufferException {
-        byte[] existingFrameworkId = zkState.fetch(FRAMEWORK_ID_KEY).get().value();
+        byte[] existingFrameworkId = zkState.fetch(FRAMEWORK_ID).get().value();
         if (existingFrameworkId.length > 0) {
             return FrameworkID.parseFrom(existingFrameworkId);
         } else {
@@ -39,7 +39,7 @@ public class State {
     }
 
     public void setFrameworkId(FrameworkID frameworkId) throws InterruptedException, ExecutionException {
-        Variable value = zkState.fetch(FRAMEWORK_ID_KEY).get();
+        Variable value = zkState.fetch(FRAMEWORK_ID).get();
         value = value.mutate(frameworkId.toByteArray());
         zkState.store(value).get();
     }
