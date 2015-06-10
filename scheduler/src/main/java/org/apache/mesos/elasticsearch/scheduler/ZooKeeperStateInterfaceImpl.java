@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 public class ZooKeeperStateInterfaceImpl implements ZooKeeperStateInterface {
     public static final long ZK_TIMEOUT = 20000L;
     public static final String CLUSTER_NAME = "/mesos-ha";
-    public static final String FRAMEWORK_NAME = "/elasticsearc-mesos";
+    public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
 
     private final ZooKeeperState state;
 
