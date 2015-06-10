@@ -9,6 +9,11 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import static com.jayway.awaitility.Awaitility.await;
+import static org.hamcrest.core.IsNull.notNullValue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -30,19 +35,33 @@ public class DiscoverySystemTest {
 
         String ipAddress = response.getNetworkSettings().getIpAddress();
 
-        // TODO: Replace with awaitility
-        long startTime = System.currentTimeMillis();
-        JSONObject nodes;
-        while (System.currentTimeMillis() - startTime < 60 * 1000) {
-            try {
-                nodes = Unirest.get("http://" + ipAddress + ":9200/_nodes").asJson().getBody().getObject();
-            } catch (UnirestException e) {
-                Thread.sleep(1000);
-                continue;
-            }
-            assertEquals(3, nodes.getJSONObject("nodes").length());
-            return;
-        }
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(ipAddress);
+        JSONObject jsonNodesResponse = await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, notNullValue());
+
+        assertEquals(3, jsonNodesResponse.getJSONObject("nodes").length());
+
         fail("Connection to Elasticsearch timed out");
     }
+
+    private static class ElasticsearchNodesResponse implements Callable<JSONObject> {
+
+        private String ipAddress;
+
+        public ElasticsearchNodesResponse(String ipAddress) {
+            this.ipAddress = ipAddress;
+        }
+
+        @Override
+        public JSONObject call() throws Exception {
+            try {
+                JSONObject object = Unirest.get("http://" + ipAddress + ":9200/_nodes").asJson().getBody().getObject();
+                System.out.println("Retrieving node response");
+                return object;
+            } catch (UnirestException e) {
+                System.out.println("Elasticsearch does not yet listen on port 9200");
+                return null;
+            }
+        }
+    }
+
 }
