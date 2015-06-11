@@ -2,7 +2,6 @@ slave:
   build: dind
   privileged: true
   volumes:
-    - /var/log/mesos:/var/log/mesos
     - /var/lib/docker/aufs:/var/lib/docker/aufs
     - /var/lib/docker/execdriver:/var/lib/docker/execdriver
     - /var/lib/docker/graph:/var/lib/docker/graph
@@ -13,7 +12,7 @@ slave:
     - /var/lib/docker/vfs:/var/lib/docker/vfs
     - /var/lib/docker/volumes:/var/lib/docker/volumes
   environment:
-    - MESOS_MASTER=mesosmaster:5050
+    - MESOS_MASTER=zk://zookeeper:2181/mesos
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
     - MESOS_CONTAINERIZERS=docker,mesos
     - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem

@@ -34,6 +34,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     // The time before Mesos kills a scheduler and tasks if it has not recovered.
     // Mesos will kill framework after 1 month if marathon does not restart.
     private static final double FAILOVER_TIMEOUT = 2592000;
+    public static final int ZOOKEEPER_PORT = 2181;
 
 
     private final State state;
@@ -95,8 +96,15 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
             boolean useDocker = cmd.hasOption('d');
 
+            InetAddress zkAddress = null;
+            zkAddress = resolveHost(zkAddress, zkNode);
+            if (zkAddress == null) {
+                LOGGER.error("Could not resolve ZK node : " + zkNode);
+                System.exit(-1);
+            }
+
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + ", docker: " + (useDocker ? "enabled" : "disabled") + ", dns: " + dnsHost + "]");
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkNode);
+            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkAddress.getHostAddress() + ":" + ZOOKEEPER_PORT);
             State state = new State(zkState);
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, dnsHost, numberOfHwNodes, useDocker, nameNode, state);
@@ -318,7 +326,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         return taskInfoBuilder.build();
     }
 
-    private InetAddress resolveHost(InetAddress masterAddress, String host) {
+    private static InetAddress resolveHost(InetAddress masterAddress, String host) {
         try {
             masterAddress = InetAddress.getByName(host);
         } catch (UnknownHostException e) {
