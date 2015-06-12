@@ -9,7 +9,7 @@ zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
 mesosmaster:
-  image: redjack/mesos-master:0.21.0
+  build: master
   hostname: mesosmaster
   environment:
     - MESOS_QUORUM=1

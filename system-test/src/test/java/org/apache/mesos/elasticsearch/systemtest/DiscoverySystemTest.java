@@ -6,6 +6,8 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -22,6 +24,8 @@ import static org.junit.Assert.fail;
  */
 public class DiscoverySystemTest {
 
+    public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
+
     @Test
     public void testNodeDiscoveryRest() throws InterruptedException {
         DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder()
@@ -36,11 +40,9 @@ public class DiscoverySystemTest {
         String ipAddress = response.getNetworkSettings().getIpAddress();
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(ipAddress);
-        JSONObject jsonNodesResponse = await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, notNullValue());
+        JSONObject jsonNodesResponse = await().atMost(60, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, notNullValue());
 
         assertEquals(3, jsonNodesResponse.getJSONObject("nodes").length());
-
-        fail("Connection to Elasticsearch timed out");
     }
 
     private static class ElasticsearchNodesResponse implements Callable<JSONObject> {
@@ -54,11 +56,9 @@ public class DiscoverySystemTest {
         @Override
         public JSONObject call() throws Exception {
             try {
-                JSONObject object = Unirest.get("http://" + ipAddress + ":9200/_nodes").asJson().getBody().getObject();
-                System.out.println("Retrieving node response");
-                return object;
+                return Unirest.get("http://" + ipAddress + ":9200/_nodes").asJson().getBody().getObject();
             } catch (UnirestException e) {
-                System.out.println("Elasticsearch does not yet listen on port 9200");
+                LOGGER.info("Elasticsearch does not yet listen on port 9200");
                 return null;
             }
         }
