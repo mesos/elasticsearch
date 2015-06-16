@@ -39,12 +39,12 @@ $ docker ps # Check the container ID of the slave
 $ docker inspect <ID> |  grep IPAddress # Find out the slave IP
 ```
 
-Now open the browser at http://<SLAVE_IP>:9200 
+Now open the browser at http://SLAVE_IP:9200 
 
 When you are done with docker compose kill the containers and remove everything:
 
 ```
-$ docker-copmose kill 
+$ docker-compose kill 
 $ docker-compose rm --force -v
 ```
 
