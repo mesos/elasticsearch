@@ -20,6 +20,9 @@ cp -f /vagrant/vagrant_files/etc/sysconfig/docker.new /etc/sysconfig/docker
 echo "Adding env vars in profile.d"
 cp -f /vagrant/vagrant_files/etc/profile.d/env_vars.sh /etc/profile.d/
 
+echo "Adding host entry for docker.io"
+echo "127.0.0.1 docker.io" > /etc/hosts
+
 echo "Restarting docker"
 systemctl restart docker
 
