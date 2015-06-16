@@ -11,7 +11,7 @@ fi
 if grep -Pq "^SELINUX=(enforcing|permissive)" /etc/sysconfig/selinux ; then
 	sed -ri 's:^SELINUX=(enforcing|permissive):SELINUX=disabled:' /etc/sysconfig/selinux
 fi
-setenforce 0
+#setenforce 0
 echo "SELINUX is now disabled"
 
 echo "Updating docker config to ignore SELinux and to accept http"
