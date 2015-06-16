@@ -26,6 +26,10 @@ echo "127.0.0.1 docker.io" > /etc/hosts
 echo "Restarting docker"
 systemctl restart docker
 
+echo "Adding vagrant to dockerroot group"
+sudo usermod -aG dockerroot vagrant
+sudo chgrp dockerroot /var/run/docker.sock
+
 echo "Installing docker-compose"
 curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose
 chmod +x /usr/bin/docker-compose
