@@ -19,6 +19,7 @@ public class SimpleFileServer {
         HttpServer server = HttpServer.create(new InetSocketAddress(8000), 0);
         server.createContext("/info", new InfoHandler());
         server.createContext("/get", new GetHandler());
+        server.createContext("/zip", new ZipHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
     }
@@ -40,6 +41,26 @@ public class SimpleFileServer {
             h.add("Content-Type", "application/octet-stream");
 
             File file = new File (Binaries.ES_EXECUTOR_JAR);
+            byte [] bytearray  = new byte [(int)file.length()];
+            FileInputStream fis = new FileInputStream(file);
+            BufferedInputStream bis = new BufferedInputStream(fis);
+            bis.read(bytearray, 0, bytearray.length);
+
+            // ok, we are ready to send the response.
+            t.sendResponseHeaders(200, file.length());
+            OutputStream os = t.getResponseBody();
+            os.write(bytearray,0,bytearray.length);
+            os.close();
+        }
+    }
+
+    static class ZipHandler implements HttpHandler {
+        public void handle(HttpExchange t) throws IOException {
+
+            Headers h = t.getResponseHeaders();
+            h.add("Content-Type", "application/octet-stream");
+
+            File file = new File ("elasticsearch-cloud-mesos.zip");
             byte [] bytearray  = new byte [(int)file.length()];
             FileInputStream fis = new FileInputStream(file);
             BufferedInputStream bis = new BufferedInputStream(fis);

@@ -326,10 +326,12 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             fileServer.run();
 
             String HTTPPath = "http://" + master + ":" + "8000" + "/get/" + Binaries.ES_EXECUTOR_JAR;
+            String zipHTTPPath = "http://" + master + ":" + "8000" + "/zip/" + "elasticsearch-cloud-mesos.zip";
 
             Protos.CommandInfo.Builder commandInfo = Protos.CommandInfo.newBuilder()
                     .setValue("java -jar ./" + Binaries.ES_EXECUTOR_JAR)
-                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(HTTPPath));
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(HTTPPath))
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(zipHTTPPath));
 
             Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
                     .setCommand(commandInfo)
