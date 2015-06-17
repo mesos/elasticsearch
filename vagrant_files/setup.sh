@@ -11,7 +11,7 @@ fi
 if grep -Pq "^SELINUX=(enforcing|permissive)" /etc/sysconfig/selinux ; then
 	sed -ri 's:^SELINUX=(enforcing|permissive):SELINUX=disabled:' /etc/sysconfig/selinux
 fi
-setenforce 0
+#setenforce 0
 echo "SELINUX is now disabled"
 
 echo "Updating docker config to ignore SELinux and to accept http"
@@ -20,8 +20,15 @@ cp -f /vagrant/vagrant_files/etc/sysconfig/docker.new /etc/sysconfig/docker
 echo "Adding env vars in profile.d"
 cp -f /vagrant/vagrant_files/etc/profile.d/env_vars.sh /etc/profile.d/
 
+echo "Adding host entry for docker.io"
+echo "127.0.0.1 docker.io" > /etc/hosts
+
 echo "Restarting docker"
 systemctl restart docker
+
+echo "Adding vagrant to dockerroot group"
+sudo usermod -aG dockerroot vagrant
+sudo chgrp dockerroot /var/run/docker.sock
 
 echo "Installing docker-compose"
 curl -L https://github.com/docker/compose/releases/download/1.2.0/docker-compose-`uname -s`-`uname -m` > /usr/bin/docker-compose

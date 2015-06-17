@@ -11,6 +11,10 @@ dependencies {
     testCompile 'com.jayway.awaitility:awaitility:1.6.3'
 }
 
+test {
+    exclude '**/*SystemTest*'
+}
+
 task dockerComposeUp(type: Exec) {
 
     workingDir "${project.projectDir}/src/test/resources/mesos-es"
@@ -18,8 +22,6 @@ task dockerComposeUp(type: Exec) {
     commandLine 'docker-compose', 'up', '-d'
 
 }
-
-test.dependsOn(dockerComposeUp)
 
 task dockerComposeKill(type: Exec) {
 
@@ -37,8 +39,14 @@ task dockerComposeRm(type: Exec) {
 
 }
 
-test.finalizedBy dockerComposeKill
-
 dockerComposeKill.finalizedBy dockerComposeRm
 
-// TODO: Configure test logs
+task systemTest(type: Test) {
+    include '**/*SystemTest*'
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
+systemTest.dependsOn(dockerComposeUp)
+systemTest.finalizedBy dockerComposeKill

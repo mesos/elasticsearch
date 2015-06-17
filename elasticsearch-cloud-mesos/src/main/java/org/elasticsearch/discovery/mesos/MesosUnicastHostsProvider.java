@@ -40,7 +40,7 @@ public class MesosUnicastHostsProvider extends AbstractComponent implements Unic
         for (Pair<String, Integer> nodeIpAndPort : nodeIpsAndPorts) {
             try {
                 logger.debug("Creating discovery node from IP " + nodeIpAndPort);
-                InetSocketAddress inetSocketAddress = InetSocketAddress.createUnresolved(nodeIpAndPort.getKey(), nodeIpAndPort.getValue());
+                InetSocketAddress inetSocketAddress = new InetSocketAddress(nodeIpAndPort.getKey(), nodeIpAndPort.getValue());
                 TransportAddress transportAddress = new InetSocketTransportAddress(inetSocketAddress);
                 discoveryNodes.add(new DiscoveryNode("node-" + nodeIpAndPort, transportAddress, version.minimumCompatibilityVersion()));
             } catch (Exception e) {

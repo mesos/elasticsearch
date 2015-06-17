@@ -34,6 +34,12 @@ jar {
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
 }
 
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
 task copyJar(type: Copy) {
     dependsOn   'jar'
     from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"

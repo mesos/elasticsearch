@@ -1,8 +1,9 @@
 slave:
-  build: dind
+  build: slave-dind
   privileged: true
   volumes:
     - /var/lib/docker/aufs:/var/lib/docker/aufs
+    - /var/lib/docker/btrfs:/var/lib/docker/btrfs
     - /var/lib/docker/execdriver:/var/lib/docker/execdriver
     - /var/lib/docker/graph:/var/lib/docker/graph
     - /var/lib/docker/init:/var/lib/docker/init

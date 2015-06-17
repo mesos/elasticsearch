@@ -21,6 +21,33 @@ Alteratively:
 * Use [Vagrant](#building-with-vagrant)
 * Use [Docker](#building-with-docker)
 
+## How to launch with Docker Compose
+
+Build the project as described above
+
+```
+$ cd system-test/src/test/resources/mesos-es
+$ docker-compose up
+```
+
+Now open the browser at http://localhost:5050 to view the Mesos GUI.
+
+The Elasticsearch task can be accessed via the slave on port 9200. Find the IP address of the slave: 
+
+```
+$ docker ps # Check the container ID of the slave
+$ docker inspect <ID> |  grep IPAddress # Find out the slave IP
+```
+
+Now open the browser at http://SLAVE_IP:9200 
+
+When you are done with docker compose kill the containers and remove everything:
+
+```
+$ docker-compose kill 
+$ docker-compose rm --force -v
+```
+
 ## How to install on Mesos
 
 ```

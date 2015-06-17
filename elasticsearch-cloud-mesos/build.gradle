@@ -32,6 +32,12 @@ jar {
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
 }
 
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+}
+
 task zip(type: Zip, dependsOn: jar) {
 
     baseName 'elasticsearch-cloud-mesos'
