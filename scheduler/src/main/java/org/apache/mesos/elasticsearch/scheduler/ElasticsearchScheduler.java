@@ -13,6 +13,7 @@ import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
+import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -215,6 +216,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 String id = taskId(offer);
 
                 Protos.TaskInfo taskInfo = buildTask(driver, offer.getResourcesList(), offer, id);
+                LOGGER.info("TaskInfo: " + taskInfo.toString());
 
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), id));
@@ -309,16 +311,31 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                     .build();
         } else {
             LOGGER.info("Using Executor to start Elasticsearch cloud mesos on slaves");
-            Protos.ExecutorInfo executorInfo = Protos.ExecutorInfo.newBuilder()
+            Runnable fileServer = new Runnable() {
+                @Override
+                public void run() {
+                    SimpleFileServer simpleFileServer = new SimpleFileServer();
+                    try {
+                        LOGGER.info("Running web server");
+                        simpleFileServer.serve();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
+            fileServer.run();
+
+            String HTTPPath = "http://" + master + ":" + "8000" + "/get/" + Binaries.ES_EXECUTOR_JAR;
+
+            Protos.CommandInfo.Builder commandInfo = Protos.CommandInfo.newBuilder()
+                    .setValue("java -jar ./" + Binaries.ES_EXECUTOR_JAR)
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(HTTPPath));
+
+            Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
+                    .setCommand(commandInfo)
                     .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                     .setFrameworkId(frameworkId)
-                    .setCommand(Protos.CommandInfo.newBuilder()
-                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_EXECUTOR_HDFS_PATH))
-                            .addUris(Protos.CommandInfo.URI.newBuilder().setValue("hdfs://" + namenode + Binaries.ES_CLOUD_MESOS_HDFS_PATH))
-                            .setValue("java -jar " + Binaries.ES_EXECUTOR_JAR))
-                    .setName("" + UUID.randomUUID())
-                    .addAllResources(acceptedResources)
-                    .build();
+                    .setName("" + UUID.randomUUID());
 
             taskInfoBuilder.setExecutor(executorInfo);
         }

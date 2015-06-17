@@ -27,30 +27,6 @@ public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
 
-    /*
-     * Elasticsearch can be launched via Mesos (default) or using -nomesos. In the latter case
-     * the elasticsearch-cloud-mesos plugin is installed and elasticsearch is launched without using Mesos APIs
-     */
-    public static void main(String[] args) {
-        if (args != null && args.length >= 1 && args[0].equals("-nomesos")) {
-            try {
-                launchElasticsearchNode();
-            } catch (IOException e) {
-                LOGGER.error("Could not launch Elasticsearch node: " + e.getMessage());
-            }
-        } else {
-            LOGGER.info("Started ElasticsearchExecutor");
-
-            MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
-            Protos.Status status = driver.run();
-            if (status.equals(Protos.Status.DRIVER_STOPPED)) {
-                System.exit(0);
-            } else {
-                System.exit(1);
-            }
-        }
-    }
-
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
         LOGGER.info("Executor Elasticsearch registered on slave " + slaveInfo.getHostname());
@@ -68,13 +44,20 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
+        LOGGER.info("driver");
+        LOGGER.info(driver);
+        LOGGER.info("task");
+        LOGGER.info(task);
+
+
         Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
                 .setTaskId(task.getTaskId())
                 .setState(Protos.TaskState.TASK_RUNNING).build();
         driver.sendStatusUpdate(status);
 
+        LOGGER.info("TASK_RUNNING");
+
         try {
-            final Node node = launchElasticsearchNode();
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -82,7 +65,7 @@ public class ElasticsearchExecutor implements Executor {
                             .setTaskId(task.getTaskId())
                             .setState(Protos.TaskState.TASK_FINISHED).build();
                     driver.sendStatusUpdate(taskStatus);
-                    node.close();
+                    LOGGER.info("TASK_FINSHED");
                 }
             }) {
             });
@@ -140,5 +123,10 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void error(ExecutorDriver driver, String message) {
         LOGGER.info("Error in executor: " + message);
+    }
+
+    public static void main(String[] args) throws Exception {
+        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
+        System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
     }
 }
