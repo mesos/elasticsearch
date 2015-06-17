@@ -31,6 +31,8 @@ dependencies {
 jar {
     baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    from { project(":elasticsearch-cloud-mesos").getTasksByName("zip", false)[0].outputs.files[0] }
+    from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] }
     manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
 }
 
@@ -64,6 +66,3 @@ task buildDockerImage(type: DockerBuildImage) {
     inputDir = file('.')
     tag = 'mesos/elasticsearch-scheduler'
 }
-
-//build.dependsOn buildDockerImage
-build.dependsOn copyJar

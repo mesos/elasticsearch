@@ -107,7 +107,7 @@ public class ElasticsearchExecutor implements Executor {
 
     private static Node launchElasticsearchNode(Protos.Port clientPort, Protos.Port transportPort) throws IOException {
         FileSystemUtils.mkdirs(new File("plugins"));
-        String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
+        String url = String.format(Binaries.ES_CLOUD_MESOS_ZIP, System.getProperty("user.dir"));
         Environment environment = new Environment();
         PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
         manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);

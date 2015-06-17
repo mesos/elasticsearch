@@ -1,8 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 
@@ -44,9 +43,7 @@ public class SimpleFileServer {
             Headers h = t.getResponseHeaders();
             h.add("Content-Type", "application/octet-stream");
 
-            File file = new File (Binaries.ES_EXECUTOR_JAR);
-            t.sendResponseHeaders(200, file.length());
-            writeFile(t, file);
+            writeClassPathResource(t, Binaries.ES_EXECUTOR_JAR);
         }
     }
 
@@ -56,21 +53,20 @@ public class SimpleFileServer {
             Headers h = t.getResponseHeaders();
             h.add("Content-Type", "application/octet-stream");
 
-            File file = new File ("elasticsearch-cloud-mesos.zip");
-            t.sendResponseHeaders(200, file.length());
-            writeFile(t, file);
+            writeClassPathResource(t, Binaries.ES_CLOUD_MESOS_ZIP);
         }
     }
 
-    private static void writeFile(HttpExchange t, File file) throws IOException {
-        FileInputStream fis = new FileInputStream(file);
+    private static void writeClassPathResource(HttpExchange t, String classPathResource) throws IOException {
+        InputStream in = SimpleFileServer.class.getClassLoader().getResourceAsStream(classPathResource);
 
         OutputStream os = t.getResponseBody();
-        IOUtils.copy(fis, os);
+        int length = IOUtils.copy(in, os);
+        t.sendResponseHeaders(200, length);
         os.flush();
 
         os.close();
-        fis.close();
+        in.close();
     }
 
 }
