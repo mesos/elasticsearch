@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -11,8 +10,12 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import com.sun.net.httpserver.Headers;
+import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.common.Binaries;
 
+/**
+ * Simple file server for distributing jars and zips across the cluster
+ */
 public class SimpleFileServer {
 
     public void serve() throws IOException {
@@ -28,8 +31,9 @@ public class SimpleFileServer {
         public void handle(HttpExchange t) throws IOException {
             String response = "Use /get to download the executor jar";
             t.sendResponseHeaders(200, response.length());
+
             OutputStream os = t.getResponseBody();
-            os.write(response.getBytes());
+            IOUtils.write(response, os);
             os.close();
         }
     }
@@ -41,16 +45,8 @@ public class SimpleFileServer {
             h.add("Content-Type", "application/octet-stream");
 
             File file = new File (Binaries.ES_EXECUTOR_JAR);
-            byte [] bytearray  = new byte [(int)file.length()];
-            FileInputStream fis = new FileInputStream(file);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            bis.read(bytearray, 0, bytearray.length);
-
-            // ok, we are ready to send the response.
             t.sendResponseHeaders(200, file.length());
-            OutputStream os = t.getResponseBody();
-            os.write(bytearray,0,bytearray.length);
-            os.close();
+            writeFile(t, file);
         }
     }
 
@@ -61,16 +57,20 @@ public class SimpleFileServer {
             h.add("Content-Type", "application/octet-stream");
 
             File file = new File ("elasticsearch-cloud-mesos.zip");
-            byte [] bytearray  = new byte [(int)file.length()];
-            FileInputStream fis = new FileInputStream(file);
-            BufferedInputStream bis = new BufferedInputStream(fis);
-            bis.read(bytearray, 0, bytearray.length);
-
-            // ok, we are ready to send the response.
             t.sendResponseHeaders(200, file.length());
-            OutputStream os = t.getResponseBody();
-            os.write(bytearray,0,bytearray.length);
-            os.close();
+            writeFile(t, file);
         }
     }
+
+    private static void writeFile(HttpExchange t, File file) throws IOException {
+        FileInputStream fis = new FileInputStream(file);
+
+        OutputStream os = t.getResponseBody();
+        IOUtils.copy(fis, os);
+        os.flush();
+
+        os.close();
+        fis.close();
+    }
+
 }

@@ -17,9 +17,10 @@ buildscript {
 dependencies {
 
     compile project(':commons')
-//    compile project(':elasticsearch-cloud-mesos')
+    compile project(':elasticsearch-cloud-mesos')
 
     compile "commons-cli:commons-cli:1.0"
+    compile "commons-io:commons-io:2.4"
     compile "log4j:log4j:1.2.16"
 
     testCompile 'org.hamcrest:hamcrest-all:1.3'

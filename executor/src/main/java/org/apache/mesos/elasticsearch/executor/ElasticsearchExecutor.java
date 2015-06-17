@@ -53,7 +53,7 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(status);
         Protos.Port clientPort;
         Protos.Port transportPort;
-        if( task.hasDiscovery() ) {
+        if (task.hasDiscovery()) {
             List<Protos.Port> portsList = task.getDiscovery().getPorts().getPortsList();
             clientPort = portsList.get(Discovery.CLIENT_PORT_INDEX);
             transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
@@ -106,39 +106,39 @@ public class ElasticsearchExecutor implements Executor {
     }
 
     private static Node launchElasticsearchNode(Protos.Port clientPort, Protos.Port transportPort) throws IOException {
-//        FileSystemUtils.mkdirs(new File("plugins"));
-//        String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
-//        Environment environment = new Environment();
-//        PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
-//        manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
-//
-//        LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
-//
-//        Settings settings = ImmutableSettings.settingsBuilder()
-//                                .put("discovery.type", "auto")
-//                                .put("cloud.enabled", "true")
-//                                .put("foreground", "true")
-//                                .put("master", "true")
-//                                .put("data", "true")
-//                                .put("script.disable_dynamic", "false")
-//                                .put("logger.discovery", "debug")
-//                                .put("logger.cloud.mesos", "debug").build();
-//
-//        final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
-//        node.start();
+        FileSystemUtils.mkdirs(new File("plugins"));
+        String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
+        Environment environment = new Environment();
+        PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
+        manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
+
+        LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
+
         Settings settings = ImmutableSettings.settingsBuilder()
-                .put("node.local", false)
-                .put("cluster.name", "mesos-elasticsearch")
-                .put("node.master", true)
-                .put("node.data", true)
-                .put("index.number_of_shards", 5)
-                .put("index.number_of_replicas", 1)
+                .put("discovery.type", "auto")
+                .put("cloud.enabled", "true")
+                .put("foreground", "true")
+                .put("master", "true")
+                .put("data", "true")
+                .put("script.disable_dynamic", "false")
+                .put("logger.discovery", "debug")
+                .put("logger.cloud.mesos", "debug").build();
+
+        final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
+//        node.start();
+//        Settings settings = ImmutableSettings.settingsBuilder()
+//                .put("node.local", false)
+//                .put("cluster.name", "mesos-elasticsearch")
+//                .put("node.master", true)
+//                .put("node.data", true)
+//                .put("index.number_of_shards", 5)
+//                .put("index.number_of_replicas", 1)
 //                .put("discovery.zen.ping.multicast.enabled", false)
 //                .put("discovery.zen.ping.unicast.hosts", "node2:9200")
-                .put("http.port", String.valueOf(clientPort.getNumber()))
-                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
-                .build();
-        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
+//                .put("http.port", String.valueOf(clientPort.getNumber()))
+//                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
+//                .build();
+//        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
 //        cluster.name: mycluster
 //        name.name: NODE1
 //        node.master: true

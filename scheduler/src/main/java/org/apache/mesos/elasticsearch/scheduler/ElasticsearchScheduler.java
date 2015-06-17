@@ -228,6 +228,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         }
     }
 
+    @SuppressWarnings("PMD.ExcessiveMethodLength")
     private Protos.TaskInfo buildTask(SchedulerDriver driver, List<Protos.Resource> offeredResources, Protos.Offer offer, String id) {
         List<Protos.Resource> acceptedResources = new ArrayList<>();
 
@@ -319,19 +320,20 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                         LOGGER.info("Running web server");
                         simpleFileServer.serve();
                     } catch (IOException e) {
+                        LOGGER.error("Elasticsearch file server stopped", e);
                         e.printStackTrace();
                     }
                 }
             };
             fileServer.run();
 
-            String HTTPPath = "http://" + master + ":" + "8000" + "/get/" + Binaries.ES_EXECUTOR_JAR;
-            String zipHTTPPath = "http://" + master + ":" + "8000" + "/zip/" + "elasticsearch-cloud-mesos.zip";
+            String httpPath = "http://" + master + ":" + "8000" + "/get/" + Binaries.ES_EXECUTOR_JAR;
+            String zipHttpPath = "http://" + master + ":" + "8000" + "/zip/" + "elasticsearch-cloud-mesos.zip";
 
             Protos.CommandInfo.Builder commandInfo = Protos.CommandInfo.newBuilder()
                     .setValue("java -jar ./" + Binaries.ES_EXECUTOR_JAR)
-                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(HTTPPath))
-                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(zipHTTPPath));
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath))
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(zipHttpPath));
 
             Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
                     .setCommand(commandInfo)
