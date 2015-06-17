@@ -43,7 +43,9 @@ dockerComposeKill.finalizedBy dockerComposeRm
 
 task systemTest(type: Test) {
     include '**/*SystemTest*'
-    testLogging.showStandardStreams = true
+    testLogging {
+        showStandardStreams = true
+    }
 }
 
 systemTest.dependsOn(dockerComposeUp)
