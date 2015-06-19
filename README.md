@@ -1,6 +1,29 @@
 # Elasticsearch
 *Coming soon!* Elasticsearch on Mesos
 
+# Roadmap
+
+### Framework Features
+
+- [x] Deployment
+- [x] Durable cluster state storage
+- [ ] High availability (master, indexer, replica)
+- [ ] Fault tolerance
+- [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
+- [ ] Scale cluster vertically
+- [ ] Scale cluster horizontally
+- [ ] Upgrade
+- [ ] Rollback
+- [ ] Snapshot and restore
+- [ ] DCOS Certified
+
+### Developer Tools
+
+- [x] Local environment (vagrant)
+- [x] Rapid code + test (docker compose)
+- [x] Build automation (gradle)
+
+
 # Getting Started
 
 This framework requires:
