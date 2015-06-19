@@ -1,6 +1,18 @@
 apply plugin: 'application'
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 
 mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.bmuschko:gradle-docker-plugin:2.2'
+    }
+}
 
 repositories {
     maven {
@@ -27,10 +39,26 @@ jar {
 task copyJar(type: Copy) {
     dependsOn 'jar'
     from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
-    into        'build/libs'
+    into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
+}
+
+task buildDockerImage(type: DockerBuildImage) {
+    dependsOn   copyJar
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
+    }
+    inputDir = file('.')
+    tag = 'mesos/elasticsearch-executor'
 }
 
 build.dependsOn "copyJar"
