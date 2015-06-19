@@ -1,12 +1,10 @@
 apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
 
-buildscript {
-    repositories { jcenter() }
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+repositories {
+    maven {
+        url "https://jitpack.io"
     }
 }
 
@@ -16,22 +14,23 @@ dependencies {
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "log4j:log4j:1.2.16"
-
+    compile "org.apache.zookeeper:zookeeper:3.4.6"
+    compile 'com.github.trifork-leeds:elasticsearch-zookeeper:153ed8c01d'
 }
 
-shadowJar {
+jar {
     baseName = "elasticsearch-mesos-executor"
-    mergeServiceFiles()
-    classifier = ''
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest { attributes 'Main-Class': mainClassName }
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'shadowJar'
-    from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
+    dependsOn 'jar'
+    from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
     into        'build/libs'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
 }
 
-build.dependsOn copyJar
+build.dependsOn "copyJar"

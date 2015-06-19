@@ -5,21 +5,14 @@ import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.env.Environment;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-import org.elasticsearch.plugins.PluginManager;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 /**
  * Executor for Elasticsearch.
@@ -28,6 +21,11 @@ import java.util.List;
 public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
+
+    public static void main(String[] args) throws Exception {
+        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
+        System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
+    }
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
@@ -51,6 +49,10 @@ public class ElasticsearchExecutor implements Executor {
                 .setTaskId(task.getTaskId())
                 .setState(Protos.TaskState.TASK_STARTING).build();
         driver.sendStatusUpdate(status);
+
+        LOGGER.info("Starting executor with a TaskInfo of:");
+        LOGGER.info(task.toString());
+
         Protos.Port clientPort;
         Protos.Port transportPort;
         if (task.hasDiscovery()) {
@@ -65,9 +67,28 @@ public class ElasticsearchExecutor implements Executor {
             driver.sendStatusUpdate(status);
             return;
         }
+
+        String zkNode;
+        int nargs = task.getExecutor().getCommand().getArgumentsCount();
+        LOGGER.info("Using arguments [" + nargs + "]: " + task.getExecutor().getCommand().getArgumentsList().toString());
+        if (nargs > 0 && nargs % 2 == 0) {
+            Map<String, String> argMap = new HashMap<>(1);
+            Iterator<String> itr = task.getExecutor().getCommand().getArgumentsList().iterator();
+            while (itr.hasNext()) {
+                argMap.put(itr.next(), itr.next());
+            }
+            zkNode = argMap.get("-zk");
+        } else {
+            LOGGER.error("The task must pass a ZooKeeper address argument using -zk.");
+            status = Protos.TaskStatus.newBuilder()
+                    .setTaskId(task.getTaskId())
+                    .setState(Protos.TaskState.TASK_ERROR).build();
+            driver.sendStatusUpdate(status);
+            return;
+        }
         final Node node;
         try {
-            node = launchElasticsearchNode(clientPort, transportPort);
+            node = launchElasticsearchNode(zkNode, clientPort, transportPort);
         } catch (IOException e) {
             LOGGER.error(e);
             status = Protos.TaskStatus.newBuilder()
@@ -105,48 +126,22 @@ public class ElasticsearchExecutor implements Executor {
         }
     }
 
-    private static Node launchElasticsearchNode(Protos.Port clientPort, Protos.Port transportPort) throws IOException {
-        FileSystemUtils.mkdirs(new File("plugins"));
-        String url = String.format(Binaries.ES_CLOUD_MESOS_ZIP, System.getProperty("user.dir"));
-        Environment environment = new Environment();
-        PluginManager manager = new PluginManager(environment, url, PluginManager.OutputMode.VERBOSE, TimeValue.timeValueMinutes(5));
-        manager.downloadAndExtract(Binaries.ES_CLOUD_MESOS_PLUGIN_NAME);
-
-        LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
-
+    private Node launchElasticsearchNode(String zkNode, Protos.Port clientPort, Protos.Port transportPort) throws IOException {
         Settings settings = ImmutableSettings.settingsBuilder()
-                .put("discovery.type", "auto")
-                .put("cloud.enabled", "true")
-                .put("foreground", "true")
-                .put("master", "true")
-                .put("data", "true")
-                .put("script.disable_dynamic", "false")
-                .put("logger.discovery", "debug")
-                .put("logger.cloud.mesos", "debug").build();
-
-        final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
-//        node.start();
-//        Settings settings = ImmutableSettings.settingsBuilder()
-//                .put("node.local", false)
-//                .put("cluster.name", "mesos-elasticsearch")
-//                .put("node.master", true)
-//                .put("node.data", true)
-//                .put("index.number_of_shards", 5)
-//                .put("index.number_of_replicas", 1)
-//                .put("discovery.zen.ping.multicast.enabled", false)
-//                .put("discovery.zen.ping.unicast.hosts", "node2:9200")
-//                .put("http.port", String.valueOf(clientPort.getNumber()))
-//                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
-//                .build();
-//        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
-//        cluster.name: mycluster
-//        name.name: NODE1
-//        node.master: true
-//        node.data: true
-//        index.number_of_shards: 5
-//        index.number_of_replicas: 1
-//        discovery.zen.ping.multicast.enabled: false
-//        discovery.zen.ping.unicast.hosts: ["node2:9200"]
+                .put("node.local", false)
+                .put("cluster.name", "mesos-elasticsearch")
+                .put("node.master", true)
+                .put("node.data", true)
+                .put("index.number_of_shards", 5)
+                .put("index.number_of_replicas", 1)
+                .put("http.port", String.valueOf(clientPort.getNumber()))
+                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
+                .put("discovery.type", "com.sonian.elasticsearch.zookeeper.discovery.ZooKeeperDiscoveryModule")
+                .put("sonian.elasticsearch.zookeeper.settings.enabled", true)
+                .put("sonian.elasticsearch.zookeeper.client.host", zkNode)
+                .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true)
+                .build();
+        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
         return node;
     }
 
@@ -172,10 +167,5 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void error(ExecutorDriver driver, String message) {
         LOGGER.info("Error in executor: " + message);
-    }
-
-    public static void main(String[] args) throws Exception {
-        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
-        System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
     }
 }
