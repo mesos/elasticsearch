@@ -3,19 +3,19 @@
 
 # Roadmap
 
-### Framework Features
+### Features
 
 - [x] Deployment
-- [x] Durable cluster state storage
+- [x] Durable cluster topology (via ZooKeeper)
+- [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [ ] High availability (master, indexer, replica)
 - [ ] Fault tolerance
-- [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
+- [ ] Faster task recovery with Mesos dynamic reservations (https://issues.apache.org/jira/browse/MESOS-1554)
 - [ ] Scale cluster vertically
 - [ ] Scale cluster horizontally
 - [ ] Upgrade
 - [ ] Rollback
 - [ ] Snapshot and restore
-- [ ] DCOS Certified
 
 ### Developer Tools
 
@@ -23,6 +23,9 @@
 - [x] Rapid code + test (docker compose)
 - [x] Build automation (gradle)
 
+### Certification
+
+- [ ] DCOS Certified
 
 # Getting Started
 
