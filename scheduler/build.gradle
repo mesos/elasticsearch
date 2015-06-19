@@ -1,7 +1,7 @@
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-remote-api'
+
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 
 mainClassName = "org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler"
 
@@ -13,11 +13,14 @@ buildscript {
         classpath 'com.bmuschko:gradle-docker-plugin:2.2'
     }
 }
-
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
 dependencies {
 
     compile project(':commons')
-    compile project(':elasticsearch-cloud-mesos')
 
     compile "commons-cli:commons-cli:1.0"
     compile "commons-io:commons-io:2.4"
@@ -29,11 +32,11 @@ dependencies {
 }
 
 jar {
+    dependsOn ":executor:copyJar"
     baseName = "elasticsearch-mesos-scheduler"
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    from { project(":elasticsearch-cloud-mesos").getTasksByName("zip", false)[0].outputs.files[0] }
-    from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] }
-    manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler' }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
+    from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] } // Include executor
+    manifest { attributes 'Main-Class': mainClassName }
 }
 
 test {

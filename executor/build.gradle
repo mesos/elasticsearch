@@ -1,19 +1,13 @@
 apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
 
 mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
 
-buildscript {
-    repositories { jcenter() }
-    dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
-    }
-}
 repositories {
     maven {
         url "https://jitpack.io"
     }
 }
+
 dependencies {
 
     compile project(':commons')
@@ -21,43 +15,22 @@ dependencies {
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "log4j:log4j:1.2.16"
     compile "org.apache.zookeeper:zookeeper:3.4.6"
-    compile fileTree(dir: '../libs', include: '*.jar')
-    runtime fileTree(dir: '../libs', include: '*.jar')
-// TODO: Fork and fix this.
-//    compile 'com.github.grmblfrz:elasticsearch-zookeeper:v1.4.2'
-}
-
-//create a single Jar with all dependencies
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': 'Gradle Jar File Example',
-                'Implementation-Version': version,
-                'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor'
-    }
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
+    compile 'com.github.trifork-leeds:elasticsearch-zookeeper:153ed8c01d'
 }
 
 jar {
     baseName = "elasticsearch-mesos-executor"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor' }
-}
-
-shadowJar {
-    baseName = "elasticsearch-mesos-executor"
-    mergeServiceFiles()
-    classifier = ''
+    manifest { attributes 'Main-Class': mainClassName }
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'shadowJar'
-    from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
+    dependsOn 'jar'
+    from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
     into        'build/libs'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
 }
 
-build.dependsOn copyJar
+build.dependsOn "copyJar"

@@ -15,6 +15,8 @@ public class Configuration {
 
     public static final int ELASTICSEARCH_TRANSPORT_PORT = 9300;
 
+    public static final Integer ZOOKEEPER_PORT = 2181;
+
     public static final int MESOS_PORT = 5050;
 
     public static final double CPUS = 0.2;
