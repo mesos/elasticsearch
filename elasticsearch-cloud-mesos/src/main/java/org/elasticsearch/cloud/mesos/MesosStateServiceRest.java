@@ -1,6 +1,7 @@
 package org.elasticsearch.cloud.mesos;
 
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.common.HostResolver;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.common.collect.Lists;
 import org.elasticsearch.common.collect.Maps;
@@ -96,7 +97,9 @@ public class MesosStateServiceRest extends AbstractLifecycleComponent<MesosState
                             portNumbers.add(portNumber);
                         }
 
-                        Pair<String, Integer> ipAndPort = Pair.of(hostname, portNumbers.get(Discovery.TRANSPORT_PORT_INDEX));
+                        String slaveIp = HostResolver.resolve(hostname).getHostAddress();
+
+                        Pair<String, Integer> ipAndPort = Pair.of(slaveIp, portNumbers.get(Discovery.TRANSPORT_PORT_INDEX));
                         nodeIps.add(ipAndPort);
                     } catch (Exception ex) {
                         logger.warn("There was an issue parsing port numbers from state.json." + ex);

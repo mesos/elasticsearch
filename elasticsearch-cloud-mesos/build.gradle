@@ -42,3 +42,5 @@ task zip(type: Zip, dependsOn: jar) {
         fileName.replace("-${project.version}", "")
     }
 }
+
+build.dependsOn zip

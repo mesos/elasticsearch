@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM ubuntu:14.10
 MAINTAINER RedJack, LLC
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -16,7 +16,7 @@ RUN apt-get update
 
 WORKDIR /tmp
 RUN \
-  apt-get install -y curl openjdk-6-jre-headless docker.io python && \
+  apt-get install -y curl openjdk-6-jre-headless docker.io python unzip && \
   curl -s -O https://downloads.mesosphere.io/master/ubuntu/14.04/mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   dpkg --unpack mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   apt-get install -f -y && \
@@ -32,11 +32,13 @@ RUN apt-get update -qq && apt-get install -qqy \
     apt-transport-https \
     ca-certificates \
     curl \
+    openjdk-8-jdk \
     lxc \
     iptables
 
-# Install Docker from Docker Inc. repositories.
-RUN curl -sSL https://get.docker.com/ubuntu/ | sh
+RUN echo deb http://get.docker.com/ubuntu docker main > /etc/apt/sources.list.d/docker.list
+RUN apt-key adv --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys 36A1D7869245C8950F966E92D8576A8BA88D21E9
+RUN apt-get update && apt-get -y install lxc-docker-1.6.0
 
 # Install the magic wrapper.
 ADD ./wrapdocker /usr/local/bin/wrapdocker

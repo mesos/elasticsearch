@@ -11,6 +11,8 @@ public class Binaries {
 
     public static final String ES_CLOUD_MESOS_ZIP = "elasticsearch-cloud-mesos.zip";
 
+    public static final String ES_CLOUD_MESOS_FILE_URL = "file:%s/elasticsearch-cloud-mesos.zip";
+
     // Elasticsearch executor constants
 
     public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";

@@ -27,8 +27,6 @@ slave1:
     file: slave.yml
     service: slave
   hostname: slave1
-  volumes:
-    - /var/log/mesos:/var/log/mesos/slave1
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -39,8 +37,6 @@ slave2:
     file: slave.yml
     service: slave
   hostname: slave2
-  volumes:
-    - /var/log/mesos:/var/log/mesos/slave2
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -51,8 +47,6 @@ slave3:
     file: slave.yml
     service: slave
   hostname: slave3
-  volumes:
-    - /var/log/mesos:/var/log/mesos/slave3
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -60,7 +54,7 @@ slave3:
    - zookeeper
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-m mesosmaster -zk zookeeper -dns dns -n 3 -nn localhost"
+  command: "-m mesosmaster -zk zookeeper -dns dns -n 3"
   ports:
     - "8000:8000"
   links:
