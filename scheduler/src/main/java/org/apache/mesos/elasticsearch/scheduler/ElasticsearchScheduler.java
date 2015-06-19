@@ -12,7 +12,6 @@ import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
@@ -322,20 +321,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                     .build();
         } else {
             LOGGER.info("Using Executor to start Elasticsearch cloud mesos on slaves");
-            final SimpleFileServer simpleFileServer = new SimpleFileServer();
-            Runnable fileServer = new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        LOGGER.info("Running web server");
-                        simpleFileServer.serve();
-                    } catch (IOException e) {
-                        LOGGER.error("Elasticsearch file server stopped", e);
-                        e.printStackTrace();
-                    }
-                }
-            };
-            fileServer.run();
 
             Protos.Volume volume = Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(RO).build();
 
