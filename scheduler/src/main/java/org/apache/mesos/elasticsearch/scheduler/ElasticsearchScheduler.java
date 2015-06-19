@@ -8,19 +8,23 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.ContainerInfo.DockerInfo.PortMapping;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Binaries;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
+import static org.apache.mesos.Protos.ContainerInfo.Type.DOCKER;
+import static org.apache.mesos.Protos.Value.Type.*;
+import static org.apache.mesos.Protos.Volume.Mode.RO;
 
 /**
  * Scheduler for Elasticsearch.
@@ -132,7 +136,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         Protos.Resource mem = Resources.mem(Configuration.MEM);
         Protos.Resource disk = Resources.disk(Configuration.DISK);
         Protos.Resource ports = Resources.portRange(Configuration.BEGIN_PORT, Configuration.END_PORT);
-        return Arrays.asList(cpus, mem, disk, ports);
+        return asList(cpus, mem, disk, ports);
     }
 
     private static InetAddress resolveHost(InetAddress masterAddress, String host) {
@@ -302,7 +306,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             }
 
             containerInfo.setDocker(docker.build());
-            containerInfo.setType(Protos.ContainerInfo.Type.DOCKER);
+            containerInfo.setType(DOCKER);
             taskInfoBuilder.setContainer(containerInfo);
             taskInfoBuilder
                     .setCommand(Protos.CommandInfo.newBuilder()
@@ -333,19 +337,27 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             };
             fileServer.run();
 
-            InetSocketAddress address = simpleFileServer.getAddress();
-            String httpPath = "http://" + master + ":" + address.getPort() + "/get/" + Binaries.ES_EXECUTOR_JAR;
+            Protos.Volume volume = Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(RO).build();
 
-            Protos.CommandInfo.Builder commandInfo = Protos.CommandInfo.newBuilder()
-                    .setValue("java -jar ./" + Binaries.ES_EXECUTOR_JAR)
-                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath))
-                    .addArguments("-zk").addArguments(zkNodeAddress);
+            Protos.ContainerInfo.DockerInfo dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build();
+
+            Protos.ContainerInfo containerInfo = Protos.ContainerInfo.newBuilder()
+                    .setDocker(dockerInfo)
+                    .setType(DOCKER)
+                    .addVolumes(volume)
+                    .build();
+
+            Protos.CommandInfo commandInfo = Protos.CommandInfo.newBuilder()
+                    .setValue("java -Djava.library.path=/usr/lib -jar /tmp/elasticsearch-mesos-executor.jar")
+                    .addAllArguments(asList("-zk", zkNodeAddress))
+                    .build();
 
             Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
+                    .setContainer(containerInfo)
                     .setCommand(commandInfo)
                     .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                     .setFrameworkId(frameworkId)
-                    .setName("" + UUID.randomUUID());
+                    .setName(UUID.randomUUID().toString());
 
             taskInfoBuilder.setExecutor(executorInfo);
         }
@@ -355,27 +367,19 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private List<Integer> selectPorts(List<Protos.Resource> offeredResources) {
         List<Integer> ports = new ArrayList<>();
-        for (Protos.Resource resource : offeredResources) {
-            if (resource.getType().equals(Protos.Value.Type.RANGES)) {
-                for (Protos.Value.Range range : resource.getRanges().getRangeList()) {
-                    if (ports.size() < 2) {
-                        ports.add((int) range.getBegin());
-                        if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
-                            ports.add((int) range.getBegin() + 1);
-                        }
-                    }
+        offeredResources.stream().filter(resource -> resource.getType().equals(RANGES)).forEach(resource -> {
+            resource.getRanges().getRangeList().stream().filter(range -> ports.size() < 2).forEach(range -> {
+                ports.add((int) range.getBegin());
+                if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
+                    ports.add((int) range.getBegin() + 1);
                 }
-            }
-        }
+            });
+        });
         return ports;
     }
 
     private void addAllScalarResources(List<Protos.Resource> offeredResources, List<Protos.Resource> acceptedResources) {
-        for (Protos.Resource resource : offeredResources) {
-            if (resource.getType().equals(Protos.Value.Type.SCALAR)) {
-                acceptedResources.add(resource);
-            }
-        }
+        acceptedResources.addAll(offeredResources.stream().filter(resource -> resource.getType().equals(SCALAR)).collect(Collectors.toList()));
     }
 
     @Override
