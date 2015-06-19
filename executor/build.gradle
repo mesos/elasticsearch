@@ -9,14 +9,40 @@ buildscript {
         classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
     }
 }
-
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
 dependencies {
 
     compile project(':commons')
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "log4j:log4j:1.2.16"
+    compile "org.apache.zookeeper:zookeeper:3.4.6"
+    compile fileTree(dir: '../libs', include: '*.jar')
+    runtime fileTree(dir: '../libs', include: '*.jar')
+// TODO: Fork and fix this.
+//    compile 'com.github.grmblfrz:elasticsearch-zookeeper:v1.4.2'
+}
 
+//create a single Jar with all dependencies
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': 'Gradle Jar File Example',
+                'Implementation-Version': version,
+                'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor'
+    }
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+jar {
+    baseName = "elasticsearch-mesos-executor"
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest { attributes 'Main-Class': 'org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor' }
 }
 
 shadowJar {
