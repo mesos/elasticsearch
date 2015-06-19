@@ -17,5 +17,5 @@ slave:
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
     - MESOS_CONTAINERIZERS=docker,mesos
     - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
-    - MESOS_LOG_DIR=/var/log
+    - MESOS_LOG_DIR=/var/log/mesos
     - MESOS_RESOURCES=ports(*):[31000-31100]

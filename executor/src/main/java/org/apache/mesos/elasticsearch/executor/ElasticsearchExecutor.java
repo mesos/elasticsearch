@@ -6,6 +6,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Binaries;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.elasticsearch.common.io.FileSystemUtils;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
@@ -18,6 +19,7 @@ import org.elasticsearch.plugins.PluginManager;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Executor for Elasticsearch.
@@ -26,30 +28,6 @@ import java.util.Arrays;
 public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
-
-    /*
-     * Elasticsearch can be launched via Mesos (default) or using -nomesos. In the latter case
-     * the elasticsearch-cloud-mesos plugin is installed and elasticsearch is launched without using Mesos APIs
-     */
-    public static void main(String[] args) {
-        if (args != null && args.length >= 1 && args[0].equals("-nomesos")) {
-            try {
-                launchElasticsearchNode();
-            } catch (IOException e) {
-                LOGGER.error("Could not launch Elasticsearch node: " + e.getMessage());
-            }
-        } else {
-            LOGGER.info("Started ElasticsearchExecutor");
-
-            MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
-            Protos.Status status = driver.run();
-            if (status.equals(Protos.Status.DRIVER_STOPPED)) {
-                System.exit(0);
-            } else {
-                System.exit(1);
-            }
-        }
-    }
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
@@ -68,13 +46,50 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
+        Protos.TaskStatus status = null;
+        status = Protos.TaskStatus.newBuilder()
+                .setTaskId(task.getTaskId())
+                .setState(Protos.TaskState.TASK_STARTING).build();
+        driver.sendStatusUpdate(status);
+        Protos.Port clientPort;
+        Protos.Port transportPort;
+        if (task.hasDiscovery()) {
+            List<Protos.Port> portsList = task.getDiscovery().getPorts().getPortsList();
+            clientPort = portsList.get(Discovery.CLIENT_PORT_INDEX);
+            transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
+        } else {
+            LOGGER.error("The task must pass a DiscoveryInfoPacket");
+            status = Protos.TaskStatus.newBuilder()
+                    .setTaskId(task.getTaskId())
+                    .setState(Protos.TaskState.TASK_ERROR).build();
+            driver.sendStatusUpdate(status);
+            return;
+        }
+        final Node node;
+
+        String master = task.getData().toStringUtf8();
+
+        LOGGER.info("Master: " +  master);
+
+        try {
+            node = launchElasticsearchNode(clientPort, transportPort, master);
+        } catch (IOException e) {
+            LOGGER.error(e);
+            status = Protos.TaskStatus.newBuilder()
+                    .setTaskId(task.getTaskId())
+                    .setState(Protos.TaskState.TASK_FAILED).build();
+            driver.sendStatusUpdate(status);
+            return;
+        }
+
+        status = Protos.TaskStatus.newBuilder()
                 .setTaskId(task.getTaskId())
                 .setState(Protos.TaskState.TASK_RUNNING).build();
         driver.sendStatusUpdate(status);
 
+        LOGGER.info("TASK_RUNNING");
+
         try {
-            final Node node = launchElasticsearchNode();
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -83,6 +98,7 @@ public class ElasticsearchExecutor implements Executor {
                             .setState(Protos.TaskState.TASK_FINISHED).build();
                     driver.sendStatusUpdate(taskStatus);
                     node.close();
+                    LOGGER.info("TASK_FINSHED");
                 }
             }) {
             });
@@ -94,7 +110,7 @@ public class ElasticsearchExecutor implements Executor {
         }
     }
 
-    private static Node launchElasticsearchNode() throws IOException {
+    private static Node launchElasticsearchNode(Protos.Port clientPort, Protos.Port transportPort, String master) throws IOException {
         FileSystemUtils.mkdirs(new File("plugins"));
         String url = String.format(Binaries.ES_CLOUD_MESOS_FILE_URL, System.getProperty("user.dir"));
         Environment environment = new Environment();
@@ -103,19 +119,26 @@ public class ElasticsearchExecutor implements Executor {
 
         LOGGER.info("Installed elasticsearch-cloud-mesos plugin");
 
-        Settings settings = ImmutableSettings.settingsBuilder()
-                                .put("discovery.type", "auto")
-                                .put("cloud.enabled", "true")
-                                .put("foreground", "true")
-                                .put("master", "true")
-                                .put("data", "true")
-                                .put("script.disable_dynamic", "false")
-                                .put("logger.discovery", "debug")
-                                .put("logger.cloud.mesos", "debug").build();
+            Settings settings = ImmutableSettings.settingsBuilder()
+                .put("discovery.type", "mesos")
+                .put("cloud.mesos.master", master)
+                .put("cloud.enabled", "true")
+                .put("node.local", false)
+                .put("cluster.name", "mesos-elasticsearch")
+                .put("node.master", true)
+                .put("node.data", true)
+                .put("index.number_of_shards", 5)
+                .put("index.number_of_replicas", 1)
+                .put("discovery.zen.ping.multicast.enabled", false)
+                .put("http.port", String.valueOf(clientPort.getNumber()))
+                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
+                .put("foreground", "true")
+                .put("script.disable_dynamic", "true")
+                .put("logger.discovery", "debug")
+                .put("logger.cloud.mesos", "debug")
+                .build();
 
-        final Node node = NodeBuilder.nodeBuilder().settings(settings).build();
-        node.start();
-        return node;
+        return NodeBuilder.nodeBuilder().local(false).settings(settings).node();
     }
 
     @Override
@@ -140,5 +163,10 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void error(ExecutorDriver driver, String message) {
         LOGGER.info("Error in executor: " + message);
+    }
+
+    public static void main(String[] args) throws Exception {
+        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
+        System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
     }
 }
