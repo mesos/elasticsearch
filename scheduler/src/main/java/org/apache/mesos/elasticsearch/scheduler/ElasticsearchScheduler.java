@@ -11,8 +11,6 @@ import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -48,31 +46,26 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private int numberOfHwNodes;
 
-    private String master;
-
-    private String zkNodeAddress;
+    private String zkHost;
 
     private Protos.FrameworkID frameworkId;
 
-    public ElasticsearchScheduler(String master, int numberOfHwNodes, State state, String zkNodeAddress) {
-        this.master = master;
+    public ElasticsearchScheduler(int numberOfHwNodes, State state, String zkHost) {
         this.numberOfHwNodes = numberOfHwNodes;
         this.state = state;
-        this.zkNodeAddress = zkNodeAddress;
+        this.zkHost = zkHost;
     }
 
     public static void main(String[] args) {
         Options options = new Options();
-        options.addOption("m", "master host or IP", true, "master host or IP");
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
-            String masterHost = cmd.getOptionValue("m");
             String numberOfHwNodesString = cmd.getOptionValue("n");
-            String zkNode = cmd.getOptionValue("zk");
-            if (masterHost == null || numberOfHwNodesString == null || zkNode == null) {
+            String zkHost = cmd.getOptionValue("zk");
+            if (numberOfHwNodesString == null || zkHost == null) {
                 printUsage(options);
                 return;
             }
@@ -84,19 +77,11 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 return;
             }
 
-            InetAddress zkAddress = null;
-            zkAddress = resolveHost(zkAddress, zkNode);
-            if (zkAddress == null) {
-                LOGGER.error("Could not resolve ZK node : " + zkNode);
-                System.exit(-1);
-            }
-
-            LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + " ]");
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkAddress.getHostAddress() + ":" + Configuration.ZOOKEEPER_PORT);
+            LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + numberOfHwNodes + ", zk: " + zkHost + " ]");
+            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkHost + ":" + Configuration.ZOOKEEPER_PORT);
             State state = new State(zkState);
 
-            String zkNodeAddress = zkAddress.getHostAddress() + ":" + Configuration.ZOOKEEPER_PORT;
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(masterHost, numberOfHwNodes, state, zkNodeAddress);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost);
 
             Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
             Thread schedThred = new Thread(scheduler);
@@ -118,15 +103,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         Protos.Resource disk = Resources.disk(Configuration.DISK);
         Protos.Resource ports = Resources.portRange(Configuration.BEGIN_PORT, Configuration.END_PORT);
         return asList(cpus, mem, disk, ports);
-    }
-
-    private static InetAddress resolveHost(InetAddress masterAddress, String host) {
-        try {
-            masterAddress = InetAddress.getByName(host);
-        } catch (UnknownHostException e) {
-            LOGGER.error("Could not resolve IP address for hostname " + host);
-        }
-        return masterAddress;
     }
 
     private void onShutdown() {
@@ -162,8 +138,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             throw new RuntimeException(e);
         }
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), this.master + ":" + Configuration.MESOS_PORT);
-
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + zkHost + ":" + Configuration.ZOOKEEPER_PORT + "/mesos");
         driver.run();
     }
 
@@ -261,7 +236,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
         Protos.CommandInfo commandInfo = Protos.CommandInfo.newBuilder()
                 .setValue("java -Djava.library.path=/usr/lib -jar /tmp/elasticsearch-mesos-executor.jar")
-                .addAllArguments(asList("-zk", zkNodeAddress))
+                .addAllArguments(asList("-zk", zkHost))
                 .build();
 
         Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
@@ -348,10 +323,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private boolean haveEnoughNodes() {
         return tasks.size() == numberOfHwNodes;
-    }
-
-    public Set<Task> getTasks() {
-        return tasks;
     }
 
     public State getState() {
