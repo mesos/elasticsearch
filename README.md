@@ -19,9 +19,9 @@
 
 ### Developer Tools
 
-- [x] Local environment (vagrant)
-- [x] Rapid code + test (docker compose)
-- [x] Build automation (gradle)
+- [x] Local environment (Vagrant)
+- [x] Rapid code + test (Docker compose)
+- [x] Build automation (Gradle)
 
 ### Certification
 
@@ -30,11 +30,10 @@
 # Getting Started
 
 This framework requires:
-* a running [Mesos](http://mesos.apache.org) cluster
-* with <a href="https://hadoop.apache.org/docs/r1.2.1/hdfs_user_guide.html">HDFS</a>.  The HDFS dependency is not at a code level.  It is used as  local repository for the elastic search executor.  This requirement will be removed over time but will likely remain is one of the options for executor fetching.
-The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is optional.
+* A running [Mesos](http://mesos.apache.org) cluster
+* The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is optional.
 
-The framework can be run by building the code, the docker images, transferring the code to the Mesos cluster and
+The framework can be run by building the code, the Docker images, transferring the code to the Mesos cluster and
 launching the framework _scheduler_.
 
 # How to build
