@@ -1,12 +1,22 @@
 apply plugin: 'application'
-apply plugin: 'com.github.johnrengelman.shadow'
+apply plugin: 'com.bmuschko.docker-remote-api'
+
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 
 mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
 
 buildscript {
-    repositories { jcenter() }
+    repositories {
+        jcenter()
+    }
     dependencies {
-        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
+        classpath 'com.bmuschko:gradle-docker-plugin:2.2'
+    }
+}
+
+repositories {
+    maven {
+        url "https://jitpack.io"
     }
 }
 
@@ -16,22 +26,39 @@ dependencies {
 
     compile "org.elasticsearch:elasticsearch:${elasticsearchVersion}"
     compile "log4j:log4j:1.2.16"
-
+    compile "org.apache.zookeeper:zookeeper:3.4.6"
+    compile 'com.github.trifork-leeds:elasticsearch-zookeeper:153ed8c01d'
 }
 
-shadowJar {
+jar {
     baseName = "elasticsearch-mesos-executor"
-    mergeServiceFiles()
-    classifier = ''
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest { attributes 'Main-Class': mainClassName }
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'shadowJar'
-    from        "build/libs/elasticsearch-mesos-executor-${project.version}.jar"
-    into        'build/libs'
+    dependsOn 'jar'
+    from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
+    into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
 }
 
-build.dependsOn copyJar
+task buildDockerImage(type: DockerBuildImage) {
+    dependsOn   copyJar
+    if (System.env.DOCKER_HOST) {
+        url = "$System.env.DOCKER_HOST".replace("tcp","https")
+        if (System.env.DOCKER_CERT_PATH) {
+            certPath = new File(System.env.DOCKER_CERT_PATH)
+
+        }
+    }
+    else {
+        url = 'unix:///var/run/docker.sock'
+    }
+    inputDir = file('.')
+    tag = 'mesos/elasticsearch-executor'
+}
+
+build.dependsOn "copyJar"
