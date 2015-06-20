@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.state.Variable;
 
@@ -15,7 +16,11 @@ import java.util.concurrent.ExecutionException;
  * In the future, we can also persist other state information to be more resilient.
  */
 public class State {
+
+    public static final Logger LOGGER = Logger.getLogger(State.class);
+
     private static final String FRAMEWORKID_KEY = "frameworkId";
+
     private ZooKeeperStateInterface zkState;
 
     public State(ZooKeeperStateInterface zkState) {
@@ -23,25 +28,31 @@ public class State {
     }
 
     /**
-     * return null if no frameworkId found
-     *
-     * @throws ExecutionException
-     * @throws InterruptedException
-     * @throws InvalidProtocolBufferException
+     * Return null if no frameworkId found.
      */
-    public FrameworkID getFrameworkID() throws InterruptedException, ExecutionException, InvalidProtocolBufferException {
-        byte[] existingFrameworkId = zkState.fetch(FRAMEWORKID_KEY).get().value();
-        if (existingFrameworkId.length > 0) {
-            return FrameworkID.parseFrom(existingFrameworkId);
-        } else {
-            return null;
+    public FrameworkID getFrameworkID() {
+        try {
+            byte[] existingFrameworkId = zkState.fetch(FRAMEWORKID_KEY).get().value();
+            if (existingFrameworkId.length > 0) {
+                return FrameworkID.parseFrom(existingFrameworkId);
+            } else {
+                return null;
+            }
+        } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
+            LOGGER.error("Could not retrieve framework ID", e);
+            throw new RuntimeException("Could not retrieve framework ID", e);
         }
     }
 
-    public void setFrameworkId(FrameworkID frameworkId) throws InterruptedException, ExecutionException {
-        Variable value = zkState.fetch(FRAMEWORKID_KEY).get();
-        value = value.mutate(frameworkId.toByteArray());
-        zkState.store(value).get();
+    public void setFrameworkId(FrameworkID frameworkId) {
+        try {
+           Variable value = zkState.fetch(FRAMEWORKID_KEY).get();
+           value = value.mutate(frameworkId.toByteArray());
+           zkState.store(value).get();
+        } catch (InterruptedException | ExecutionException e) {
+            LOGGER.error("Could not retrieve framework ID", e);
+            throw new RuntimeException("Could not set framework ID", e);
+        }
     }
 
     /**
@@ -55,7 +66,7 @@ public class State {
      * @throws ClassNotFoundException
      */
     @SuppressWarnings("unchecked")
-    private <T extends Object> T get(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+    private <T> T get(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         byte[] existingNodes = zkState.fetch(key).get().value();
         if (existingNodes.length > 0) {
             ByteArrayInputStream bis = new ByteArrayInputStream(existingNodes);
@@ -84,7 +95,7 @@ public class State {
      * @throws InterruptedException
      * @throws IOException
      */
-    private <T extends Object> void set(String key, T object) throws InterruptedException, ExecutionException, IOException {
+    private <T> void set(String key, T object) throws InterruptedException, ExecutionException, IOException {
         Variable value = zkState.fetch(key).get();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = null;
