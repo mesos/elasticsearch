@@ -33,7 +33,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    public static final int ZOOKEEPER_PORT = 2181;
+
     // DCOS Certification requirement 01
     // The time before Mesos kills a scheduler and tasks if it has not recovered.
     // Mesos will kill framework after 1 month if marathon does not restart.
@@ -92,7 +92,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             }
 
             LOGGER.info("Starting ElasticSearch on Mesos - [master: " + masterHost + ", numHwNodes: " + numberOfHwNodes + " ]");
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkAddress.getHostAddress() + ":" + ZOOKEEPER_PORT);
+            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkAddress.getHostAddress() + ":" + Configuration.ZOOKEEPER_PORT);
             State state = new State(zkState);
 
             String zkNodeAddress = zkAddress.getHostAddress() + ":" + Configuration.ZOOKEEPER_PORT;
