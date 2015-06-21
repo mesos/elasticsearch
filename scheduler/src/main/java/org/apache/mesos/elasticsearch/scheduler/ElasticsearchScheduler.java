@@ -1,7 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
+
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
@@ -41,59 +41,18 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     Set<Task> tasks = new HashSet<>();
 
-    private CountDownLatch initialized = new CountDownLatch(1);
-
     private int numberOfHwNodes;
 
     private String zkHost;
 
     private Protos.FrameworkID frameworkId;
 
+    private static CountDownLatch initialized = new CountDownLatch(1);
+
     public ElasticsearchScheduler(int numberOfHwNodes, State state, String zkHost) {
         this.numberOfHwNodes = numberOfHwNodes;
         this.state = state;
         this.zkHost = zkHost;
-    }
-
-    public static void main(String[] args) {
-        Options options = new Options();
-        options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
-        options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
-        CommandLineParser parser = new BasicParser();
-        try {
-            CommandLine cmd = parser.parse(options, args);
-            String numberOfHwNodesString = cmd.getOptionValue("n");
-            String zkHost = cmd.getOptionValue("zk");
-            if (numberOfHwNodesString == null || zkHost == null) {
-                printUsage(options);
-                return;
-            }
-            int numberOfHwNodes;
-            try {
-                numberOfHwNodes = Integer.parseInt(numberOfHwNodesString);
-            } catch (IllegalArgumentException e) {
-                printUsage(options);
-                return;
-            }
-
-            LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + numberOfHwNodes + ", zk: " + zkHost + " ]");
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkHost + ":" + Configuration.ZOOKEEPER_PORT);
-            State state = new State(zkState);
-
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost);
-
-            Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
-            Thread schedThred = new Thread(scheduler);
-            schedThred.start();
-            scheduler.waitUntilInit();
-        } catch (ParseException e) {
-            printUsage(options);
-        }
-    }
-
-    private static void printUsage(Options options) {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(Configuration.FRAMEWORK_NAME, options);
     }
 
     private static List<Protos.Resource> buildResources() {
@@ -104,21 +63,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         return asList(cpus, mem, disk, ports);
     }
 
-    private void onShutdown() {
-        LOGGER.info("On shutdown...");
-    }
-
-    private void waitUntilInit() {
-        try {
-            initialized.await();
-        } catch (InterruptedException e) {
-            LOGGER.error("Elasticsearch framework interrupted");
-        }
-    }
-
     @Override
     public void run() {
-        LOGGER.info("Starting up ...");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + numberOfHwNodes + ", zk: " + zkHost + " ]");
+
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
         frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
@@ -311,6 +259,18 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         return true;
 
         //TODO: return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
+    }
+
+    public void waitUntilInit() {
+        try {
+            initialized.await();
+        } catch (InterruptedException e) {
+            LOGGER.error("Elasticsearch framework interrupted");
+        }
+    }
+
+    public void onShutdown() {
+        LOGGER.info("On shutdown...");
     }
 
     private boolean haveEnoughNodes() {
