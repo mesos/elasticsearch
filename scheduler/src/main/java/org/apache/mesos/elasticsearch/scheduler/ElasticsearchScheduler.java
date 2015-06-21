@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.commons.cli.*;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
@@ -14,7 +13,6 @@ import org.apache.mesos.elasticsearch.common.Resources;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -36,6 +34,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     // The time before Mesos kills a scheduler and tasks if it has not recovered.
     // Mesos will kill framework after 1 month if marathon does not restart.
     private static final double FAILOVER_TIMEOUT = 2592000;
+
     private final State state;
 
     Clock clock = new Clock();
@@ -127,15 +126,10 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         frameworkBuilder.setFailoverTimeout(FAILOVER_TIMEOUT);
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
 
-        try {
-            Protos.FrameworkID frameworkID = this.getState().getFrameworkID(); // DCOS certification 02
-            if (frameworkID != null) {
-                LOGGER.info("Found previous frameworkID: " + frameworkID);
-                frameworkBuilder.setId(frameworkID);
-            }
-        } catch (InterruptedException | ExecutionException
-                | InvalidProtocolBufferException e) {
-            throw new RuntimeException(e);
+        Protos.FrameworkID frameworkID = this.getState().getFrameworkID(); // DCOS certification 02
+        if (frameworkID != null) {
+            LOGGER.info("Found previous frameworkID: " + frameworkID);
+            frameworkBuilder.setId(frameworkID);
         }
 
         final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + zkHost + ":" + Configuration.ZOOKEEPER_PORT + "/mesos");
@@ -145,11 +139,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
         this.frameworkId = frameworkId;
-        try {
-            getState().setFrameworkId(frameworkId); // DCOS certification 02
-        } catch (InterruptedException | ExecutionException e) {
-            throw new RuntimeException(e);
-        }
+
+        getState().setFrameworkId(frameworkId); // DCOS certification 02
+
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         List<Protos.Resource> resources = buildResources();
