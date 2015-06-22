@@ -29,6 +29,10 @@ public class ElasticsearchScheduler implements Scheduler {
         this.taskInfoFactory = taskInfoFactory;
     }
 
+    public Set<Task> getTasks() {
+        return tasks;
+    }
+
     public void run() {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperPort() + " ]");
 

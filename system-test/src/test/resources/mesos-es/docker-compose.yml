@@ -8,6 +8,10 @@ dns:
 zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
+  ports:
+    - "2181:2181"
+    - "2888:2888"
+    - "3888:3888"
 mesosmaster:
   build: master
   hostname: mesosmaster

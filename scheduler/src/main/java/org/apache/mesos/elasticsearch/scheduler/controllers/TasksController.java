@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.controllers;
 
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
+import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -9,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
 
 /**
  *
@@ -22,13 +23,10 @@ public class TasksController {
     ElasticsearchScheduler scheduler;
 
     @RequestMapping
-    public ResponseEntity<List<GetTasksResponse>> getTasks() {
-        return new ResponseEntity<>(asList(new GetTasksResponse("hJLXmY_NTrCytiIMbX4_1g", "example4", "1.60", "Time", "inet[/172.18.58.139:9203]", "inet[/172.18.58.139:9203]", "example4.nodes.cluster")), HttpStatus.OK);
+    public List<GetTasksResponse> getTasks() {
+        return scheduler.getTasks().stream().map(GetTasksResponse::from).collect(toList());
     }
 
-    /**
-     *
-     */
     public static class GetTasksResponse {
         public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
 
@@ -40,6 +38,18 @@ public class TasksController {
             this.httpAddress = httpAddress;
             this.transportAddress = transportAddress;
             this.hostname = hostname;
+        }
+
+        public static GetTasksResponse from(Task task) {
+            return new GetTasksResponse(
+                    task.getTaskId(),
+                    "UNKOWN: name",
+                    "UNKOWN: version",
+                    "UNKOWN: started at",
+                    "UNKOWN: http address",
+                    "UNKOWN: transport address",
+                    task.getHostname()
+            );
         }
     }
 }
