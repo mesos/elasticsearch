@@ -8,11 +8,25 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
+
+import java.lang.ref.WeakReference;
 
 /**
  * Application which starts the Elasticsearch scheduler
  */
+@EnableAutoConfiguration
+@ComponentScan
 public class Main {
+    private static WeakReference<ElasticsearchScheduler> elasticsearchScheduler;
+
+    @Bean
+    public ElasticsearchScheduler getElasticsearchScheduler() {
+        return elasticsearchScheduler.get();
+    }
 
     public static void main(String[] args) {
         Options options = new Options();
@@ -40,12 +54,15 @@ public class Main {
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost, new TaskInfoFactory());
 
+            elasticsearchScheduler = new WeakReference<>(scheduler);
+            final ConfigurableApplicationContext springApplication = SpringApplication.run(Main.class, args);
+
             Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
+            Runtime.getRuntime().addShutdownHook(new Thread(springApplication::close));
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
 
-            SpringApplication.run(ElasticsearchScheduler.class, args).getBeanFactory().registerSingleton("scheduler", scheduler);
         } catch (ParseException e) {
             printUsage(options);
         }
