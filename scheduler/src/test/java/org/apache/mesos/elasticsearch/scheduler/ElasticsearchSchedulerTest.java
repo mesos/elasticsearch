@@ -2,7 +2,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -13,7 +12,7 @@ import java.util.*;
 
 import static java.util.Collections.*;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
-import static org.apache.mesos.elasticsearch.common.Resources.*;
+import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -56,24 +55,28 @@ public class ElasticsearchSchedulerTest {
 
     private TaskInfoFactory taskInfoFactory;
 
-    private State state;
-
-    private String zkHost = "zookeeper";
+    private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
 
     @Before
     public void before() {
         Clock clock = mock(Clock.class);
         when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
+        frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
+
+        configuration = mock(org.apache.mesos.elasticsearch.scheduler.Configuration.class);
+        when(configuration.getFrameworkId()).thenReturn(frameworkID);
+        when(configuration.getNumberOfHwNodes()).thenReturn(3);
+        when(configuration.getZookeeperHost()).thenReturn("zookeeper");
+        when(configuration.getZookeeperPort()).thenReturn(2181);
+        when(configuration.getTaskName()).thenReturn("esdemo");
+
         taskInfoFactory = mock(TaskInfoFactory.class);
 
-        state = mock(State.class);
-
-
-        scheduler = new ElasticsearchScheduler(3, state, zkHost, taskInfoFactory);
+        scheduler = new ElasticsearchScheduler(configuration, taskInfoFactory);
 
         driver = mock(SchedulerDriver.class);
-        frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
+
         masterInfo = newMasterInfo();
     }
 
@@ -134,19 +137,17 @@ public class ElasticsearchSchedulerTest {
     public void testResourceOffers_launchTasks() {
         scheduler.tasks = new HashSet<>();
 
-        when(state.getFrameworkID()).thenReturn(frameworkID);
-
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));
         offerBuilder.addResources(portRange(9300, 9300));
 
         Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
-                                        .setName(Configuration.TASK_NAME)
+                                        .setName(configuration.getTaskName())
                                         .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
                                         .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
                                         .build();
 
-        when(taskInfoFactory.createTask(offerBuilder.build(), zkHost, frameworkID)).thenReturn(taskInfo);
+        when(taskInfoFactory.createTask(offerBuilder.build(), frameworkID, configuration)).thenReturn(taskInfo);
 
         scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
 

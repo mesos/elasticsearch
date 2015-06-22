@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.common;
+package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 
@@ -65,7 +65,6 @@ public class Resources {
         Protos.Resource cpus = Resources.cpus(Configuration.CPUS);
         Protos.Resource mem = Resources.mem(Configuration.MEM);
         Protos.Resource disk = Resources.disk(Configuration.DISK);
-        Protos.Resource ports = Resources.portRange(Configuration.BEGIN_PORT, Configuration.END_PORT);
-        return asList(cpus, mem, disk, ports);
+        return asList(cpus, mem, disk);
     }
 }

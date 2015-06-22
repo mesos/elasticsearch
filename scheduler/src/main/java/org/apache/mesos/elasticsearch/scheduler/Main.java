@@ -6,7 +6,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.mesos.elasticsearch.common.Configuration;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -17,40 +16,43 @@ public class Main {
         Options options = new Options();
         options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
         options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
+
+        org.apache.mesos.elasticsearch.scheduler.Configuration configuration = new org.apache.mesos.elasticsearch.scheduler.Configuration();
+
         CommandLineParser parser = new BasicParser();
         try {
             CommandLine cmd = parser.parse(options, args);
             String numberOfHwNodesString = cmd.getOptionValue("n");
             String zkHost = cmd.getOptionValue("zk");
             if (numberOfHwNodesString == null || zkHost == null) {
-                printUsage(options);
+                printUsage(configuration, options);
                 return;
             }
-            int numberOfHwNodes;
+
             try {
-                numberOfHwNodes = Integer.parseInt(numberOfHwNodesString);
+                configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
             } catch (IllegalArgumentException e) {
-                printUsage(options);
+                printUsage(configuration, options);
                 return;
             }
 
-            ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkHost + ":" + Configuration.ZOOKEEPER_PORT);
-            State state = new State(zkState);
+            configuration.setZookeeperHost(zkHost);
+            configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost, new TaskInfoFactory());
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
             Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
         } catch (ParseException e) {
-            printUsage(options);
+            printUsage(configuration, options);
         }
     }
 
-    private static void printUsage(Options options) {
+    private static void printUsage(org.apache.mesos.elasticsearch.scheduler.Configuration configuration, Options options) {
         HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(Configuration.FRAMEWORK_NAME, options);
+        formatter.printHelp(configuration.getFrameworkName(), options);
     }
 
 }

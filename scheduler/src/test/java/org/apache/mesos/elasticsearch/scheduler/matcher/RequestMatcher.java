@@ -38,19 +38,10 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
                 .setScalar(Protos.Value.Scalar.newBuilder().setValue(disk).build())
                 .build();
 
-        Protos.Value.Range portRange = Protos.Value.Range.newBuilder().setBegin(31000).setEnd(32000).build();
-
-        Protos.Resource portsResource = Protos.Resource.newBuilder()
-                .setName("ports")
-                .setType(Protos.Value.Type.RANGES)
-                .setRanges(Protos.Value.Ranges.newBuilder().addRange(portRange))
-                .build();
-
         Protos.Request request = Protos.Request.newBuilder()
                 .addResources(cpuResource)
                 .addResources(memResource)
                 .addResources(diskResource)
-                .addResources(portsResource)
                 .build();
 
         return requests.contains(request);

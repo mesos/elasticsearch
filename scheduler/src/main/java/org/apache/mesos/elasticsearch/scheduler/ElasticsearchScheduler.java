@@ -6,8 +6,6 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Configuration;
-import org.apache.mesos.elasticsearch.common.Resources;
 
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
@@ -21,54 +19,43 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
-    // DCOS Certification requirement 01
-    // The time before Mesos kills a scheduler and tasks if it has not recovered.
-    // Mesos will kill framework after 1 month if marathon does not restart.
-    private static final double FAILOVER_TIMEOUT = 2592000;
-
-    private final State state;
+    private final Configuration configuration;
 
     private final TaskInfoFactory taskInfoFactory;
 
     Set<Task> tasks = new HashSet<>();
 
-    private int numberOfHwNodes;
-
-    private String zkHost;
-
     private static CountDownLatch initialized = new CountDownLatch(1);
 
-    public ElasticsearchScheduler(int numberOfHwNodes, State state, String zkHost, TaskInfoFactory taskInfoFactory) {
-        this.numberOfHwNodes = numberOfHwNodes;
-        this.state = state;
-        this.zkHost = zkHost;
+    public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
+        this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
     }
 
     @Override
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + numberOfHwNodes + ", zk: " + zkHost + " ]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperPort() + " ]");
 
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
-        frameworkBuilder.setName(Configuration.FRAMEWORK_NAME);
+        frameworkBuilder.setName(configuration.getFrameworkName());
         frameworkBuilder.setCheckpoint(true);
-        frameworkBuilder.setFailoverTimeout(FAILOVER_TIMEOUT);
+        frameworkBuilder.setFailoverTimeout(configuration.getFailoverTimeout());
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
 
-        Protos.FrameworkID frameworkID = this.getState().getFrameworkID(); // DCOS certification 02
+        Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
         if (frameworkID != null) {
             LOGGER.info("Found previous frameworkID: " + frameworkID);
             frameworkBuilder.setId(frameworkID);
         }
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + zkHost + ":" + Configuration.ZOOKEEPER_PORT + "/mesos");
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + configuration.getZookeeperHost() + ":" + configuration.getZookeeperPort() + "/mesos");
         driver.run();
     }
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        getState().setFrameworkId(frameworkId); // DCOS certification 02
+        configuration.setFrameworkId(frameworkId); // DCOS certification 02
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
@@ -93,22 +80,22 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (tasks.size() == numberOfHwNodes) {
+            } else if (tasks.size() == configuration.getNumberOfHwNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Mesos runs already runs " + numberOfHwNodes + " Elasticsearch tasks");
+                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getNumberOfHwNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
             } else {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
-                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, zkHost, state.getFrameworkID());
+                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, configuration.getFrameworkId(), configuration);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue()));
-            }
-        }
 
-        if (tasks.size() == numberOfHwNodes) {
-            initialized.countDown();
+                if (tasks.size() == configuration.getNumberOfHwNodes()) {
+                    initialized.countDown();
+                }
+            }
         }
     }
 
@@ -170,7 +157,4 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         LOGGER.info("On shutdown...");
     }
 
-    public State getState() {
-        return state;
-    }
 }
