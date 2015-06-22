@@ -147,7 +147,7 @@ public class ElasticsearchSchedulerTest {
                                         .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
                                         .build();
 
-        when(taskInfoFactory.createTask(offerBuilder.build(), frameworkID, configuration)).thenReturn(taskInfo);
+        when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
 
         scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
 

@@ -34,7 +34,7 @@ public class DiscoverySystemTest {
     }
 
     private void assertNodesDiscovered(ElasticsearchNodesResponse nodesResponse) {
-        await().atMost(60, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, is(true));
+        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, is(true));
     }
 
     private String getSlaveIp(String slaveName) {
