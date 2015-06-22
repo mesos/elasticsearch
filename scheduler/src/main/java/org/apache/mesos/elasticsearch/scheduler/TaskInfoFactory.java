@@ -2,9 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.Resources;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -26,7 +24,7 @@ public class TaskInfoFactory {
     Clock clock = new Clock();
 
     @SuppressWarnings("PMD.ExcessiveMethodLength")
-    public Protos.TaskInfo createTask(Protos.Offer offer, String zkHost, Protos.FrameworkID frameworkId) {
+    public Protos.TaskInfo createTask(Protos.Offer offer, Protos.FrameworkID frameworkId, org.apache.mesos.elasticsearch.scheduler.Configuration configuration) {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = new ArrayList<>();
@@ -46,7 +44,7 @@ public class TaskInfoFactory {
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
         Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
-                .setName(Configuration.TASK_NAME)
+                .setName(configuration.getTaskName())
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
@@ -64,14 +62,13 @@ public class TaskInfoFactory {
 
         Protos.CommandInfo commandInfo = Protos.CommandInfo.newBuilder()
                 .setValue("java -Djava.library.path=/usr/lib -jar /tmp/elasticsearch-mesos-executor.jar")
-                .addAllArguments(asList("-zk", zkHost))
-                .build();
+                .addAllArguments(asList("-zk", configuration.getZookeeperHost())).build();
 
         Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
                 .setContainer(containerInfo)
                 .setCommand(commandInfo)
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
-                .setFrameworkId(frameworkId)
+                .setFrameworkId(configuration.getFrameworkId())
                 .setName(UUID.randomUUID().toString());
 
         taskInfoBuilder.setExecutor(executorInfo);

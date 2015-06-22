@@ -3,7 +3,7 @@ apply plugin: 'com.bmuschko.docker-remote-api'
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 
-mainClassName = "org.apache.mesos.elasticsearch.executor.ElasticsearchExecutor"
+mainClassName = "org.apache.mesos.elasticsearch.executor.Main"
 
 buildscript {
     repositories {
