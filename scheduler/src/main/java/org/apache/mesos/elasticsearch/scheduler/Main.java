@@ -12,41 +12,56 @@ import org.apache.commons.cli.ParseException;
  */
 public class Main {
 
+    public static final String NUMBER_OF_HARDWARE_NODES = "n";
+
+    public static final String ZK_HOST = "zk";
+
+    private Options options;
+
+    private Configuration configuration;
+
+    public Main() {
+        this.options = new Options();
+        this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
+        this.options.addOption(ZK_HOST, "ZookeeperNode", true, "Zookeeper IP address and port");
+    }
+
     public static void main(String[] args) {
-        Options options = new Options();
-        options.addOption("n", "numHardwareNodes", true, "number of hardware nodes");
-        options.addOption("zk", "ZookeeperNode", true, "Zookeeper IP address and port");
+        Main main = new Main();
+        main.run(args);
+    }
 
-        org.apache.mesos.elasticsearch.scheduler.Configuration configuration = new org.apache.mesos.elasticsearch.scheduler.Configuration();
+    public void run(String[] args) {
+        parseCommandlineOptions(args);
 
-        CommandLineParser parser = new BasicParser();
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
+        scheduler.run();
+    }
+
+    private void parseCommandlineOptions(String[] args) {
+        configuration = new Configuration();
+
         try {
+            CommandLineParser parser = new BasicParser();
             CommandLine cmd = parser.parse(options, args);
-            String numberOfHwNodesString = cmd.getOptionValue("n");
-            String zkHost = cmd.getOptionValue("zk");
+
+            String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
+            String zkHost = cmd.getOptionValue(ZK_HOST);
+
             if (numberOfHwNodesString == null || zkHost == null) {
-                printUsage(configuration, options);
+                printUsage();
                 return;
             }
 
-            try {
-                configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-            } catch (IllegalArgumentException e) {
-                printUsage(configuration, options);
-                return;
-            }
-
+            configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
             configuration.setZookeeperHost(zkHost);
             configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
-
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
-            scheduler.run();
-        } catch (ParseException e) {
-            printUsage(configuration, options);
+        } catch (ParseException | IllegalArgumentException e) {
+            printUsage();
         }
     }
 
-    private static void printUsage(org.apache.mesos.elasticsearch.scheduler.Configuration configuration, Options options) {
+    private void printUsage() {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(configuration.getFrameworkName(), options);
     }
