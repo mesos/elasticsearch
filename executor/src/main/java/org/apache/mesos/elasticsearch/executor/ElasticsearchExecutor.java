@@ -4,22 +4,22 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.Discovery;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchLauncher;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchSettings;
+import org.apache.mesos.elasticsearch.executor.model.PortsModel;
+import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 
-import java.io.IOException;
-import java.util.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.util.Arrays;
 
 /**
  * Executor for Elasticsearch.
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
 
-    public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
+    public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
+    private TaskStatus taskStatus;
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
@@ -38,114 +38,49 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        Protos.TaskStatus status = null;
-        status = Protos.TaskStatus.newBuilder()
-                .setTaskId(task.getTaskId())
-                .setState(Protos.TaskState.TASK_STARTING).build();
-        driver.sendStatusUpdate(status);
+        Protos.TaskID taskID = task.getTaskId();
+        taskStatus = new TaskStatus(taskID);
 
         LOGGER.info("Starting executor with a TaskInfo of:");
         LOGGER.info(task.toString());
 
-        Protos.Port clientPort;
-        Protos.Port transportPort;
-        if (task.hasDiscovery()) {
-            List<Protos.Port> portsList = task.getDiscovery().getPorts().getPortsList();
-            clientPort = portsList.get(Discovery.CLIENT_PORT_INDEX);
-            transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
-        } else {
-            LOGGER.error("The task must pass a DiscoveryInfoPacket");
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_ERROR).build();
-            driver.sendStatusUpdate(status);
-            return;
-        }
-
-        String zkNode;
-        int nargs = task.getExecutor().getCommand().getArgumentsCount();
-        LOGGER.info("Using arguments [" + nargs + "]: " + task.getExecutor().getCommand().getArgumentsList().toString());
-        if (nargs > 0 && nargs % 2 == 0) {
-            Map<String, String> argMap = new HashMap<>(1);
-            Iterator<String> itr = task.getExecutor().getCommand().getArgumentsList().iterator();
-            while (itr.hasNext()) {
-                argMap.put(itr.next(), itr.next());
-            }
-            zkNode = argMap.get("-zk");
-        } else {
-            LOGGER.error("The task must pass a ZooKeeper address argument using -zk.");
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_ERROR).build();
-            driver.sendStatusUpdate(status);
-            return;
-        }
-        final Node node;
-        try {
-            node = launchElasticsearchNode(zkNode, clientPort, transportPort);
-        } catch (IOException e) {
-            LOGGER.error(e);
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_FAILED).build();
-            driver.sendStatusUpdate(status);
-            return;
-        }
-
-        status = Protos.TaskStatus.newBuilder()
-                .setTaskId(task.getTaskId())
-                .setState(Protos.TaskState.TASK_RUNNING).build();
-        driver.sendStatusUpdate(status);
-
-        LOGGER.info("TASK_RUNNING");
+        // Send status update, starting
+        driver.sendStatusUpdate(taskStatus.starting());
 
         try {
+            // Parse ports
+            PortsModel ports = new PortsModel(task);
+
+            // Parse ZooKeeper address
+            ZooKeeperModel zk = new ZooKeeperModel(task);
+
+            // Launch Node
+            ElasticsearchSettings settings = new ElasticsearchSettings(ports, zk);
+            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings);
+            final Node node = launcher.launch();
+
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
-                            .setTaskId(task.getTaskId())
-                            .setState(Protos.TaskState.TASK_FINISHED).build();
-                    driver.sendStatusUpdate(taskStatus);
+                    // Send status update, finished
+                    driver.sendStatusUpdate(taskStatus.finished());
                     node.close();
-                    LOGGER.info("TASK_FINSHED");
                 }
             }) {
             });
-        } catch (Exception e) {
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_FAILED).build();
-            driver.sendStatusUpdate(status);
-        }
-    }
 
-    private Node launchElasticsearchNode(String zkNode, Protos.Port clientPort, Protos.Port transportPort) throws IOException {
-        Settings settings = ImmutableSettings.settingsBuilder()
-                .put("node.local", false)
-                .put("cluster.name", "mesos-elasticsearch")
-                .put("node.master", true)
-                .put("node.data", true)
-                .put("index.number_of_shards", 5)
-                .put("index.number_of_replicas", 1)
-                .put("http.port", String.valueOf(clientPort.getNumber()))
-                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
-                .put("discovery.type", "com.sonian.elasticsearch.zookeeper.discovery.ZooKeeperDiscoveryModule")
-                .put("sonian.elasticsearch.zookeeper.settings.enabled", true)
-                .put("sonian.elasticsearch.zookeeper.client.host", zkNode)
-                .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true)
-                .build();
-        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
-        return node;
+            // Send status update, running
+            driver.sendStatusUpdate(taskStatus.running());
+        } catch (InvalidAlgorithmParameterException e) {
+            driver.sendStatusUpdate(taskStatus.failed());
+            LOGGER.error(e);
+        }
     }
 
     @Override
     public void killTask(ExecutorDriver driver, Protos.TaskID taskId) {
         LOGGER.info("Kill task: " + taskId.getValue());
-        Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
-                .setTaskId(taskId)
-                .setState(Protos.TaskState.TASK_FAILED).build();
-        driver.sendStatusUpdate(status);
+        driver.sendStatusUpdate(taskStatus.failed());
     }
 
     @Override
