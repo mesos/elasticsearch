@@ -37,7 +37,7 @@ public class Main {
             ZooKeeperStateInterface zkState = new ZooKeeperStateInterfaceImpl(zkHost + ":" + Configuration.ZOOKEEPER_PORT);
             State state = new State(zkState);
 
-            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost);
+            final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(numberOfHwNodes, state, zkHost, new TaskInfoFactory());
 
             Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
             Thread schedThred = new Thread(scheduler);

@@ -7,18 +7,11 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Configuration;
-import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
 
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.concurrent.CountDownLatch;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
-import static org.apache.mesos.Protos.ContainerInfo.Type.DOCKER;
-import static org.apache.mesos.Protos.Value.Type.*;
-import static org.apache.mesos.Protos.Volume.Mode.RO;
+import java.util.function.Predicate;
 
 /**
  * Scheduler for Elasticsearch.
@@ -28,8 +21,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
-    public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
     // DCOS Certification requirement 01
     // The time before Mesos kills a scheduler and tasks if it has not recovered.
     // Mesos will kill framework after 1 month if marathon does not restart.
@@ -37,7 +28,7 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private final State state;
 
-    Clock clock = new Clock();
+    private final TaskInfoFactory taskInfoFactory;
 
     Set<Task> tasks = new HashSet<>();
 
@@ -45,22 +36,13 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private String zkHost;
 
-    private Protos.FrameworkID frameworkId;
-
     private static CountDownLatch initialized = new CountDownLatch(1);
 
-    public ElasticsearchScheduler(int numberOfHwNodes, State state, String zkHost) {
+    public ElasticsearchScheduler(int numberOfHwNodes, State state, String zkHost, TaskInfoFactory taskInfoFactory) {
         this.numberOfHwNodes = numberOfHwNodes;
         this.state = state;
         this.zkHost = zkHost;
-    }
-
-    private static List<Protos.Resource> buildResources() {
-        Protos.Resource cpus = Resources.cpus(Configuration.CPUS);
-        Protos.Resource mem = Resources.mem(Configuration.MEM);
-        Protos.Resource disk = Resources.disk(Configuration.DISK);
-        Protos.Resource ports = Resources.portRange(Configuration.BEGIN_PORT, Configuration.END_PORT);
-        return asList(cpus, mem, disk, ports);
+        this.taskInfoFactory = taskInfoFactory;
     }
 
     @Override
@@ -86,13 +68,11 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        this.frameworkId = frameworkId;
-
         getState().setFrameworkId(frameworkId); // DCOS certification 02
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        List<Protos.Resource> resources = buildResources();
+        List<Protos.Resource> resources = Resources.buildFrameworkResources();
 
         Protos.Request request = Protos.Request.newBuilder()
                 .addAllResources(resources)
@@ -110,101 +90,31 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         for (Protos.Offer offer : offers) {
-            if (!isOfferGood(offer)) {
+            if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Offer is not sufficient");
-            } else if (haveEnoughNodes()) {
+                LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
+            } else if (tasks.size() == numberOfHwNodes) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Node " + offer.getHostname() + " already has an Elasticsearch task");
+                LOGGER.info("Declined offer: Mesos runs already runs " + numberOfHwNodes + " Elasticsearch tasks");
+            } else if (!containsTwoPorts(offer.getResourcesList())) {
+                LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
+                driver.declineOffer(offer.getId());
             } else {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
-
-                String id = taskId(offer);
-
-                Protos.TaskInfo taskInfo = buildTask(driver, offer.getResourcesList(), offer, id);
-                LOGGER.info("TaskInfo: " + taskInfo.toString());
-
+                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, zkHost, state.getFrameworkID());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.add(new Task(offer.getHostname(), id));
+                tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue()));
             }
         }
 
-        if (haveEnoughNodes()) {
+        if (tasks.size() == numberOfHwNodes) {
             initialized.countDown();
         }
     }
 
-    @SuppressWarnings("PMD.ExcessiveMethodLength")
-    private Protos.TaskInfo buildTask(SchedulerDriver driver, List<Protos.Resource> offeredResources, Protos.Offer offer, String id) {
-        List<Protos.Resource> acceptedResources = new ArrayList<>();
-
-        addAllScalarResources(offeredResources, acceptedResources);
-
-        List<Integer> ports = selectPorts(offeredResources);
-        Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
-        Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        if (ports.size() != 2) {
-            LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
-            driver.declineOffer(offer.getId());
-        } else {
-            LOGGER.info("Elasticsearch client port " + ports.get(0));
-            LOGGER.info("Elasticsearch transport port " + ports.get(1));
-            acceptedResources.add(Resources.singlePortRange(ports.get(0)));
-            acceptedResources.add(Resources.singlePortRange(ports.get(1)));
-            discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
-            discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
-            discovery.setPorts(discoveryPorts);
-            discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
-        }
-
-        Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
-                .setName(Configuration.TASK_NAME)
-                .setTaskId(Protos.TaskID.newBuilder().setValue(id))
-                .setSlaveId(offer.getSlaveId())
-                .addAllResources(acceptedResources)
-                .setDiscovery(discovery);
-
-        Protos.Volume volume = Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(RO).build();
-
-        Protos.ContainerInfo.DockerInfo dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build();
-
-        Protos.ContainerInfo containerInfo = Protos.ContainerInfo.newBuilder()
-                .setDocker(dockerInfo)
-                .setType(DOCKER)
-                .addVolumes(volume)
-                .build();
-
-        Protos.CommandInfo commandInfo = Protos.CommandInfo.newBuilder()
-                .setValue("java -Djava.library.path=/usr/lib -jar /tmp/elasticsearch-mesos-executor.jar")
-                .addAllArguments(asList("-zk", zkHost))
-                .build();
-
-        Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
-                .setContainer(containerInfo)
-                .setCommand(commandInfo)
-                .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
-                .setFrameworkId(frameworkId)
-                .setName(UUID.randomUUID().toString());
-
-        taskInfoBuilder.setExecutor(executorInfo);
-
-        return taskInfoBuilder.build();
-    }
-
-    private List<Integer> selectPorts(List<Protos.Resource> offeredResources) {
-        List<Integer> ports = new ArrayList<>();
-        offeredResources.stream().filter(resource -> resource.getType().equals(RANGES))
-                .forEach(resource -> resource.getRanges().getRangeList().stream().filter(range -> ports.size() < 2).forEach(range -> {
-                    ports.add((int) range.getBegin());
-                        if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
-                            ports.add((int) range.getBegin() + 1);
-                        }
-                }));
-        return ports;
-    }
-
-    private void addAllScalarResources(List<Protos.Resource> offeredResources, List<Protos.Resource> acceptedResources) {
-        acceptedResources.addAll(offeredResources.stream().filter(resource -> resource.getType().equals(SCALAR)).collect(Collectors.toList()));
+    private boolean containsTwoPorts(List<Protos.Resource> resources) {
+        int count = Resources.selectTwoPortsFromRange(resources).size();
+        return count == 2;
     }
 
     @Override
@@ -244,21 +154,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         LOGGER.error("Error: " + message);
     }
 
-    private String taskId(Protos.Offer offer) {
-        String date = new SimpleDateFormat(TASK_DATE_FORMAT).format(clock.now());
-        return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
-    }
-
-    private boolean isOfferGood(Protos.Offer offer) {
-        // Don't start the same framework multiple times on the same host
-        for (Task task : tasks) {
-            if (task.getHostname().equals(offer.getHostname())) {
-                return false;
-            }
-        }
-        return true;
-
-        //TODO: return tasks.stream().map(Task::getHostname).noneMatch(Predicate.isEqual(offer.getHostname()));
+    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
+        return tasks.stream().map(Task::getHostname).anyMatch(Predicate.isEqual(offer.getHostname()));
     }
 
     public void waitUntilInit() {
@@ -271,10 +168,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public void onShutdown() {
         LOGGER.info("On shutdown...");
-    }
-
-    private boolean haveEnoughNodes() {
-        return tasks.size() == numberOfHwNodes;
     }
 
     public State getState() {

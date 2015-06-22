@@ -3,19 +3,21 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Configuration;
-import org.apache.mesos.elasticsearch.scheduler.matcher.OfferIDMatcher;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
-import org.apache.mesos.elasticsearch.scheduler.matcher.TaskInfoMatcher;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Matchers;
 import org.mockito.Mockito;
 
 import java.util.*;
 
+import static java.util.Collections.*;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.apache.mesos.elasticsearch.common.Resources.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.spockframework.util.CollectionUtil.asSet;
 
 /**
  * Tests Scheduler API.
@@ -45,22 +47,32 @@ public class ElasticsearchSchedulerTest {
             .toDate();
 
     private ElasticsearchScheduler scheduler;
+
     private SchedulerDriver driver;
-    private State state;
 
     private Protos.FrameworkID frameworkID;
+
     private Protos.MasterInfo masterInfo;
+
+    private TaskInfoFactory taskInfoFactory;
+
+    private State state;
+
+    private String zkHost = "zookeeper";
 
     @Before
     public void before() {
-        Clock clock = Mockito.mock(Clock.class);
-        Mockito.when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
+        Clock clock = mock(Clock.class);
+        when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
-        state = Mockito.mock(State.class);
-        scheduler = new ElasticsearchScheduler(3, state, "zookeeper:2181");
-        scheduler.clock = clock;
+        taskInfoFactory = mock(TaskInfoFactory.class);
 
-        driver = Mockito.mock(SchedulerDriver.class);
+        state = mock(State.class);
+
+
+        scheduler = new ElasticsearchScheduler(3, state, zkHost, taskInfoFactory);
+
+        driver = mock(SchedulerDriver.class);
         frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
         masterInfo = newMasterInfo();
     }
@@ -72,146 +84,81 @@ public class ElasticsearchSchedulerTest {
         Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK)));
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testResourceOffers_singleOffer() {
-        Protos.Offer.Builder offerBuilder = newOfferBuilder("offer1", "host1", "slave1", frameworkID);
-        offerBuilder.addResources(cpus(Configuration.CPUS));
-        offerBuilder.addResources(mem(Configuration.MEM));
-        offerBuilder.addResources(disk(Configuration.DISK));
-        offerBuilder.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
+    public void testResourceOffers_isSlaveAlreadyRunningTask() {
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
 
-        scheduler.registered(driver, frameworkID, masterInfo);
-        scheduler.resourceOffers(driver, Collections.singletonList(offerBuilder.build()));
+        Protos.Offer.Builder offer = newOffer("host1");
 
-        OfferIDMatcher offerIdMatcher = new OfferIDMatcher("offer1");
+        scheduler.resourceOffers(driver, singletonList(offer.build()));
 
-        TaskInfoMatcher taskInfoMatcher = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
+        verify(driver).declineOffer(offer.getId());
+    }
 
-        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Matchers.argThat(org.hamcrest.Matchers.contains(offerIdMatcher)),
-                (Collection<Protos.TaskInfo>) Matchers.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher)));
+    @Test
+    public void testResourceOffers_enoughNodes() {
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2"), new Task("host3", "3")});
+
+        Protos.Offer.Builder offer = newOffer("host4");
+
+        scheduler.resourceOffers(driver, singletonList(offer.build()));
+
+        verify(driver).declineOffer(offer.getId());
+    }
+
+    @Test
+    public void testResourceOffers_noPorts() {
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
+
+        Protos.Offer.Builder offer = newOffer("host3");
+
+        scheduler.resourceOffers(driver, singletonList(offer.build()));
+
+        verify(driver).declineOffer(offer.getId());
     }
 
     @SuppressWarnings("unchecked")
     @Test
-    public void testResourceOffers_twoOffers() {
-        Protos.Offer.Builder offerBuilder1 = newOfferBuilder("offer1", "host1", "slave1", frameworkID);
-        offerBuilder1.addResources(cpus(Configuration.CPUS));
-        offerBuilder1.addResources(mem(Configuration.MEM));
-        offerBuilder1.addResources(disk(Configuration.DISK));
-        offerBuilder1.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
+    public void testResourceOffers_singlePort() {
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1")});
 
-        Protos.Offer.Builder offerBuilder2 = newOfferBuilder("offer2", "host2", "slave2", frameworkID);
-        offerBuilder2.addResources(cpus(Configuration.CPUS));
-        offerBuilder2.addResources(mem(Configuration.MEM));
-        offerBuilder2.addResources(disk(Configuration.DISK));
-        offerBuilder2.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
+        Protos.Offer.Builder offerBuilder = newOffer("host3");
+        offerBuilder.addResources(portRange(9200, 9200));
 
-        scheduler.registered(driver, frameworkID, masterInfo);
-        scheduler.resourceOffers(driver, Arrays.asList(offerBuilder1.build(), offerBuilder2.build()));
+        scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
 
-        OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
-        OfferIDMatcher offerIdMatcher2 = new OfferIDMatcher("offer2");
-
-        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
-        TaskInfoMatcher taskInfoMatcher2 = new TaskInfoMatcher("elasticsearch_host2_20150306T102040.900Z").slaveId("slave2").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
-
-        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
-        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher2)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher2)));
+        Mockito.verify(driver).declineOffer(offerBuilder.build().getId());
     }
 
-    @SuppressWarnings("unchecked")
     @Test
-    public void testResourceOffers_haveEnoughNodes() {
-        Set<Task> tasks = new HashSet<>();
-        tasks.add(new Task("host1", "task1"));
-        tasks.add(new Task("host2", "task2"));
-        scheduler.tasks = tasks;
-
-        Protos.Offer.Builder offerBuilder1 = newOfferBuilder("offer1", "host3", "slave1", frameworkID);
-        offerBuilder1.addResources(cpus(Configuration.CPUS));
-        offerBuilder1.addResources(mem(Configuration.MEM));
-        offerBuilder1.addResources(disk(Configuration.DISK));
-        offerBuilder1.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
-
-        Protos.Offer.Builder offerBuilder2 = newOfferBuilder("offer2", "host3", "slave2", frameworkID);
-        offerBuilder2.addResources(cpus(Configuration.CPUS));
-        offerBuilder2.addResources(mem(Configuration.MEM));
-        offerBuilder2.addResources(disk(Configuration.DISK));
-        offerBuilder2.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
-
-        scheduler.registered(driver, frameworkID, masterInfo);
-        scheduler.resourceOffers(driver, Arrays.asList(offerBuilder1.build(), offerBuilder2.build()));
-
-        OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
-        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host3_20150306T102040.789Z").slaveId("slave1").cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK);
-
-        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
-        Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer2").build());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testResourceOffers_whenOfferedNoPortsReject() {
-        Set<Task> tasks = new HashSet<>();
-        tasks.add(new Task("host1", "task1"));
-        scheduler.tasks = tasks;
-
-        Protos.Offer.Builder offerBuilder = newOfferBuilder("offer1", "host1", "slave1", frameworkID);
-        offerBuilder.addResources(cpus(Configuration.CPUS));
-        offerBuilder.addResources(mem(Configuration.MEM));
-        offerBuilder.addResources(disk(Configuration.DISK));
-        offerBuilder.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
-
-        scheduler.resourceOffers(driver, Collections.singletonList(offerBuilder.build()));
-
-        Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer1").build());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testResourceOffers_whenOfferedSinglePortReject() {
-        Set<Task> tasks = new HashSet<>();
-        tasks.add(new Task("host1", "task1"));
-        scheduler.tasks = tasks;
-
-        Protos.Offer.Builder offerBuilder = newOfferBuilder("offer1", "host1", "slave1", frameworkID);
-        offerBuilder.addResources(cpus(Configuration.CPUS));
-        offerBuilder.addResources(mem(Configuration.MEM));
-        offerBuilder.addResources(disk(Configuration.DISK));
-        offerBuilder.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
-        offerBuilder.addResources(singlePortRange(9200));
-
-        scheduler.resourceOffers(driver, Collections.singletonList(offerBuilder.build()));
-
-        Mockito.verify(driver).declineOffer(Protos.OfferID.newBuilder().setValue("offer1").build());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testResourceOffers_whenOfferedTwoPortsAccept() {
+    public void testResourceOffers_launchTasks() {
         scheduler.tasks = new HashSet<>();
 
-        scheduler.registered(driver, frameworkID, masterInfo);
+        when(state.getFrameworkID()).thenReturn(frameworkID);
 
-        Protos.Offer.Builder offerBuilder = newOfferBuilder("offer1", "host1", "slave1", frameworkID);
-        offerBuilder.addResources(cpus(Configuration.CPUS));
-        offerBuilder.addResources(mem(Configuration.MEM));
-        offerBuilder.addResources(disk(Configuration.DISK));
-        offerBuilder.addResources(portRange(Configuration.BEGIN_PORT, Configuration.END_PORT));
+        Protos.Offer.Builder offerBuilder = newOffer("host3");
+        offerBuilder.addResources(portRange(9200, 9200));
+        offerBuilder.addResources(portRange(9300, 9300));
 
-        scheduler.resourceOffers(driver, Collections.singletonList(offerBuilder.build()));
+        Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
+                                        .setName(Configuration.TASK_NAME)
+                                        .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
+                                        .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
+                                        .build();
 
-        OfferIDMatcher offerIdMatcher1 = new OfferIDMatcher("offer1");
-        TaskInfoMatcher taskInfoMatcher1 = new TaskInfoMatcher("elasticsearch_host1_20150306T102040.789Z")
-                                                        .slaveId("slave1")
-                .cpus(Configuration.CPUS)
-                .mem(Configuration.MEM)
-                .disk(Configuration.DISK)
-                .beginPort(31000)
-                .endPort(31001);
+        when(taskInfoFactory.createTask(offerBuilder.build(), zkHost, frameworkID)).thenReturn(taskInfo);
 
-        Mockito.verify(driver).launchTasks((Collection<Protos.OfferID>) Mockito.argThat(org.hamcrest.Matchers.contains(offerIdMatcher1)), (Collection<Protos.TaskInfo>) Mockito.argThat(org.hamcrest.Matchers.contains(taskInfoMatcher1)));
+        scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
+
+        verify(driver).launchTasks(Collections.singleton(offerBuilder.build().getId()), Collections.singleton(taskInfo));
+    }
+
+    private Protos.Offer.Builder newOffer(String hostname) {
+        Protos.Offer.Builder builder = newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
+        builder.addResources(cpus(Configuration.CPUS));
+        builder.addResources(mem(Configuration.MEM));
+        builder.addResources(disk(Configuration.DISK));
+        return builder;
     }
 
     private Protos.MasterInfo newMasterInfo() {
