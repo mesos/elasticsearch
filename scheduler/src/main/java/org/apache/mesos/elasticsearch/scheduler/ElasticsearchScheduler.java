@@ -16,7 +16,7 @@ import java.util.function.Predicate;
 /**
  * Scheduler for Elasticsearch.
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
