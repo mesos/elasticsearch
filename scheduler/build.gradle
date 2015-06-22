@@ -22,6 +22,7 @@ dependencies {
 
     compile project(':commons')
 
+    compile("org.springframework.boot:spring-boot-starter-web:1.2.4.RELEASE")
     compile "commons-cli:commons-cli:1.0"
     compile "commons-io:commons-io:2.4"
     compile "log4j:log4j:1.2.16"

@@ -1,5 +1,7 @@
-package org.apache.mesos.elasticsearch.statusapi.controllers;
+package org.apache.mesos.elasticsearch.scheduler.controllers;
 
+import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -9,15 +11,24 @@ import java.util.List;
 
 import static java.util.Arrays.asList;
 
+/**
+ *
+ */
 @RestController
 @RequestMapping("/tasks")
 public class TasksController {
+
+    @Autowired
+    ElasticsearchScheduler scheduler;
 
     @RequestMapping
     public ResponseEntity<List<GetTasksResponse>> getTasks() {
         return new ResponseEntity<>(asList(new GetTasksResponse("hJLXmY_NTrCytiIMbX4_1g", "example4", "1.60", "Time", "inet[/172.18.58.139:9203]", "inet[/172.18.58.139:9203]", "example4.nodes.cluster")), HttpStatus.OK);
     }
 
+    /**
+     *
+     */
     public static class GetTasksResponse {
         public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
 

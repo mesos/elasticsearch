@@ -9,6 +9,9 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Configuration;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.Resources;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.context.annotation.ComponentScan;
 
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -24,6 +27,8 @@ import static org.apache.mesos.Protos.Volume.Mode.RO;
  * Scheduler for Elasticsearch.
  */
 @SuppressWarnings({"PMD.TooManyMethods", "PMD.CyclomaticComplexity"})
+@EnableAutoConfiguration
+@ComponentScan
 public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
@@ -86,6 +91,8 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
             Thread schedThred = new Thread(scheduler);
             schedThred.start();
             scheduler.waitUntilInit();
+
+            SpringApplication.run(ElasticsearchScheduler.class, args).getBeanFactory().registerSingleton("scheduler", scheduler);
         } catch (ParseException e) {
             printUsage(options);
         }
@@ -248,9 +255,9 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
         offeredResources.stream().filter(resource -> resource.getType().equals(RANGES))
                 .forEach(resource -> resource.getRanges().getRangeList().stream().filter(range -> ports.size() < 2).forEach(range -> {
                     ports.add((int) range.getBegin());
-                        if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
-                            ports.add((int) range.getBegin() + 1);
-                        }
+                    if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
+                        ports.add((int) range.getBegin() + 1);
+                    }
                 }));
         return ports;
     }
