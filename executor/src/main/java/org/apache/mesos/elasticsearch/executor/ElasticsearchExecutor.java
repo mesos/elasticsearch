@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.executor;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
-import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -21,11 +20,6 @@ import java.util.*;
 public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
-
-    public static void main(String[] args) throws Exception {
-        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
-        System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
-    }
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
