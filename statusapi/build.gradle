@@ -1,0 +1,4 @@
+
+dependencies {
+    compile("org.springframework.boot:spring-boot-starter-web:1.2.4.RELEASE")
+}
