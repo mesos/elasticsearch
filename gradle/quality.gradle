@@ -17,7 +17,6 @@ pmd {
             'java-braces',
             'java-clone',
             'java-codesize',
-	        'java-finalizers',
-            'java-imports',
+	        'java-finalizers'
     ]
 }
