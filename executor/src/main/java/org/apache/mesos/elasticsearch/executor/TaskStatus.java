@@ -3,6 +3,9 @@ package org.apache.mesos.elasticsearch.executor;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 
+/**
+ * Wraps the TaskState status updates into easy to read methods.
+ */
 public class TaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class.getCanonicalName());
     private final Protos.TaskID taskID;

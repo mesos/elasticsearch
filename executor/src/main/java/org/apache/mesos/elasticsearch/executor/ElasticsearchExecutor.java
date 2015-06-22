@@ -5,14 +5,16 @@ import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.executor.model.PortsModel;
+import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
 import java.io.IOException;
-import java.util.*;
+import java.security.InvalidAlgorithmParameterException;
+import java.util.Arrays;
 
 /**
  * Executor for Elasticsearch.
@@ -54,46 +56,16 @@ public class ElasticsearchExecutor implements Executor {
         // Send status update, starting
         driver.sendStatusUpdate(taskStatus.starting());
 
-        Protos.Port clientPort;
-        Protos.Port transportPort;
-        if (task.hasDiscovery()) {
-            List<Protos.Port> portsList = task.getDiscovery().getPorts().getPortsList();
-            clientPort = portsList.get(Discovery.CLIENT_PORT_INDEX);
-            transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
-        } else {
-            LOGGER.error("The task must pass a DiscoveryInfoPacket");
-            driver.sendStatusUpdate(taskStatus.error());
-            return;
-        }
-
-        String zkNode;
-        int nargs = task.getExecutor().getCommand().getArgumentsCount();
-        LOGGER.info("Using arguments [" + nargs + "]: " + task.getExecutor().getCommand().getArgumentsList().toString());
-        if (nargs > 0 && nargs % 2 == 0) {
-            Map<String, String> argMap = new HashMap<>(1);
-            Iterator<String> itr = task.getExecutor().getCommand().getArgumentsList().iterator();
-            while (itr.hasNext()) {
-                argMap.put(itr.next(), itr.next());
-            }
-            zkNode = argMap.get("-zk");
-        } else {
-            LOGGER.error("The task must pass a ZooKeeper address argument using -zk.");
-            driver.sendStatusUpdate(taskStatus.error());
-            return;
-        }
-        final Node node;
         try {
-            node = launchElasticsearchNode(zkNode, clientPort, transportPort);
-        } catch (IOException e) {
-            LOGGER.error(e);
-            driver.sendStatusUpdate(taskStatus.failed());
-            return;
-        }
+            // Parse ports
+            PortsModel ports = new PortsModel(task);
 
-        // Send status update, running
-        driver.sendStatusUpdate(taskStatus.running());
+            // Parse ZooKeeper address
+            ZooKeeperModel zk = new ZooKeeperModel(task);
 
-        try {
+            // Launch Node
+            final Node node = launchElasticsearchNode(zk.getAddress(), ports.getClientPort(), ports.getTransportPort());
+
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
@@ -103,8 +75,12 @@ public class ElasticsearchExecutor implements Executor {
                 }
             }) {
             });
-        } catch (Exception e) {
+
+            // Send status update, running
+            driver.sendStatusUpdate(taskStatus.running());
+        } catch (InvalidAlgorithmParameterException | IOException e) {
             driver.sendStatusUpdate(taskStatus.failed());
+            LOGGER.error(e);
         }
     }
 
