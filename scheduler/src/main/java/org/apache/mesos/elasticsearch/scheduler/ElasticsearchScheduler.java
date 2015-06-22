@@ -8,7 +8,6 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 
 import java.util.*;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Predicate;
 
 /**
@@ -25,14 +24,11 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     Set<Task> tasks = new HashSet<>();
 
-    private static CountDownLatch initialized = new CountDownLatch(1);
-
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
     }
 
-    @Override
     public void run() {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperPort() + " ]");
 
@@ -91,10 +87,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, configuration.getFrameworkId(), configuration);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue()));
-
-                if (tasks.size() == configuration.getNumberOfHwNodes()) {
-                    initialized.countDown();
-                }
             }
         }
     }
@@ -143,18 +135,6 @@ public class ElasticsearchScheduler implements Scheduler, Runnable {
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
         return tasks.stream().map(Task::getHostname).anyMatch(Predicate.isEqual(offer.getHostname()));
-    }
-
-    public void waitUntilInit() {
-        try {
-            initialized.await();
-        } catch (InterruptedException e) {
-            LOGGER.error("Elasticsearch framework interrupted");
-        }
-    }
-
-    public void onShutdown() {
-        LOGGER.info("On shutdown...");
     }
 
 }

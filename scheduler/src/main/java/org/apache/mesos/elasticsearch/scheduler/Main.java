@@ -40,11 +40,7 @@ public class Main {
             configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
 
             final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
-
-            Runtime.getRuntime().addShutdownHook(new Thread(scheduler::onShutdown));
-            Thread schedThred = new Thread(scheduler);
-            schedThred.start();
-            scheduler.waitUntilInit();
+            scheduler.run();
         } catch (ParseException e) {
             printUsage(configuration, options);
         }
