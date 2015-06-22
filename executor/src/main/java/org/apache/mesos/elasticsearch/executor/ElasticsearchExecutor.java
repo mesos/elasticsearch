@@ -54,7 +54,6 @@ public class ElasticsearchExecutor implements Executor {
         // Send status update, starting
         driver.sendStatusUpdate(taskStatus.starting());
 
-
         Protos.Port clientPort;
         Protos.Port transportPort;
         if (task.hasDiscovery()) {
@@ -94,8 +93,6 @@ public class ElasticsearchExecutor implements Executor {
         // Send status update, running
         driver.sendStatusUpdate(taskStatus.running());
 
-        LOGGER.info("TASK_RUNNING");
-
         try {
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
@@ -103,7 +100,6 @@ public class ElasticsearchExecutor implements Executor {
                     // Send status update, finished
                     driver.sendStatusUpdate(taskStatus.finished());
                     node.close();
-                    LOGGER.info("TASK_FINSHED");
                 }
             }) {
             });
