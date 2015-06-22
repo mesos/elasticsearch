@@ -5,24 +5,21 @@ import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchLauncher;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchSettings;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
 
-import java.io.IOException;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.Arrays;
 
 /**
  * Executor for Elasticsearch.
  */
-@SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
 
-    public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
+    public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private TaskStatus taskStatus;
 
     public static void main(String[] args) throws Exception {
@@ -64,7 +61,9 @@ public class ElasticsearchExecutor implements Executor {
             ZooKeeperModel zk = new ZooKeeperModel(task);
 
             // Launch Node
-            final Node node = launchElasticsearchNode(zk.getAddress(), ports.getClientPort(), ports.getTransportPort());
+            ElasticsearchSettings settings = new ElasticsearchSettings(ports, zk);
+            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings);
+            final Node node = launcher.launch();
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
@@ -78,29 +77,10 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidAlgorithmParameterException | IOException e) {
+        } catch (InvalidAlgorithmParameterException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }
-    }
-
-    private Node launchElasticsearchNode(String zkNode, Protos.Port clientPort, Protos.Port transportPort) throws IOException {
-        Settings settings = ImmutableSettings.settingsBuilder()
-                .put("node.local", false)
-                .put("cluster.name", "mesos-elasticsearch")
-                .put("node.master", true)
-                .put("node.data", true)
-                .put("index.number_of_shards", 5)
-                .put("index.number_of_replicas", 1)
-                .put("http.port", String.valueOf(clientPort.getNumber()))
-                .put("transport.tcp.port", String.valueOf(transportPort.getNumber()))
-                .put("discovery.type", "com.sonian.elasticsearch.zookeeper.discovery.ZooKeeperDiscoveryModule")
-                .put("sonian.elasticsearch.zookeeper.settings.enabled", true)
-                .put("sonian.elasticsearch.zookeeper.client.host", zkNode)
-                .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true)
-                .build();
-        Node node = NodeBuilder.nodeBuilder().local(false).settings(settings).node();
-        return node;
     }
 
     @Override
