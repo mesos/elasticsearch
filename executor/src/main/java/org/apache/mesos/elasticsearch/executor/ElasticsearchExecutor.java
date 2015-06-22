@@ -21,6 +21,7 @@ import java.util.*;
 public class ElasticsearchExecutor implements Executor {
 
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.toString());
+    private TaskStatus taskStatus;
 
     public static void main(String[] args) throws Exception {
         MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor());
@@ -44,14 +45,15 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        Protos.TaskStatus status = null;
-        status = Protos.TaskStatus.newBuilder()
-                .setTaskId(task.getTaskId())
-                .setState(Protos.TaskState.TASK_STARTING).build();
-        driver.sendStatusUpdate(status);
+        Protos.TaskID taskID = task.getTaskId();
+        taskStatus = new TaskStatus(taskID);
 
         LOGGER.info("Starting executor with a TaskInfo of:");
         LOGGER.info(task.toString());
+
+        // Send status update, starting
+        driver.sendStatusUpdate(taskStatus.starting());
+
 
         Protos.Port clientPort;
         Protos.Port transportPort;
@@ -61,10 +63,7 @@ public class ElasticsearchExecutor implements Executor {
             transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
         } else {
             LOGGER.error("The task must pass a DiscoveryInfoPacket");
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_ERROR).build();
-            driver.sendStatusUpdate(status);
+            driver.sendStatusUpdate(taskStatus.error());
             return;
         }
 
@@ -80,10 +79,7 @@ public class ElasticsearchExecutor implements Executor {
             zkNode = argMap.get("-zk");
         } else {
             LOGGER.error("The task must pass a ZooKeeper address argument using -zk.");
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_ERROR).build();
-            driver.sendStatusUpdate(status);
+            driver.sendStatusUpdate(taskStatus.error());
             return;
         }
         final Node node;
@@ -91,17 +87,12 @@ public class ElasticsearchExecutor implements Executor {
             node = launchElasticsearchNode(zkNode, clientPort, transportPort);
         } catch (IOException e) {
             LOGGER.error(e);
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_FAILED).build();
-            driver.sendStatusUpdate(status);
+            driver.sendStatusUpdate(taskStatus.failed());
             return;
         }
 
-        status = Protos.TaskStatus.newBuilder()
-                .setTaskId(task.getTaskId())
-                .setState(Protos.TaskState.TASK_RUNNING).build();
-        driver.sendStatusUpdate(status);
+        // Send status update, running
+        driver.sendStatusUpdate(taskStatus.running());
 
         LOGGER.info("TASK_RUNNING");
 
@@ -109,20 +100,15 @@ public class ElasticsearchExecutor implements Executor {
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
-                            .setTaskId(task.getTaskId())
-                            .setState(Protos.TaskState.TASK_FINISHED).build();
-                    driver.sendStatusUpdate(taskStatus);
+                    // Send status update, finished
+                    driver.sendStatusUpdate(taskStatus.finished());
                     node.close();
                     LOGGER.info("TASK_FINSHED");
                 }
             }) {
             });
         } catch (Exception e) {
-            status = Protos.TaskStatus.newBuilder()
-                    .setTaskId(task.getTaskId())
-                    .setState(Protos.TaskState.TASK_FAILED).build();
-            driver.sendStatusUpdate(status);
+            driver.sendStatusUpdate(taskStatus.failed());
         }
     }
 
@@ -148,10 +134,7 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void killTask(ExecutorDriver driver, Protos.TaskID taskId) {
         LOGGER.info("Kill task: " + taskId.getValue());
-        Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
-                .setTaskId(taskId)
-                .setState(Protos.TaskState.TASK_FAILED).build();
-        driver.sendStatusUpdate(status);
+        driver.sendStatusUpdate(taskStatus.failed());
     }
 
     @Override
