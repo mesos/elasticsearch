@@ -8,14 +8,20 @@ import org.elasticsearch.node.NodeBuilder;
 /**
  * Launches an elasticsearch node
  */
-public class ElasticsearchLauncher {
-    private final Settings settings;
+public class ElasticsearchLauncher implements Launcher {
+    private Settings settings;
 
     public ElasticsearchLauncher(ImmutableSettings.Builder settings) {
         this.settings = settings.build();
     }
 
+    @Override
     public Node launch() {
         return NodeBuilder.nodeBuilder().settings(settings).node();
+    }
+
+    @Override
+    public void addRuntimeSettings(ImmutableSettings.Builder settings) {
+        settings.put(settings);
     }
 }

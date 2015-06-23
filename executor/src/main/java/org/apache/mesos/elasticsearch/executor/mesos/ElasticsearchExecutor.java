@@ -6,6 +6,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchLauncher;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchSettings;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.node.Node;
@@ -17,9 +18,13 @@ import java.util.Arrays;
  * Executor for Elasticsearch.
  */
 public class ElasticsearchExecutor implements Executor {
-
+    private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private TaskStatus taskStatus;
+
+    public ElasticsearchExecutor(Launcher launcher) {
+        this.launcher = launcher;
+    }
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
@@ -50,13 +55,14 @@ public class ElasticsearchExecutor implements Executor {
         try {
             // Parse ports
             PortsModel ports = new PortsModel(task);
+            launcher.addRuntimeSettings(ports.getClientPort());
+            launcher.addRuntimeSettings(ports.getTransportPort());
 
             // Parse ZooKeeper address
             ZooKeeperModel zk = new ZooKeeperModel(task);
+            launcher.addRuntimeSettings(zk.getAddress());
 
             // Launch Node
-            ElasticsearchSettings settings = new ElasticsearchSettings(ports, zk);
-            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings.defaultSettings());
             final Node node = launcher.launch();
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
