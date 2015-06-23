@@ -41,7 +41,7 @@ public class ZooKeeperModelTest {
         Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("ZK_ADDRESS"));
         Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
         ZooKeeperModel zooKeeperModel = new ZooKeeperModel(taskInfo.build());
-        assertEquals("ZK_ADDRESS", zooKeeperModel.getAddress().get(ZooKeeperModel.ZOOKEEPER_ADDRESS_KEY));
+        assertEquals("ZK_ADDRESS", zooKeeperModel.getRuntimeSettings().get(ZooKeeperModel.ZOOKEEPER_ADDRESS_KEY));
     }
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo(Protos.CommandInfo.Builder commandInfo) {

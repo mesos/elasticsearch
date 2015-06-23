@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * Model of the port allocation.
  */
-public class PortsModel {
+public class PortsModel implements RunTimeSettings {
     public static final String HTTP_PORT_KEY = "http.port";
     public static final String TRANSPORT_PORT_KEY = "transport.tcp.port";
     private TaskParser<List<Protos.Port>> parser = new ParsePorts();
@@ -29,12 +29,19 @@ public class PortsModel {
         transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
     }
 
-    public ImmutableSettings.Builder getClientPort() {
+    private ImmutableSettings.Builder getClientPort() {
         return ImmutableSettings.settingsBuilder().put(HTTP_PORT_KEY, String.valueOf(clientPort.getNumber()));
 
     }
 
-    public ImmutableSettings.Builder getTransportPort() {
+    private ImmutableSettings.Builder getTransportPort() {
         return ImmutableSettings.settingsBuilder().put(TRANSPORT_PORT_KEY, String.valueOf(transportPort.getNumber()));
+    }
+
+    @Override
+    public ImmutableSettings.Builder getRuntimeSettings() {
+        return ImmutableSettings.settingsBuilder()
+                .put(getClientPort().build())
+                .put(getTransportPort().build());
     }
 }

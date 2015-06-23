@@ -40,8 +40,8 @@ public class PortsModelTest {
                                 .setName(Discovery.TRANSPORT_PORT_NAME)
                                 .setNumber(12345)));
         PortsModel portsModel = new PortsModel(getDefaultTaskInfo(discoveryInfo).build());
-        assertEquals("1234", portsModel.getClientPort().get(PortsModel.HTTP_PORT_KEY));
-        assertEquals("12345", portsModel.getTransportPort().get(PortsModel.TRANSPORT_PORT_KEY));
+        assertEquals("1234", portsModel.getRuntimeSettings().get(PortsModel.HTTP_PORT_KEY));
+        assertEquals("12345", portsModel.getRuntimeSettings().get(PortsModel.TRANSPORT_PORT_KEY));
     }
 
     private Protos.DiscoveryInfo.Builder getDefaultDiscoveryInfo() {

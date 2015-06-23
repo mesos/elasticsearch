@@ -5,10 +5,12 @@ import org.apache.mesos.elasticsearch.executor.parser.ParseZooKeeper;
 import org.apache.mesos.elasticsearch.executor.parser.TaskParser;
 import org.elasticsearch.common.settings.ImmutableSettings;
 
+import java.util.List;
+
 /**
  * Model representing ZooKeeper information
  */
-public class ZooKeeperModel {
+public class ZooKeeperModel implements RunTimeSettings {
     public static final String ZOOKEEPER_ADDRESS_KEY = "sonian.elasticsearch.zookeeper.client.host";
     private final TaskParser<String> parser = new ParseZooKeeper();
     private final String address;
@@ -17,7 +19,12 @@ public class ZooKeeperModel {
         address = parser.parse(taskInfo);
     }
 
-    public ImmutableSettings.Builder getAddress() {
+    private ImmutableSettings.Builder getAddress() {
         return ImmutableSettings.settingsBuilder().put(ZOOKEEPER_ADDRESS_KEY, address);
+    }
+
+    @Override
+    public ImmutableSettings.Builder getRuntimeSettings() {
+        return ImmutableSettings.settingsBuilder().put(getAddress().build());
     }
 }
