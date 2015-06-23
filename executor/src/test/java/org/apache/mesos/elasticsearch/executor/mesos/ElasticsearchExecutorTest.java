@@ -5,7 +5,8 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.elasticsearch.common.settings.ImmutableSettings;
-import org.junit.AfterClass;
+import org.elasticsearch.node.Node;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
@@ -34,9 +35,10 @@ public class ElasticsearchExecutorTest {
     @Mock
     private ExecutorDriver driver;
 
-    @AfterClass
-    public static void callShutdownHook() {
-        Runtime.getRuntime().exit(0); // Just to make sure it shuts down everything.
+    @Before
+    public void setupLauncher() {
+        Node node = mock(Node.class);
+        when(launcher.launch()).thenReturn(node);
     }
 
     @Test(expected = NullPointerException.class)
