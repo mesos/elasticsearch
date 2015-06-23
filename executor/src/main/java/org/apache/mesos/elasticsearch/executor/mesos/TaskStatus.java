@@ -11,6 +11,9 @@ public class TaskStatus {
     private final Protos.TaskID taskID;
 
     public TaskStatus(Protos.TaskID taskID) {
+        if (taskID == null) {
+            throw new NullPointerException("TaskID cannot be null");
+        }
         this.taskID = taskID;
     }
 

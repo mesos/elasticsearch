@@ -16,7 +16,7 @@ public class TaskStatusTest {
 
     @Test
     public void shouldReturnValidProtos() {
-        TaskStatus status = new TaskStatus(Protos.TaskID.getDefaultInstance());
+        TaskStatus status = new TaskStatus(Protos.TaskID.newBuilder().setValue("").build());
         assertNotNull(status.starting());
         assertNotNull(status.running());
         assertNotNull(status.finished());
