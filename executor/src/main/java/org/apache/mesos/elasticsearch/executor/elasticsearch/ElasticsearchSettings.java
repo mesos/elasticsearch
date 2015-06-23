@@ -18,8 +18,8 @@ public class ElasticsearchSettings {
     }
 
     // Todo: Make ES settings, settings.
-    Settings build() {
-        Settings settings = ImmutableSettings.settingsBuilder()
+    public ImmutableSettings.Builder defaultSettings() {
+        ImmutableSettings.Builder settings = ImmutableSettings.settingsBuilder()
                 .put("node.local", false)
                 .put("cluster.name", "mesos-elasticsearch")
                 .put("node.master", true)
@@ -31,8 +31,7 @@ public class ElasticsearchSettings {
                 .put("discovery.type", "com.sonian.elasticsearch.zookeeper.discovery.ZooKeeperDiscoveryModule")
                 .put("sonian.elasticsearch.zookeeper.settings.enabled", true)
                 .put("sonian.elasticsearch.zookeeper.client.host", zk.getAddress())
-                .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true)
-                .build();
+                .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true);
         return settings;
     }
 }

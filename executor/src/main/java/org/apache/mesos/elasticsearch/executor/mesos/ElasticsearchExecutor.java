@@ -56,7 +56,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Launch Node
             ElasticsearchSettings settings = new ElasticsearchSettings(ports, zk);
-            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings);
+            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings.defaultSettings());
             final Node node = launcher.launch();
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
