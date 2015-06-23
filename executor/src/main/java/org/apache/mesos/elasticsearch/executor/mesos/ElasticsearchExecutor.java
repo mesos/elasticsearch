@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.executor;
+package org.apache.mesos.elasticsearch.executor.mesos;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
@@ -10,7 +10,7 @@ import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.node.Node;
 
-import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 
 /**
@@ -71,7 +71,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidAlgorithmParameterException e) {
+        } catch (InvalidParameterException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }

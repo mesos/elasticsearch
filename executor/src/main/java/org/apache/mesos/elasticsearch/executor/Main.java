@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.executor;
 
 import org.apache.mesos.MesosExecutorDriver;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.executor.mesos.ElasticsearchExecutor;
 
 /**
  * Application which starts the Elasticsearch executor

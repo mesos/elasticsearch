@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.executor;
+package org.apache.mesos.elasticsearch.executor.mesos;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
@@ -14,7 +14,7 @@ public class TaskStatus {
         this.taskID = taskID;
     }
 
-    public Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
+    private Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
         return Protos.TaskStatus.newBuilder()
                 .setTaskId(taskID)
                 .setState(taskState).build();
