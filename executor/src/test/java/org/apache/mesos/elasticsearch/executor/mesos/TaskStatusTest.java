@@ -9,14 +9,15 @@ import static org.junit.Assert.*;
  * Tests
  */
 public class TaskStatusTest {
+    private TaskStatus status = new TaskStatus();
     @Test(expected = NullPointerException.class)
     public void shouldExceptionIfPassedNull() {
-        new TaskStatus(null);
+        status.setTaskID(null);
     }
 
     @Test
     public void shouldReturnValidProtos() {
-        TaskStatus status = new TaskStatus(Protos.TaskID.newBuilder().setValue("").build());
+        status.setTaskID(Protos.TaskID.newBuilder().setValue("").build());
         assertNotNull(status.starting());
         assertNotNull(status.running());
         assertNotNull(status.finished());

@@ -8,14 +8,7 @@ import org.apache.mesos.Protos;
  */
 public class TaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class.getCanonicalName());
-    private final Protos.TaskID taskID;
-
-    public TaskStatus(Protos.TaskID taskID) {
-        if (taskID == null) {
-            throw new NullPointerException("TaskID cannot be null");
-        }
-        this.taskID = taskID;
-    }
+    private Protos.TaskID taskID;
 
     private Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
         return Protos.TaskStatus.newBuilder()
@@ -46,5 +39,12 @@ public class TaskStatus {
     public Protos.TaskStatus finished() {
         LOGGER.info("TASK_FINISHED");
         return getTaskStatus(Protos.TaskState.TASK_FINISHED);
+    }
+
+    public void setTaskID(Protos.TaskID taskID) {
+        if (taskID == null) {
+            throw new NullPointerException("TaskID cannot be null");
+        }
+        this.taskID = taskID;
     }
 }
