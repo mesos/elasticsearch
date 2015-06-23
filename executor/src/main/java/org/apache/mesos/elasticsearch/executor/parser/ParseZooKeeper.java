@@ -26,7 +26,7 @@ public class ParseZooKeeper implements TaskParser<String> {
         while (itr.hasNext()) {
             String value = itr.next();
             // If it is a argument command
-            if( value.charAt(0) == '-') {
+            if (value.charAt(0) == '-') {
                 lastKey = value;
             } else { // Else it must be an argument parameter
                 argMap.put(lastKey, value);
