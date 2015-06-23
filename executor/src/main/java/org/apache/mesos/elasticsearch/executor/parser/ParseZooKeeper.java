@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.executor.parser;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.ZooKeeper;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
@@ -16,18 +17,25 @@ public class ParseZooKeeper implements TaskParser<String> {
     private static final Logger LOGGER = Logger.getLogger(ParseZooKeeper.class.getCanonicalName());
 
     @Override
-    public String parse(Protos.TaskInfo taskInfo) throws InvalidAlgorithmParameterException {
+    public String parse(Protos.TaskInfo taskInfo) throws InvalidParameterException {
         int nargs = taskInfo.getExecutor().getCommand().getArgumentsCount();
         LOGGER.info("Using arguments [" + nargs + "]: " + taskInfo.getExecutor().getCommand().getArgumentsList().toString());
-        if (nargs > 0 && nargs % 2 == 0) {
-            Map<String, String> argMap = new HashMap<>(1);
-            Iterator<String> itr = taskInfo.getExecutor().getCommand().getArgumentsList().iterator();
-            while (itr.hasNext()) {
-                argMap.put(itr.next(), itr.next());
+        Map<String, String> argMap = new HashMap<>(1);
+        Iterator<String> itr = taskInfo.getExecutor().getCommand().getArgumentsList().iterator();
+        String lastKey = "";
+        while (itr.hasNext()) {
+            String value = itr.next();
+            // If it is a argument command
+            if( value.charAt(0) == '-') {
+                lastKey = value;
+            } else { // Else it must be an argument parameter
+                argMap.put(lastKey, value);
             }
-            return argMap.get("-zk");
-        } else {
-            throw new InvalidParameterException("The task must pass a ZooKeeper address argument using -zk.");
         }
+        String address = argMap.get(ZooKeeper.ZOOKEEPER_ARG);
+        if (address == null) {
+            throw new InvalidParameterException("The task must pass a ZooKeeper address argument using " + ZooKeeper.ZOOKEEPER_ARG + ".");
+        }
+        return address;
     }
 }

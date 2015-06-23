@@ -13,7 +13,7 @@ public class ZooKeeperModel {
     private final TaskParser<String> parser = new ParseZooKeeper();
     private final String address;
 
-    public ZooKeeperModel(Protos.TaskInfo taskInfo) throws InvalidAlgorithmParameterException {
+    public ZooKeeperModel(Protos.TaskInfo taskInfo) {
         address = parser.parse(taskInfo);
     }
 
