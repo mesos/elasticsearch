@@ -20,7 +20,7 @@ public class ElasticsearchLauncherTest {
     }
 
     @Test
-    public void shouldLaunchWithValidSettings() throws InterruptedException {
+    public void shouldLaunchWithDefaultSettings() throws InterruptedException {
         ElasticsearchSettings esSettings = new ElasticsearchSettings();
         ImmutableSettings.Builder settings = esSettings.defaultSettings()
                 // Set local
@@ -35,26 +35,37 @@ public class ElasticsearchLauncherTest {
     }
 
     @Test
+    public void shouldLaunchWithRunTimeSettings() throws InterruptedException {
+        ElasticsearchSettings esSettings = new ElasticsearchSettings();
+        ImmutableSettings.Builder settings = esSettings.defaultSettings()
+                // Set local
+                .put("node.local", true);
+        // Remove zookeeper settings
+        settings.remove("discovery.type");
+        settings.remove("sonian.elasticsearch.zookeeper.settings.enabled");
+        settings.remove("sonian.elasticsearch.zookeeper.client.host");
+        settings.remove("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled");
+        ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
+        elasticsearchLauncher.addRuntimeSettings(getClientPort());
+        elasticsearchLauncher.launch();
+    }
+
+    @Test
     public void shouldBeAbleToAddRunTimeSettings() {
         // Given settings
         ImmutableSettings.Builder settings = mock(ImmutableSettings.Builder.class);
         Launcher launcher = new ElasticsearchLauncher(settings);
 
         // When add runtime
-        ImmutableSettings.Builder runtimeSettings = mock(ImmutableSettings.Builder.class);
+        ImmutableSettings.Builder runtimeSettings = spy(getClientPort());
         launcher.addRuntimeSettings(runtimeSettings);
 
         // Ensure settings are updated
-        verify(settings, times(1)).put(runtimeSettings);
+        verify(settings, times(1)).put(runtimeSettings.build());
     }
 
     private ImmutableSettings.Builder getClientPort() {
         return ImmutableSettings.settingsBuilder().put(PortsModel.HTTP_PORT_KEY, "1234");
 
     }
-
-    private ImmutableSettings.Builder getTransportPort() {
-        return ImmutableSettings.settingsBuilder().put(PortsModel.TRANSPORT_PORT_KEY, "12345");
-    }
-
 }

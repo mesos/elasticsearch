@@ -25,7 +25,7 @@ public class ElasticsearchLauncher implements Launcher {
     @Override
     public void addRuntimeSettings(ImmutableSettings.Builder settingsToAdd) {
         if (settingsToAdd != null) {
-            this.settings.put(settingsToAdd);
+            this.settings.put(settingsToAdd.build());
         }
     }
 }
