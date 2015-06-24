@@ -7,9 +7,6 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 
 import java.lang.ref.WeakReference;
 
@@ -38,19 +35,22 @@ public class Main {
     }
 
     public void run(String[] args) {
-        parseCommandlineOptions(args);
+        configuration = parseCommandlineOptions(args);
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
+        WebApplication.configuration = new WeakReference<>(configuration);
         WebApplication.elasticsearchScheduler = new WeakReference<>(scheduler);
-        SpringApplication.run(WebApplication.class, args);
+
+        final SpringApplication springApplication = new SpringApplication(WebApplication.class);
+        springApplication.setShowBanner(false);
+        springApplication.run(args);
 
         scheduler.run();
     }
 
-    private void parseCommandlineOptions(String[] args) {
-        configuration = new Configuration();
-        WebApplication.configuration = new WeakReference<>(configuration);
+    private Configuration parseCommandlineOptions(String[] args) {
+        Configuration configuration = new Configuration();
 
         try {
             CommandLineParser parser = new BasicParser();
