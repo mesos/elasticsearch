@@ -17,22 +17,33 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
+    public static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 
+    /**
+     * The fraction of offered resources that will be consumed
+     */
+    public static final double RESOURCE_CONSUMPTION_FRACTION = 0.5;
+
     Clock clock = new Clock();
 
-    @SuppressWarnings("PMD.ExcessiveMethodLength")
-    public Protos.TaskInfo createTask(Protos.Offer offer, Protos.FrameworkID frameworkId, org.apache.mesos.elasticsearch.scheduler.Configuration configuration) {
+    /**
+     * Creates TaskInfo for Elasticsearch execcutor running in a Docker container
+     *
+     * @param configuration configuation of the framework
+     * @param offer with resources to run the executor with
+     *
+     * @return TaskInfo
+     */
+    public Protos.TaskInfo createTask(Configuration configuration, Protos.Offer offer) {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = new ArrayList<>();
 
         addAllScalarResources(offer.getResourcesList(), acceptedResources);
 
-        LOGGER.info("Elasticsearch client port " + ports.get(0));
-        LOGGER.info("Elasticsearch transport port " + ports.get(1));
+        LOGGER.info("Creating Elasticsearch task [client port: " + ports.get(0) + ", transport port: " + ports.get(1) + "]");
 
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
@@ -43,41 +54,43 @@ public class TaskInfoFactory {
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
-        Protos.TaskInfo.Builder taskInfoBuilder = Protos.TaskInfo.newBuilder()
+        return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
-                .setDiscovery(discovery);
+                .setDiscovery(discovery)
+                .setExecutor(newExecutorInfo(configuration, acceptedResources)).build();
+    }
 
-        Protos.Volume volume = Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(org.apache.mesos.Protos.Volume.Mode.RO).build();
-
-        Protos.ContainerInfo.DockerInfo dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build();
-
-        Protos.ContainerInfo containerInfo = Protos.ContainerInfo.newBuilder()
-                .setDocker(dockerInfo)
-                .setType(org.apache.mesos.Protos.ContainerInfo.Type.DOCKER)
-                .addVolumes(volume)
-                .build();
-
-        Protos.CommandInfo commandInfo = Protos.CommandInfo.newBuilder()
-                .setValue("java -Djava.library.path=/usr/lib -jar /tmp/elasticsearch-mesos-executor.jar")
-                .addAllArguments(asList("-zk", configuration.getZookeeperHost())).build();
-
-        Protos.ExecutorInfo.Builder executorInfo = Protos.ExecutorInfo.newBuilder()
-                .setContainer(containerInfo)
-                .setCommand(commandInfo)
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, List<Protos.Resource> resources) {
+        return Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(configuration.getFrameworkId())
-                .setName(UUID.randomUUID().toString());
+                .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
+                .addAllResources(resources)
+                .setCommand(newCommandInfo(configuration))
+                .setContainer(Protos.ContainerInfo.newBuilder()
+                        .setType(Protos.ContainerInfo.Type.DOCKER)
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
+                        .addVolumes(Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(Protos.Volume.Mode.RO).build())
+                        .build());
+    }
 
-        taskInfoBuilder.setExecutor(executorInfo);
-
-        return taskInfoBuilder.build();
+    private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
+        return Protos.CommandInfo.newBuilder()
+                .setShell(false)
+                .addAllArguments(asList("-zk", configuration.getZookeeperHost()))
+                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
     }
 
     private void addAllScalarResources(List<Protos.Resource> offeredResources, List<Protos.Resource> acceptedResources) {
-        acceptedResources.addAll(offeredResources.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.SCALAR)).collect(Collectors.toList()));
+        acceptedResources.addAll(offeredResources.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.SCALAR))
+                .map(resource -> resource = Protos.Resource.newBuilder()
+                        .setType(Protos.Value.Type.SCALAR)
+                        .setName(resource.getName())
+                        .setScalar(Protos.Value.Scalar.newBuilder().setValue(resource.getScalar().getValue() * RESOURCE_CONSUMPTION_FRACTION)).build())
+                .collect(Collectors.toList()));
     }
 
     private String taskId(Protos.Offer offer) {
