@@ -26,7 +26,7 @@ public class TaskInfoFactoryTest {
         TaskInfoFactory factory = new TaskInfoFactory();
         factory.clock = clock;
 
-        Date now = new DateTime().withDayOfMonth(1).withDayOfYear(1).withYear(1970).withHourOfDay(1).withMinuteOfHour(2).withSecondOfMinute(3).withMillis(400).toDate();
+        Date now = new DateTime().withDayOfMonth(1).withDayOfYear(1).withYear(1970).withHourOfDay(1).withMinuteOfHour(2).withSecondOfMinute(3).withMillisOfSecond(400).toDate();
         when(clock.now()).thenReturn(now);
 
         Protos.FrameworkID frameworkId = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
