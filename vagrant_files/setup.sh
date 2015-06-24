@@ -1,8 +1,10 @@
 #!/bin/bash -e
 
-# Docker setup
+echo "Running system updates"
+sudo yum clean all
+sudo yum -y --skip-broken update
+
 echo "Installing docker"
-yum -y update
 curl -O -sSL https://get.docker.com/rpm/1.7.0/centos-7/RPMS/x86_64/docker-engine-1.7.0-1.el7.centos.x86_64.rpm
 yum -y localinstall --nogpgcheck docker-engine-1.7.0-1.el7.centos.x86_64.rpm
 
