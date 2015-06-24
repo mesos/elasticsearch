@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.net.InetSocketAddress;
 import java.time.ZonedDateTime;
 import java.util.*;
 
@@ -58,6 +59,8 @@ public class ElasticsearchSchedulerTest {
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
     private ZonedDateTime now = ZonedDateTime.now();
+    private InetSocketAddress clientAddress = new InetSocketAddress("127.0.0.1", 9200);
+    private InetSocketAddress transportAddress = new InetSocketAddress("127.0.0.1", 9300);
 
 
     @Before
@@ -92,7 +95,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_isSlaveAlreadyRunningTask() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now)});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host1");
 
@@ -103,7 +106,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_enoughNodes() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now), new Task("host3", "3", now)});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress), new Task("host3", "3", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host4");
 
@@ -114,7 +117,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_noPorts() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now)});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host3");
 
@@ -126,7 +129,7 @@ public class ElasticsearchSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResourceOffers_singlePort() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1", now)});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));

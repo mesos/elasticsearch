@@ -6,7 +6,9 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Discovery;
 
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -92,7 +94,12 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, configuration.getFrameworkId(), configuration);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue(), clock.zonedNow()));
+                tasks.add(new Task(
+                        offer.getHostname(),
+                        taskInfo.getTaskId().getValue(),
+                        clock.zonedNow(),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())));
             }
         }
     }

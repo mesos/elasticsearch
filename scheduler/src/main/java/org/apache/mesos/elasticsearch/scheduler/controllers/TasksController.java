@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.net.InetSocketAddress;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -37,11 +38,16 @@ public class TasksController {
                 configuration.getTaskName(),
                 "UNKOWN: version",
                 task.getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                "UNKOWN: http address",
-                "UNKOWN: transport address",
+                toFormattedAddress(task.getClientAddress()),
+                toFormattedAddress(task.getTransportAddress()),
                 task.getHostname()
         );
     }
+
+    private String toFormattedAddress(InetSocketAddress clientAddress) {
+        return String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort());
+    }
+
     public static class GetTasksResponse {
         public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
 

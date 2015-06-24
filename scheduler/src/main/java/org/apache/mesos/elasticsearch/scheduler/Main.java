@@ -61,15 +61,18 @@ public class Main {
 
             if (numberOfHwNodesString == null || zkHost == null) {
                 printUsage();
-                return;
+                //TODO: Should stop application after printing usage
+                return configuration;
             }
 
             configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
             configuration.setZookeeperHost(zkHost);
             configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
+
         } catch (ParseException | IllegalArgumentException e) {
             printUsage();
         }
+        return configuration;
     }
 
     private void printUsage() {
