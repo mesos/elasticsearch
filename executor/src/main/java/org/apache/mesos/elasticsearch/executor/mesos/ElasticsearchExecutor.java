@@ -1,25 +1,30 @@
-package org.apache.mesos.elasticsearch.executor;
+package org.apache.mesos.elasticsearch.executor.mesos;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchLauncher;
-import org.apache.mesos.elasticsearch.executor.elasticsearch.ElasticsearchSettings;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
+import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.node.Node;
 
-import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.util.Arrays;
 
 /**
  * Executor for Elasticsearch.
  */
 public class ElasticsearchExecutor implements Executor {
-
+    private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
-    private TaskStatus taskStatus;
+    private final TaskStatus taskStatus;
+
+    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
+        this.launcher = launcher;
+        this.taskStatus = taskStatus;
+    }
 
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
@@ -38,25 +43,25 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void launchTask(final ExecutorDriver driver, final Protos.TaskInfo task) {
-        Protos.TaskID taskID = task.getTaskId();
-        taskStatus = new TaskStatus(taskID);
-
         LOGGER.info("Starting executor with a TaskInfo of:");
         LOGGER.info(task.toString());
+
+        Protos.TaskID taskID = task.getTaskId();
+        taskStatus.setTaskID(taskID);
 
         // Send status update, starting
         driver.sendStatusUpdate(taskStatus.starting());
 
         try {
             // Parse ports
-            PortsModel ports = new PortsModel(task);
+            RunTimeSettings ports = new PortsModel(task);
+            launcher.addRuntimeSettings(ports.getRuntimeSettings());
 
             // Parse ZooKeeper address
-            ZooKeeperModel zk = new ZooKeeperModel(task);
+            RunTimeSettings zk = new ZooKeeperModel(task);
+            launcher.addRuntimeSettings(zk.getRuntimeSettings());
 
             // Launch Node
-            ElasticsearchSettings settings = new ElasticsearchSettings(ports, zk);
-            ElasticsearchLauncher launcher = new ElasticsearchLauncher(settings);
             final Node node = launcher.launch();
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -71,7 +76,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidAlgorithmParameterException e) {
+        } catch (InvalidParameterException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }

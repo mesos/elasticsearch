@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.executor.parser;
 import org.apache.mesos.Protos;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.util.List;
 
 /**
@@ -10,11 +11,11 @@ import java.util.List;
  */
 public class ParsePorts implements TaskParser<List<Protos.Port>> {
     @Override
-    public List<Protos.Port> parse(Protos.TaskInfo taskInfo) throws InvalidAlgorithmParameterException {
+    public List<Protos.Port> parse(Protos.TaskInfo taskInfo) {
         if (taskInfo.hasDiscovery()) {
             return taskInfo.getDiscovery().getPorts().getPortsList();
         } else {
-            throw new InvalidAlgorithmParameterException("The task must pass a DiscoveryInfoPacket");
+            throw new InvalidParameterException("The task must pass a DiscoveryInfoPacket");
         }
     }
 }

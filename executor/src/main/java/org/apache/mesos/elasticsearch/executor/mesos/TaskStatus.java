@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.executor;
+package org.apache.mesos.elasticsearch.executor.mesos;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
@@ -8,13 +8,9 @@ import org.apache.mesos.Protos;
  */
 public class TaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class.getCanonicalName());
-    private final Protos.TaskID taskID;
+    private Protos.TaskID taskID;
 
-    public TaskStatus(Protos.TaskID taskID) {
-        this.taskID = taskID;
-    }
-
-    public Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
+    private Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
         return Protos.TaskStatus.newBuilder()
                 .setTaskId(taskID)
                 .setState(taskState).build();
@@ -43,5 +39,12 @@ public class TaskStatus {
     public Protos.TaskStatus finished() {
         LOGGER.info("TASK_FINISHED");
         return getTaskStatus(Protos.TaskState.TASK_FINISHED);
+    }
+
+    public void setTaskID(Protos.TaskID taskID) {
+        if (taskID == null) {
+            throw new NullPointerException("TaskID cannot be null");
+        }
+        this.taskID = taskID;
     }
 }

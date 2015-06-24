@@ -9,5 +9,5 @@ public interface Discovery {
     int TRANSPORT_PORT_INDEX = 1;
     String CLIENT_PORT_NAME = "CLIENT_PORT";
     String TRANSPORT_PORT_NAME = "TRANSPORT_PORT";
-
+    int EXPECTED_NUMBER_OF_PORTS = 2;
 }
