@@ -1,13 +1,13 @@
 package org.apache.mesos.elasticsearch.scheduler.controllers;
 
+import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static java.util.stream.Collectors.toList;
@@ -22,11 +22,26 @@ public class TasksController {
     @Autowired
     ElasticsearchScheduler scheduler;
 
+    @Autowired
+    Configuration configuration;
+
     @RequestMapping
     public List<GetTasksResponse> getTasks() {
-        return scheduler.getTasks().stream().map(GetTasksResponse::from).collect(toList());
+        return scheduler.getTasks().stream().map(this::from).collect(toList());
+
     }
 
+    private GetTasksResponse from(Task task) {
+        return new GetTasksResponse(
+                task.getTaskId(),
+                configuration.getTaskName(),
+                "UNKOWN: version",
+                task.getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+                "UNKOWN: http address",
+                "UNKOWN: transport address",
+                task.getHostname()
+        );
+    }
     public static class GetTasksResponse {
         public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
 
@@ -38,18 +53,6 @@ public class TasksController {
             this.httpAddress = httpAddress;
             this.transportAddress = transportAddress;
             this.hostname = hostname;
-        }
-
-        public static GetTasksResponse from(Task task) {
-            return new GetTasksResponse(
-                    task.getTaskId(),
-                    "UNKOWN: name",
-                    "UNKOWN: version",
-                    "UNKOWN: started at",
-                    "UNKOWN: http address",
-                    "UNKOWN: transport address",
-                    task.getHostname()
-            );
         }
     }
 }

@@ -8,6 +8,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static java.util.Collections.*;
@@ -56,6 +57,8 @@ public class ElasticsearchSchedulerTest {
     private TaskInfoFactory taskInfoFactory;
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
+    private ZonedDateTime now = ZonedDateTime.now();
+
 
     @Before
     public void before() {
@@ -89,7 +92,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_isSlaveAlreadyRunningTask() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now)});
 
         Protos.Offer.Builder offer = newOffer("host1");
 
@@ -100,7 +103,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_enoughNodes() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2"), new Task("host3", "3")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now), new Task("host3", "3", now)});
 
         Protos.Offer.Builder offer = newOffer("host4");
 
@@ -111,7 +114,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_noPorts() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now), new Task("host2", "2", now)});
 
         Protos.Offer.Builder offer = newOffer("host3");
 
@@ -123,7 +126,7 @@ public class ElasticsearchSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResourceOffers_singlePort() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1", now)});
 
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));
