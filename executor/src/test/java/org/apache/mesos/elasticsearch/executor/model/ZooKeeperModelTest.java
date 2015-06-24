@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZooKeeperModelTest {
     @Test(expected = NullPointerException.class)
     public void shouldExceptionIfPassedNull() {
