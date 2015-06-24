@@ -7,6 +7,9 @@ import java.security.InvalidParameterException;
 
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Tests parsing of Zookeeper addresses
+ */
 public class ZooKeeperAddressTest {
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptionIfInvalidZKAddress() {
