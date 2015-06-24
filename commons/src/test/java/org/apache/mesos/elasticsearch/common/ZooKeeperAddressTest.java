@@ -10,6 +10,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests parsing of Zookeeper addresses
  */
+@SuppressWarnings({"PMD.TooManyMethods", "AvoidUsingHardCodedIP"})
 public class ZooKeeperAddressTest {
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptionIfInvalidZKAddress() {
