@@ -53,7 +53,7 @@ public class TaskInfoFactoryTest {
 
         assertEquals(configuration.getTaskName(), taskInfo.getName());
         assertEquals(offer.getSlaveId(), taskInfo.getSlaveId());
-        assertEquals("elasticsearch_host1_19700101T01203.400Z", taskInfo.getTaskId().getValue());
+        assertEquals("elasticsearch_host1_19700101T010203.400Z", taskInfo.getTaskId().getValue());
 
         assertEquals("cpus", taskInfo.getResources(0).getName());
         assertEquals(0.5d, taskInfo.getResources(0).getScalar().getValue(), EPSILON);
