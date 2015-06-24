@@ -28,6 +28,14 @@ public class TaskInfoFactory {
 
     Clock clock = new Clock();
 
+    /**
+     * Creates TaskInfo for Elasticsearch execcutor running in a Docker container
+     *
+     * @param configuration configuation of the framework
+     * @param offer with resources to run the executor with
+     *
+     * @return TaskInfo
+     */
     public Protos.TaskInfo createTask(Configuration configuration, Protos.Offer offer) {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
