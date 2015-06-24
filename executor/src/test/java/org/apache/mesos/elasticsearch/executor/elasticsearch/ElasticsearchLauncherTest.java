@@ -1,9 +1,12 @@
 package org.apache.mesos.elasticsearch.executor.elasticsearch;
 
+import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import static org.mockito.Mockito.*;
 
 
 /**
@@ -30,4 +33,28 @@ public class ElasticsearchLauncherTest {
         ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
         elasticsearchLauncher.launch();
     }
+
+    @Test
+    public void shouldBeAbleToAddRunTimeSettings() {
+        // Given settings
+        ImmutableSettings.Builder settings = mock(ImmutableSettings.Builder.class);
+        Launcher launcher = new ElasticsearchLauncher(settings);
+
+        // When add runtime
+        ImmutableSettings.Builder runtimeSettings = mock(ImmutableSettings.Builder.class);
+        launcher.addRuntimeSettings(runtimeSettings);
+
+        // Ensure settings are updated
+        verify(settings, times(1)).put(runtimeSettings);
+    }
+
+    private ImmutableSettings.Builder getClientPort() {
+        return ImmutableSettings.settingsBuilder().put(PortsModel.HTTP_PORT_KEY, "1234");
+
+    }
+
+    private ImmutableSettings.Builder getTransportPort() {
+        return ImmutableSettings.settingsBuilder().put(PortsModel.TRANSPORT_PORT_KEY, "12345");
+    }
+
 }
