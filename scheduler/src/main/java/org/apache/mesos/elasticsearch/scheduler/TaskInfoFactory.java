@@ -59,7 +59,7 @@ public class TaskInfoFactory {
         return Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(configuration.getFrameworkId())
-                .setName(UUID.randomUUID().toString())
+                .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
                 .addAllResources(resources)
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
