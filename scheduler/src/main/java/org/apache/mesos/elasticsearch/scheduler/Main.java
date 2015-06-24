@@ -16,10 +16,7 @@ import java.lang.ref.WeakReference;
 /**
  * Application which starts the Elasticsearch scheduler
  */
-@EnableAutoConfiguration
-@ComponentScan
 public class Main {
-    private static WeakReference<ElasticsearchScheduler> elasticsearchScheduler;
 
     public static final String NUMBER_OF_HARDWARE_NODES = "n";
 
@@ -28,11 +25,6 @@ public class Main {
     private Options options;
 
     private Configuration configuration;
-
-    @Bean
-    public ElasticsearchScheduler getElasticsearchScheduler() {
-        return elasticsearchScheduler.get();
-    }
 
     public Main() {
         this.options = new Options();
@@ -50,14 +42,15 @@ public class Main {
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
-        elasticsearchScheduler = new WeakReference<>(scheduler);
-        SpringApplication.run(Main.class, args);
+        WebApplication.elasticsearchScheduler = new WeakReference<>(scheduler);
+        SpringApplication.run(WebApplication.class, args);
 
         scheduler.run();
     }
 
     private void parseCommandlineOptions(String[] args) {
         configuration = new Configuration();
+        WebApplication.configuration = new WeakReference<>(configuration);
 
         try {
             CommandLineParser parser = new BasicParser();

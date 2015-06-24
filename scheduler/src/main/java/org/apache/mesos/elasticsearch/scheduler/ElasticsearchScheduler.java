@@ -22,6 +22,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
+    Clock clock = new Clock();
+
     Set<Task> tasks = new HashSet<>();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
@@ -90,7 +92,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, configuration.getFrameworkId(), configuration);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue()));
+                tasks.add(new Task(offer.getHostname(), taskInfo.getTaskId().getValue(), clock.zonedNow()));
             }
         }
     }
