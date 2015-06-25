@@ -21,5 +21,11 @@
     <Match>
         <Bug code="SnVI"/>
     </Match>
+    <Match>
+        <!-- Ignore all unread public fields on responses classes in the controllers-->
+        <Bug code="UrF, UuF"/>
+        <Class name="~org\.apache\.mesos\.elasticsearch\.scheduler\.controllers\.[A-Za-z0-9]+Controller\$[A-Za-z0-9]+Response"/>
+        <!--<Class name="org.apache.mesos.elasticsearch.scheduler.controllers.ClusterController"/>-->
+    </Match>
 
 </FindBugsFilter>

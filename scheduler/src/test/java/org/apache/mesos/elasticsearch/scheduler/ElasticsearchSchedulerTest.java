@@ -60,8 +60,8 @@ public class ElasticsearchSchedulerTest {
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
     private ZonedDateTime now = ZonedDateTime.now();
-    private InetSocketAddress clientAddress = new InetSocketAddress("127.0.0.1", 9200);
-    private InetSocketAddress transportAddress = new InetSocketAddress("127.0.0.1", 9300);
+    private InetSocketAddress transportAddress = new InetSocketAddress("localhost", 9300);
+    private InetSocketAddress clientAddress = new InetSocketAddress("localhost", 9200);
 
 
     @Before

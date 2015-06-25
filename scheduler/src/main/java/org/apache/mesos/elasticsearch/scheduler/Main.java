@@ -39,10 +39,7 @@ public class Main {
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
-        WebApplication.configuration = new WeakReference<>(configuration);
-        WebApplication.elasticsearchScheduler = new WeakReference<>(scheduler);
-
-        final SpringApplication springApplication = new SpringApplication(WebApplication.class);
+        final SpringApplication springApplication = new SpringApplication(new WebApplication(scheduler, configuration));
         springApplication.setShowBanner(false);
         springApplication.run(args);
 

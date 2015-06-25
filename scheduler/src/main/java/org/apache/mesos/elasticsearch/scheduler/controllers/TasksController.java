@@ -48,6 +48,9 @@ public class TasksController {
         return String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort());
     }
 
+    /**
+     *
+     */
     public static class GetTasksResponse {
         public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
 

@@ -4,22 +4,28 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 
-import java.lang.ref.WeakReference;
-
+/**
+ *
+ */
 @EnableAutoConfiguration
 @ComponentScan
 public class WebApplication {
-    static WeakReference<ElasticsearchScheduler> elasticsearchScheduler;
-    static WeakReference<Configuration> configuration;
+    private final ElasticsearchScheduler elasticsearchScheduler;
+    private final Configuration configuration;
+
+    public WebApplication(ElasticsearchScheduler elasticsearchScheduler, Configuration configuration) {
+        this.elasticsearchScheduler = elasticsearchScheduler;
+        this.configuration = configuration;
+    }
 
     @Bean
     public ElasticsearchScheduler getElasticsearchScheduler() {
-        return elasticsearchScheduler.get();
+        return elasticsearchScheduler;
     }
 
     @Bean
     public Configuration getConfiguration() {
-        return configuration.get();
+        return configuration;
     }
 
 
