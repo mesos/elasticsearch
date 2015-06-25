@@ -32,7 +32,8 @@ slave1:
     service: slave
   hostname: slave1
   volumes:
-    - /var/log/mesos:/var/log/mesos/slave1
+    - /tmp/slave1:/tmp/mesos/slaves
+    - /var/log/slave1:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -44,7 +45,8 @@ slave2:
     service: slave
   hostname: slave2
   volumes:
-    - /var/log/mesos:/var/log/mesos/slave2
+    - /tmp/slave2:/tmp/mesos/slaves
+    - /var/log/slave2:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -56,7 +58,8 @@ slave3:
     service: slave
   hostname: slave3
   volumes:
-    - /var/log/mesos:/var/log/mesos/slave3
+     - /tmp/slave3:/tmp/mesos/slaves
+     - /var/log/slave3:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:

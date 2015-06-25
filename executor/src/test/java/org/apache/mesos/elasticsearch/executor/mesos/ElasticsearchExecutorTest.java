@@ -102,7 +102,7 @@ public class ElasticsearchExecutorTest {
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo() {
         return Protos.ExecutorInfo.newBuilder()
-                .setCommand(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("ZK_ADDRESS"))
+                .setCommand(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("zk://master:2181/mesos"))
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue("0"));
     }
 }

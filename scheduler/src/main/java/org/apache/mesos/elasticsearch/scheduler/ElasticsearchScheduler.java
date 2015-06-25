@@ -92,7 +92,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 driver.declineOffer(offer.getId());
             } else {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
-                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(offer, configuration.getFrameworkId(), configuration);
+                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 tasks.add(new Task(
                         offer.getHostname(),

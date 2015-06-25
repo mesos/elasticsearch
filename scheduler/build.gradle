@@ -42,7 +42,12 @@ jar {
     baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
     from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] } // Include executor
-    manifest { attributes 'Main-Class': mainClassName }
+    manifest {
+        attributes(
+            'Main-Class'                : mainClassName,
+            'Implementation-Version'    : project.version
+        )
+    }
 }
 
 test {

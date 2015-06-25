@@ -5,8 +5,6 @@ import org.apache.mesos.elasticsearch.executor.parser.ParseZooKeeper;
 import org.apache.mesos.elasticsearch.executor.parser.TaskParser;
 import org.elasticsearch.common.settings.ImmutableSettings;
 
-import java.util.List;
-
 /**
  * Model representing ZooKeeper information
  */

@@ -19,6 +19,8 @@ public class Configuration {
 
     private State state;
 
+    private String version;
+
     public void setState(State state) {
         this.state = state;
     }
@@ -64,5 +66,13 @@ public class Configuration {
 
     public String getTaskName() {
         return "esdemo";
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public String getVersion() {
+        return version;
     }
 }

@@ -65,6 +65,7 @@ public class Main {
                 return configuration;
             }
 
+            configuration.setVersion(getClass().getPackage().getImplementationVersion());
             configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
             configuration.setZookeeperHost(zkHost);
             configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
