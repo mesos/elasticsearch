@@ -46,6 +46,22 @@ Alteratively:
 * Use [Vagrant](#building-with-vagrant)
 * Use [Docker](#building-with-docker)
 
+# How to build scheduler and executor Docker containers
+
+The docker containers for the scheduler and executor are not built by default:
+
+```
+$ ./gradlew build docker
+```
+
+Build only the scheduler or executor Docker container:
+
+
+```
+$ ./gradlew :scheduler:docker
+$ ./gradlew :executor:docker
+```
+
 ## How to launch with Docker Compose
 
 Build the project as described above

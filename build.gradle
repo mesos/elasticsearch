@@ -9,9 +9,12 @@ idea {
     }
 }
 
+
 subprojects {
 
+    apply plugin: 'sonar-runner'
     apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
 
@@ -45,5 +48,20 @@ subprojects {
         testCompile 'commons-collections:commons-collections:3.2.1'
         testCompile "org.mockito:mockito-all:1.9.5"
 
+    }
+
+    sonarRunner {
+        sonarProperties {
+            property "sonar.sourceEncoding", "UTF-8"
+            property "sonar.dynamicAnalysis", "reuseReports"
+            property "sonar.jacoco.reportPath", "${buildDir}/jacoco/test.exec" 
+        }
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+            csv.enabled false
+        }
     }
 }
