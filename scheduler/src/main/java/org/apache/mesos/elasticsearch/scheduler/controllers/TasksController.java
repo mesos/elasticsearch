@@ -36,7 +36,7 @@ public class TasksController {
         return new GetTasksResponse(
                 task.getTaskId(),
                 configuration.getTaskName(),
-                "UNKOWN: version",
+                configuration.getVersion(),
                 task.getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
                 toFormattedAddress(task.getClientAddress()),
                 toFormattedAddress(task.getTransportAddress()),
