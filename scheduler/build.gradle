@@ -59,7 +59,7 @@ task copyJar(type: Copy) {
     }
 }
 
-task buildDockerImage(type: DockerBuildImage) {
+task docker(type: DockerBuildImage) {
     dependsOn   copyJar
     if (System.env.DOCKER_HOST) {
         url = "$System.env.DOCKER_HOST".replace("tcp","https")
