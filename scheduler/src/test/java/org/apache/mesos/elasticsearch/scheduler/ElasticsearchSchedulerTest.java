@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -151,6 +152,14 @@ public class ElasticsearchSchedulerTest {
                                         .setName(configuration.getTaskName())
                                         .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
                                         .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
+                                        .setDiscovery(
+                                                Protos.DiscoveryInfo.newBuilder()
+                                                        .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
+                                                        .setPorts(Protos.Ports.newBuilder()
+                                                                .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
+                                                                .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
+                                                        )
+                                        )
                                         .build();
 
         when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
