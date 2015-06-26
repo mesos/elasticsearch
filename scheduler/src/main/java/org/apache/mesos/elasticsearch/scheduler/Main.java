@@ -50,11 +50,6 @@ public class Main {
             applicationContext.getBeanFactory().registerSingleton("configuration", configuration);
         }).showBanner(false).run(args);
 
-//        final SpringApplication springApplication = new SpringApplication(WebApplication.class);
-//        springApplication.setShowBanner(false);
-//        springApplication.setDefaultProperties(Collections.singletonMap("server.port", configuration.getManagementApiPort()));
-//        springApplication.run(new WebApplication(scheduler, configuration), args);
-
         scheduler.run();
     }
 
