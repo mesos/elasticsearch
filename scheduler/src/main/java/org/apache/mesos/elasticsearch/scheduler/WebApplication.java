@@ -10,23 +10,6 @@ import org.springframework.context.annotation.ComponentScan;
 @EnableAutoConfiguration
 @ComponentScan
 public class WebApplication {
-    private final ElasticsearchScheduler elasticsearchScheduler;
-    private final Configuration configuration;
-
-    public WebApplication(ElasticsearchScheduler elasticsearchScheduler, Configuration configuration) {
-        this.elasticsearchScheduler = elasticsearchScheduler;
-        this.configuration = configuration;
-    }
-
-    @Bean
-    public ElasticsearchScheduler getElasticsearchScheduler() {
-        return elasticsearchScheduler;
-    }
-
-    @Bean
-    public Configuration getConfiguration() {
-        return configuration;
-    }
 
 
 }

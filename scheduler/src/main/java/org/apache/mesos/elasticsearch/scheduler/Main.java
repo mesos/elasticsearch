@@ -7,6 +7,7 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.springframework.boot.SpringApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.Collections;
 
@@ -44,10 +45,15 @@ public class Main {
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
-        final SpringApplication springApplication = new SpringApplication(new WebApplication(scheduler, configuration));
-        springApplication.setShowBanner(false);
-        springApplication.setDefaultProperties(Collections.singletonMap("server.port", configuration.getManagementApiPort()));
-        springApplication.run(args);
+        new SpringApplicationBuilder(WebApplication.class).initializers(applicationContext -> {
+            applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler);
+            applicationContext.getBeanFactory().registerSingleton("configuration", configuration);
+        }).showBanner(false).run(args);
+
+//        final SpringApplication springApplication = new SpringApplication(WebApplication.class);
+//        springApplication.setShowBanner(false);
+//        springApplication.setDefaultProperties(Collections.singletonMap("server.port", configuration.getManagementApiPort()));
+//        springApplication.run(new WebApplication(scheduler, configuration), args);
 
         scheduler.run();
     }
