@@ -20,6 +20,7 @@ public class Configuration {
     private State state;
 
     private String version;
+    private int managementApiPort;
 
     public void setState(State state) {
         this.state = state;
@@ -74,5 +75,13 @@ public class Configuration {
 
     public String getVersion() {
         return version;
+    }
+
+    public void setManagementApiPort(int managementApiPort) {
+        this.managementApiPort = managementApiPort;
+    }
+
+    public int getManagementApiPort() {
+        return managementApiPort;
     }
 }

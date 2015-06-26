@@ -8,7 +8,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.springframework.boot.SpringApplication;
 
-import java.lang.ref.WeakReference;
+import java.util.Collections;
+
+import static org.apache.commons.lang.NumberUtils.stringToInt;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -19,6 +21,8 @@ public class Main {
 
     public static final String ZK_HOST = "zk";
 
+    public static final String MANAGEMENT_API_PORT = "m";
+
     private Options options;
 
     private Configuration configuration;
@@ -27,6 +31,7 @@ public class Main {
         this.options = new Options();
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
         this.options.addOption(ZK_HOST, "ZookeeperNode", true, "Zookeeper IP address and port");
+        this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
     }
 
     public static void main(String[] args) {
@@ -41,6 +46,7 @@ public class Main {
 
         final SpringApplication springApplication = new SpringApplication(new WebApplication(scheduler, configuration));
         springApplication.setShowBanner(false);
+        springApplication.setDefaultProperties(Collections.singletonMap("server.port", configuration.getManagementApiPort()));
         springApplication.run(args);
 
         scheduler.run();
@@ -66,6 +72,7 @@ public class Main {
             configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
             configuration.setZookeeperHost(zkHost);
             configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
+            configuration.setManagementApiPort(stringToInt(cmd.getOptionValue(MANAGEMENT_API_PORT), 8080));
 
         } catch (ParseException | IllegalArgumentException e) {
             printUsage();
