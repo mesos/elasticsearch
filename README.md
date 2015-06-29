@@ -62,6 +62,16 @@ $ ./gradlew :scheduler:docker
 $ ./gradlew :executor:docker
 ```
 
+## Launching a docker machine VM
+
+If you want to run docker-compose in a virtual machine (for example you are on a mac, where the native mesos libraries don't work), then you can use docker machine.
+* Install docker-machine: https://docs.docker.com/machine/#installation
+* Create a virtual machine: ```$ docker-machine create --driver virtualbox dev```
+* Export the environment variables so you can communicate with the docker daemon: ```$ eval "$(docker-machine env dev)"```
+* Now run docker-compose as described below.
+
+Docker-compose will connect to the VM docker daemon that was exported above.
+
 ## How to launch with Docker Compose
 
 Build the project as described above
