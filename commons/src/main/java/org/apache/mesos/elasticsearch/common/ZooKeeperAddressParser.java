@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.common;
 
-import java.security.InvalidParameterException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -9,18 +10,33 @@ import java.util.regex.Pattern;
  */
 public class ZooKeeperAddressParser {
     private static final String userAndPass = "[^/@]+";
-    private static final String hostAndPort = "[A-z0-9-.]+(?::\\d+)?";
+    private static final String hostAndPort = "([A-z0-9-.]+)(?::)([0-9]+)";
     private static final String zkNode = "[^/]+";
-    private static final String REGEX = "^zk://((?:" + userAndPass + "@)?(?:" + hostAndPort + "(?:," + hostAndPort + ")*))(/" + zkNode + "(?:/" + zkNode + ")*)*$";
-    private static final String validZkUrl = "zk://host1:port1,host2:port2,.../path";
-    private static final Pattern zkURLPattern = Pattern.compile(REGEX);
+    public static final String ADDRESS_REGEX = "^(" + userAndPass + "@)?" + hostAndPort + "(/" + zkNode + ")?$";
+    private static final String ZK_PREFIX = "zk://";
+    private static final String ZK_PREFIX_REGEX = "^" + ZK_PREFIX + ".*";
 
-    public static Matcher validateZkUrl(final String zkUrl) {
-        final Matcher matcher = zkURLPattern.matcher(zkUrl);
+    public static List<ZooKeeperAddress> validateZkUrl(final String zkUrl) {
+        final List<ZooKeeperAddress> zkList = new ArrayList<>();
 
+        // Ensure that string is prefixed with "zk://"
+        Matcher matcher = Pattern.compile(ZK_PREFIX_REGEX).matcher(zkUrl);
         if (!matcher.matches()) {
-            throw new InvalidParameterException(String.format("Invalid zk url format: '%s' expected '%s'", zkUrl, validZkUrl));
+            throw new ZooKeeperAddressException(zkUrl);
         }
-        return matcher;
+
+        // Strip zk prefix and spaces
+        String zkStripped = zkUrl.replace(ZK_PREFIX, "").replace(" ", "");
+
+        // Split address by commas
+        String[] split = zkStripped.split(",");
+
+        // Validate and add each split
+        for (String s : split) {
+            zkList.add(new ZooKeeperAddress(s));
+        }
+
+        // Return list of zk addresses
+        return zkList;
     }
 }

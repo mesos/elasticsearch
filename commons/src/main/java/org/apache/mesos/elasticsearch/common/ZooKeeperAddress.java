@@ -1,45 +1,89 @@
 package org.apache.mesos.elasticsearch.common;
 
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Model representing ZooKeeper address
+ * Model representing ZooKeeper addresses
  */
 public class ZooKeeperAddress {
-    private final String ipPort;
-    private final String zkAddress;
-    private String zkNode = "";
+    private String user;
+    private String password;
+    private String address;
+    private String port;
+    private String zkNode;
 
     /**
-     * Creates an object representing the zookeeper address model.
+     * Represents a single zookeeper address.
      *
-     * @param zookeeperAddress a String in the format "zk://host1:port1,host2:port2,.../path"
+     * @param address Must be in the format [user:password@]host[:port] where [] are optional.
      */
-    public ZooKeeperAddress(String zookeeperAddress) {
-        Matcher zkMatcher = ZooKeeperAddressParser.validateZkUrl(zookeeperAddress);
-        this.zkAddress = zookeeperAddress;
-        this.ipPort = zkMatcher.group(1);
-        setPath(zkMatcher.group(2));
+    public ZooKeeperAddress(String address) {
+        Matcher matcher = Pattern.compile(ZooKeeperAddressParser.ADDRESS_REGEX).matcher(address);
+        if (!matcher.matches()) {
+            throw new ZooKeeperAddressException(address);
+        }
+        setUser(matcher.group(0));
+        setPassword(matcher.group(1));
+        setAddress(matcher.group(2));
+        setPort(matcher.group(3));
+        setZkNode(matcher.group(4));
     }
 
-    private void setPath(String str) {
-        if (str != null) {
-            zkNode = str;
+    public String getUser() {
+        return user;
+    }
+
+    public void setUser(String user) {
+        this.user = "";
+        if (user != null) {
+            this.user = user;
         }
     }
 
-    // Returns the full zk address in the format "zk://host1:port1,host2:port2,.../path"
-    public String getZkAddress() {
-        return zkAddress;
+    public String getPassword() {
+        return password;
     }
 
-    // Returns the IP address and port number of the zookeeper instance in the format [addr]:[port]
-    public String getIpPort() {
-        return ipPort;
+    public void setPassword(String password) {
+        this.password = "";
+        if (password != null) {
+            this.password = password;
+        }
     }
 
-    // Returns the zookeeper path
-    public String getZKNode() {
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = "";
+        if (address != null) {
+            this.address = address;
+        }
+    }
+
+    public String getPort() {
+        return port;
+    }
+
+    public void setPort(String port) {
+        this.port = "";
+        if (port != null) {
+            this.port = port;
+        }
+    }
+
+    public String getZkNode() {
         return zkNode;
     }
+
+    public void setZkNode(String zkNode) {
+        this.zkNode = "";
+        if (zkNode != null) {
+            this.zkNode = zkNode;
+        }
+    }
 }
+
+
