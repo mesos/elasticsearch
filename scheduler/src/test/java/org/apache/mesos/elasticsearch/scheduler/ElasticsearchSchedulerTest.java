@@ -91,7 +91,7 @@ public class ElasticsearchSchedulerTest {
     public void testRegistered() {
         scheduler.registered(driver, frameworkID, masterInfo);
 
-        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK)));
+        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.getCpus()).mem(Configuration.getMem()).disk(Configuration.getDisk())));
     }
 
     @Test
@@ -171,9 +171,9 @@ public class ElasticsearchSchedulerTest {
 
     private Protos.Offer.Builder newOffer(String hostname) {
         Protos.Offer.Builder builder = newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
-        builder.addResources(cpus(Configuration.CPUS));
-        builder.addResources(mem(Configuration.MEM));
-        builder.addResources(disk(Configuration.DISK));
+        builder.addResources(cpus(Configuration.getCpus()));
+        builder.addResources(mem(Configuration.getMem()));
+        builder.addResources(disk(Configuration.getDisk()));
         return builder;
     }
 

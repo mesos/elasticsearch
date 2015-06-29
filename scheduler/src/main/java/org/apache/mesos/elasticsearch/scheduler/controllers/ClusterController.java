@@ -48,7 +48,10 @@ public class ClusterController {
     private Object invokeConfigurationGetter(Method method) {
         try {
             final Object result = method.invoke(configuration);
-            if (result instanceof Number || result instanceof Boolean || result instanceof String) {
+            if (method.getName().toLowerCase().contains("password")) {
+                return "************";
+            }
+            else if (result instanceof Number || result instanceof Boolean || result instanceof String) {
                 return result;
             }
             else if (result instanceof Protos.FrameworkID) {
