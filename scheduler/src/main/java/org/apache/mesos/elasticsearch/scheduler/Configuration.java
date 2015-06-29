@@ -7,11 +7,11 @@ import org.apache.mesos.Protos;
  */
 public class Configuration {
 
-    public static final double CPUS = 0.2;
+    private static final double CPUS = 0.2;
 
-    public static final double MEM = 512;
+    private static final double MEM = 512;
 
-    public static final double DISK = 250;
+    private static final double DISK = 250;
 
     private String zookeeperHost;
 
@@ -20,7 +20,24 @@ public class Configuration {
     private State state;
 
     private String version;
+
     private int managementApiPort;
+
+    public static double getCpus() {
+        return CPUS;
+    }
+
+    public static double getMem() {
+        return MEM;
+    }
+
+    public static double getDisk() {
+        return DISK;
+    }
+
+    public State getState() {
+        return state;
+    }
 
     public void setState(State state) {
         this.state = state;

@@ -62,9 +62,9 @@ public class Resources {
     }
 
     public static List<Protos.Resource> buildFrameworkResources() {
-        Protos.Resource cpus = Resources.cpus(Configuration.CPUS);
-        Protos.Resource mem = Resources.mem(Configuration.MEM);
-        Protos.Resource disk = Resources.disk(Configuration.DISK);
+        Protos.Resource cpus = Resources.cpus(Configuration.getCpus());
+        Protos.Resource mem = Resources.mem(Configuration.getMem());
+        Protos.Resource disk = Resources.disk(Configuration.getDisk());
         return asList(cpus, mem, disk);
     }
 }
