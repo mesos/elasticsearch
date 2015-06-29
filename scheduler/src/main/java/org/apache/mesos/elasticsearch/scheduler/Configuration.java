@@ -21,6 +21,8 @@ public class Configuration {
 
     private String version;
 
+    private String zookeeperAddress;
+
     public void setState(State state) {
         this.state = state;
     }
@@ -74,5 +76,13 @@ public class Configuration {
 
     public String getVersion() {
         return version;
+    }
+
+    public void setZookeeperAddress(String zookeeperAddress) {
+        this.zookeeperAddress = zookeeperAddress;
+    }
+
+    public String getZookeeperAddress() {
+        return zookeeperAddress;
     }
 }

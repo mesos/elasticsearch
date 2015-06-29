@@ -14,7 +14,7 @@ public class Main {
 
     public static final String NUMBER_OF_HARDWARE_NODES = "n";
 
-    public static final String ZK_HOST = "zk";
+    public static final String ZK_ADDRESS = "zk";
 
     private Options options;
 
@@ -23,7 +23,7 @@ public class Main {
     public Main() {
         this.options = new Options();
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
-        this.options.addOption(ZK_HOST, "ZookeeperNode", true, "Zookeeper IP address and port");
+        this.options.addOption(ZK_ADDRESS, "ZookeeperNode", true, "Zookeeper address (IP:PORT/mesos)");
     }
 
     public static void main(String[] args) {
@@ -32,34 +32,35 @@ public class Main {
     }
 
     public void run(String[] args) {
-        parseCommandlineOptions(args);
+        try {
+            parseCommandlineOptions(args);
+        } catch (ParseException | IllegalArgumentException e) {
+            printUsage();
+            return;
+        }
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
         scheduler.run();
     }
 
-    private void parseCommandlineOptions(String[] args) {
+    private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
         configuration = new Configuration();
 
-        try {
-            CommandLineParser parser = new BasicParser();
-            CommandLine cmd = parser.parse(options, args);
+        CommandLineParser parser = new BasicParser();
+        CommandLine cmd = parser.parse(options, args);
 
-            String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
-            String zkHost = cmd.getOptionValue(ZK_HOST);
+        String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
+        String zkAddress = cmd.getOptionValue(ZK_ADDRESS);
 
-            if (numberOfHwNodesString == null || zkHost == null) {
-                printUsage();
-                return;
-            }
-
-            configuration.setVersion(getClass().getPackage().getImplementationVersion());
-            configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-            configuration.setZookeeperHost(zkHost);
-            configuration.setState(new State(new ZooKeeperStateInterfaceImpl(zkHost + ":" + configuration.getZookeeperPort())));
-        } catch (ParseException | IllegalArgumentException e) {
+        if (numberOfHwNodesString == null || zkAddress == null) {
             printUsage();
+            return;
         }
+
+        configuration.setZookeeperAddress(zkAddress);
+        configuration.setVersion(getClass().getPackage().getImplementationVersion());
+        configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperAddress())));
     }
 
     private void printUsage() {

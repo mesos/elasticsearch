@@ -63,7 +63,7 @@ slave3:
    - zookeeper
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-zk zookeeper -n 3"
+  command: "-zk zk://zookeeper:2181/mesos -n 3"
   ports:
     - "8000:8000"
   links:

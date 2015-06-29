@@ -45,7 +45,7 @@ public class ElasticsearchScheduler implements Scheduler {
             frameworkBuilder.setId(frameworkID);
         }
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + configuration.getZookeeperHost() + ":" + configuration.getZookeeperPort() + "/mesos");
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperAddress());
         driver.run();
     }
 
