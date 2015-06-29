@@ -7,7 +7,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests for Mesos state zookeeper address parsing
  */
-public class MesosStateZooKeeperAddressTest {
+public class MesosStateZKFormatterTest {
 
     @Test(expected = ZooKeeperAddressException.class)
     public void shouldExceptionIfInvalidZKAddress() {
@@ -38,7 +38,7 @@ public class MesosStateZooKeeperAddressTest {
     public void shouldReturnInCorrectFormat() {
         String add = "zk://192.168.0.1:2182";
         String expectedResult = "192.168.0.1:2182";
-        MesosStateZooKeeperAddress zk = new MesosStateZooKeeperAddress(add);
+        MesosStateZKFormatter zk = new MesosStateZKFormatter(add);
         assertEquals(expectedResult, zk.getAddress());
     }
 
@@ -46,7 +46,7 @@ public class MesosStateZooKeeperAddressTest {
     public void shouldReturnInCorrectFormatWithPath() {
         String add = "zk://192.168.0.1:2182/mesos";
         String expectedResult = "192.168.0.1:2182";
-        MesosStateZooKeeperAddress zk = new MesosStateZooKeeperAddress(add);
+        MesosStateZKFormatter zk = new MesosStateZKFormatter(add);
         assertEquals(expectedResult, zk.getAddress());
     }
 
@@ -54,7 +54,7 @@ public class MesosStateZooKeeperAddressTest {
     public void shouldReturnMultiAddr() {
         String add = "zk://192.168.0.1:2182/mesos,192.168.0.2:2182";
         String expectedResult = "192.168.0.1:2182,192.168.0.2:2182";
-        MesosStateZooKeeperAddress zk = new MesosStateZooKeeperAddress(add);
+        MesosStateZKFormatter zk = new MesosStateZKFormatter(add);
         assertEquals(expectedResult, zk.getAddress());
     }
 }

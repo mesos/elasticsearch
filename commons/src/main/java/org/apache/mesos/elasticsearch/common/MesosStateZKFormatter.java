@@ -5,11 +5,11 @@ import java.util.List;
 /**
  * Provides the ZooKeeper address(es) in a format required by Mesos
  */
-public class MesosStateZooKeeperAddress {
+public class MesosStateZKFormatter {
 
     private final String address;
 
-    public MesosStateZooKeeperAddress(String zkUrl) {
+    public MesosStateZKFormatter(String zkUrl) {
         List<ZooKeeperAddress> addressList = ZooKeeperAddressParser.validateZkUrl(zkUrl);
         StringBuilder builder = new StringBuilder();
         addressList.forEach(add -> builder.append("," + add.getAddress() + ":" + add.getPort()));
