@@ -45,6 +45,7 @@ task systemTest(type: Test) {
     testLogging {
         showStandardStreams = true
     }
+    outputs.upToDateWhen { false }
 }
 
 systemTest.dependsOn(dockerComposeUp)
