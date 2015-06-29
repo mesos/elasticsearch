@@ -1,10 +1,62 @@
 <!DOCTYPE html>
-<html>
-<head lang="en">
-    <meta charset="UTF-8">
-    <title></title>
+<html ng-app="mesos-es-ui">
+<head>
+    <title>Elasticsearch Mesos Framework</title>
+    <link rel="stylesheet" href="webjars/bootstrap/3.3.5/css/bootstrap.min.css">
+    <link rel="stylesheet" href="webjars/font-awesome/4.3.0/css/font-awesome.min.css">
+    <!--<link rel="stylesheet" href="components/rdash-ui/dist/css/rdash.min.css">-->
+    <link rel="stylesheet" href="stylesheets/style.css">
+    <script src="webjars/jquery/1.11.1/jquery.min.js" type="application/javascript"></script>
+    <script src="webjars/bootstrap/3.3.5/js/bootstrap.min.js" type="application/javascript"></script>
+    <script src="webjars/angular/1.4.1/angular.min.js" type="application/javascript"></script>
+    <script src="webjars/angular-resource/1.4.1/angular-resource.min.js" type="application/javascript"></script>
+    <script src="webjars/angular-route/1.4.1/angular-route.min.js" type="application/javascript"></script>
+    <script src="app/app.js" type="application/javascript"></script>
+    <script src="app/config.js" type="application/javascript"></script>
+    <script src="app/controllers.js" type="application/javascript"></script>
+    <script src="app/directives.js" type="application/javascript"></script>
+    <script src="app/services.js" type="application/javascript"></script>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
-
+<div id="page-wrapper" ng-class="{'open': toggle}" ng-cloak="" ng-controller="MainController">
+    <div id="sidebar-wrapper">
+        <ul class="sidebar">
+            <li class="sidebar-main">
+                <a ng-click="toggleSidebar()">Elasticsearch<span class="menu-icon glyphicon glyphicon-transfer"></span></a>
+            </li>
+            <li class="sidebar-list">
+                <a href="#/">Cluster<span class="menu-icon fa fa-tachometer"></span></a>
+            </li>
+            <li class="sidebar-list">
+                <a href="#/tasks">Tasks<span class="menu-icon fa fa-table"></span></a>
+            </li>
+        </ul>
+        <div class="sidebar-footer">
+            <div class="col-xs-4">
+                <a href="https://github.com/mesos/elasticsearch" target="_blank">Github</a>
+            </div>
+            <div class="col-xs-4">
+                <a href="https://github.com/mesos/elasticsearch/blob/master/README.md" target="_blank">About</a>
+            </div>
+            <div class="col-xs-4">
+                <a href="#">Support</a>
+            </div>
+        </div>
+    </div>
+    <div id="content-wrapper">
+        <div class="page-content">
+            <div class="row header">
+                <div class="col-xs-12">
+                    <div class="pull-right mesos-logo"><img src="images/mesos.jpg"></div>
+                    <h1>{{header}}</h1>
+                    <div class="content-wrapper">
+                        <div ng-view></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 </body>
 </html>

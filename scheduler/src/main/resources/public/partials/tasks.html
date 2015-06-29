@@ -1,0 +1,29 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="table-responsive">
+
+            <table class="table table-bordered table-striped table-hover">
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Hostname</th>
+                    <th>IP address</th>
+                    <th>Transport IP address</th>
+                    <th>Started</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr ng-repeat="task in tasks track by task.id">
+                    <td><a href="#">{{task.id}}</a></td>
+                    <td>{{task.name}}</td>
+                    <td><a href="http://{{task.hostname}}" target="_blank">{{task.hostname}}</a></td>
+                    <td><a href="http://{{task.http_address}}" target="_blank">{{task.http_address}}</a></td>
+                    <td>{{task.transport_address}}</td>
+                    <td>{{task.started_at}}</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
