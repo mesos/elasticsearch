@@ -1,1 +1,39 @@
-body{background-image:url("../images/bg.jpg") !important}h1{margin:10px}.content-wrapper{margin-top:40px}.mesos-logo img{max-height:59px}#sidebar-wrapper{background-color:#000000}ul.sidebar .sidebar-main a{background-color:#74BD43}ul.sidebar .sidebar-list a{background:#000000;color:#ffffff}ul.sidebar .sidebar-list a:hover{background:#222222;color:#74BD43;border-left:3px solid #74BD43}.sidebar-footer{background-color:#000000}.sidebar-footer div a{color:#ffffff}.sidebar-footer div a:hover{color:#74BD43}
+body {
+  background-image: url("../images/bg.jpg") !important;
+}
+h1 {
+  margin: 10px;
+}
+.content-wrapper {
+  margin-top: 40px;
+}
+.mesos-logo img {
+  max-height: 59px;
+}
+.task-list-item td {
+  font-family: monospace;
+}
+#sidebar-wrapper {
+  background-color: #000000;
+}
+ul.sidebar .sidebar-main a {
+  background-color: #74BD43;
+}
+ul.sidebar .sidebar-list a {
+  background: #000000;
+  color: #ffffff;
+}
+ul.sidebar .sidebar-list a:hover {
+  background: #222222;
+  color: #74BD43;
+  border-left: 3px solid #74BD43;
+}
+.sidebar-footer {
+  background-color: #000000;
+}
+.sidebar-footer div a {
+  color: #ffffff;
+}
+.sidebar-footer div a:hover {
+  color: #74BD43;
+}

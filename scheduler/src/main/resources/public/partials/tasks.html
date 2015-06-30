@@ -16,7 +16,7 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr ng-repeat="task in tasks track by task.id">
+                <tr ng-repeat="task in tasks track by task.id" class="task-list-item">
                     <td><a href="http://{{task.hostname}}">{{task.id}}</a></td>
                     <td>{{task.name}}</td>
                     <td><a href="http://{{task.hostname}}" target="_blank">{{task.hostname}}</a></td>
