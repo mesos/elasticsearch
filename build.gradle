@@ -26,7 +26,6 @@ subprojects {
 /*    mainClassName = "com.ebay.myriad.Main"*/
 
     group = "org.apache.mesos"
-    version = "0.0.1-SNAPSHOT"
 
     ext {
         mesosVer = "0.22.1"
