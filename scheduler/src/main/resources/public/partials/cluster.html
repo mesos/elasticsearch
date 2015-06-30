@@ -5,8 +5,8 @@
                 <div class="widget-icon red pull-left">
                     <i class="fa fa-tasks"></i>
                 </div>
-                <div class="title">16</div>
-                <div class="comment">Servers</div>
+                <div class="title">{{configuration.NumberOfHwNodes}}</div>
+                <div class="comment">Nodes</div>
             </rd-widget-body>
         </rd-widget>
     </div>
@@ -14,10 +14,10 @@
         <rd-widget>
             <rd-widget-body>
                 <div class="widget-icon orange pull-left">
-                    <i class="fa fa-sitemap"></i>
+                    <i class="fa fa-file-text-o"></i>
                 </div>
-                <div class="title">225</div>
-                <div class="comment">1st Metric</div>
+                <div class="title">{{configuration.Mem}}</div>
+                <div class="comment">Memory</div>
             </rd-widget-body>
         </rd-widget>
     </div>
@@ -25,10 +25,10 @@
         <rd-widget>
             <rd-widget-body>
                 <div class="widget-icon blue pull-left">
-                    <i class="fa fa-support"></i>
+                    <i class="fa fa-database"></i>
                 </div>
-                <div class="title">62</div>
-                <div class="comment">2nd Metric</div>
+                <div class="title">{{configuration.Disk}}</div>
+                <div class="comment">Disk</div>
             </rd-widget-body>
         </rd-widget>
     </div>
