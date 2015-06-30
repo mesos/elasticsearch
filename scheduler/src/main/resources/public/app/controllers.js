@@ -42,5 +42,6 @@ controllers.controller('TasksController', function ($scope, $interval, config, T
             $scope.tasks = data;
         });
     };
-    fetchTasks() && $interval(fetchTasks, fetchInterval);
+    fetchTasks();
+    $interval(fetchTasks, fetchInterval);
 });
