@@ -62,9 +62,7 @@ public class Main {
         } catch (ZKAddressException ex) {
             throw new ParseException("Incorrect ZK address format: " + ex.getMessage());
         }
-        System.out.println("ZK ADDRESSES: " + zkAddress + " and " + formattedAddr);
         configuration.setZookeeperAddress(formattedAddr);
-        System.out.println("So config says: " + configuration.getZookeeperAddress());
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
         configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperAddress())));
