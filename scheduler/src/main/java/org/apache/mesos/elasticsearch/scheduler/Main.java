@@ -1,7 +1,9 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
-import org.apache.mesos.elasticsearch.common.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -56,8 +58,9 @@ public class Main {
         configuration.setZookeeperAddress(zkAddress);
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        String formattedZKAddress = new MesosStateZKFormatter(configuration.getZookeeperAddress()).getAddress();
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(formattedZKAddress)));
+        ZKFormatter formatter = new MesosStateZKFormatter(new ZKAddressParser());
+        String formattedAddr = formatter.format(configuration.getZookeeperAddress());
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(formattedAddr)));
     }
 
     private void printUsage() {

@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.executor.model;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressException;
 import org.junit.Test;
 
 import java.security.InvalidParameterException;
@@ -37,14 +38,14 @@ public class ZooKeeperModelTest {
         new ZooKeeperModel(taskInfo.build());
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = ZKAddressException.class)
     public void shouldExceptionIfIPFormat() {
         Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("192.168.0.1"));
         Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
         new ZooKeeperModel(taskInfo.build());
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = ZKAddressException.class)
     public void shouldExceptionIfHTTPFormat() {
         Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("http://192.168.0.1"));
         Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
