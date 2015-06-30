@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
+import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressException;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
@@ -54,13 +55,19 @@ public class Main {
             printUsage();
             return;
         }
-
-        configuration.setZookeeperAddress(zkAddress);
+        String formattedAddr;
+        try {
+            ZKFormatter formatter = new MesosStateZKFormatter(new ZKAddressParser());
+            formattedAddr = formatter.format(zkAddress);
+        } catch (ZKAddressException ex) {
+            throw new ParseException("Incorrect ZK address format: " + ex.getMessage());
+        }
+        System.out.println("ZK ADDRESSES: " + zkAddress + " and " + formattedAddr);
+        configuration.setZookeeperAddress(formattedAddr);
+        System.out.println("So config says: " + configuration.getZookeeperAddress());
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        ZKFormatter formatter = new MesosStateZKFormatter(new ZKAddressParser());
-        String formattedAddr = formatter.format(configuration.getZookeeperAddress());
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(formattedAddr)));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperAddress())));
     }
 
     private void printUsage() {
