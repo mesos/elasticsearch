@@ -3,9 +3,13 @@ package org.apache.mesos.elasticsearch.common;
 import org.apache.mesos.Protos;
 
 /**
- *
+ * Utility class for building offers
  */
 public class Offers {
+
+    private Offers() {
+
+    }
 
     public static Protos.Offer.Builder newOfferBuilder(String offerId, String hostname, String slave, Protos.FrameworkID frameworkID) {
         Protos.OfferID offerID = Protos.OfferID.newBuilder().setValue(offerId).build();
