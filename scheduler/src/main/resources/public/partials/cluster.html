@@ -1,0 +1,43 @@
+<div class="row">
+    <div class="col-lg-3 col-md-6 col-xs-12">
+        <rd-widget>
+            <rd-widget-body>
+                <div class="widget-icon red pull-left">
+                    <i class="fa fa-tasks"></i>
+                </div>
+                <div class="title">{{configuration.NumberOfHwNodes}}</div>
+                <div class="comment">Nodes</div>
+            </rd-widget-body>
+        </rd-widget>
+    </div>
+    <div class="col-lg-3 col-md-6 col-xs-12">
+        <rd-widget>
+            <rd-widget-body>
+                <div class="widget-icon orange pull-left">
+                    <i class="fa fa-file-text-o"></i>
+                </div>
+                <div class="title">{{configuration.Mem}}</div>
+                <div class="comment">Memory</div>
+            </rd-widget-body>
+        </rd-widget>
+    </div>
+    <div class="col-lg-3 col-md-6 col-xs-12">
+        <rd-widget>
+            <rd-widget-body>
+                <div class="widget-icon blue pull-left">
+                    <i class="fa fa-database"></i>
+                </div>
+                <div class="title">{{configuration.Disk}}</div>
+                <div class="comment">Disk</div>
+            </rd-widget-body>
+        </rd-widget>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <h3>Configuration Overview</h3>
+        <json-formatter json="configuration" open="1"></json-formatter>
+    </div>
+</div>
+
