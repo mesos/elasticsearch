@@ -1,29 +1,5 @@
-dns:
-  image: devries/dnsmasq
-  links:
-  - mesosmaster
-  - slave1
-  - slave2
-  - slave3
-zookeeper:
-  image: jplock/zookeeper:3.4.5
-  hostname: zookeeper
-mesosmaster:
-  build: master
-  hostname: mesosmaster
-  environment:
-    - MESOS_QUORUM=1
-    - MESOS_WORK_DIR=/var/lib/mesos
-    - MESOS_LOG_DIR=/var/log
-    - MESOS_ZK=zk://zookeeper:2181/mesos
-  volumes:
-    - /var/log/mesos:/var/log/mesos
-  ports:
-    - "5050:5050"
-  links:
-    - zookeeper
 slave1:
-  extends: 
+  extends:
     file: slave.yml
     service: slave
   hostname: slave1
@@ -35,32 +11,21 @@ slave1:
   links:
    - mesosmaster
    - zookeeper
-slave2:
-  extends: 
-    file: slave.yml
-    service: slave
-  hostname: slave2
-  volumes:
-    - /tmp/slave2:/tmp/mesos/slaves
-    - /var/log/slave2:/var/log
+zookeeper:
+  image: jplock/zookeeper:3.4.5
+  hostname: zookeeper
+mesosmaster:
+  build: master
+  hostname: mesosmaster
   environment:
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+    - MESOS_QUORUM=1
+    - MESOS_WORK_DIR=/var/lib/mesos
+    - MESOS_LOG_DIR=/var/log
+    - MESOS_ZK=zk://zookeeper:2181/mesos
+  ports:
+    - "5050:5050"
   links:
-   - mesosmaster
-   - zookeeper
-slave3:
-  extends: 
-    file: slave.yml
-    service: slave
-  hostname: slave3
-  volumes:
-     - /tmp/slave3:/tmp/mesos/slaves
-     - /var/log/slave3:/var/log
-  environment:
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
-  links:
-   - mesosmaster
-   - zookeeper
+    - zookeeper
 scheduler:
   image: mesos/elasticsearch-scheduler
   command: "-zk zk://zookeeper:2181/mesos -n 3"
@@ -68,7 +33,31 @@ scheduler:
     - "8000:8000"
   links:
    - slave1
-   - slave2
-   - slave3
-   - dns
    - zookeeper
+#slave2:
+#  extends:
+#    file: slave.yml
+#    service: slave
+#  hostname: slave2
+#  volumes:
+#    - /tmp/slave2:/tmp/mesos/slaves
+#    - /var/log/slave2:/var/log
+#  environment:
+#    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+#  links:
+#   - mesosmaster
+#   - zookeeper
+#slave3:
+#  extends:
+#    file: slave.yml
+#    service: slave
+#  hostname: slave3
+#  volumes:
+#     - /tmp/slave3:/tmp/mesos/slaves
+#     - /var/log/slave3:/var/log
+#  environment:
+#    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+#  links:
+#   - mesosmaster
+#   - zookeeper
+

@@ -1,6 +1,11 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
+
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Holder object for framework configuration.
@@ -13,15 +18,15 @@ public class Configuration {
 
     public static final double DISK = 250;
 
-    private String zookeeperHost;
-
     private int numberOfHwNodes;
 
     private State state;
 
     private String version;
 
-    private String zookeeperAddress;
+    private List<ZKAddress> zookeeperAddresses;
+
+    private String zookeeperUrl;
 
     public void setState(State state) {
         this.state = state;
@@ -33,18 +38,6 @@ public class Configuration {
 
     public void setNumberOfHwNodes(int numberOfHwNodes) {
         this.numberOfHwNodes = numberOfHwNodes;
-    }
-
-    public String getZookeeperHost() {
-        return zookeeperHost;
-    }
-
-    public void setZookeeperHost(String zookeeperHost) {
-        this.zookeeperHost = zookeeperHost;
-    }
-
-    public int getZookeeperPort() {
-        return 2181;
     }
 
     public String getFrameworkName() {
@@ -78,11 +71,20 @@ public class Configuration {
         return version;
     }
 
-    public void setZookeeperAddress(String zookeeperAddress) {
-        this.zookeeperAddress = zookeeperAddress;
+    public void setZookeeperAddresses(List<ZKAddress> zookeeperAddresses) {
+        this.zookeeperAddresses = zookeeperAddresses;
     }
 
-    public String getZookeeperAddress() {
-        return zookeeperAddress;
+    public void setZookeeperUrl(String zookeeperUrl) {
+        this.zookeeperUrl = zookeeperUrl;
+    }
+
+    public String getZookeeperUrl() {
+        return zookeeperUrl;
+    }
+
+    public String getZookeeperServers() {
+        Iterator<String> hostPorts = zookeeperAddresses.stream().map(zk -> zk.getAddress() + ":" + zk.getPort()).iterator();
+        return StringUtils.join(hostPorts, ",");
     }
 }

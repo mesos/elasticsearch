@@ -32,7 +32,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperAddress() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + "]");
 
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
@@ -47,7 +47,7 @@ public class ElasticsearchScheduler implements Scheduler {
             frameworkBuilder.setId(frameworkID);
         }
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperAddress());
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
         driver.run();
     }
 

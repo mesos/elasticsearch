@@ -1,10 +1,10 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
-import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressException;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+
+import java.util.List;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -13,7 +13,7 @@ public class Main {
 
     public static final String NUMBER_OF_HARDWARE_NODES = "n";
 
-    public static final String ZK_ADDRESS = "zk";
+    public static final String ZK_URL = "zk";
 
     private Options options;
 
@@ -22,7 +22,7 @@ public class Main {
     public Main() {
         this.options = new Options();
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
-        this.options.addOption(ZK_ADDRESS, "ZookeeperNode", true, "Zookeeper address (IP:PORT/mesos)");
+        this.options.addOption(ZK_URL, "Zookeeper URL", true, "Zookeeper urls zk://IP:PORT,IP:PORT,IP:PORT/mesos)");
     }
 
     public static void main(String[] args) {
@@ -49,23 +49,21 @@ public class Main {
         CommandLine cmd = parser.parse(options, args);
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
-        String zkAddress = cmd.getOptionValue(ZK_ADDRESS);
+        String zkUrl = cmd.getOptionValue(ZK_URL);
 
-        if (numberOfHwNodesString == null || zkAddress == null) {
+        if (numberOfHwNodesString == null || zkUrl == null) {
             printUsage();
             return;
         }
-        String formattedAddr;
-        try {
-            ZKFormatter formatter = new MesosStateZKFormatter(new ZKAddressParser());
-            formattedAddr = formatter.format(zkAddress);
-        } catch (ZKAddressException ex) {
-            throw new ParseException("Incorrect ZK address format: " + ex.getMessage());
-        }
-        configuration.setZookeeperAddress(formattedAddr);
+
+        ZKAddressParser zkParser = new ZKAddressParser();
+        List<ZKAddress> zkAddresses = zkParser.validateZkUrl(zkUrl);
+
+        configuration.setZookeeperUrl(zkUrl);
+        configuration.setZookeeperAddresses(zkAddresses);
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperAddress())));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperServers())));
     }
 
     private void printUsage() {

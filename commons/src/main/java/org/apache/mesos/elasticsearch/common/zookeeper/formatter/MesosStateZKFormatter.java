@@ -28,4 +28,5 @@ public class MesosStateZKFormatter extends AbstractZKFormatter {
         builder.deleteCharAt(0);
         return builder.toString();
     }
+
 }
