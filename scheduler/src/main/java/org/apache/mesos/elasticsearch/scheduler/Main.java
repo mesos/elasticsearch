@@ -3,6 +3,9 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.commons.cli.*;
 import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+
+import static org.apache.commons.lang.NumberUtils.stringToInt;
 
 import java.util.List;
 
@@ -15,6 +18,8 @@ public class Main {
 
     public static final String ZK_URL = "zk";
 
+    public static final String MANAGEMENT_API_PORT = "m";
+
     private Options options;
 
     private Configuration configuration;
@@ -23,6 +28,7 @@ public class Main {
         this.options = new Options();
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
         this.options.addOption(ZK_URL, "Zookeeper URL", true, "Zookeeper urls zk://IP:PORT,IP:PORT,IP:PORT/mesos)");
+        this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
     }
 
     public static void main(String[] args) {
@@ -34,11 +40,18 @@ public class Main {
         try {
             parseCommandlineOptions(args);
         } catch (ParseException | IllegalArgumentException e) {
-            printUsage();
+            printUsageAndExit();
             return;
         }
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
+
+        new SpringApplicationBuilder(WebApplication.class)
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
+                .showBanner(false)
+                .run(args);
+
         scheduler.run();
     }
 
@@ -52,7 +65,7 @@ public class Main {
         String zkUrl = cmd.getOptionValue(ZK_URL);
 
         if (numberOfHwNodesString == null || zkUrl == null) {
-            printUsage();
+            printUsageAndExit();
             return;
         }
 
@@ -66,9 +79,10 @@ public class Main {
         configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperServers())));
     }
 
-    private void printUsage() {
+    private void printUsageAndExit() {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(configuration.getFrameworkName(), options);
+        System.exit(2);
     }
 
 }

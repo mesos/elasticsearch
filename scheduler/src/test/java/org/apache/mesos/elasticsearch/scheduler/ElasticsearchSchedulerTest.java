@@ -2,12 +2,15 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.net.InetSocketAddress;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 import static java.util.Collections.*;
@@ -56,6 +59,10 @@ public class ElasticsearchSchedulerTest {
     private TaskInfoFactory taskInfoFactory;
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
+    private ZonedDateTime now = ZonedDateTime.now();
+    private InetSocketAddress transportAddress = new InetSocketAddress("localhost", 9300);
+    private InetSocketAddress clientAddress = new InetSocketAddress("localhost", 9200);
+
 
     @Before
     public void before() {
@@ -83,12 +90,12 @@ public class ElasticsearchSchedulerTest {
     public void testRegistered() {
         scheduler.registered(driver, frameworkID, masterInfo);
 
-        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.CPUS).mem(Configuration.MEM).disk(Configuration.DISK)));
+        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(Configuration.getCpus()).mem(Configuration.getMem()).disk(Configuration.getDisk())));
     }
 
     @Test
     public void testResourceOffers_isSlaveAlreadyRunningTask() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host1");
 
@@ -99,7 +106,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_enoughNodes() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2"), new Task("host3", "3")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress), new Task("host3", "3", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host4");
 
@@ -110,7 +117,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_noPorts() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1"), new Task("host2", "2")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offer = newOffer("host3");
 
@@ -122,7 +129,7 @@ public class ElasticsearchSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResourceOffers_singlePort() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1")});
+        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1", now, clientAddress, transportAddress)});
 
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));
@@ -144,6 +151,14 @@ public class ElasticsearchSchedulerTest {
                                         .setName(configuration.getTaskName())
                                         .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
                                         .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
+                                        .setDiscovery(
+                                                Protos.DiscoveryInfo.newBuilder()
+                                                        .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
+                                                        .setPorts(Protos.Ports.newBuilder()
+                                                                .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
+                                                                .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
+                                                        )
+                                        )
                                         .build();
 
         when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
@@ -155,9 +170,9 @@ public class ElasticsearchSchedulerTest {
 
     private Protos.Offer.Builder newOffer(String hostname) {
         Protos.Offer.Builder builder = newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
-        builder.addResources(cpus(Configuration.CPUS));
-        builder.addResources(mem(Configuration.MEM));
-        builder.addResources(disk(Configuration.DISK));
+        builder.addResources(cpus(Configuration.getCpus()));
+        builder.addResources(mem(Configuration.getMem()));
+        builder.addResources(disk(Configuration.getDisk()));
         return builder;
     }
 
