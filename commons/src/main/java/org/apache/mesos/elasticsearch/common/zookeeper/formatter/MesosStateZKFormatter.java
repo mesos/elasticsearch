@@ -7,7 +7,11 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import java.util.List;
 
 /**
- * Provides the ZooKeeper address(es) in a format required by Mesos
+ * Provides the ZooKeeper address(es) in a format required by Mesos.
+ *
+ * The format consists of a list of ZK servers
+ *
+ * Example: zk://host1:port1,host2:port2
  */
 public class MesosStateZKFormatter extends AbstractZKFormatter {
 
@@ -24,7 +28,7 @@ public class MesosStateZKFormatter extends AbstractZKFormatter {
     public String format(String zkUrl) {
         List<ZKAddress> addressList = parser.validateZkUrl(zkUrl);
         StringBuilder builder = new StringBuilder();
-        addressList.forEach(add -> builder.append("," + add.getAddress() + ":" + add.getPort()));
+        addressList.forEach(add -> builder.append(",").append(add.getAddress()).append(":").append(add.getPort()));
         builder.deleteCharAt(0);
         return builder.toString();
     }

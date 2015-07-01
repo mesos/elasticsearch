@@ -1,11 +1,10 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
-import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-
-import java.util.List;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -67,14 +66,13 @@ public class Main {
             return;
         }
 
-        ZKAddressParser zkParser = new ZKAddressParser();
-        List<ZKAddress> zkAddresses = zkParser.validateZkUrl(zkUrl);
+        ZKFormatter zkFormatter = new MesosStateZKFormatter(new ZKAddressParser());
+        String mesosStateZkUrl = zkFormatter.format(zkUrl);
 
         configuration.setZookeeperUrl(zkUrl);
-        configuration.setZookeeperAddresses(zkAddresses);
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(configuration.getZookeeperServers())));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(mesosStateZkUrl)));
     }
 
     private void printUsageAndExit() {

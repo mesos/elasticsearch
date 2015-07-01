@@ -4,26 +4,28 @@ import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressExcept
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 
 /**
- * Formatter for native zookeeper connections
+ * Provides the ZooKeeper address in a format required by the Elasticsearch Zookeeper plugin.
  *
- * The format consists of a list full Zookeeper URL
+ * The format consists of a list of Zookeeper servers and a path.
  *
- * Example: zk://host1:port1,host2:port2/mesos
+ * Example: host1:port1,host2:port2/mesos
  */
-public class ZooKeeperFormatter extends AbstractZKFormatter {
+public class ElasticsearchZKFormatter extends AbstractZKFormatter {
 
-    public ZooKeeperFormatter(ZKAddressParser parser) {
+    public ElasticsearchZKFormatter(ZKAddressParser parser) {
         super(parser);
     }
 
     /**
      * Get the ZooKeeper address, correctly formatted.
+     *
      * @param zkUrl The raw ZK address string in the format "zk://host:port/zkNode,..."
      * @return the zookeeper addresses in the format "zk://host:port/zkNode,..."
      * @throws ZKAddressException if the raw zkURL is invalid.
      */
+    @Override
     public String format(String zkUrl) {
         parser.validateZkUrl(zkUrl);
-        return zkUrl;
+        return zkUrl.replace("zk://", "");
     }
 }
