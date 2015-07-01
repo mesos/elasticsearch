@@ -17,7 +17,7 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    public static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
+    private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
 

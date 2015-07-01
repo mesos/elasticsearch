@@ -12,6 +12,11 @@ import org.apache.mesos.elasticsearch.executor.mesos.TaskStatus;
  * Application which starts the Elasticsearch executor
  */
 public class Main {
+
+    private Main() {
+
+    }
+
     public static void main(String[] args) throws Exception {
         Launcher launcher = new ElasticsearchLauncher(new ElasticsearchSettings().defaultSettings());
         MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor(launcher, new TaskStatus()));

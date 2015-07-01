@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ElasticsearchScheduler implements Scheduler {
 
-    public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
+    private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     private final Configuration configuration;
 
