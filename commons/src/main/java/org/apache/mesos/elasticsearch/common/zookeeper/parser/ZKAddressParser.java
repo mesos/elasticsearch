@@ -10,6 +10,21 @@ import java.util.regex.Pattern;
 
 /**
  * Ensures ZooKeeper addresses are formatted properly
+ *
+ * IMPORTANT: Different components in the framework require different ZK address strings.
+ *
+ * 1) The ZK State requires a ZK servers url
+ *
+ * host1:port1,host2:port2
+ *
+ * 2) The MesosSchedulerDriver requires a full ZK url
+ *
+ * zk://host1:port1,host2:port2/mesos
+ *
+ * 3) The Elasticsearch ZK plugin requires ZK servers PLUS path WITHOUT the zk:// prefix
+ *
+ * host1:port1,host2:port2/mesos
+ *
  */
 public class ZKAddressParser {
     public static final String ZK_PREFIX = "zk://";
