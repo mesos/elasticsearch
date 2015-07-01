@@ -20,17 +20,18 @@ repositories {
         url "https://jitpack.io"
     }
 }
+configurations {
+    all*.exclude group:"org.springframework.boot", module: "spring-boot-starter-logging"
+}
 dependencies {
 
     compile project(':commons')
 
-    compile("org.springframework.boot:spring-boot-starter-web:1.2.4.RELEASE") {
-        exclude group:"org.springframework.boot", module: "spring-boot-starter-logging"
-    }
+    compile("org.springframework.boot:spring-boot-starter-web:1.2.4.RELEASE")
     compile("org.springframework.boot:spring-boot-starter-log4j:1.2.4.RELEASE")
     compile "commons-cli:commons-cli:1.0"
     compile "commons-io:commons-io:2.4"
-    compile "log4j:log4j:1.2.16"
+    compile "log4j:log4j:1.2.17"
 
     compile 'org.webjars:angularjs:1.4.1'
     compile 'org.webjars.bower:angular-route:1.4.1'

@@ -6,10 +6,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
-
-import java.util.Collections;
 
 import static org.apache.commons.lang.NumberUtils.stringToInt;
 
@@ -41,20 +38,21 @@ public class Main {
     }
 
     public void run(String[] args) {
-        configuration = parseCommandlineOptions(args);
+        parseCommandlineOptions(args);
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
-        new SpringApplicationBuilder(WebApplication.class).initializers(applicationContext -> {
-            applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler);
-            applicationContext.getBeanFactory().registerSingleton("configuration", configuration);
-        }).showBanner(false).run(args);
+        new SpringApplicationBuilder(WebApplication.class)
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
+                .showBanner(false)
+                .run(args);
 
         scheduler.run();
     }
 
-    private Configuration parseCommandlineOptions(String[] args) {
-        Configuration configuration = new Configuration();
+    private void parseCommandlineOptions(String[] args) {
+        configuration = new Configuration();
 
         try {
             CommandLineParser parser = new BasicParser();
@@ -64,9 +62,7 @@ public class Main {
             String zkHost = cmd.getOptionValue(ZK_HOST);
 
             if (numberOfHwNodesString == null || zkHost == null) {
-                printUsage();
-                //TODO: Should stop application after printing usage
-                return configuration;
+                printUsageAndExit();
             }
 
             configuration.setVersion(getClass().getPackage().getImplementationVersion());
@@ -76,14 +72,14 @@ public class Main {
             configuration.setManagementApiPort(stringToInt(cmd.getOptionValue(MANAGEMENT_API_PORT), 8080));
 
         } catch (ParseException | IllegalArgumentException e) {
-            printUsage();
+            printUsageAndExit();
         }
-        return configuration;
     }
 
-    private void printUsage() {
+    private void printUsageAndExit() {
         HelpFormatter formatter = new HelpFormatter();
         formatter.printHelp(configuration.getFrameworkName(), options);
+        System.exit(2);
     }
 
 }
