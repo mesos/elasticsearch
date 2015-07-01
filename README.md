@@ -7,6 +7,7 @@
 
 - [x] Deployment
 - [x] Durable cluster topology (via ZooKeeper)
+- [x] Web UI on scheduler port 8080
 - [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [ ] High availability (master, indexer, replica)
 - [ ] Fault tolerance
@@ -90,6 +91,11 @@ $ docker-compose up
 ```
 
 Now open the browser at http://localhost:5050 to view the Mesos GUI.
+
+NOTE: If you run docker from a VM (boot2docker on OSX), use the ip address assigned to the VM instead of localhost:
+```
+docker-machine inspect dev -f "{{.Driver.IPAddress}}"
+```
 
 The Elasticsearch task can be accessed via the slave on port 9200. Find the IP address of the slave: 
 

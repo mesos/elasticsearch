@@ -9,7 +9,16 @@
         </layout>
     </appender>
 
+    <logger name="org.apache.mesos.elasticsearch">
+        <level value="DEBUG"/>
+    </logger>
+
+    <logger name="org.springframework">
+        <level value="WARN"/>
+    </logger>
+
     <root>
+        <level value="DEBUG"/>
         <appender-ref ref="console" />
     </root>
 

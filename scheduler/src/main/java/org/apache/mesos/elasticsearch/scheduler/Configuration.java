@@ -12,11 +12,11 @@ import java.util.List;
  */
 public class Configuration {
 
-    public static final double CPUS = 0.2;
+    private static final double CPUS = 0.2;
 
-    public static final double MEM = 512;
+    private static final double MEM = 512;
 
-    public static final double DISK = 250;
+    private static final double DISK = 250;
 
     private int numberOfHwNodes;
 
@@ -27,6 +27,24 @@ public class Configuration {
     private List<ZKAddress> zookeeperAddresses;
 
     private String zookeeperUrl;
+
+    private int managementApiPort;
+
+    public static double getCpus() {
+        return CPUS;
+    }
+
+    public static double getMem() {
+        return MEM;
+    }
+
+    public static double getDisk() {
+        return DISK;
+    }
+
+    public State getState() {
+        return state;
+    }
 
     public void setState(State state) {
         this.state = state;
@@ -86,5 +104,13 @@ public class Configuration {
     public String getZookeeperServers() {
         Iterator<String> hostPorts = zookeeperAddresses.stream().map(zk -> zk.getAddress() + ":" + zk.getPort()).iterator();
         return StringUtils.join(hostPorts, ",");
+    }
+
+    public void setManagementApiPort(int managementApiPort) {
+        this.managementApiPort = managementApiPort;
+    }
+
+    public int getManagementApiPort() {
+        return managementApiPort;
     }
 }
