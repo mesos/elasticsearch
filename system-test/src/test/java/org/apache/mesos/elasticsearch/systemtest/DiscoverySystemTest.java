@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
+import com.jayway.awaitility.core.ConditionTimeoutException;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
@@ -13,6 +14,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
+import static junit.framework.Assert.fail;
 import static org.hamcrest.CoreMatchers.is;
 
 /**
@@ -34,7 +36,12 @@ public class DiscoverySystemTest {
     }
 
     private void assertNodesDiscovered(ElasticsearchNodesResponse nodesResponse) {
-        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, is(true));
+        try {
+            await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, is(true));
+        } catch (ConditionTimeoutException e) {
+            fail("Elasticsearch did not discover nodes within 5 minutes");
+        }
+        LOGGER.info("Elasticsearch nodes discovered each other successfully");
     }
 
     private String getSlaveIp(String slaveName) {
@@ -72,7 +79,7 @@ public class DiscoverySystemTest {
                     return false;
                 }
             } catch (UnirestException e) {
-                LOGGER.info("Elasticsearch does not yet listen on port 9200");
+                LOGGER.info("Polling Elasticsearch on port 9200...");
                 return false;
             }
             return true;
