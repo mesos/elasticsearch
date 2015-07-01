@@ -11,6 +11,32 @@ slave1:
   links:
    - mesosmaster
    - zookeeper
+slave2:
+  extends:
+    file: slave.yml
+    service: slave
+  hostname: slave2
+  volumes:
+    - /tmp/slave2:/tmp/mesos/slaves
+    - /var/log/slave2:/var/log
+  environment:
+    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+  links:
+   - mesosmaster
+   - zookeeper
+slave3:
+  extends:
+    file: slave.yml
+    service: slave
+  hostname: slave3
+  volumes:
+     - /tmp/slave3:/tmp/mesos/slaves
+     - /var/log/slave3:/var/log
+  environment:
+    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+  links:
+   - mesosmaster
+   - zookeeper
 zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
@@ -34,30 +60,3 @@ scheduler:
   links:
    - slave1
    - zookeeper
-#slave2:
-#  extends:
-#    file: slave.yml
-#    service: slave
-#  hostname: slave2
-#  volumes:
-#    - /tmp/slave2:/tmp/mesos/slaves
-#    - /var/log/slave2:/var/log
-#  environment:
-#    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
-#  links:
-#   - mesosmaster
-#   - zookeeper
-#slave3:
-#  extends:
-#    file: slave.yml
-#    service: slave
-#  hostname: slave3
-#  volumes:
-#     - /tmp/slave3:/tmp/mesos/slaves
-#     - /var/log/slave3:/var/log
-#  environment:
-#    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
-#  links:
-#   - mesosmaster
-#   - zookeeper
-
