@@ -5,8 +5,6 @@ import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-import static org.apache.commons.lang.NumberUtils.stringToInt;
-
 import java.util.List;
 
 /**
