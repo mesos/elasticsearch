@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.common;
+package org.apache.mesos.elasticsearch.common.zookeeper;
 
 /**
  * Global zookeeper configuration

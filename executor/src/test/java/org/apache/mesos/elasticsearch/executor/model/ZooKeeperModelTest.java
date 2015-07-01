@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.executor.model;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressException;
 import org.junit.Test;
 
 import java.security.InvalidParameterException;
@@ -28,43 +29,6 @@ public class ZooKeeperModelTest {
         Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk"));
         Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
         new ZooKeeperModel(taskInfo.build());
-    }
-
-    @Test(expected = InvalidParameterException.class)
-    public void shouldExceptionIfOnlyParameterValue() {
-        Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("ZK_ADDRESS"));
-        Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
-        new ZooKeeperModel(taskInfo.build());
-    }
-
-    @Test(expected = InvalidParameterException.class)
-    public void shouldExceptionIfIPFormat() {
-        Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("192.168.0.1"));
-        Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
-        new ZooKeeperModel(taskInfo.build());
-    }
-
-    @Test(expected = InvalidParameterException.class)
-    public void shouldExceptionIfHTTPFormat() {
-        Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("http://192.168.0.1"));
-        Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
-        new ZooKeeperModel(taskInfo.build());
-    }
-
-    @Test
-    public void shouldParseSingleZookeeperAddressCorrectly() {
-        Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("zk://192.168.0.1:2182"));
-        Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
-        ZooKeeperModel zooKeeperModel = new ZooKeeperModel(taskInfo.build());
-        assertEquals("zk://192.168.0.1:2182", zooKeeperModel.getRuntimeSettings().get(ZooKeeperModel.ZOOKEEPER_ADDRESS_KEY));
-    }
-
-    @Test
-    public void shouldParseMultiZookeeperAddressCorrectly() {
-        Protos.ExecutorInfo.Builder executorInfo = getDefaultExecutorInfo(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("zk://192.168.0.1:2182,10.4.52.3:1234/mesos"));
-        Protos.TaskInfo.Builder taskInfo = getDefaultTaskInfo(executorInfo);
-        ZooKeeperModel zooKeeperModel = new ZooKeeperModel(taskInfo.build());
-        assertEquals("zk://192.168.0.1:2182,10.4.52.3:1234/mesos", zooKeeperModel.getRuntimeSettings().get(ZooKeeperModel.ZOOKEEPER_ADDRESS_KEY));
     }
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo(Protos.CommandInfo.Builder commandInfo) {

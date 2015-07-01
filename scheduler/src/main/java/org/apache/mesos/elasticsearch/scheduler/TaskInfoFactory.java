@@ -80,7 +80,7 @@ public class TaskInfoFactory {
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
-                .addAllArguments(asList("-zk", configuration.getZookeeperHost()))
+                .addAllArguments(asList("-zk", configuration.getZookeeperServers() + "/mesos"))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
     }
 

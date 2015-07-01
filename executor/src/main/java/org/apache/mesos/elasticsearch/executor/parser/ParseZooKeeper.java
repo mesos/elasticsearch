@@ -2,8 +2,7 @@ package org.apache.mesos.elasticsearch.executor.parser;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.ZooKeeper;
-import org.apache.mesos.elasticsearch.common.ZooKeeperAddress;
+import org.apache.mesos.elasticsearch.common.zookeeper.ZooKeeper;
 
 import java.security.InvalidParameterException;
 import java.util.HashMap;
@@ -14,8 +13,8 @@ import java.util.Map;
  * Parses ZooKeeper information
  */
 public class ParseZooKeeper implements TaskParser<String> {
-    private static final Logger LOGGER = Logger.getLogger(ParseZooKeeper.class.getCanonicalName());
 
+    private static final Logger LOGGER = Logger.getLogger(ParseZooKeeper.class.getCanonicalName());
 
     @Override
     public String parse(Protos.TaskInfo taskInfo) throws InvalidParameterException {
@@ -37,7 +36,6 @@ public class ParseZooKeeper implements TaskParser<String> {
         if (address == null) {
             throw new InvalidParameterException("The task must pass a ZooKeeper address argument using " + ZooKeeper.ZOOKEEPER_ARG + ".");
         }
-        ZooKeeperAddress zkAdd = new ZooKeeperAddress(address);
-        return zkAdd.getZkAddress();
+        return address;
     }
 }
