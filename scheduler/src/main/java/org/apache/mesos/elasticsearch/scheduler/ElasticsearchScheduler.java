@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.log4j.Logger;
-
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
@@ -18,7 +17,7 @@ import java.util.function.Predicate;
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ElasticsearchScheduler implements Scheduler {
 
-    public static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
+    private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     private final Configuration configuration;
 
@@ -38,7 +37,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperHost() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + "]");
 
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
@@ -53,7 +52,7 @@ public class ElasticsearchScheduler implements Scheduler {
             frameworkBuilder.setId(frameworkID);
         }
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), "zk://" + configuration.getZookeeperHost() + ":" + configuration.getZookeeperPort() + "/mesos");
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
         driver.run();
     }
 

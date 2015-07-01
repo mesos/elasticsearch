@@ -71,8 +71,7 @@ public class ElasticsearchExecutor implements Executor {
                     driver.sendStatusUpdate(taskStatus.finished());
                     node.close();
                 }
-            }) {
-            });
+            }));
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());

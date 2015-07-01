@@ -8,10 +8,6 @@ dns:
 zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
-  ports:
-    - "2181:2181"
-    - "2888:2888"
-    - "3888:3888"
 mesosmaster:
   build: master
   hostname: mesosmaster
@@ -27,7 +23,7 @@ mesosmaster:
   links:
     - zookeeper
 slave1:
-  extends: 
+  extends:
     file: slave.yml
     service: slave
   hostname: slave1
@@ -40,7 +36,7 @@ slave1:
    - mesosmaster
    - zookeeper
 slave2:
-  extends: 
+  extends:
     file: slave.yml
     service: slave
   hostname: slave2
@@ -53,7 +49,7 @@ slave2:
    - mesosmaster
    - zookeeper
 slave3:
-  extends: 
+  extends:
     file: slave.yml
     service: slave
   hostname: slave3
@@ -65,15 +61,27 @@ slave3:
   links:
    - mesosmaster
    - zookeeper
+zookeeper:
+  image: jplock/zookeeper:3.4.5
+  hostname: zookeeper
+mesosmaster:
+  build: master
+  hostname: mesosmaster
+  environment:
+    - MESOS_QUORUM=1
+    - MESOS_WORK_DIR=/var/lib/mesos
+    - MESOS_LOG_DIR=/var/log
+    - MESOS_ZK=zk://zookeeper:2181/mesos
+  ports:
+    - "5050:5050"
+  links:
+    - zookeeper
 scheduler:
   image: mesos/elasticsearch-scheduler
-  command: "-zk zookeeper -n 3"
+  command: "-zk zk://zookeeper:2181/mesos -n 3"
   ports:
     - "8000:8000"
     - "8080:8080"
   links:
    - slave1
-   - slave2
-   - slave3
-   - dns
    - zookeeper

@@ -1,6 +1,0 @@
-image: bradrydzewski/base
-script:
-  - find /
-
-cache:
-  - .gradle

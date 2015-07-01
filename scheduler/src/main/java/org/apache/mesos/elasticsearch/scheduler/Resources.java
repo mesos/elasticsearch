@@ -12,6 +12,10 @@ import static java.util.Arrays.asList;
  */
 public class Resources {
 
+    private Resources() {
+
+    }
+
     public static Protos.Resource portRange(long beginPort, long endPort) {
         Protos.Value.Range singlePortRange = Protos.Value.Range.newBuilder().setBegin(beginPort).setEnd(endPort).build();
         return Protos.Resource.newBuilder()

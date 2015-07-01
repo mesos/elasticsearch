@@ -11,15 +11,14 @@ import java.util.concurrent.ExecutionException;
 /**
  * DCOS certification requirement 02
  * This allows the scheduler to persist the key/value pairs to zookeeper.
- *
- * Todo:
- * In the future, we can also persist other state information to be more resilient.
  */
 public class State {
 
-    public static final Logger LOGGER = Logger.getLogger(State.class);
+    private static final Logger LOGGER = Logger.getLogger(State.class);
 
     private static final String FRAMEWORKID_KEY = "frameworkId";
+
+    private static final String FRAMEWORK_ID_ERROR = "Could not retrieve framework ID";
 
     private ZooKeeperStateInterface zkState;
 
@@ -39,8 +38,8 @@ public class State {
                 return null;
             }
         } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
-            LOGGER.error("Could not retrieve framework ID", e);
-            throw new RuntimeException("Could not retrieve framework ID", e);
+            LOGGER.error(FRAMEWORK_ID_ERROR, e);
+            throw new RuntimeException(FRAMEWORK_ID_ERROR, e);
         }
     }
 
@@ -50,8 +49,8 @@ public class State {
            value = value.mutate(frameworkId.toByteArray());
            zkState.store(value).get();
         } catch (InterruptedException | ExecutionException e) {
-            LOGGER.error("Could not retrieve framework ID", e);
-            throw new RuntimeException("Could not set framework ID", e);
+            LOGGER.error(FRAMEWORK_ID_ERROR, e);
+            throw new RuntimeException(FRAMEWORK_ID_ERROR, e);
         }
     }
 
