@@ -77,4 +77,6 @@ scheduler:
     - "8080:8080"
   links:
    - slave1
+   - slave2
+   - slave3
    - zookeeper
