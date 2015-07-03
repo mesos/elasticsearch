@@ -78,8 +78,5 @@ public class TaskInfoFactoryTest {
 
         assertEquals(configuration.getFrameworkId(), taskInfo.getExecutor().getFrameworkId());
         assertEquals("mesos/elasticsearch-executor", taskInfo.getExecutor().getContainer().getDocker().getImage());
-        assertEquals("/usr/lib", taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
-        assertEquals("/usr/lib", taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
-        assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
     }
 }

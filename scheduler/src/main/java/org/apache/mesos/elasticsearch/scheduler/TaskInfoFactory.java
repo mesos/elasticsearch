@@ -73,14 +73,13 @@ public class TaskInfoFactory {
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
                         .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
-                        .addVolumes(Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(Protos.Volume.Mode.RO).build())
                         .build());
     }
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
-                .addAllArguments(asList("-zk", configuration.getZookeeperUrl()))
+                .addAllArguments(asList("java", "-Djava.library.path=/usr/lib", "-jar", "/tmp/elasticsearch-mesos-executor.jar", "-zk", configuration.getZookeeperUrl()))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
     }
 

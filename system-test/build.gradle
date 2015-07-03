@@ -48,5 +48,19 @@ task systemTest(type: Test) {
     outputs.upToDateWhen { false }
 }
 
+task mkImagesDir {
+
+    def folder = new File("build/images")
+
+    if (!folder.exists()) {
+        folder.mkdirs()
+    }
+
+}
+
+task "saveExecutor"(type: Exec, dependsOn: mkImagesDir) {
+    commandLine '/usr/bin/docker', 'save', '-o', "build/images/executor.tar", 'mesos/elasticsearch-executor'
+}
+
 systemTest.dependsOn(dockerComposeUp)
 systemTest.finalizedBy dockerComposeKill
