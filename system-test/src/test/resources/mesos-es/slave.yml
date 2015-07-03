@@ -1,5 +1,5 @@
 slave:
-  image: redjack/mesos-slave:0.21.0
+  image: mesosphere/mesos-slave:0.22.1-1.0.ubuntu1404
   volumes:
     - /var/run/docker.sock:/var/run/docker.sock
     - /usr/local/bin/docker:/usr/local/bin/docker
