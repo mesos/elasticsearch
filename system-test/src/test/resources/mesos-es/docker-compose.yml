@@ -52,7 +52,7 @@ zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
 mesosmaster:
-  build: master
+  image: mesosphere/mesos-master:0.22.1-1.0.ubuntu1404
   hostname: mesosmaster
   environment:
     - MESOS_QUORUM=1
