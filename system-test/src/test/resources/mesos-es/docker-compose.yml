@@ -23,8 +23,6 @@ slave1:
   volumes:
     - /tmp/slave1:/tmp/mesos/slaves
     - /var/log/slave1:/var/log
-  environment:
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
@@ -36,8 +34,6 @@ slave2:
   volumes:
     - /tmp/slave2:/tmp/mesos/slaves
     - /var/log/slave2:/var/log
-  environment:
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
@@ -47,10 +43,8 @@ slave3:
     service: slave
   hostname: slave3
   volumes:
-     - /tmp/slave3:/tmp/mesos/slaves
-     - /var/log/slave3:/var/log
-  environment:
-    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
+    - /tmp/slave3:/tmp/mesos/slaves
+    - /var/log/slave3:/var/log
   links:
    - mesosmaster
    - zookeeper
@@ -58,7 +52,7 @@ zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
 mesosmaster:
-  build: master
+  image: mesosphere/mesos-master:0.22.1-1.0.ubuntu1404
   hostname: mesosmaster
   environment:
     - MESOS_QUORUM=1
