@@ -18,27 +18,100 @@ buildscript {
   dependencies {
     classpath "org.ajoberstar:semver-vcs-gradle-grgit:0.1.0-milestone.1"
     classpath "org.ajoberstar:gradle-git:1.2.0"
+    classpath "com.github.zafarkhaja:java-semver:0.9.0"
+    classpath 'com.bmuschko:gradle-docker-plugin:2.2'
   }
 }
 
+apply plugin: 'com.bmuschko.docker-remote-api'
 apply plugin: 'org.ajoberstar.semver-vcs-grgit'
 apply plugin: 'org.ajoberstar.release-opinion'
 
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import org.ajoberstar.grgit.Grgit
-import org.ajoberstar.gradle.git.release.opinion.Strategies
 
-release {
-  grgit = Grgit.open(project.file('.'))
-  versionStrategy Strategies.FINAL
 
-  // set the default, can be one already added or something else
-  def strategy = Strategies.SNAPSHOT
-  strategy = strategy.copyWith(createTag: true)
-  defaultVersionStrategy = strategy
-  tagStrategy {
-    prefixNameWithV = false // defaults to true
-    generateMessage = { version -> "Released by $user" }
-  }
+//import org.ajoberstar.gradle.git.release.opinion.Strategies
+//
+//release {
+//  grgit = Grgit.open(project.file('.'))
+//  versionStrategy Strategies.FINAL
+//
+//  // set the default, can be one already added or something else
+//  def strategy = Strategies.SNAPSHOT
+//  strategy = strategy.copyWith(createTag: true)
+//  defaultVersionStrategy = strategy
+//  tagStrategy {
+//    prefixNameWithV = false // defaults to true
+//    generateMessage = { version -> "Released by $user" }
+//  }
+//}
+
+import com.github.zafarkhaja.semver.Version
+import org.ajoberstar.grgit.Tag
+
+task calculateNextVersion {
+
+    Version currentVersion = new Version.Builder("0.1.0").build()
+
+    grgit = Grgit.open(project.file('.'))
+    grgit.tag.list().each {
+        Tag t -> println t.name
+        try {
+            Version version = new Version.Builder(t.toString()).build()
+            if (version.compareTo(currentVersion) == 1) {
+                currentVersion = version
+            }
+        } catch (UnexpectedCharacterException e) {
+            // Skip
+        }
+    }
+
+    println "Existing version: " + currentVersion
+
+    Version nextVersion
+    if (incrementType == "major") {
+        nextVersion = currentVersion.incrementMajorVersion()
+    } else if (incrementType == "minor") {
+        nextVersion = currentVersion.incremenetMinorVersion()
+    } else {
+        nextVersion = currentVersion.incrementPatchVersion()
+    }
+
+    println "Next version: " + nextVersion
+
+    // TODO: User name from environment variable
+
+    grgit.tag.add(name: nextVersion, annotate:true, message: "RELEASE $version - by Frank Scholten")
+
+}
+
+task pushImages(dependsOn: calculateNextVersion) {
+
+    println "Preparing to push Docker images [$version]"
+
+    println "Pushing scheduler:$version"
+    println "Pushing executor:$version"
+
+}
+
+task pushArtifacts(dependsOn: pushImages) {
+
+    println "Preparing to push artifacts [$version]"
+
+    println "Pushing scheduler:$version"
+    println "Pushing executor:$version"
+
+}
+
+task pushGithub(dependsOn: pushArtifacts) {
+
+    println "Preparing to push to GitHub [$version]"
+
+    println "Pushing scheduler:$version"
+    println "Pushing executor:$version"
+
 }
 
 subprojects {
@@ -73,7 +146,6 @@ subprojects {
 
         compile "org.apache.mesos:mesos:${mesosVer}"
         compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
-
 
         testCompile 'junit:junit:4.11'
         testCompile 'commons-collections:commons-collections:3.2.1'
