@@ -61,4 +61,13 @@ task docker(type: DockerBuildImage) {
     tag = 'mesos/elasticsearch-executor'
 }
 
+task mkImagesDir {
+    mkdir 'build/images'
+}
+
+task "saveExecutor"(type: Exec, dependsOn: mkImagesDir) {
+    commandLine '/usr/bin/docker', 'save', '-o', 'build/images/executor.tar', 'mesos/elasticsearch-executor'
+}
+
+
 build.dependsOn "copyJar"
