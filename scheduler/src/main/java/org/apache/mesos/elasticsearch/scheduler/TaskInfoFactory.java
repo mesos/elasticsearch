@@ -17,15 +17,12 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
-
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
     /**
      * The fraction of offered resources that will be consumed
      */
     public static final double RESOURCE_CONSUMPTION_FRACTION = 0.5;
-
+    private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
     Clock clock = new Clock();
 
     /**
@@ -73,7 +70,6 @@ public class TaskInfoFactory {
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
                         .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
-                        .addVolumes(Protos.Volume.newBuilder().setContainerPath("/usr/lib").setHostPath("/usr/lib").setMode(Protos.Volume.Mode.RO).build())
                         .build());
     }
 
