@@ -16,44 +16,63 @@ mesosmaster:
   links:
     - zookeeper
 slave1:
-  extends:
-    file: slave.yml
-    service: slave
+  image: redjack/mesos-slave:0.21.0
   hostname: slave1
   volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /usr/local/bin/docker:/usr/local/bin/docker
+    - /sys/fs/cgroup:/sys/fs/cgroup
     - /tmp/slave1:/tmp/mesos/slaves
     - /var/log/slave1:/var/log
   environment:
+    - MESOS_MASTER=zk://zookeeper:2181/mesos
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
 slave2:
-  extends:
-    file: slave.yml
-    service: slave
+  image: redjack/mesos-slave:0.21.0
   hostname: slave2
   volumes:
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /usr/local/bin/docker:/usr/local/bin/docker
+    - /sys/fs/cgroup:/sys/fs/cgroup
     - /tmp/slave2:/tmp/mesos/slaves
     - /var/log/slave2:/var/log
   environment:
+    - MESOS_MASTER=zk://zookeeper:2181/mesos
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
 slave3:
-  extends:
-    file: slave.yml
-    service: slave
+  image: redjack/mesos-slave:0.21.0
   hostname: slave3
   volumes:
-     - /tmp/slave3:/tmp/mesos/slaves
-     - /var/log/slave3:/var/log
+    - /var/run/docker.sock:/var/run/docker.sock
+    - /usr/local/bin/docker:/usr/local/bin/docker
+    - /sys/fs/cgroup:/sys/fs/cgroup
+    - /tmp/slave3:/tmp/mesos/slaves
+    - /var/log/slave3:/var/log
   environment:
+    - MESOS_MASTER=zk://zookeeper:2181/mesos
+    - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins
+    - MESOS_CONTAINERIZERS=docker,mesos
+    - MESOS_ISOLATOR=cgroups/cpu,cgroups/mem
+    - MESOS_LOG_DIR=/var/log
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
+
 zookeeper:
   image: jplock/zookeeper:3.4.5
   hostname: zookeeper
