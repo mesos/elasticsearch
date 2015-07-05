@@ -1,0 +1,52 @@
+apply plugin: 'java'
+
+dependencies {
+
+    compile project(':scheduler')
+
+    testCompile 'junit:junit:4.11'
+    testCompile 'com.github.docker-java:docker-java:1.3.0'
+    testCompile 'com.mashape.unirest:unirest-java:1.4.5'
+    testCompile 'com.jayway.awaitility:awaitility:1.6.3'
+}
+
+test {
+    exclude '**/*SystemTest*'
+}
+
+task dockerComposeUp(type: Exec) {
+
+    workingDir "${project.projectDir}/src/test/resources/mesos-es"
+
+    commandLine 'docker-compose', 'up', '-d'
+
+}
+
+task dockerComposeKill(type: Exec) {
+
+    workingDir "${project.projectDir}/src/test/resources/mesos-es"
+
+    commandLine 'docker-compose', 'kill'
+
+}
+
+task dockerComposeRm(type: Exec) {
+
+    workingDir "${project.projectDir}/src/test/resources/mesos-es"
+
+    commandLine 'docker-compose', 'rm', '--force', '-v'
+
+}
+
+dockerComposeKill.finalizedBy dockerComposeRm
+
+task systemTest(type: Test) {
+    include '**/*SystemTest*'
+    testLogging {
+        showStandardStreams = true
+    }
+    outputs.upToDateWhen { false }
+}
+
+systemTest.dependsOn(dockerComposeUp)
+systemTest.finalizedBy dockerComposeKill

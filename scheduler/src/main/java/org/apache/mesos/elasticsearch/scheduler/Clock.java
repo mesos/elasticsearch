@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import java.time.ZonedDateTime;
 import java.util.Date;
 
 /**
@@ -11,4 +12,7 @@ public class Clock {
         return new Date();
     }
 
+    public ZonedDateTime zonedNow() {
+        return ZonedDateTime.now();
+    }
 }

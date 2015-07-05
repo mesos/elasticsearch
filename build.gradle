@@ -9,25 +9,59 @@ idea {
     }
 }
 
+buildscript {
+  repositories {
+    maven {
+      url "https://plugins.gradle.org/m2/"
+    }
+  }
+  dependencies {
+    classpath "org.ajoberstar:semver-vcs-gradle-grgit:0.1.0-milestone.1"
+    classpath "org.ajoberstar:gradle-git:1.2.0"
+  }
+}
+
+apply plugin: 'org.ajoberstar.semver-vcs-grgit'
+apply plugin: 'org.ajoberstar.release-opinion'
+
+import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.gradle.git.release.opinion.Strategies
+
+release {
+  grgit = Grgit.open(project.file('.'))
+  versionStrategy Strategies.FINAL
+
+  // set the default, can be one already added or something else
+  def strategy = Strategies.SNAPSHOT
+  strategy = strategy.copyWith(createTag: true)
+  defaultVersionStrategy = strategy
+  tagStrategy {
+    prefixNameWithV = false // defaults to true
+    generateMessage = { version -> "Released by $user" }
+  }
+}
+
 subprojects {
 
+    apply plugin: 'sonar-runner'
     apply plugin: 'java'
+    apply plugin: 'jacoco'
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
 
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
+    version = rootProject.version.toString()
 
     [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
 /*    mainClassName = "com.ebay.myriad.Main"*/
 
     group = "org.apache.mesos"
-    version = "0.0.1-SNAPSHOT"
 
     ext {
-        mesosVer = "0.21.1"
-		elasticsearchVersion="1.4.0"
+        mesosVer = "0.22.1"
+		elasticsearchVersion="1.4.5"
     }
 
     repositories {
@@ -46,24 +80,19 @@ subprojects {
         testCompile "org.mockito:mockito-all:1.9.5"
 
     }
+
+    sonarRunner {
+        sonarProperties {
+            property "sonar.sourceEncoding", "UTF-8"
+            property "sonar.dynamicAnalysis", "reuseReports"
+            property "sonar.jacoco.reportPath", "${buildDir}/jacoco/test.exec" 
+        }
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+            csv.enabled false
+        }
+    }
 }
-
-// TODO: Deploy tasks below should only be available when script is running from a mesos cluster
-
-task deployExecutorHDFS(type: Exec) {
-    commandLine 'hdfs', 'dfs', '-put', '-f', 'executor/build/libs/elasticsearch-mesos-executor.jar', '/elasticsearch'
-}
-deployExecutorHDFS.description="Deploys the mesos elasticsearch scheduler to HDFS"
-
-task deployCloudMesosHDFS(type: Exec) {
-    dependsOn deployExecutorHDFS
-    commandLine 'hdfs', 'dfs', '-put', '-f', 'elasticsearch-cloud-mesos/build/docker/elasticsearch-cloud-mesos.zip', '/elasticsearch'
-}
-deployCloudMesosHDFS.description="Deploys the elasticsearch cloud mesos plugin to HDFS"
-
-task deploy(type: Exec) {
-    dependsOn deployCloudMesosHDFS
-    commandLine 'java', '-jar', 'scheduler/build/docker/elasticsearch-mesos-scheduler.jar', '-m', '10.11.142.163:5050', '-n', '3', '-nn', '10.11.142.163:8020'
-}
-deploy.description="Runs the mesos elasticsearch framework on the clsuter"
-
