@@ -24,93 +24,77 @@ buildscript {
 }
 
 apply plugin: 'com.bmuschko.docker-remote-api'
-apply plugin: 'org.ajoberstar.semver-vcs-grgit'
-apply plugin: 'org.ajoberstar.release-opinion'
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
-import org.ajoberstar.grgit.Grgit
-
-
-//import org.ajoberstar.gradle.git.release.opinion.Strategies
-//
-//release {
-//  grgit = Grgit.open(project.file('.'))
-//  versionStrategy Strategies.FINAL
-//
-//  // set the default, can be one already added or something else
-//  def strategy = Strategies.SNAPSHOT
-//  strategy = strategy.copyWith(createTag: true)
-//  defaultVersionStrategy = strategy
-//  tagStrategy {
-//    prefixNameWithV = false // defaults to true
-//    generateMessage = { version -> "Released by $user" }
-//  }
-//}
 
 import com.github.zafarkhaja.semver.Version
 import org.ajoberstar.grgit.Tag
+import org.ajoberstar.grgit.Grgit
 
-task calculateNextVersion {
+task release {
+
+    // TODO: Check releaseType property (major,minor, patch) or fail with error message
+
+    def grgit = Grgit.open(project.file('.'))
+    def tags = grgit.tag.list()
+
+    def versions = []
+
+    tags.each { Tag t ->
+        try {
+            Version version = new Version.Builder(t.name).build()
+            versions << version
+        } catch (UnexpectedCharacterException e) {
+            // Skip, tag is invalid
+       }
+    }
 
     Version currentVersion = new Version.Builder("0.1.0").build()
 
-    grgit = Grgit.open(project.file('.'))
-    grgit.tag.list().each {
-        Tag t -> println t.name
-        try {
-            Version version = new Version.Builder(t.toString()).build()
-            if (version.compareTo(currentVersion) == 1) {
-                currentVersion = version
-            }
-        } catch (UnexpectedCharacterException e) {
-            // Skip
+    versions.each { Version v ->
+        if (v.greaterThan(currentVersion)) {
+            currentVersion = v
         }
     }
 
-    println "Existing version: " + currentVersion
+    println "Current version: " + currentVersion
 
-    Version nextVersion
-    if (incrementType == "major") {
-        nextVersion = currentVersion.incrementMajorVersion()
-    } else if (incrementType == "minor") {
-        nextVersion = currentVersion.incremenetMinorVersion()
-    } else {
-        nextVersion = currentVersion.incrementPatchVersion()
+    if (releaseType == "major") {
+        project.version = currentVersion.incrementMajorVersion()
+    } else if (releaseType == "minor") {
+        project.version = currentVersion.incrementMinorVersion()
+    } else if (releaseType == "patch") {
+        project.version = currentVersion.incrementPatchVersion()
     }
 
-    println "Next version: " + nextVersion
+    println "Next version: " + project.version
 
     // TODO: User name from environment variable
 
-    grgit.tag.add(name: nextVersion, annotate:true, message: "RELEASE $version - by Frank Scholten")
+    grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by Frank Scholten")
 
 }
 
-task pushImages(dependsOn: calculateNextVersion) {
+task pushImages(dependsOn: release) {
 
-    println "Preparing to push Docker images [$version]"
-
-    println "Pushing scheduler:$version"
-    println "Pushing executor:$version"
+    println "Pushing mesos/elasticsearch-scheduler:$project.version"
+    println "Pushing mesos/executor:$project.version"
 
 }
 
 task pushArtifacts(dependsOn: pushImages) {
 
-    println "Preparing to push artifacts [$version]"
-
-    println "Pushing scheduler:$version"
-    println "Pushing executor:$version"
+    println "Pushing scheduler:$project.version"
+    println "Pushing executor:$project.version"
+    println "Pushing commons:$project.version"
+    println "Pushing system-test:$project.version"
 
 }
 
 task pushGithub(dependsOn: pushArtifacts) {
 
-    println "Preparing to push to GitHub [$version]"
-
-    println "Pushing scheduler:$version"
-    println "Pushing executor:$version"
+    println "Pushing to Github"
 
 }
 
@@ -157,7 +141,7 @@ subprojects {
         sonarProperties {
             property "sonar.sourceEncoding", "UTF-8"
             property "sonar.dynamicAnalysis", "reuseReports"
-            property "sonar.jacoco.reportPath", "${buildDir}/jacoco/test.exec" 
+            property "sonar.jacoco.reportPath", "${buildDir}/jacoco/test.exec"
         }
     }
 
