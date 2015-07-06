@@ -2,7 +2,7 @@ FROM jpetazzo/dind
 MAINTAINER RedJack, LLC
 
 ENV DEBIAN_FRONTEND noninteractive
-ENV VERSION 0.22.0
+ENV VERSION 0.22.1
 ENV PKG_RELEASE 1.0
 
 RUN apt-get update
@@ -23,10 +23,6 @@ RUN \
   rm mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   apt-get clean
 
-# TODO Optimize
-
-# Add dind
-
 # Let's start with some basic stuff.
 RUN apt-get update -qq && apt-get install -qqy \
     apt-transport-https \
@@ -34,20 +30,9 @@ RUN apt-get update -qq && apt-get install -qqy \
     curl \
     iptables
 
-# Add Supervisor
-
 # Update the base image
 RUN sed -i.bak 's/main$/main universe/' /etc/apt/sources.list
 RUN apt-get update && apt-get upgrade -qq
-
-# Install Supervisord
-RUN apt-get install -qq supervisor
-
-# Make the necessary folders for Supervisord
-RUN mkdir -p /var/log/supervisor /etc/supervisor/conf.d
-
-# Add the base configuration file for Supervisord
-ADD supervisor.conf /etc/supervisor.conf
 
 ADD runslave.sh /tmp/runslave.sh
 

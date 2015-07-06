@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Start Docker & Mesos-Slave
+/usr/local/bin/wrapdocker
 
-supervisord -c /etc/supervisor.conf &
+docker load < /tmp/build/images/executor.tar
 
-while ! supervisorctl status docker | grep -q 'EXITED'; do sleep 1; done
+mesos-slave
