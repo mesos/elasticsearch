@@ -19,7 +19,6 @@ import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.spockframework.util.CollectionUtil.asSet;
 
 /**
  * Tests Scheduler API.
@@ -95,7 +94,11 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_isSlaveAlreadyRunningTask() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
+        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        scheduler.tasks = new HashMap<>();
+        scheduler.tasks.put("host1", task1);
+        scheduler.tasks.put("host2", task2);
 
         Protos.Offer.Builder offer = newOffer("host1");
 
@@ -106,7 +109,13 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_enoughNodes() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress), new Task("host3", "3", now, clientAddress, transportAddress)});
+        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        Task task3 = new Task("host3", "3", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        scheduler.tasks = new HashMap<>();
+        scheduler.tasks.put("host1", task1);
+        scheduler.tasks.put("host2", task2);
+        scheduler.tasks.put("host3", task3);
 
         Protos.Offer.Builder offer = newOffer("host4");
 
@@ -117,7 +126,11 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_noPorts() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "1", now, clientAddress, transportAddress), new Task("host2", "2", now, clientAddress, transportAddress)});
+        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        scheduler.tasks = new HashMap<>();
+        scheduler.tasks.put("host1", task1);
+        scheduler.tasks.put("host2", task2);
 
         Protos.Offer.Builder offer = newOffer("host3");
 
@@ -129,7 +142,9 @@ public class ElasticsearchSchedulerTest {
     @SuppressWarnings("unchecked")
     @Test
     public void testResourceOffers_singlePort() {
-        scheduler.tasks = asSet(new Task[]{new Task("host1", "task1", now, clientAddress, transportAddress)});
+        Task task = new Task("host1", "task1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
+        scheduler.tasks = new HashMap<>();
+        scheduler.tasks.put("host1", task);
 
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));
@@ -141,7 +156,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testResourceOffers_launchTasks() {
-        scheduler.tasks = new HashSet<>();
+        scheduler.tasks = new HashMap<>();
 
         Protos.Offer.Builder offerBuilder = newOffer("host3");
         offerBuilder.addResources(portRange(9200, 9200));
