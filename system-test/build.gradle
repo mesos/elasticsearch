@@ -64,3 +64,5 @@ task "saveExecutor"(type: Exec, dependsOn: mkImagesDir) {
 
 systemTest.dependsOn(dockerComposeUp)
 systemTest.finalizedBy dockerComposeKill
+
+build.dependsOn(saveExecutor)

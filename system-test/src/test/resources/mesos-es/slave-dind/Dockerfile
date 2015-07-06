@@ -1,4 +1,4 @@
-FROM ubuntu
+FROM jpetazzo/dind
 MAINTAINER RedJack, LLC
 
 ENV DEBIAN_FRONTEND noninteractive
@@ -16,7 +16,7 @@ RUN apt-get update
 
 WORKDIR /tmp
 RUN \
-  apt-get install -y curl openjdk-6-jre-headless docker.io python && \
+  apt-get install -y curl openjdk-6-jre-headless python && \
   curl -s -O https://downloads.mesosphere.io/master/ubuntu/14.04/mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   dpkg --unpack mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   apt-get install -f -y && \
@@ -32,17 +32,7 @@ RUN apt-get update -qq && apt-get install -qqy \
     apt-transport-https \
     ca-certificates \
     curl \
-    lxc \
     iptables
-
-# Install Docker from Docker Inc. repositories.
-RUN curl -sSL https://get.docker.com/ubuntu/ | sh
-
-# Install the magic wrapper.
-ADD ./wrapdocker /usr/local/bin/wrapdocker
-RUN chmod +x /usr/local/bin/wrapdocker
-
-VOLUME /var/lib/docker
 
 # Add Supervisor
 
