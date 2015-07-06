@@ -38,7 +38,7 @@ slave2:
     - /tmp/slave2:/tmp/mesos/slaves
     - /var/log/slave2:/var/log
   environment:
-    - MESOS_RESOURCES=ports(*):[9400-9400,9500-9500]
+    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
@@ -51,7 +51,7 @@ slave3:
      - /tmp/slave3:/tmp/mesos/slaves
      - /var/log/slave3:/var/log
   environment:
-    - MESOS_RESOURCES=ports(*):[9600-9600,9700-9700]
+    - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
    - mesosmaster
    - zookeeper
