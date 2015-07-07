@@ -8,8 +8,11 @@ import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 
@@ -20,6 +23,7 @@ public class ElasticsearchExecutor implements Executor {
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
+    private String hostName;
 
     public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
         this.launcher = launcher;
@@ -29,11 +33,15 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void registered(ExecutorDriver driver, Protos.ExecutorInfo executorInfo, Protos.FrameworkInfo frameworkInfo, Protos.SlaveInfo slaveInfo) {
         LOGGER.info("Executor Elasticsearch registered on slave " + slaveInfo.getHostname());
+
+        this.hostName = slaveInfo.getHostname();
     }
 
     @Override
     public void reregistered(ExecutorDriver driver, Protos.SlaveInfo slaveInfo) {
         LOGGER.info("Executor Elasticsearch re-registered on slave " + slaveInfo.getHostname());
+
+        this.hostName = slaveInfo.getHostname();
     }
 
     @Override
@@ -53,6 +61,15 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(taskStatus.starting());
 
         try {
+            try {
+                InetAddress inetAddress  = InetAddress.getByName(hostName);
+                ImmutableSettings.Builder builder = ImmutableSettings.settingsBuilder().put("network.publish_host", inetAddress.getHostAddress());
+                launcher.addRuntimeSettings(builder);
+            } catch (UnknownHostException e) {
+                LOGGER.error("Could not resolve IP for hostname");
+                return;
+            }
+
             // Parse ports
             RunTimeSettings ports = new PortsModel(task);
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
