@@ -1,5 +1,6 @@
 apply plugin: 'application'
 apply plugin: 'com.bmuschko.docker-remote-api'
+apply plugin: 'com.github.johnrengelman.shadow'
 
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 
@@ -11,6 +12,7 @@ buildscript {
     }
     dependencies {
         classpath 'com.bmuschko:gradle-docker-plugin:2.2'
+        classpath 'com.github.jengelman.gradle.plugins:shadow:1.2.1'
     }
 }
 
@@ -30,15 +32,15 @@ dependencies {
     compile 'com.github.trifork-leeds:elasticsearch-zookeeper:v1.4.5'
 }
 
-jar {
+shadowJar {
     baseName = "elasticsearch-mesos-executor"
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    manifest { attributes 'Main-Class': mainClassName }
+    mergeServiceFiles()
+    classifier = ''
 }
 
 task copyJar(type: Copy) {
-    dependsOn 'jar'
-    from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
+    dependsOn 'shadowJar'
+    from { getTasksByName("shadowJar", false)[0].outputs.files[0] } // Get outputs from task "jar"
     into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")

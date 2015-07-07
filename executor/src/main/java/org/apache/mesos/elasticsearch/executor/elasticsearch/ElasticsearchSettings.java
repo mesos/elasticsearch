@@ -17,6 +17,7 @@ public class ElasticsearchSettings {
                 .put("index.number_of_replicas", 1)
                 .put("discovery.type", "com.sonian.elasticsearch.zookeeper.discovery.ZooKeeperDiscoveryModule")
                 .put("sonian.elasticsearch.zookeeper.settings.enabled", true)
+                .put("sonian.elasticsearch.zookeeper.client.session.timeout", 60)
                 .put("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled", true);
     }
 }

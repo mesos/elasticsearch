@@ -1,5 +1,5 @@
 zookeeper:
-  image: jplock/zookeeper:3.4.5
+  build: zookeeper
   hostname: zookeeper
 mesosmaster:
   build: master
