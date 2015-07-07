@@ -181,6 +181,12 @@ $ docker run --rm -v /var/run/docker.sock:/var/run/docker.sock:rw \
       -v `pwd`:/app:rw pierrevincent/gradle-java8 build
 ```
 
+## User Interface
+
+The web based user interface is available on port 8080 of the scheduler by default. It displays real time information about the tasks running in the cluster and a basic configuration overview of the cluster. 
+
+The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
+
 ## Sponsors
 This project is sponsored by Cisco Cloud Services
 
