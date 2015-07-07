@@ -20,7 +20,7 @@ import static org.hamcrest.CoreMatchers.is;
 /**
  * Tests REST node discovery
  */
-public class DiscoverySystemTest {
+public class DiscoverySystemTest extends TestBase {
 
     public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
 
@@ -42,19 +42,6 @@ public class DiscoverySystemTest {
             fail("Elasticsearch did not discover nodes within 5 minutes");
         }
         LOGGER.info("Elasticsearch nodes discovered each other successfully");
-    }
-
-    private String getSlaveIp(String slaveName) {
-        DockerClientConfig config = DockerClientConfig.createDefaultConfigBuilder()
-                .withVersion("1.16")
-                .withUri("unix:///var/run/docker.sock")
-                .build();
-
-        DockerClient docker = DockerClientBuilder.getInstance(config).build();
-
-        InspectContainerResponse response = docker.inspectContainerCmd(slaveName).exec();
-
-        return response.getNetworkSettings().getIpAddress();
     }
 
     private static class ElasticsearchNodesResponse implements Callable<Boolean> {
