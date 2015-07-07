@@ -2,7 +2,7 @@ slave:
   build: slave-dind
   privileged: true
   volumes:
-    - ../../../../build/images:/tmp/build/images
+    - /tmp:/tmp
   environment:
     - MESOS_MASTER=zk://zookeeper:2181/mesos
     - MESOS_EXECUTOR_REGISTRATION_TIMEOUT=5mins

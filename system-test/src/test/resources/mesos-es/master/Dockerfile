@@ -16,7 +16,7 @@ RUN apt-get update
 
 WORKDIR /tmp
 RUN \
-  apt-get install -y curl openjdk-6-jre-headless docker.io && \
+  apt-get install -y curl openjdk-6-jre-headless && \
   curl -s -O https://downloads.mesosphere.io/master/ubuntu/14.04/mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   dpkg --unpack mesos_${VERSION}-${PKG_RELEASE}.ubuntu1404_amd64.deb && \
   apt-get install -f -y && \

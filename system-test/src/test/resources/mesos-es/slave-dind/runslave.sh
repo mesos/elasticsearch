@@ -2,6 +2,6 @@
 
 /usr/local/bin/wrapdocker
 
-docker load < /tmp/build/images/executor.tar
+docker load < /tmp/executor.tar
 
 mesos-slave

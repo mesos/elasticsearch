@@ -40,7 +40,7 @@ shadowJar {
 
 task copyJar(type: Copy) {
     dependsOn 'shadowJar'
-    from { getTasksByName("jar", false)[0].outputs.files[0] } // Get outputs from task "jar"
+    from { getTasksByName("shadowJar", false)[0].outputs.files[0] } // Get outputs from task "jar"
     into        'build/docker'
     rename { String fileName ->
         fileName.replace("-${project.version}", "")

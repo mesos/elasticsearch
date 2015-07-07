@@ -59,7 +59,7 @@ task mkImagesDir {
 }
 
 task "saveExecutor"(type: Exec, dependsOn: mkImagesDir) {
-    commandLine '/usr/bin/docker', 'save', '-o', "build/images/executor.tar", 'mesos/elasticsearch-executor'
+    commandLine 'docker', 'save', '-o', "/tmp/executor.tar", 'mesos/elasticsearch-executor'
 }
 
 systemTest.dependsOn(dockerComposeUp)
