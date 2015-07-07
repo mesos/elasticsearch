@@ -14,27 +14,38 @@ test {
     exclude '**/*SystemTest*'
 }
 
-task dockerComposeUp(type: Exec) {
+task mkImagesDir {
 
-    workingDir "${project.projectDir}/src/test/resources/mesos-es"
+    def folder = new File("${project.buildDir}/test/images")
 
-    commandLine 'docker-compose', 'up', '-d'
+    if (!folder.exists()) {
+        folder.mkdirs()
+    }
 
 }
 
+task saveExecutor(type: Exec, dependsOn: [ 'mkImagesDir' /*, ':executor:docker' */ ]) {
+    commandLine 'docker', 'save', '-o', "${project.rootProject.buildDir}/test/images/executor.tar", 'mesos/elasticsearch-executor'
+}
+
+task dockerComposeUp(type: Exec, dependsOn: saveExecutor) {
+
+    commandLine 'docker-compose', '-f', "${project.projectDir}/src/test/resources/mesos-es/docker-compose.yml", 'up', '-d'
+
+}
+
+//dockerComposeUp.dependsOn project.rootProject.tasks.withType(DockerBuildImage)
+//dockerComposeUp.dependsOn ":scheduler:docker" 
+
 task dockerComposeKill(type: Exec) {
 
-    workingDir "${project.projectDir}/src/test/resources/mesos-es"
-
-    commandLine 'docker-compose', 'kill'
+    commandLine 'docker-compose', '-f', "${project.projectDir}/src/test/resources/mesos-es/docker-compose.yml", 'kill'
 
 }
 
 task dockerComposeRm(type: Exec) {
 
-    workingDir "${project.projectDir}/src/test/resources/mesos-es"
-
-    commandLine 'docker-compose', 'rm', '--force', '-v'
+    commandLine 'docker-compose', '-f', "${project.projectDir}/src/test/resources/mesos-es/docker-compose.yml", 'rm', '--force', '-v'
 
 }
 
@@ -48,21 +59,5 @@ task systemTest(type: Test) {
     outputs.upToDateWhen { false }
 }
 
-task mkImagesDir {
-
-    def folder = new File("build/images")
-
-    if (!folder.exists()) {
-        folder.mkdirs()
-    }
-
-}
-
-task "saveExecutor"(type: Exec, dependsOn: mkImagesDir) {
-    commandLine '/usr/bin/docker', 'save', '-o', "build/images/executor.tar", 'mesos/elasticsearch-executor'
-}
-
-systemTest.dependsOn(dockerComposeUp)
+systemTest.dependsOn dockerComposeUp
 systemTest.finalizedBy dockerComposeKill
-
-build.dependsOn(saveExecutor)

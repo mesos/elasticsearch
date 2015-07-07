@@ -11,7 +11,7 @@ mesosmaster:
     - MESOS_ZK=zk://zookeeper:2181/mesos
     - MESOS_REGISTRY_STORE_TIMEOUT=20secs
   volumes:
-    - /var/log/mesos:/var/log/mesos
+    -  ../../../../../build/test/var/log/mesos:/var/log/mesos
   ports:
     - "5050:5050"
   links:
@@ -22,8 +22,8 @@ slave1:
     service: slave
   hostname: slave1
   volumes:
-    - /tmp/slave1:/tmp/mesos/slaves
-    - /var/log/slave1:/var/log
+    -  ../../../../../build/test/tmp/slave1:/tmp/mesos/slaves
+    -  ../../../../../build/test/var/log/slave1:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -35,8 +35,8 @@ slave2:
     service: slave
   hostname: slave2
   volumes:
-    - /tmp/slave2:/tmp/mesos/slaves
-    - /var/log/slave2:/var/log
+    -  ../../../../../build/test/tmp/slave2:/tmp/mesos/slaves
+    -  ../../../../../build/test/var/log/slave2:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
@@ -48,8 +48,8 @@ slave3:
     service: slave
   hostname: slave3
   volumes:
-     - /tmp/slave3:/tmp/mesos/slaves
-     - /var/log/slave3:/var/log
+     -  ../../../../../build/test/tmp/slave3:/tmp/mesos/slaves
+     -  ../../../../../build/test/var/log/slave3:/var/log
   environment:
     - MESOS_RESOURCES=ports(*):[9200-9200,9300-9300]
   links:
