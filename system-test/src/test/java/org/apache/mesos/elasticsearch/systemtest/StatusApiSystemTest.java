@@ -6,6 +6,7 @@ import com.mashape.unirest.http.Unirest;
 import org.json.JSONObject;
 import org.junit.Test;
 
+import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.*;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -33,9 +34,9 @@ public class StatusApiSystemTest extends TestBase {
             JSONObject taskObject = tasksResponse.getBody().getArray().getJSONObject(i);
             assertThat(taskObject.getString("id"), startsWith("elasticsearch_slave"));
             assertEquals("esdemo", taskObject.getString("name"));
-            assertThat(taskObject.getString("started_at"), SystemTestMatchers.isValidDateTime());
-            assertThat(taskObject.getString("http_address"), SystemTestMatchers.isValidAddress());
-            assertThat(taskObject.getString("transport_address"), SystemTestMatchers.isValidAddress());
+            assertThat(taskObject.getString("started_at"), isValidDateTime());
+            assertThat(taskObject.getString("http_address"), isValidAddress());
+            assertThat(taskObject.getString("transport_address"), isValidAddress());
             assertThat(taskObject.getString("hostname"), startsWith("slave"));
         }
     }
