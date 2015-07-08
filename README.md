@@ -9,6 +9,7 @@
 - [x] Durable cluster topology (via ZooKeeper)
 - [x] Web UI on scheduler port 8080
 - [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
+- [ ] Configuration
 - [ ] High availability (master, indexer, replica)
 - [ ] Fault tolerance
 - [ ] Faster task recovery with Mesos dynamic reservations (https://issues.apache.org/jira/browse/MESOS-1554)
