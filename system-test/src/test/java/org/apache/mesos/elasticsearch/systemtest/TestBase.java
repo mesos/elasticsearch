@@ -32,8 +32,6 @@ public abstract class TestBase {
         docker = DockerClientBuilder.getInstance(config).build();
         HttpHost proxy = new HttpHost(config.getUri().getHost(), 8888);
         Unirest.setProxy(proxy);
-        LOGGER.info("Using proxy " + proxy.toHostString());
-        System.out.println("proxy.toHostString() = " + proxy.toHostString());
         Unirest.setDefaultHeader("Content-Type", "application/json");
     }
 }
