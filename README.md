@@ -17,6 +17,7 @@
 - [ ] Upgrade
 - [ ] Rollback
 - [ ] Snapshot and restore
+- [ ] Persistent storage
 
 ### Developer Tools
 
