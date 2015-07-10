@@ -57,3 +57,7 @@ slave3:
   links:
    - mesosmaster
    - zookeeper
+proxy:
+  image: paintedfox/tinyproxy
+  ports:
+    - "8888:8888"
