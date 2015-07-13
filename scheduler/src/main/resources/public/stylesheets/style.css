@@ -1,17 +1,85 @@
 body {
-  background-image: url("../images/bg.jpg") !important;
+  background-color: #e9ecf3;
+  font-size: 12px;
 }
 h1 {
   margin: 10px;
 }
+h3 {
+  margin: 0px 0px 20px 0px;
+  font-size: 20px;
+}
+input,
+button {
+  font-size: inherit;
+}
 .content-wrapper {
   margin-top: 40px;
+}
+.cell {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+}
+.dashboard-stat .display .number {
+  display: inline-block;
+}
+.dashboard-stat .display .number h3 {
+  margin: 0 0 2px 0;
+  padding: 0;
+  font-size: 30px;
+  font-weight: 400;
+}
+.dashboard-stat .display .number small {
+  font-size: 14px;
+  color: #AAB5BC;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.dashboard-stat .display .icon {
+  display: inline-block;
+  float: right;
+  padding: 7px 0 0 0;
+}
+.dashboard-stat .display .icon i {
+  color: #cbd4e0;
+  font-size: 26px;
+}
+.dashboard-stat .progress-info {
+  clear: both;
+}
+.dashboard-stat .progress-info .progress {
+  margin: 0;
+  height: 4px;
+  clear: both;
+  display: block;
+  border: 0;
+  background-image: none;
+  filter: none;
+}
+.dashboard-stat .progress-info .status {
+  margin-top: 5px;
+  font-size: 11px;
+  color: #AAB5BC;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.dashboard-stat .progress-info .status .status-title {
+  float: left;
+  display: inline-block;
+}
+.dashboard-stat .progress-info .status .status-number {
+  float: right;
+  display: inline-block;
 }
 .mesos-logo img {
   max-height: 59px;
 }
 .task-list-item td {
   font-family: monospace;
+}
+.query-string-input {
+  width: 350px;
 }
 #sidebar-wrapper {
   background-color: #000000;
