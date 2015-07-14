@@ -55,6 +55,7 @@ public class DiscoverySystemTest extends TestBase {
         @Override
         public Boolean call() throws Exception {
             try {
+                //todo: get ES urls from Scheduler/tasks API
                 double nodesSlave1 = Unirest.get("http://" + ipAddress1 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
                 double nodesSlave2 = Unirest.get("http://" + ipAddress2 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
                 double nodesSlave3 = Unirest.get("http://" + ipAddress3 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();

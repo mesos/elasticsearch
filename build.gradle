@@ -67,6 +67,9 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
     }
 
     dependencies {
@@ -75,7 +78,7 @@ subprojects {
         compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
 
 
-        testCompile 'junit:junit:4.11'
+        testCompile 'junit:junit:4.12'
         testCompile 'commons-collections:commons-collections:3.2.1'
         testCompile "org.mockito:mockito-all:1.9.5"
 
