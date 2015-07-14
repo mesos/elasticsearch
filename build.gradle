@@ -1,3 +1,8 @@
+
+import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
+import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
+import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
+
 allprojects {
     apply plugin: 'idea'
 }
@@ -18,6 +23,7 @@ buildscript {
   dependencies {
     classpath "org.ajoberstar:semver-vcs-gradle-grgit:0.1.0-milestone.1"
     classpath "org.ajoberstar:gradle-git:1.2.0"
+    classpath 'com.bmuschko:gradle-docker-plugin:2.3.1'
   }
 }
 
@@ -43,11 +49,13 @@ release {
 
 subprojects {
 
+    apply plugin: 'maven-publish'
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
     apply plugin: 'jacoco'
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
+    apply plugin: 'com.bmuschko.docker-remote-api'
 
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
@@ -55,13 +63,10 @@ subprojects {
 
     [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
-/*    mainClassName = "com.ebay.myriad.Main"*/
-
     group = "org.apache.mesos"
-
     ext {
         mesosVer = "0.22.1"
-		elasticsearchVersion="1.4.5"
+	    elasticsearchVersion="1.4.5"
     }
 
     repositories {
@@ -93,6 +98,34 @@ subprojects {
         reports {
             xml.enabled true
             csv.enabled false
+        }
+    }
+
+    publishing {
+        publications {
+            mavenJava(MavenPublication) {
+                from components.java
+            }
+        }
+    }
+
+    afterEvaluate { project ->
+        if (project.hasProperty('imageName')) {
+            docker.url = 'unix:///var/run/docker.sock'
+            if (System.env.DOCKER_HOST) {
+                docker.url = "$System.env.DOCKER_HOST".replace("tcp","https")
+                if (System.env.DOCKER_CERT_PATH) {
+                    docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                }
+            }
+            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar]) {
+                inputDir = file(project.projectDir)
+                tag = project.imageName
+            }
+            task publishDockerImage(type: DockerPushImage) {
+                imageName = project.imageName
+            }
+            project.publish.dependsOn publishDockerImage
         }
     }
 }
