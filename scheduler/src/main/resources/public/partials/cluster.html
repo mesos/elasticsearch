@@ -13,7 +13,7 @@
             <!--<div class="progress-info">-->
                 <!--<div class="progress">-->
                     <!--<span style="width: 85%;" class="progress-bar progress-bar-success">-->
-                    <!--<span class="sr-only">85% change</span>-->
+                        <!--<span class="sr-only">85% change</span>-->
                     <!--</span>-->
                 <!--</div>-->
                 <!--<div class="status">-->
@@ -51,6 +51,14 @@
                     <i class="fa fa-database"></i>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="cell">
+            <h3>Nodes State</h3>
+            <progress><bar ng-repeat="state in statesPercentage track by $index" value="state.percentage" type="{{state.type}}">{{state.percentage}}% {{state.state}}</bar></progress>
         </div>
     </div>
 </div>

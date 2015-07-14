@@ -1,6 +1,7 @@
 var app = angular.module('mesos-es-ui', [
     'ngRoute',
     'ngResource',
+    'ui.bootstrap',
     'angularMoment',
     'jsonFormatter',
 	'mesos-es-ui.config',
