@@ -9,6 +9,7 @@
                 <tr>
                     <th>Task ID</th>
                     <th>Name</th>
+                    <th>State</th>
                     <th>Hostname</th>
                     <th>IP address</th>
                     <th>Transport IP</th>
@@ -19,6 +20,7 @@
                 <tr ng-repeat="task in tasks track by task.id" class="task-list-item">
                     <td><a href="http://{{task.hostname}}">{{task.id}}</a></td>
                     <td>{{task.name}}</td>
+                    <td>{{task.state}}</td>
                     <td><a href="http://{{task.hostname}}" target="_blank">{{task.hostname}}</a></td>
                     <td><a href="http://{{task.http_address}}" target="_blank">{{task.http_address}}</a></td>
                     <td>{{task.transport_address}}</td>

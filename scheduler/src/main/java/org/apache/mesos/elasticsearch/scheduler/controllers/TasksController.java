@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.InetSocketAddress;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
@@ -28,19 +29,20 @@ public class TasksController {
 
     @RequestMapping
     public List<GetTasksResponse> getTasks() {
-        return scheduler.getTasks().stream().map(this::from).collect(toList());
+        return scheduler.getTasks().entrySet().stream().map(this::from).collect(toList());
 
     }
 
-    private GetTasksResponse from(Task task) {
+    private GetTasksResponse from(Map.Entry<String, Task> task) {
         return new GetTasksResponse(
-                task.getTaskId(),
-                configuration.getTaskName(),
-                configuration.getVersion(),
-                task.getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-                toFormattedAddress(task.getClientAddress()),
-                toFormattedAddress(task.getTransportAddress()),
-                task.getHostname()
+            task.getValue().getTaskId(),
+            task.getValue().getState().toString(),
+            configuration.getTaskName(),
+            configuration.getVersion(),
+            task.getValue().getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            toFormattedAddress(task.getValue().getClientAddress()),
+            toFormattedAddress(task.getValue().getTransportAddress()),
+            task.getValue().getHostname()
         );
     }
 
@@ -52,10 +54,11 @@ public class TasksController {
      *
      */
     public static class GetTasksResponse {
-        public String id, name, version, startedAt, httpAddress, transportAddress, hostname;
+        public String id, state, name, version, startedAt, httpAddress, transportAddress, hostname;
 
-        public GetTasksResponse(String id, String name, String version, String startedAt, String httpAddress, String transportAddress, String hostname) {
+        public GetTasksResponse(String id, String state, String name, String version, String startedAt, String httpAddress, String transportAddress, String hostname) {
             this.id = id;
+            this.state = state;
             this.name = name;
             this.version = version;
             this.startedAt = startedAt;
