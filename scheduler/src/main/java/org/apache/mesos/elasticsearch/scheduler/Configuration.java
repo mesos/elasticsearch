@@ -11,7 +11,11 @@ public class Configuration {
 
     private static final double MEM = 512;
 
+    private String MEM_UNITS = "MB";
+
     private static final double DISK = 250;
+
+    private String DISK_UNITS = "GB";
 
     private int numberOfHwNodes;
 
@@ -31,8 +35,16 @@ public class Configuration {
         return MEM;
     }
 
+    public String getMemUnits() {
+        return MEM_UNITS;
+    }
+
     public static double getDisk() {
         return DISK;
+    }
+
+    public String getDiskUnits() {
+        return DISK_UNITS;
     }
 
     public State getState() {
