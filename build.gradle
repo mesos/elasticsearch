@@ -35,7 +35,6 @@ import org.ajoberstar.grgit.Grgit
 
 def grgit = Grgit.open(project.file('.'))
 def tags = grgit.tag.list()
-
 def versions = []
 
 tags.each { Tag t ->
@@ -57,17 +56,16 @@ versions.each { Version v ->
 
 println "Current version: " + currentVersion
 project.version = currentVersion
-
 task publishToGitOrigin << {
     println "Pushing to Github"
 }
 
-task publish << {
-    println "Pushing to Github"
+afterEvaluate {
+    publishToGitOrigin.dependsOn getTasksByName('publish', true)
 }
 
-task release(dependsOn: [publish]) << {
-    if (hasProperty('releaseType')) {
+task incrementVersion << {
+    if (project.hasProperty('releaseType')) {
         if (releaseType == "major") {
             project.version = currentVersion.incrementMajorVersion()
         } else if (releaseType == "minor") {
@@ -76,12 +74,17 @@ task release(dependsOn: [publish]) << {
             project.version = currentVersion.incrementPatchVersion()
         }
     } else {
-        // TODO: Check releaseType property (major,minor, patch) or fail with error message
+        throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
     }
-
     println "Next version: " + project.version
-    // TODO: User name from environment variable
-    grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by Frank Scholten")
+}
+
+task release(dependsOn: [incrementVersion, publishToGitOrigin]) << {
+    if (!project.hasProperty('userName')) {
+        throw new GradleException('userName was not provided. Specify -PuserName=<user>')
+    }
+    grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by $userName")
+    grgit.push()
 }
 
 subprojects {
