@@ -56,13 +56,6 @@ versions.each { Version v ->
 
 println "Current version: " + currentVersion
 project.version = currentVersion
-task publishToGitOrigin << {
-    println "Pushing to Github"
-}
-
-afterEvaluate {
-    publishToGitOrigin.dependsOn getTasksByName('publish', true)
-}
 
 task incrementVersion << {
     if (project.hasProperty('releaseType')) {
@@ -79,12 +72,16 @@ task incrementVersion << {
     println "Next version: " + project.version
 }
 
-task release(dependsOn: [incrementVersion, publishToGitOrigin]) << {
+task release(dependsOn: [incrementVersion]) << {
     if (!project.hasProperty('userName')) {
         throw new GradleException('userName was not provided. Specify -PuserName=<user>')
     }
     grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by $userName")
     grgit.push()
+}
+
+afterEvaluate {
+    release.dependsOn getTasksByName('publish', true)
 }
 
 subprojects {
