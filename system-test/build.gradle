@@ -1,5 +1,11 @@
 apply plugin: 'java'
 
+repositories {
+    maven {
+        url "https://jitpack.io"
+    }
+}
+
 dependencies {
 
     compile project(':scheduler')
@@ -8,7 +14,7 @@ dependencies {
     testCompile 'com.github.docker-java:docker-java:1.3.0'
     testCompile 'com.mashape.unirest:unirest-java:1.4.5'
     testCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    testCompile 'com.github.ContainerSolutions:mini-mesos:0.2-SNAPSHOT'
+    testCompile 'com.github.ContainerSolutions:mini-mesos:b16584c89d'
 }
 
 test {
