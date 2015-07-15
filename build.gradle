@@ -3,6 +3,12 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 
+ext {
+    mesosVer = "0.22.1"
+    elasticsearchVersion="1.4.5"
+    imagePrefix = 'lguminski'
+}
+
 allprojects {
     apply plugin: 'idea'
 }
@@ -23,7 +29,7 @@ buildscript {
   dependencies {
     classpath "org.ajoberstar:semver-vcs-gradle-grgit:0.1.0-milestone.1"
     classpath "org.ajoberstar:gradle-git:1.2.0"
-    classpath 'com.bmuschko:gradle-docker-plugin:2.3.1'
+    classpath 'com.bmuschko:gradle-docker-plugin:2.4'
     classpath "com.github.zafarkhaja:java-semver:0.9.0"
   }
 }
@@ -101,10 +107,6 @@ subprojects {
     [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
     group = "org.apache.mesos"
-    ext {
-        mesosVer = "0.22.1"
-	    elasticsearchVersion="1.4.5"
-    }
 
     repositories {
         mavenLocal()
@@ -146,20 +148,45 @@ subprojects {
     }
 
     afterEvaluate { project ->
-        if (project.hasProperty('imageName')) {
+        if (new File(project.projectDir, 'Dockerfile').exists()) {
+            if (!project.hasProperty('imageName')) {
+                throw new GradleException('Root directory of ' + project.name 
+                        + ' contains Dockerfile, but it does not define project.ext.imageName value')
+            }
             docker.url = 'unix:///var/run/docker.sock'
             if (System.env.DOCKER_HOST) {
                 docker.url = "$System.env.DOCKER_HOST".replace("tcp","https")
-                if (System.env.DOCKER_CERT_PATH) {
-                    docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                    if (System.env.DOCKER_CERT_PATH) {
+                        docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                    }
+            }
+
+            ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+            }
+            docker {
+                registryCredentials {
+                    username = project.property('dockerHubUsername')
+                    password = project.property('dockerHubPassword')
+                    email = project.property('dockerHubEmail')
                 }
             }
-            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar]) {
+            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar], description: 'build Docker image') {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
-            task publishDockerImage(type: DockerPushImage) {
+            project.build.dependsOn buildDockerImage
+            task tagDockerImage(type: DockerTagImage, description: 'tag Docker image') {
+                println 'Version: ' + project.version
+                imageId = project.imageName
+                tag = project.version
+                repository = project.imageName
+                force = true
+            }
+            task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
+                url = 'https://index.docker.io/v1/'
                 imageName = project.imageName
+                tag = project.version
             }
             project.publish.dependsOn publishDockerImage
         }
