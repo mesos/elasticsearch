@@ -1,7 +1,7 @@
 var controllers = angular.module('mesos-es-ui.controllers', []);
 
-controllers.controller('MainController', function($scope, $interval, config, Tasks) {
-    $scope.header = "";
+controllers.controller('MainController', function($scope, $interval, $route, config, Cluster, Tasks) {
+    $scope.$route = $route;
 
     /** Responsiveness helpers **/
     var mobileView = 992;
@@ -21,6 +21,15 @@ controllers.controller('MainController', function($scope, $interval, config, Tas
     window.onresize = function() {
         $scope.$apply();
     };
+
+    /** Cluster info **/
+    var fetchClusterConfiguration = function() {
+        Cluster.get(function (data) {
+            $scope.name = data.name;
+            $scope.configuration = data.configuration;
+        });
+    };
+    fetchClusterConfiguration();
 
     /** Tasks monitoring **/
     $scope.tasks = [];
@@ -87,15 +96,6 @@ controllers.controller('MainController', function($scope, $interval, config, Tas
 });
 
 controllers.controller('ClusterController', function($scope, $http, config, Cluster) {
-    $scope.$parent.header = 'Elasticsearch Cluster';
-    var fetchClusterConfiguration = function() {
-        Cluster.get(function (data) {
-            $scope.name = data.name;
-            $scope.configuration = data.configuration;
-        });
-    };
-    fetchClusterConfiguration();
-
     $scope.query = {
         string: '',
         node: '',
@@ -132,5 +132,5 @@ controllers.controller('ClusterController', function($scope, $http, config, Clus
 });
 
 controllers.controller('TasksController', function ($scope, $interval, config, Tasks) {
-    $scope.$parent.header = 'Elasticsearch Tasks';
+
 });

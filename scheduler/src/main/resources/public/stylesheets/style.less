@@ -5,6 +5,10 @@ body {
 
 h1 {
   margin: 10px;
+  span {
+    color: #aaa;
+    font-size: 18px;
+  }
 }
 
 h3 {
@@ -113,10 +117,14 @@ ul.sidebar {
     a {
       background: #000000;
       color: #ffffff;
-      &:hover {
+      &:hover, &.active {
         background: #222222;
         color: #74BD43;
         border-left: 3px solid #74BD43;
+        text-indent: 22px;
+        .menu-icon {
+          text-indent: 22px !important;
+        }
       }
     }
   }

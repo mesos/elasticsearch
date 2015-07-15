@@ -13,10 +13,12 @@ var app = angular.module('mesos-es-ui', [
 app.config(['$routeProvider', function ($routeProvider) {
     $routeProvider.when('/', {
         templateUrl: 'partials/cluster.html',
-        controller: 'ClusterController'
+        controller: 'ClusterController',
+        activeTab: 'cluster'
     }).when('/tasks', {
         templateUrl: 'partials/tasks.html',
-        controller: 'TasksController'
+        controller: 'TasksController',
+        activeTab: 'tasks'
     }).otherwise({
         redirectTo: '/'
     });
