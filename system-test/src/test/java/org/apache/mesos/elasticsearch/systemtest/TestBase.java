@@ -32,10 +32,10 @@ public abstract class TestBase {
     public static MesosCluster cluster = new MesosCluster(config);
 
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
-    protected static String schedulerId;
+    protected static String schedulerId, schedulerURL;
     static DockerClient docker;
 
-    protected String getSlaveIp(String slaveName) {
+    protected static String getSlaveIp(String slaveName) {
         InspectContainerResponse response = docker.inspectContainerCmd(slaveName).exec();
         return response.getNetworkSettings().getIpAddress();
     }
@@ -49,12 +49,14 @@ public abstract class TestBase {
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + cluster.getMesosContainer().getMesosMasterIP()).toArray(String[]::new))
+//                .withEnv("JAVA_TOOL_OPTIONS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005").withPortBindings(PortBinding.parse("0.0.0.0:5005:5005"))
                 .withCmd("-zk", "zk://" + cluster.getMesosContainer().getMesosMasterIP() + ":2181/mesos", "-n", "3");
 
         final CreateContainerResponse createSchedulerResponse = createCommand.exec();
         schedulerId = createSchedulerResponse.getId();
         assertThat(schedulerId, not(isEmptyOrNullString()));
         docker.startContainerCmd(schedulerId).exec();
+        schedulerURL = "http://" + getSlaveIp(schedulerId) + ":8080";
 
         assertThat(schedulerId, not(isEmptyOrNullString()));
         final String schedulerIp = docker.inspectContainerCmd(schedulerId).exec().getNetworkSettings().getIpAddress();
