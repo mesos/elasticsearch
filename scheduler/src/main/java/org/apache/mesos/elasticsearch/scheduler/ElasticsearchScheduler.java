@@ -6,10 +6,8 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
-
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.function.Predicate;
 
 /**
  * Scheduler for Elasticsearch.
@@ -25,14 +23,14 @@ public class ElasticsearchScheduler implements Scheduler {
 
     Clock clock = new Clock();
 
-    Set<Task> tasks = new HashSet<>();
+    Map<String, Task> tasks = new HashMap<String, Task>();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
     }
 
-    public Set<Task> getTasks() {
+    public Map<String, Task> getTasks() {
         return tasks;
     }
 
@@ -93,12 +91,15 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.add(new Task(
-                        offer.getHostname(),
-                        taskInfo.getTaskId().getValue(),
-                        clock.zonedNow(),
-                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())));
+                Task task = new Task(
+                    offer.getHostname(),
+                    taskInfo.getTaskId().getValue(),
+                    Protos.TaskState.TASK_STAGING,
+                    clock.zonedNow(),
+                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+                );
+                tasks.put(taskInfo.getTaskId().getValue(), task);
             }
         }
     }
@@ -116,6 +117,12 @@ public class ElasticsearchScheduler implements Scheduler {
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
+        Task task = tasks.get(status.getTaskId().getValue());
+        if (task != null) {
+            task.setState(status.getState());
+        } else {
+            throw new RuntimeException("Cannot update status of Task ID: " + status.getTaskId() + ". Unknown Task.");
+        }
     }
 
     @Override
@@ -146,7 +153,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        return tasks.stream().map(Task::getHostname).anyMatch(Predicate.isEqual(offer.getHostname()));
+        return tasks.containsKey(offer.getId().getValue());
     }
 
 }
