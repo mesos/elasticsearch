@@ -8,8 +8,8 @@ repositories {
 
 sourceSets {
     systemTest {
-        java.srcDir file('src/test/java')
-        resources.srcDir file('src/test/resources')
+        java.srcDir file('src/systemTest/java')
+        resources.srcDir file('src/systemTest/resources')
     }
 }
 
