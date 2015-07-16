@@ -18,10 +18,6 @@ dependencies {
 }
 
 test {
-    exclude '**/*SystemTest*'
-}
-
-task systemTest(type: Test) {
     include '**/*SystemTest*'
     testLogging {
         showStandardStreams = true
