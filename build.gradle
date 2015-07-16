@@ -49,6 +49,8 @@ subprojects {
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
 
+    task showDeps(type: DependencyReportTask) {}
+
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
     version = rootProject.version.toString()
