@@ -50,7 +50,7 @@ public abstract class TestBase {
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + ipAddress).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "1");
+                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3");
 
         DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
