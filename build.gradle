@@ -1,7 +1,12 @@
-
 import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
+
+ext {
+    mesosVer = "0.22.1"
+    elasticsearchVersion="1.4.5"
+    imagePrefix = 'lguminski'
+}
 
 allprojects {
     apply plugin: 'idea'
@@ -16,15 +21,14 @@ idea {
 
 buildscript {
   repositories {
-    maven {
-      url "https://plugins.gradle.org/m2/"
-    }
+      jcenter()
   }
   dependencies {
     classpath "org.ajoberstar:semver-vcs-gradle-grgit:0.1.0-milestone.1"
-    classpath "org.ajoberstar:gradle-git:1.2.0"
-    classpath 'com.bmuschko:gradle-docker-plugin:2.3.1'
+    classpath "org.ajoberstar:grgit:1.3.0"
+    classpath 'com.bmuschko:gradle-docker-plugin:2.4.1'
     classpath "com.github.zafarkhaja:java-semver:0.9.0"
+    classpath 'org.springframework.boot:spring-boot:1.2.5.RELEASE' 
   }
 }
 
@@ -70,6 +74,9 @@ task incrementVersion << {
         throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
     }
     println "Next version: " + project.version
+    subprojects { project ->
+        project.version = rootProject.version.toString()
+    }
 }
 
 task release(dependsOn: [incrementVersion]) << {
@@ -77,7 +84,7 @@ task release(dependsOn: [incrementVersion]) << {
         throw new GradleException('userName was not provided. Specify -PuserName=<user>')
     }
     grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by $userName")
-    grgit.push()
+    grgit.push(tags: true)
 }
 
 afterEvaluate {
@@ -103,10 +110,6 @@ subprojects {
     [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 
     group = "org.apache.mesos"
-    ext {
-        mesosVer = "0.22.1"
-	    elasticsearchVersion="1.4.5"
-    }
 
     repositories {
         mavenLocal()
@@ -151,20 +154,48 @@ subprojects {
     }
 
     afterEvaluate { project ->
-        if (project.hasProperty('imageName')) {
+        if (new File(project.projectDir, 'Dockerfile').exists()) {
+            if (!project.hasProperty('imageName')) {
+                throw new GradleException('Root directory of ' + project.name 
+                        + ' contains Dockerfile, but it does not define project.ext.imageName value')
+            }
             docker.url = 'unix:///var/run/docker.sock'
             if (System.env.DOCKER_HOST) {
                 docker.url = "$System.env.DOCKER_HOST".replace("tcp","https")
-                if (System.env.DOCKER_CERT_PATH) {
-                    docker.certPath = new File(System.env.DOCKER_CERT_PATH)
-                }
+                    if (System.env.DOCKER_CERT_PATH) {
+                        docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                    }
             }
-            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar]) {
+            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar], description: 'build Docker image') {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
-            task publishDockerImage(type: DockerPushImage) {
+            project.build.dependsOn buildDockerImage
+            task tagDockerImage(type: DockerTagImage, description: 'tag Docker image') {
+                imageId = project.imageName
+                tag = project.version
+                repository = project.imageName
+                force = true
+                doFirst {
+                    tag = project.version // needed to upgrade on release
+                }
+            }
+            task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
                 imageName = project.imageName
+                tag = project.version
+                doFirst {
+                    tag = project.version // needed to upgrade on release
+                    ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                        assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                    }
+                    docker {
+                        registryCredentials {
+                            username = project.property('dockerHubUsername')
+                            password = project.property('dockerHubPassword')
+                            email = project.property('dockerHubEmail')
+                        }
+                    }
+                }
             }
             project.publish.dependsOn publishDockerImage
         }
