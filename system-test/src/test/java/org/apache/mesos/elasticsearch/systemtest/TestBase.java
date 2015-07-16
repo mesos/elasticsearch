@@ -33,8 +33,9 @@ public abstract class TestBase {
             .build();
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
     @ClassRule
-    public static MesosCluster cluster = new MesosCluster(config);
-    protected static String schedulerId;
+    public static final MesosCluster cluster = new MesosCluster(config);
+    public static final String MESOS_PORT = "5050";
+    static String schedulerId;
     static DockerClient docker;
 
     @BeforeClass
@@ -43,7 +44,7 @@ public abstract class TestBase {
 
         cluster.injectImage("mesos/elasticsearch-executor");
 
-        String ipAddress = cluster.getMesosContainer().getMesosMasterURL().replace(":5050", "");
+        String ipAddress = cluster.getMesosContainer().getMesosMasterURL().replace(":" + MESOS_PORT, "");
 
         final String schedulerImage = "mesos/elasticsearch-scheduler";
 
