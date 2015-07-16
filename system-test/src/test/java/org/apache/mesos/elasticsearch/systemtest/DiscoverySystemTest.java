@@ -61,7 +61,7 @@ public class DiscoverySystemTest extends TestBase {
                     return false;
                 }
             } catch (UnirestException e) {
-                LOGGER.info("Polling Elasticsearch on port 9200...");
+                LOGGER.info("Polling Elasticsearch _nodes endpoints...");
                 return false;
             }
             return true;
