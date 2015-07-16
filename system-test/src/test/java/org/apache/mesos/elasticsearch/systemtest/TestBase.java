@@ -39,8 +39,7 @@ public abstract class TestBase {
     public static void startScheduler() throws Exception {
         docker = config.dockerClient;
 
-        DockerUtil dockerUtil = new DockerUtil(docker);
-        dockerUtil.pullImage("mesos/elasticsearch-executor", "latest");
+        cluster.injectImage("mesos/elasticsearch-executor");
 
         String ipAddress = cluster.getMesosContainer().getMesosMasterURL().replace(":5050", "");
 
@@ -49,8 +48,9 @@ public abstract class TestBase {
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + ipAddress).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3");
+                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "1");
 
+        DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
 
 
