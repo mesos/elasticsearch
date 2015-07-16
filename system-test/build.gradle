@@ -6,21 +6,31 @@ repositories {
     }
 }
 
+sourceSets {
+    systemTest {
+        java.srcDir file('src/test/java')
+        resources.srcDir file('src/test/resources')
+    }
+}
+
 dependencies {
 
     compile project(':scheduler')
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.github.docker-java:docker-java:1.3.0'
-    testCompile 'com.mashape.unirest:unirest-java:1.4.5'
-    testCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    testCompile 'com.github.ContainerSolutions:mini-mesos:51a13f01e8ab299df6adc5a79d1e10a42d96d4ef'
+    systemTestCompile 'junit:junit:4.12'
+    systemTestCompile 'com.github.docker-java:docker-java:1.3.0'
+    systemTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
+    systemTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
+    systemTestCompile 'com.github.ContainerSolutions:mini-mesos:51a13f01e8ab299df6adc5a79d1e10a42d96d4ef'
 }
 
-test {
+task systemTest(type: Test) {
+    testClassesDir = sourceSets.systemTest.output.classesDir
+    classpath = sourceSets.systemTest.runtimeClasspath
     include '**/*SystemTest*'
     testLogging {
         showStandardStreams = true
     }
     outputs.upToDateWhen { false }
 }
+
