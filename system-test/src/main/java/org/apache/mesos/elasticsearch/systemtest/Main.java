@@ -9,14 +9,9 @@ import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.docker.DockerUtil;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 
+import java.util.Scanner;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
-
-import static com.jayway.awaitility.Awaitility.await;
-import static org.hamcrest.Matchers.isEmptyOrNullString;
-import static org.hamcrest.Matchers.not;
-import static org.junit.Assert.assertThat;
 
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
@@ -31,7 +26,7 @@ public class Main {
 
     private static String schedulerId;
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         MesosClusterConfig config = MesosClusterConfig.builder()
                 .numberOfSlaves(3)
                 .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
@@ -40,11 +35,11 @@ public class Main {
 
         docker = config.dockerClient;
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            docker.removeContainerCmd(schedulerId).withForce().exec();
-        }));
+        Runtime.getRuntime().addShutdownHook(new Thread(Main::shutdown));
 
         MesosCluster cluster = new MesosCluster(config);
+        cluster.start();
+
         cluster.injectImage("mesos/elasticsearch-executor");
 
         String ipAddress = cluster.getMesosContainer().getMesosMasterURL().replace(":" + MESOS_PORT, "");
@@ -54,14 +49,22 @@ public class Main {
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + ipAddress).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3");
+                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3", "-m", "8081");
 
         DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
 
-        assertThat(schedulerId, not(isEmptyOrNullString()));
-        final String schedulerIp = docker.inspectContainerCmd(schedulerId).exec().getNetworkSettings().getIpAddress();
-        await().atMost(60, TimeUnit.SECONDS).until(new SchedulerResponse(schedulerIp));
+        LOGGER.info("===> Press any key to quite");
+
+        Scanner scanner = new Scanner(System.in);
+        if (scanner.nextLine().equals("")) {
+            shutdown();
+            System.exit(0);
+        }
+    }
+
+    private static void shutdown() {
+        docker.removeContainerCmd(schedulerId).withForce().exec();
     }
 
     private static class SchedulerResponse implements Callable<Boolean> {
