@@ -84,7 +84,7 @@ task release(dependsOn: [incrementVersion]) << {
         throw new GradleException('userName was not provided. Specify -PuserName=<user>')
     }
     grgit.tag.add(name: project.version, annotate: true, message: "RELEASE $project.version - by $userName")
-    grgit.push()
+    grgit.push(tags: true)
 }
 
 afterEvaluate {
