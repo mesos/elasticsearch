@@ -11,11 +11,11 @@ dependencies {
 
     testCompile 'cglib:cglib-nodep:2.2.2'               // need to mock classes
 
-    // useful to mock out statics and final classes in Java.
-    testCompile "org.powermock:powermock-module-junit4:$powermockVersion"
-    testCompile "org.powermock:powermock-module-junit4-rule:$powermockVersion"
-    testCompile "org.powermock:powermock-classloading-xstream:$powermockVersion"
-    testCompile "org.powermock:powermock-api-mockito:$powermockVersion"
+//    // useful to mock out statics and final classes in Java.
+//    testCompile "org.powermock:powermock-module-junit4:$powermockVersion"
+//    testCompile "org.powermock:powermock-module-junit4-rule:$powermockVersion"
+//    testCompile "org.powermock:powermock-classloading-xstream:$powermockVersion"
+//    testCompile "org.powermock:powermock-api-mockito:$powermockVersion"
 }
 
 // for spock to live in test java tree
