@@ -6,8 +6,9 @@ import com.mashape.unirest.http.Unirest;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.*;
-import static org.hamcrest.Matchers.startsWith;
+import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidAddress;
+import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidDateTime;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
@@ -18,14 +19,15 @@ public class StatusApiSystemTest extends TestBase {
 
     @Test
     public void canGet200FromScheduler() throws Exception {
-        String schedulerIp = getSlaveIp("mesoses_scheduler_1");
-        HttpResponse<JsonNode> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asJson();
+        String schedulerIp = getSlaveIp(schedulerId);
+        assertThat(schedulerIp, not(isEmptyOrNullString()));
+        final HttpResponse<String> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asString();
         assertEquals(200, tasksResponse.getStatus());
     }
 
     @Test
     public void hasThreeTasksWithValidInformation() throws Exception {
-        String schedulerIp = getSlaveIp("mesoses_scheduler_1");
+        String schedulerIp = getSlaveIp(schedulerId);
         HttpResponse<JsonNode> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asJson();
 
         assertEquals(3, tasksResponse.getBody().getArray().length());

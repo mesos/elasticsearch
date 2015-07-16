@@ -22,11 +22,9 @@ public class DiscoverySystemTest extends TestBase {
 
     @Test
     public void testNodeDiscoveryRest() throws InterruptedException {
-        String slave1Ip = getSlaveIp("mesoses_slave1_1");
-        String slave2Ip = getSlaveIp("mesoses_slave2_1");
-        String slave3Ip = getSlaveIp("mesoses_slave3_1");
+        String slave1Ip = getSlaveIp(cluster.getMesosContainer().getMesosContainerID());
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(slave1Ip, slave2Ip, slave3Ip);
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(slave1Ip, slave1Ip, slave1Ip);
 
         assertNodesDiscovered(nodesResponse);
     }
@@ -55,14 +53,15 @@ public class DiscoverySystemTest extends TestBase {
         @Override
         public Boolean call() throws Exception {
             try {
+                //todo: get ES urls from Scheduler/tasks API
                 double nodesSlave1 = Unirest.get("http://" + ipAddress1 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
-                double nodesSlave2 = Unirest.get("http://" + ipAddress2 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
-                double nodesSlave3 = Unirest.get("http://" + ipAddress3 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
+                double nodesSlave2 = Unirest.get("http://" + ipAddress2 + ":9201/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
+                double nodesSlave3 = Unirest.get("http://" + ipAddress3 + ":9202/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
                 if (!(nodesSlave1 == 3 && nodesSlave2 == 3 && nodesSlave3 == 3)) {
                     return false;
                 }
             } catch (UnirestException e) {
-                LOGGER.info("Polling Elasticsearch on port 9200...");
+                LOGGER.info("Polling Elasticsearch _nodes endpoints...");
                 return false;
             }
             return true;

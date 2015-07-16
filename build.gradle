@@ -49,6 +49,8 @@ subprojects {
     apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
 
+    task showDeps(type: DependencyReportTask) {}
+
     sourceCompatibility = '1.8'
     targetCompatibility = '1.8'
     version = rootProject.version.toString()
@@ -67,6 +69,9 @@ subprojects {
     repositories {
         mavenLocal()
         mavenCentral()
+        maven {
+            url "https://jitpack.io"
+        }
     }
 
     dependencies {
@@ -75,7 +80,7 @@ subprojects {
         compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
 
 
-        testCompile 'junit:junit:4.11'
+        testCompile 'junit:junit:4.12'
         testCompile 'commons-collections:commons-collections:3.2.1'
         testCompile "org.mockito:mockito-all:1.9.5"
 

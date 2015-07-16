@@ -11,4 +11,6 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
 
 ADD ./build/docker/elasticsearch-mesos-scheduler.jar /tmp/elasticsearch-mesos-scheduler.jar
 
+EXPOSE 5005 8080
+
 ENTRYPOINT ["java", "-Djava.library.path=/usr/local/lib", "-jar", "/tmp/elasticsearch-mesos-scheduler.jar"]
