@@ -81,6 +81,32 @@ The user interface uses REST API of the Elasticsearch Mesos Framework. You can f
 
 For developers, we have provided a range of tools for testing and running the project. Check out the [mini-mesos](https://github.com/containersolutions/mini-mesos) project for an in-memory Mesos cluster for integration testing.
 
+## Quickstart
+
+You can run Mesos-Elasticsearch using <a href="https://github.com/containersolutions/mini-mesos">Mini Mesos</a>, a containerized Mesos cluster for testing frameworks.
+
+### How to run on Linux
+
+#### Requirements
+
+* Docker
+
+```
+$ ./gradlew build docker system-test:main
+```
+
+### How to run on Mac 
+
+#### Requirements
+
+* Docker Machine
+
+```
+$ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
+$ eval $(docker-machine env mesos-es)
+$ ./gradlew build docker system-test:main
+```
+
 ## How to build scheduler and executor Docker containers
 
 This describes how to build and launch a local instance of mesos, with the Mesos Elasticsearch project installed. If you want to build and run the containers natively, then skip the docker-machine step.
