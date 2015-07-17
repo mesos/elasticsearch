@@ -45,7 +45,7 @@ public class Main {
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + ipAddress).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3", "-m", "9999");
+                .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3", "-m", "9999", "-ram", "64");
 
         DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
