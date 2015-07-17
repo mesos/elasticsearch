@@ -54,9 +54,9 @@ public class Main {
         DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
 
-        LOGGER.info("===> Press any key to quite");
+        LOGGER.info("===> Press any key to quit");
 
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, "UTF-8");
         if (scanner.nextLine().equals("")) {
             shutdown();
             System.exit(0);
