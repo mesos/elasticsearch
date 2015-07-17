@@ -107,6 +107,32 @@ $ eval $(docker-machine env mesos-es)
 $ ./gradlew build docker system-test:main
 ```
 
+## System test
+
+The project contains a system-test module which tests if the framework interacts correctly with Mesos, using <a href="https://github.com/containersolutions/mini-mesos">Mini Mesos</a>. We currently test Zookeeper discovery and the Scheduler's API by calling endpoints and verifying the results. As the framework grows we will add more system tests.
+
+### How to run system tests on Linux
+
+#### Requirements
+
+* Docker
+
+```
+$ ./gradlew build buildDockerImage system-test:systemTest
+```
+
+### How to run on Mac 
+
+#### Requirements
+
+* Docker Machine
+
+```
+$ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
+$ eval $(docker-machine env mesos-es)
+$ ./gradlew build docker system-test:systemTest
+```
+
 ## Sponsors
 This project is sponsored by Cisco Cloud Services
 
