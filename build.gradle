@@ -81,7 +81,6 @@ subprojects {
 
 
         testCompile 'junit:junit:4.12'
-        testCompile 'commons-collections:commons-collections:3.2.1'
         testCompile "org.mockito:mockito-all:1.9.5"
 
     }
