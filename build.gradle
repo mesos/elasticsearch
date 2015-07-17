@@ -50,7 +50,7 @@ tags.each { Tag t ->
    }
 }
 
-Version currentVersion = new Version.Builder("0.1.0").build()
+Version currentVersion = new Version.Builder("0.0.0").build()
 
 versions.each { Version v ->
     if (v.greaterThan(currentVersion)) {
