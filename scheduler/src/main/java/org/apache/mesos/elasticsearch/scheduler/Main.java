@@ -16,6 +16,7 @@ public class Main {
     public static final String ZK_URL = "zk";
 
     public static final String MANAGEMENT_API_PORT = "m";
+    public static final String RAM = "ram";
 
     private Options options;
 
@@ -26,6 +27,7 @@ public class Main {
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
         this.options.addOption(ZK_URL, "Zookeeper URL", true, "Zookeeper urls zk://IP:PORT,IP:PORT,IP:PORT/mesos)");
         this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
+        this.options.addOption(RAM, "ElasticsearchRam", true, "Amount of RAM to give the Elasticsearch instances");
     }
 
     public static void main(String[] args) {
@@ -60,6 +62,7 @@ public class Main {
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
         String zkUrl = cmd.getOptionValue(ZK_URL);
+        String ram = cmd.getOptionValue(RAM);
 
         if (numberOfHwNodesString == null || zkUrl == null) {
             printUsageAndExit();
@@ -73,6 +76,7 @@ public class Main {
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
         configuration.setState(new State(new ZooKeeperStateInterfaceImpl(mesosStateZkUrl)));
+        configuration.setMem(Double.parseDouble(ram));
     }
 
     private void printUsageAndExit() {
