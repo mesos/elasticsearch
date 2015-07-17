@@ -125,7 +125,7 @@ Docker-compose will connect to the VM docker daemon that was exported above.
 The docker containers for the scheduler and executor are not built by default:
 
 ```
-$ ./gradlew build docker
+$ ./gradlew build buildDockerImage
 ```
 
 ### Building the containers
