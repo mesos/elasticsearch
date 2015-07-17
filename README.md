@@ -60,7 +60,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
       "network": "HOST"
     }
   },
-  "args": ["-n", "3", "-zk", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos", "-ram", "64"],
+  "args": ["-n", "3", "-zk", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos", "-ram", "2048"],
   "cpus": 0.2,
   "mem": 512.0,
   "instances": 1
