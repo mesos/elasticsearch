@@ -30,6 +30,10 @@ dependencies {
     systemTestCompile 'com.github.ContainerSolutions:mini-mesos:51a13f01e8ab299df6adc5a79d1e10a42d96d4ef'
 }
 
+test {
+    enabled = false
+}
+
 task systemTest(type: Test) {
     testClassesDir = sourceSets.systemTest.output.classesDir
     classpath = sourceSets.systemTest.runtimeClasspath
