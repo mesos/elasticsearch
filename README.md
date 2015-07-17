@@ -83,65 +83,13 @@ Build only the scheduler or executor Docker container:
 $ ./gradlew :scheduler:docker
 $ ./gradlew :executor:docker
 ```
-
-## Launch locally with Docker Compose
-
-We recommend that you use docker-machine to test the Mesos Elasticsearch project locally. Users that do not want to use docker-machine, please ensure your Kernel supports overlayFS.
-
-Build the project as described above, then run the docker-compose scripts with the following commands:
-
-```
-$ cd system-test/src/test/resources/mesos-es
-$ docker-compose up
-```
-
-Now open the browser at http://localhost:5050 to view the Mesos GUI.
-
-NOTE: If you run docker from a VM (boot2docker on OSX), use the ip address assigned to the VM instead of localhost:
-```
-docker-machine inspect dev -f "{{.Driver.IPAddress}}"
-```
-
-The Elasticsearch task can be accessed via the slave on port 9200. Find the IP address of the slave: 
-
-```
-$ docker ps # Check the container ID of the slave
-$ docker inspect <ID> |  grep IPAddress # Find out the slave IP
-```
-
-Now open the browser at http://SLAVE_IP:9200 
-
-When you are done with docker compose kill the containers and remove everything:
-
-```
-$ docker-compose kill 
-$ docker-compose rm --force -v
-```
-
 ## How to install on Mesos
 
-```
-$ deploy-executor.sh
-$ deploy-scheduler.sh
-$ deploy-cloud-mesos.sh
-```
-These scripts transfer the jars and the cloud-mesos zip to the master node. Also, the <i>executor</i> jar and 
-cloud-mesos are put in HDFS onder /elasticsearch because they are used to launch the elasticsearch task. Now you can SSH
-into the master node and run the <i>scheduler</i>
+Upload the scheduler jar to a Mesos node and run it. 
 
 ```bash
-$ java -jar elasticsearch-mesos-scheduler.jar -m MASTER_IP:5050 -n 3 -nn MASTER_IP:8020
+$ java -jar elasticsearch-mesos-scheduler.jar -n 3 -zk zk://ZOOKEEPER_IP_ADDRESS:2181/mesos
 ```
-
-## How to install on Dcos
-
-If you have followed the steps described in "Full steps to build on Mac" then  to deploy execute the following steps.
-
-```bash
-$ ./deployDcos.sh --master=MASTER_IP
-```
-
-Replace `MASTER_IP` in `--master=MASTER_IP` with a reference to a host recognisable by your `ssh` command.
 
 ## How to find the Mesos master on AWS
 
@@ -160,14 +108,23 @@ This will show the Mesos website for your instance
 
 ## How to install on Marathon
 
-Run the deploy.sh script from the root directory to install all the components. Now change to the scheduler folder and run 
+Create a Marathon file like the one below and fill in the IP addresses and other configuration.
 
-```bash
-$ ./deploy-to-marathon.sh 
 ```
-
-This scripts loads the marathon.json file and runs the scheduler in a container on one of the slaves. Note that it 
-requires host networking.
+{
+  "id": "elasticsearch-mesos-scheduler",
+  "container": {
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler",
+      "network": "HOST"
+    }
+  },
+  "args": ["-n", "3", "-zk", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
+  "cpus": 0.2,
+  "mem": 512.0,
+  "instances": 1
+}
+```
 
 ## How to import demo data
 

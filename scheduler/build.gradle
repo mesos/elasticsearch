@@ -1,17 +1,16 @@
 apply plugin: 'application'
-apply plugin: 'com.bmuschko.docker-remote-api'
 apply plugin: 'spring-boot'
 
-import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
-
 mainClassName = "org.apache.mesos.elasticsearch.scheduler.Main"
+ext {
+    imageName = imagePrefix + '/elasticsearch-scheduler'
+}
 
 buildscript {
     repositories {
         jcenter()
     }
     dependencies {
-        classpath 'com.bmuschko:gradle-docker-plugin:2.2'
         classpath("org.springframework.boot:spring-boot-gradle-plugin:1.2.4.RELEASE")
     }
 }
@@ -76,18 +75,3 @@ task copyJar(type: Copy) {
     }
 }
 
-task docker(type: DockerBuildImage) {
-    dependsOn   copyJar
-    if (System.env.DOCKER_HOST) {
-        url = "$System.env.DOCKER_HOST".replace("tcp","https")
-        if (System.env.DOCKER_CERT_PATH) {
-            certPath = new File(System.env.DOCKER_CERT_PATH)
-
-        }
-    }
-    else {
-        url = 'unix:///var/run/docker.sock'
-    }
-    inputDir = file('.')
-    tag = 'mesos/elasticsearch-scheduler'
-}

@@ -6,6 +6,8 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
+import java.util.HashMap;
+
 /**
  * Application which starts the Elasticsearch scheduler
  */
@@ -45,7 +47,10 @@ public class Main {
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
+        HashMap<String, Object> properties = new HashMap<>();
+        properties.put("server.port", String.valueOf(configuration.getManagementApiPort()));
         new SpringApplicationBuilder(WebApplication.class)
+                .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
                 .showBanner(false)
@@ -63,6 +68,8 @@ public class Main {
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
         String zkUrl = cmd.getOptionValue(ZK_URL);
         String ram = cmd.getOptionValue(RAM);
+        String managementApiPort = cmd.getOptionValue(MANAGEMENT_API_PORT, "8080");
+
 
         if (numberOfHwNodesString == null || zkUrl == null) {
             printUsageAndExit();
@@ -77,6 +84,7 @@ public class Main {
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
         configuration.setState(new State(new ZooKeeperStateInterfaceImpl(mesosStateZkUrl)));
         configuration.setMem(Double.parseDouble(ram));
+        configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
     }
 
     private void printUsageAndExit() {
