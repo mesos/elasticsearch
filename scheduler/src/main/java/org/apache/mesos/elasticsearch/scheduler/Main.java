@@ -67,7 +67,7 @@ public class Main {
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
         String zkUrl = cmd.getOptionValue(ZK_URL);
-        String ram = cmd.getOptionValue(RAM);
+        String ram = cmd.getOptionValue(RAM, Double.toString(configuration.getMem()));
         String managementApiPort = cmd.getOptionValue(MANAGEMENT_API_PORT, "8080");
 
 
