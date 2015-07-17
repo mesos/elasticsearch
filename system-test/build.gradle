@@ -30,6 +30,11 @@ dependencies {
     systemTestCompile 'com.github.ContainerSolutions:mini-mesos:51a13f01e8ab299df6adc5a79d1e10a42d96d4ef'
 }
 
+task main(type:JavaExec, dependsOn: 'compileJava') {
+    main = "org.apache.mesos.elasticsearch.systemtest.Main"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
 test {
     enabled = false
 }
