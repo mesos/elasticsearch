@@ -92,7 +92,7 @@ You can run Mesos-Elasticsearch using <a href="https://github.com/containersolut
 * Docker
 
 ```
-$ ./gradlew build docker system-test:main
+$ ./gradlew build buildDockerImage system-test:main
 ```
 
 ### How to run on Mac 
@@ -105,36 +105,6 @@ $ ./gradlew build docker system-test:main
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
 $ ./gradlew build docker system-test:main
-```
-
-## How to build scheduler and executor Docker containers
-
-This describes how to build and launch a local instance of mesos, with the Mesos Elasticsearch project installed. If you want to build and run the containers natively, then skip the docker-machine step.
-
-### Launching a docker-machine VM
-
-If you want to run docker-compose in a virtual machine (for example you are on a mac, where the native mesos libraries don't work), then you can use docker machine.
-* Install docker-machine: https://docs.docker.com/machine/#installation
-* Create a virtual machine: ```$ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 dev```
-* Export the environment variables so you can communicate with the docker daemon: ```$ eval "$(docker-machine env dev)"```
-
-Docker-compose will connect to the VM docker daemon that was exported above.
-
-### Building the code and containers
-
-The docker containers for the scheduler and executor are not built by default:
-
-```
-$ ./gradlew build buildDockerImage
-```
-
-### Building the containers
-
-Build only the scheduler or executor Docker container:
-
-```
-$ ./gradlew :scheduler:docker
-$ ./gradlew :executor:docker
 ```
 
 ## Sponsors
