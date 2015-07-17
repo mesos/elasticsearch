@@ -26,7 +26,7 @@
 ### Developer Tools
 
 - [x] Local environment (Docker-machine)
-- [x] Rapid code + test (Docker compose)
+- [x] Rapid code + test (Mini Mesos)
 - [x] Build automation (Gradle)
 
 ### User tools
