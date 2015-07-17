@@ -2,15 +2,11 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.docker.DockerUtil;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 
-import java.util.Scanner;
-import java.util.concurrent.Callable;
 import java.util.stream.IntStream;
 
 /**
@@ -54,36 +50,14 @@ public class Main {
         DockerUtil dockerUtil = new DockerUtil(config.dockerClient);
         schedulerId = dockerUtil.createAndStart(createCommand);
 
-        LOGGER.info("===> Press any key to quit");
-
-        Scanner scanner = new Scanner(System.in, "UTF-8");
-        if (scanner.nextLine().equals("")) {
-            shutdown();
-            System.exit(0);
+        LOGGER.info("Type CTRL-C to quit");
+        while (true) {
+            Thread.sleep(1000);
         }
     }
 
     private static void shutdown() {
         docker.removeContainerCmd(schedulerId).withForce().exec();
-    }
-
-    private static class SchedulerResponse implements Callable<Boolean> {
-
-        private String schedulerIpAddress;
-
-        public SchedulerResponse(String schedulerIpAddress) {
-            this.schedulerIpAddress = schedulerIpAddress;
-        }
-
-        @Override
-        public Boolean call() throws Exception {
-            try {
-                return Unirest.get("http://" + schedulerIpAddress + ":8080/tasks").asString().getStatus() == 200;
-            } catch (UnirestException e) {
-                LOGGER.info("Polling Elasticsearch Scheduler UI on 8080...");
-                return false;
-            }
-        }
     }
 
 }
