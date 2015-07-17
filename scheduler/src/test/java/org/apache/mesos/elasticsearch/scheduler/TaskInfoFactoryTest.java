@@ -55,14 +55,15 @@ public class TaskInfoFactoryTest {
         assertEquals(offer.getSlaveId(), taskInfo.getSlaveId());
         assertEquals("elasticsearch_host1_19700101T010203.400Z", taskInfo.getTaskId().getValue());
 
+        // TODO: Should get resources by name, not by index. Position is arbitrary.
         assertEquals("cpus", taskInfo.getResources(0).getName());
-        assertEquals(0.5d, taskInfo.getResources(0).getScalar().getValue(), EPSILON);
+        assertEquals(configuration.getCpus(), taskInfo.getResources(0).getScalar().getValue(), EPSILON);
 
-        assertEquals("disk", taskInfo.getResources(1).getName());
-        assertEquals(1.0, taskInfo.getResources(1).getScalar().getValue(), EPSILON);
+        assertEquals("disk", taskInfo.getResources(2).getName());
+        assertEquals(configuration.getDisk(), taskInfo.getResources(2).getScalar().getValue(), EPSILON);
 
-        assertEquals("mem", taskInfo.getResources(2).getName());
-        assertEquals(1.5, taskInfo.getResources(2).getScalar().getValue(), EPSILON);
+        assertEquals("mem", taskInfo.getResources(1).getName());
+        assertEquals(configuration.getMem(), taskInfo.getResources(1).getScalar().getValue(), EPSILON);
 
         assertEquals("ports", taskInfo.getResources(3).getName());
         assertEquals(9200, taskInfo.getResources(3).getRanges().getRange(0).getBegin());

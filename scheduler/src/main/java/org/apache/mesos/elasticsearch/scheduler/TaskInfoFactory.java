@@ -37,8 +37,9 @@ public class TaskInfoFactory {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = new ArrayList<>();
-
-        addAllScalarResources(offer.getResourcesList(), acceptedResources);
+        acceptedResources.add(Resources.cpus(configuration.getCpus()));
+        acceptedResources.add(Resources.mem(configuration.getMem()));
+        acceptedResources.add(Resources.disk(configuration.getDisk()));
 
         LOGGER.info("Creating Elasticsearch task [client port: " + ports.get(0) + ", transport port: " + ports.get(1) + "]");
 
