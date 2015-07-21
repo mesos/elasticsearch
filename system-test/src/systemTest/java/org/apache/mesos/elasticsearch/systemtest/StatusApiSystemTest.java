@@ -21,14 +21,14 @@ public class StatusApiSystemTest extends TestBase {
     public void canGet200FromScheduler() throws Exception {
         String schedulerIp = getSlaveIp(schedulerId);
         assertThat(schedulerIp, not(isEmptyOrNullString()));
-        final HttpResponse<String> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asString();
+        final HttpResponse<String> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/v1/tasks").asString();
         assertEquals(200, tasksResponse.getStatus());
     }
 
     @Test
     public void hasThreeTasksWithValidInformation() throws Exception {
         String schedulerIp = getSlaveIp(schedulerId);
-        HttpResponse<JsonNode> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asJson();
+        HttpResponse<JsonNode> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/v1/tasks").asJson();
 
         assertEquals(3, tasksResponse.getBody().getArray().length());
 

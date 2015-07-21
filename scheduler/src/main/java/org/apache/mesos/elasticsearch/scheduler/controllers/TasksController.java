@@ -18,7 +18,7 @@ import static java.util.stream.Collectors.toList;
  *
  */
 @RestController
-@RequestMapping("/tasks")
+@RequestMapping("/v1/tasks")
 public class TasksController {
 
     @Autowired
