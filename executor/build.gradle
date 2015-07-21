@@ -37,6 +37,14 @@ shadowJar {
     classifier = ''
 }
 
+publishing {
+  publications {
+    shadow(MavenPublication) {
+      from components.shadow
+    }
+  }
+}
+
 task copyJar(type: Copy) {
     dependsOn 'shadowJar'
     from { getTasksByName("shadowJar", false)[0].outputs.files[0] } // Get outputs from task "jar"
