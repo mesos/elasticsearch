@@ -78,6 +78,12 @@ public class TaskInfoFactory {
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
                 .addAllArguments(asList("-zk", configuration.getZookeeperUrl()))
+                .setEnvironment(Protos.Environment.newBuilder().addVariables(
+                        Protos.Environment.Variable.newBuilder()
+                                .setName("MESOS_NATIVE_JAVA_LIBRARY")
+                                .setValue("/usr/lib/libmesos.so") // libmesos.so is usually symlinked to the version.
+                        )
+                )
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
     }
 
