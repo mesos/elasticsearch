@@ -73,7 +73,7 @@ public abstract class TestBase {
       @Override
       public Boolean call() throws Exception {
         try {
-          return Unirest.get("http://" + schedulerIpAddress + ":8080/tasks").asString().getStatus() == 200;
+          return Unirest.get("http://" + schedulerIpAddress + ":8080/v1/tasks").asString().getStatus() == 200;
         } catch (UnirestException e) {
           LOGGER.info("Polling Elasticsearch Scheduler UI on 8080...");
           return false;
