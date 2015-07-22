@@ -94,7 +94,7 @@ public class Main {
 
 
         DataPusherContainer dpsContainer = new DataPusherContainer(config.dockerClient);
-        cluster.addAndStartContainer(dpsContainer);
+        esPusherId = cluster.addAndStartContainer(dpsContainer);
 
 
         LOGGER.info("Type CTRL-C to quit");
