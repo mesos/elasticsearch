@@ -50,6 +50,7 @@ public abstract class TestBase {
 
         CreateContainerCmd createCommand = docker
                 .createContainerCmd(schedulerImage)
+                .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, config.numberOfSlaves).mapToObj(value -> "slave" + value + ":" + ipAddress).toArray(String[]::new))
                 .withCmd("-zk", "zk://" + ipAddress + ":2181/mesos", "-n", "3", "-ram", "64");
 
