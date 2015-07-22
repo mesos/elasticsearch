@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
  * Tests the main method.
  */
 public class SchedulerMainTest {
-    protected static final MesosClusterConfig config = MesosClusterConfig.builder()
+    protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
@@ -26,19 +26,19 @@ public class SchedulerMainTest {
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
         final String schedulerImage = "mesos/elasticsearch-scheduler";
-        CreateContainerCmd createCommand = config.dockerClient
+        CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
-        StartContainerCmd startMesosClusterContainerCmd = config.dockerClient.startContainerCmd(containerId);
+        StartContainerCmd startMesosClusterContainerCmd = CONFIG.dockerClient.startContainerCmd(containerId);
         startMesosClusterContainerCmd.exec();
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = config.dockerClient.logContainerCmd(containerId).withStdErr().exec();
+            InputStream exec = CONFIG.dockerClient.logContainerCmd(containerId).withStdErr().exec();
             return !IOUtils.toString(exec).isEmpty();
         });
-        InputStream exec = config.dockerClient.logContainerCmd(containerId).withStdErr().exec();
+        InputStream exec = CONFIG.dockerClient.logContainerCmd(containerId).withStdErr().exec();
         String log = IOUtils.toString(exec);
         assertTrue(log.contains("Exception"));
         assertTrue(log.contains("heap"));
