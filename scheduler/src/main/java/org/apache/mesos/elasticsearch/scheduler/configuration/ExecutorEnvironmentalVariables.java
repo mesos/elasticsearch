@@ -56,7 +56,7 @@ public class ExecutorEnvironmentalVariables {
      * @return A string representing the java heap space.
      */
     private String getHeapSpaceString(Configuration configuration) {
-        int osRam = (int) Math.min(256.0, configuration.getMem()/4.0);
-        return "-Xms" + (int)(configuration.getMem()/4.0) + "m -Xmx" + ((int) configuration.getMem() - osRam) + "m";
+        int osRam = (int) Math.min(256.0, configuration.getMem() / 4.0);
+        return "-Xms" + (int) (configuration.getMem() / 4.0) + "m -Xmx" + ((int) configuration.getMem() - osRam) + "m";
     }
 }

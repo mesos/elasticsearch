@@ -20,7 +20,7 @@ public class ExecutorEnvironmentalVariablesTest {
         configuration.setMem(ram);
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
-        for ( Protos.Environment.Variable var : env.getList()) {
+        for (Protos.Environment.Variable var : env.getList()) {
             if (var.getName().equals(ExecutorEnvironmentalVariables.JAVA_OPTS)) {
                 String val = var.getValue();
                 Pattern pattern = Pattern.compile(".*-Xmx(\\d*)m");
@@ -38,16 +38,16 @@ public class ExecutorEnvironmentalVariablesTest {
         configuration.setMem(ram);
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
-        for ( Protos.Environment.Variable var : env.getList()) {
+        for (Protos.Environment.Variable var : env.getList()) {
             if (var.getName().equals(ExecutorEnvironmentalVariables.JAVA_OPTS)) {
                 String val = var.getValue();
                 Pattern pattern = Pattern.compile(".*-Xmx(\\d*)m");
                 Matcher matcher = pattern.matcher(val);
                 assertTrue(matcher.matches());
-                assertEquals(Integer.toString(ram - ram/4), matcher.group(1));
-                assertTrue(ram - Integer.valueOf(matcher.group(1)) < 256);
-                assertTrue(ram - Integer.valueOf(matcher.group(1)) < ram);
-                assertTrue(ram - Integer.valueOf(matcher.group(1)) > 0);
+                assertEquals(Integer.toString(ram - ram / 4), matcher.group(1));
+                assertTrue(ram - Integer.parseInt(matcher.group(1)) < 256);
+                assertTrue(ram - Integer.parseInt(matcher.group(1)) < ram);
+                assertTrue(ram - Integer.parseInt(matcher.group(1)) > 0);
             }
         }
     }
