@@ -89,12 +89,17 @@ Create a Marathon file like the one below and fill in the IP addresses and other
   "args": ["-n", "3", "-zk", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos", "-ram", "2048"],
   "cpus": 0.2,
   "mem": 512.0,
+  "env": {
+    "JAVA_OPTS": "-Xms128m -Xmx256m"
+  },
   "instances": 1
 }
 ```
 
 Then post to marathon to instantiate the scheduler:
 `curl -k -XPOST -d @marathon.json -H "Content-Type: application/json" http://MARATHON_IP_ADDRESS:8080/v2/apps`
+
+Note: the JAVA_OPTS line is required. If this is not set, then the Java heap space will be incorrectly set.
 
 ### User Interface
 
