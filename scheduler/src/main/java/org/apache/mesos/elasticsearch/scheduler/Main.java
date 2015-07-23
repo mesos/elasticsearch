@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
@@ -38,6 +39,7 @@ public class Main {
     }
 
     public void run(String[] args) {
+        checkHostConfig();
         try {
             parseCommandlineOptions(args);
         } catch (ParseException | IllegalArgumentException e) {
@@ -57,6 +59,21 @@ public class Main {
                 .run(args);
 
         scheduler.run();
+    }
+
+    private void checkHostConfig() {
+        String ethConfig = "";
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec("ifconfig docker");
+            p.waitFor();
+            ethConfig = IOUtils.toString(p.getInputStream());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unable to read machine ifconfig");
+        }
+        if (ethConfig.isEmpty()) {
+            throw new IllegalArgumentException("Docker network mode is not HOST. Please run with --net=host.");
+        }
     }
 
     private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
