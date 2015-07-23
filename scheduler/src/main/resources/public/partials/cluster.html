@@ -1,43 +1,90 @@
 <div class="row">
-    <div class="col-lg-3 col-md-6 col-xs-12">
-        <rd-widget>
-            <rd-widget-body>
-                <div class="widget-icon red pull-left">
+    <div class="col-md-3">
+        <div class="cell dashboard-stat">
+            <div class="display">
+                <div class="number">
+                    <h3 class="font-red-haze">{{configuration.NumberOfHwNodes}}</h3>
+                    <small>NODES</small>
+                </div>
+                <div class="icon">
                     <i class="fa fa-tasks"></i>
                 </div>
-                <div class="title">{{configuration.NumberOfHwNodes}}</div>
-                <div class="comment">Nodes</div>
-            </rd-widget-body>
-        </rd-widget>
+            </div>
+            <!--<div class="progress-info">-->
+                <!--<div class="progress">-->
+                    <!--<span style="width: 85%;" class="progress-bar progress-bar-success">-->
+                        <!--<span class="sr-only">85% change</span>-->
+                    <!--</span>-->
+                <!--</div>-->
+                <!--<div class="status">-->
+                    <!--<div class="status-title">-->
+                        <!--change-->
+                    <!--</div>-->
+                    <!--<div class="status-number">-->
+                        <!--85%-->
+                    <!--</div>-->
+                <!--</div>-->
+            <!--</div>-->
+        </div>
     </div>
-    <div class="col-lg-3 col-md-6 col-xs-12">
-        <rd-widget>
-            <rd-widget-body>
-                <div class="widget-icon orange pull-left">
+    <div class="col-md-3">
+        <div class="cell dashboard-stat">
+            <div class="display">
+                <div class="number">
+                    <h3 class="font-red-haze">{{configuration.Mem}}{{configuration.MemUnits}}</h3>
+                    <small>MEMORY</small>
+                </div>
+                <div class="icon">
                     <i class="fa fa-file-text-o"></i>
                 </div>
-                <div class="title">{{configuration.Mem}}</div>
-                <div class="comment">Memory</div>
-            </rd-widget-body>
-        </rd-widget>
+            </div>
+        </div>
     </div>
-    <div class="col-lg-3 col-md-6 col-xs-12">
-        <rd-widget>
-            <rd-widget-body>
-                <div class="widget-icon blue pull-left">
+    <div class="col-md-3">
+        <div class="cell dashboard-stat">
+            <div class="display">
+                <div class="number">
+                    <h3 class="font-red-haze">{{configuration.Disk}}{{configuration.DiskUnits}}</h3>
+                    <small>DISK</small>
+                </div>
+                <div class="icon">
                     <i class="fa fa-database"></i>
                 </div>
-                <div class="title">{{configuration.Disk}}</div>
-                <div class="comment">Disk</div>
-            </rd-widget-body>
-        </rd-widget>
+            </div>
+        </div>
     </div>
 </div>
-
 <div class="row">
     <div class="col-md-12">
-        <h3>Configuration Overview</h3>
-        <json-formatter json="configuration" open="1"></json-formatter>
+        <div class="cell">
+            <h3>Nodes State</h3>
+            <progress><bar ng-repeat="state in statesPercentage track by $index" value="state.percentage" type="{{state.type}}">{{state.percentage}}% {{state.state}}</bar></progress>
+        </div>
+    </div>
+</div>
+<div class="row">
+    <div class="col-md-5">
+        <div class="cell">
+            <h3>Configuration Overview</h3>
+            <json-formatter json="$parent.configuration" open="1"></json-formatter>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="cell">
+            <h3>Elasticsearch Query Browser</h3>
+            <form class="form-inline" ng-submit="querySubmit()">
+                <div class="form-group">
+                    <input type="text" class="form-control query-string-input" ng-model="query.string" placeholder="Enter your query...">
+                </div>
+                <div class="form-group">
+                    <select class="form-control" ng-model="query.node" ng-options="ip for ip in nodesIpAddresses"></select>
+                </div>
+                <button type="submit" class="btn btn-default">Send</button>
+            </form>
+            <div class="search-results" ng-show="query.results.length">
+                <json-formatter json="query.results" open="1"></json-formatter>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -35,6 +35,7 @@ dependencies {
     compile 'org.webjars:angularjs:1.4.1'
     compile 'org.webjars.bower:angular-route:1.4.1'
     compile 'org.webjars.bower:angular-resource:1.4.1'
+    compile 'org.webjars.bower:angular-bootstrap:0.13.0'
     compile 'org.webjars:bootstrap:3.3.5'
     compile 'org.webjars:font-awesome:4.3.0'
     compile 'org.webjars.bower:rdash-ui:1.0.1'
