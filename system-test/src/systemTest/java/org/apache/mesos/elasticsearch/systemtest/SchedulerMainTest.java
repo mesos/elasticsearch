@@ -2,13 +2,16 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.StartContainerCmd;
+import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.Test;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
@@ -42,5 +45,49 @@ public class SchedulerMainTest {
         String log = IOUtils.toString(exec);
         assertTrue(log.contains("Exception"));
         assertTrue(log.contains("heap"));
+    }
+
+    @Test
+    public void ensureMainFailsIfInvalidHeap() throws Exception {
+        final String schedulerImage = "mesos/elasticsearch-scheduler";
+        CreateContainerCmd createCommand = CONFIG.dockerClient
+                .createContainerCmd(schedulerImage)
+                .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
+                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
+
+        CreateContainerResponse r = createCommand.exec();
+        String containerId = r.getId();
+        StartContainerCmd startMesosClusterContainerCmd = CONFIG.dockerClient.startContainerCmd(containerId);
+        startMesosClusterContainerCmd.exec();
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            InputStream exec = CONFIG.dockerClient.logContainerCmd(containerId).withStdErr().exec();
+            return !IOUtils.toString(exec).isEmpty();
+        });
+        InputStream exec = CONFIG.dockerClient.logContainerCmd(containerId).withStdErr().exec();
+        String log = IOUtils.toString(exec);
+        assertTrue(log.contains("Invalid initial heap size"));
+    }
+
+
+
+    @Test
+    public void ensureMainWorksIfValidHeap() throws Exception {
+        final String schedulerImage = "mesos/elasticsearch-scheduler";
+        CreateContainerCmd createCommand = CONFIG.dockerClient
+                .createContainerCmd(schedulerImage)
+                .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
+                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
+
+        CreateContainerResponse r = createCommand.exec();
+        String containerId = r.getId();
+        StartContainerCmd startMesosClusterContainerCmd = CONFIG.dockerClient.startContainerCmd(containerId);
+        startMesosClusterContainerCmd.exec();
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
+            List<Container> containers = CONFIG.dockerClient.listContainersCmd().exec();
+            return !containers.isEmpty();
+        });
+        List<Container> containers = CONFIG.dockerClient.listContainersCmd().exec();
+        Boolean containerExists = containers.stream().anyMatch(c -> c.getId().equals(containerId));
+        assertTrue(containerExists);
     }
 }
