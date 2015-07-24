@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.springframework.boot.builder.SpringApplicationBuilder;
@@ -76,15 +77,22 @@ public class Main {
             return;
         }
 
-        ZKFormatter zkFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        String mesosStateZkUrl = zkFormatter.format(zkUrl);
-
-        configuration.setZookeeperUrl(zkUrl);
+        configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(mesosStateZkUrl)));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl))));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+    }
+
+    private String getMesosStateZKURL(String zkUrl) {
+        ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
+        return mesosStateZKFormatter.format(zkUrl);
+    }
+
+    private String getMesosZKURL(String zkUrl) {
+        ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
+        return mesosZKFormatter.format(zkUrl);
     }
 
     private void printUsageAndExit() {
