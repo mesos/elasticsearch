@@ -7,7 +7,6 @@ import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,17 +24,17 @@ import static org.junit.Assert.assertFalse;
  * System test for the executor
  */
 public class ExecutorSystemTest extends TestBase {
-    private static final Logger LOG = Logger.getLogger(ExecutorSystemTest.class.getSimpleName());
+
     public static final String DOCKER_PORT = "2376";
+
     private static DockerClient clusterClient;
+
     private static String executorId;
 
     @BeforeClass
     public static void beforeClass() {
-        String ipAddress = cluster.getMesosContainer().getMesosMasterURL().replace("zk://", "").replace(":" + MESOS_PORT, ""); // want IP address! TODO
-
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder()
-                .withUri("http://" + ipAddress + ":" + DOCKER_PORT);
+                .withUri("http://" + cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
         clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> clusterClient.listContainersCmd().exec().size() > 0);
         List<Container> containers = clusterClient.listContainersCmd().exec();
