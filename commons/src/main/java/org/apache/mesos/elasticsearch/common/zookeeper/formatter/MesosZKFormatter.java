@@ -32,7 +32,8 @@ public class MesosZKFormatter extends AbstractZKFormatter {
         StringBuilder builder = new StringBuilder();
         addressList.forEach(add -> builder.append(",").append(add.getAddress()).append(":").append(add.getPort()));
         builder.deleteCharAt(0); // Delete first ','
-        builder.append(MESOS_PATH);
+        builder.append(MESOS_PATH); // Append "/mesos"
+        builder.insert(0,ZKAddress.ZK_PREFIX); // Prepend "zk://"
         return builder.toString();
     }
 
