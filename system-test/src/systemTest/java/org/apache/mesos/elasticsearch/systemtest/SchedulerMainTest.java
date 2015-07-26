@@ -31,7 +31,7 @@ public class SchedulerMainTest {
         final String schedulerImage = "mesos/elasticsearch-scheduler";
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
-                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
+                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -53,7 +53,7 @@ public class SchedulerMainTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
-                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
+                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -76,7 +76,7 @@ public class SchedulerMainTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "64");
+                .withCmd("-zk", "zk://" + "noIP" + ":2181/mesos", "-n", "3", "-ram", "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
