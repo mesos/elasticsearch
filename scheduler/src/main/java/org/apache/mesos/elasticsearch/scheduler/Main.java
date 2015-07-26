@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
@@ -29,7 +30,7 @@ public class Main {
     public Main() {
         this.options = new Options();
         this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
-        this.options.addOption(ZK_URL, "Zookeeper URL", true, "Zookeeper urls zk://IP:PORT,IP:PORT,IP:PORT/mesos)");
+        this.options.addOption(ZK_URL, "zookeeperUrl", true, "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)");
         this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
         this.options.addOption(RAM, "ElasticsearchRam", true, "Amount of RAM to give the Elasticsearch instances");
     }
@@ -91,15 +92,22 @@ public class Main {
             return;
         }
 
-        ZKFormatter zkFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        String mesosStateZkUrl = zkFormatter.format(zkUrl);
-
-        configuration.setZookeeperUrl(zkUrl);
+        configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(mesosStateZkUrl)));
+        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl))));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+    }
+
+    private String getMesosStateZKURL(String zkUrl) {
+        ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
+        return mesosStateZKFormatter.format(zkUrl);
+    }
+
+    private String getMesosZKURL(String zkUrl) {
+        ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
+        return mesosZKFormatter.format(zkUrl);
     }
 
     private void printUsageAndExit() {
