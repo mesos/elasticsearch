@@ -7,6 +7,7 @@ import org.apache.mesos.mini.mesos.MesosClusterConfig;
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Main {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
@@ -30,12 +31,13 @@ public class Main {
             @Override
             public void run() {
                 scheduler.remove();
+                cluster.stop();
             }
         });
 
         scheduler.start();
 
-        LOGGER.info("Scheduler started");
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":8080");
 
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
