@@ -11,10 +11,12 @@ import java.util.regex.Pattern;
  * Model representing ZooKeeper addresses
  */
 public class ZKAddress {
+    public static final String ZK_PREFIX = "zk://";
     public static final String USER_AND_PASS_REG = "([^/@:]+):([^/@:]+)";
     public static final String HOST_AND_PORT_REG = "([A-z0-9-.]+)(?::)([0-9]+)";
     public static final String ZK_NODE_REG = "/([^/]+)";
     public static final String ADDRESS_REGEX = "^(?:" + USER_AND_PASS_REG + "@)?" + HOST_AND_PORT_REG + "(?:" + ZK_NODE_REG + ")?";
+    public static final String VALID_ZK_URL = "zk://host1:port1,user:pass@host2:port2/path,.../path";
     private String user;
     private String password;
     private String address;
