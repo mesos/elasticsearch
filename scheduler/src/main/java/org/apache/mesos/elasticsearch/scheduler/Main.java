@@ -5,9 +5,11 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFor
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -39,6 +41,8 @@ public class Main {
     }
 
     public void run(String[] args) {
+        checkEnv();
+
         try {
             parseCommandlineOptions(args);
         } catch (ParseException | IllegalArgumentException e) {
@@ -58,6 +62,17 @@ public class Main {
                 .run(args);
 
         scheduler.run();
+    }
+
+    private void checkEnv() {
+        Map<String, String> env = System.getenv();
+        checkHeap(env.get(ExecutorEnvironmentalVariables.JAVA_OPTS));
+    }
+
+    private void checkHeap(String s) {
+        if (s == null || s.isEmpty()) {
+            throw new IllegalArgumentException("Scheduler heap space not set!");
+        }
     }
 
     private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
