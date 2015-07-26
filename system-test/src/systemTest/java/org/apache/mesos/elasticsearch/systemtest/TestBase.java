@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.systemtest;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
