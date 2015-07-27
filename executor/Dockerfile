@@ -10,5 +10,6 @@ RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true 
   rm -rf /var/cache/oracle-jdk8-installer
 
 ADD ./build/docker/elasticsearch-mesos-executor.jar /tmp/elasticsearch-mesos-executor.jar
+ADD ./build/docker/start-executor.sh /tmp/start-executor.sh
 
-ENTRYPOINT ["java", "-Djava.library.path=/usr/lib", "-jar", "/tmp/elasticsearch-mesos-executor.jar"]
+ENTRYPOINT ["/tmp/start-executor.sh"]

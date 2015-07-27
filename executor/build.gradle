@@ -37,6 +37,10 @@ shadowJar {
     classifier = ''
 }
 
+task taskCopyFilesForDocker(type: Copy) {
+    dependsOn "copyShellScript", "copyJar"
+}
+
 task copyJar(type: Copy) {
     dependsOn 'shadowJar'
     from { getTasksByName("shadowJar", false)[0].outputs.files[0] } // Get outputs from task "jar"
@@ -46,4 +50,7 @@ task copyJar(type: Copy) {
     }
 }
 
-build.dependsOn "copyJar"
+task copyShellScript(type: Copy) {
+    from        "start-executor.sh"
+    into        'build/docker'
+}

@@ -1,17 +1,12 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.jayway.awaitility.core.ConditionTimeoutException;
-import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
 import org.junit.Test;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
+import java.util.List;
 
-import static com.jayway.awaitility.Awaitility.await;
-import static junit.framework.Assert.fail;
-import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests REST node discovery
@@ -22,50 +17,14 @@ public class DiscoverySystemTest extends TestBase {
 
     @Test
     public void testNodeDiscoveryRest() throws InterruptedException {
-        String slave1Ip = getSlaveIp(cluster.getMesosContainer().getMesosContainerID());
+        ElasticsearchSchedulerContainer scheduler = getScheduler();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(slave1Ip, slave1Ip, slave1Ip);
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress());
 
-        assertNodesDiscovered(nodesResponse);
-    }
+        List<JSONObject> tasks = tasksResponse.getTasks();
 
-    private void assertNodesDiscovered(ElasticsearchNodesResponse nodesResponse) {
-        try {
-            await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(nodesResponse, is(true));
-        } catch (ConditionTimeoutException e) {
-            fail("Elasticsearch did not discover nodes within 5 minutes");
-        }
-        LOGGER.info("Elasticsearch nodes discovered each other successfully");
-    }
-
-    private static class ElasticsearchNodesResponse implements Callable<Boolean> {
-
-        private String ipAddress1;
-        private String ipAddress2;
-        private String ipAddress3;
-
-        public ElasticsearchNodesResponse(String ipAddress1, String ipAddress2, String ipAddress3) {
-            this.ipAddress1 = ipAddress1;
-            this.ipAddress2 = ipAddress2;
-            this.ipAddress3 = ipAddress3;
-        }
-
-        @Override
-        public Boolean call() throws Exception {
-            try {
-                //todo: get ES urls from Scheduler/tasks API
-                double nodesSlave1 = Unirest.get("http://" + ipAddress1 + ":9200/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
-                double nodesSlave2 = Unirest.get("http://" + ipAddress2 + ":9201/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
-                double nodesSlave3 = Unirest.get("http://" + ipAddress3 + ":9202/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length();
-                if (!(nodesSlave1 == 3 && nodesSlave2 == 3 && nodesSlave3 == 3)) {
-                    return false;
-                }
-            } catch (UnirestException e) {
-                LOGGER.info("Polling Elasticsearch _nodes endpoints...");
-                return false;
-            }
-            return true;
-        }
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks);
+        assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
 
 }

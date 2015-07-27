@@ -9,6 +9,10 @@
         </layout>
     </appender>
 
+    <category name="org.apache.mesos.mini">
+        <level value="DEBUG"/>
+    </category>
+
     <root>
         <level value="INFO"/>
         <appender-ref ref="console" />
