@@ -27,9 +27,7 @@ import java.util.regex.Pattern;
  *
  */
 public class ZKAddressParser {
-    public static final String ZK_PREFIX = "zk://";
-    public static final String ZK_PREFIX_REGEX = "^" + ZK_PREFIX + ".*";
-    public static final String VALID_ZK_URL = "zk://host1:port1,user:pass@host2:port2/path,.../path";
+    public static final String ZK_PREFIX_REGEX = "^" + ZKAddress.ZK_PREFIX + ".*";
 
     public List<ZKAddress> validateZkUrl(final String zkUrl) {
         final List<ZKAddress> zkList = new ArrayList<>();
@@ -41,7 +39,7 @@ public class ZKAddressParser {
         }
 
         // Strip zk prefix and spaces
-        String zkStripped = zkUrl.replace(ZK_PREFIX, "").replace(" ", "");
+        String zkStripped = zkUrl.replace(ZKAddress.ZK_PREFIX, "").replace(" ", "");
 
         // Split address by commas
         String[] split = zkStripped.split(",");

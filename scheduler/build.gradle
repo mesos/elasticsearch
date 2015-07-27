@@ -48,7 +48,6 @@ dependencies {
 }
 
 jar {
-    dependsOn ":executor:copyJar"
     baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
     from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] } // Include executor
@@ -66,6 +65,10 @@ test {
     }
 }
 
+task taskCopyFilesForDocker(type: Copy) {
+    dependsOn "copyShellScript", "copyJar"
+}
+
 task copyJar(type: Copy) {
     dependsOn   'jar'
     from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"
@@ -75,3 +78,7 @@ task copyJar(type: Copy) {
     }
 }
 
+task copyShellScript(type: Copy) {
+    from        "start-scheduler.sh"
+    into        'build/docker'
+}
