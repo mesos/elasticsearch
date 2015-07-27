@@ -7,15 +7,15 @@ import org.apache.mesos.Protos;
  */
 public class Configuration {
 
-    private static final double CPUS = 0.2;
+    private double cpus = 0.2;
 
-    private static final double MEM = 512;
+    private double mem = 512;
 
-    private String MEM_UNITS = "MB";
+    private String memUnits = "MB";
 
-    private static final double DISK = 250;
+    private double disk = 250;
 
-    private String DISK_UNITS = "GB";
+    private String diskUnits = "GB";
 
     private int numberOfHwNodes;
 
@@ -27,24 +27,27 @@ public class Configuration {
 
     private int managementApiPort;
 
-    public static double getCpus() {
-        return CPUS;
+    public double getCpus() {
+        return cpus;
     }
 
-    public static double getMem() {
-        return MEM;
+    public double getMem() {
+        return mem;
+    }
+    public void setMem(double mem) {
+        this.mem = mem;
     }
 
     public String getMemUnits() {
-        return MEM_UNITS;
+        return memUnits;
     }
 
-    public static double getDisk() {
-        return DISK;
+    public double getDisk() {
+        return disk;
     }
 
     public String getDiskUnits() {
-        return DISK_UNITS;
+        return diskUnits;
     }
 
     public State getState() {

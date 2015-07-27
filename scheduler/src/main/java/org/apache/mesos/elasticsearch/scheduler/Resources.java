@@ -65,10 +65,10 @@ public class Resources {
         return ports;
     }
 
-    public static List<Protos.Resource> buildFrameworkResources() {
-        Protos.Resource cpus = Resources.cpus(Configuration.getCpus());
-        Protos.Resource mem = Resources.mem(Configuration.getMem());
-        Protos.Resource disk = Resources.disk(Configuration.getDisk());
+    public static List<Protos.Resource> buildFrameworkResources(Configuration configuration) {
+        Protos.Resource cpus = Resources.cpus(configuration.getCpus());
+        Protos.Resource mem = Resources.mem(configuration.getMem());
+        Protos.Resource disk = Resources.disk(configuration.getDisk());
         return asList(cpus, mem, disk);
     }
 }

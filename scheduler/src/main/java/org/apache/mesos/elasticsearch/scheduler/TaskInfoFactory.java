@@ -3,12 +3,12 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -37,8 +37,9 @@ public class TaskInfoFactory {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = new ArrayList<>();
-
-        addAllScalarResources(offer.getResourcesList(), acceptedResources);
+        acceptedResources.add(Resources.cpus(configuration.getCpus()));
+        acceptedResources.add(Resources.mem(configuration.getMem()));
+        acceptedResources.add(Resources.disk(configuration.getDisk()));
 
         LOGGER.info("Creating Elasticsearch task [client port: " + ports.get(0) + ", transport port: " + ports.get(1) + "]");
 
@@ -74,19 +75,12 @@ public class TaskInfoFactory {
     }
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
+        ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
                 .addAllArguments(asList("-zk", configuration.getZookeeperUrl()))
+                .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
-    }
-
-    private void addAllScalarResources(List<Protos.Resource> offeredResources, List<Protos.Resource> acceptedResources) {
-        acceptedResources.addAll(offeredResources.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.SCALAR))
-                .map(resource -> resource = Protos.Resource.newBuilder()
-                        .setType(Protos.Value.Type.SCALAR)
-                        .setName(resource.getName())
-                        .setScalar(Protos.Value.Scalar.newBuilder().setValue(resource.getScalar().getValue() * RESOURCE_CONSUMPTION_FRACTION)).build())
-                .collect(Collectors.toList()));
     }
 
     private String taskId(Protos.Offer offer) {

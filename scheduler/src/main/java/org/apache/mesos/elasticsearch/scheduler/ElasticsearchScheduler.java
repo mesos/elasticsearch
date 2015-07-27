@@ -60,7 +60,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        List<Protos.Resource> resources = Resources.buildFrameworkResources();
+        List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
         Protos.Request request = Protos.Request.newBuilder()
                 .addAllResources(resources)
@@ -87,9 +87,19 @@ public class ElasticsearchScheduler implements Scheduler {
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
+            } else if (!isEnoughCPU(offer.getResourcesList())) {
+                LOGGER.info("Declined offer: Not enough CPU resources");
+                driver.declineOffer(offer.getId());
+            } else if (!isEnoughRAM(offer.getResourcesList())) {
+                LOGGER.info("Declined offer: Not enough RAM resources");
+                driver.declineOffer(offer.getId());
+            } else if (!isEnoughDisk(offer.getResourcesList())) {
+                LOGGER.info("Not enough Disk resources");
+                driver.declineOffer(offer.getId());
             } else {
                 LOGGER.info("Accepted offer: " + offer.getHostname());
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
+                LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 Task task = new Task(
                     offer.getHostname(),
@@ -102,6 +112,21 @@ public class ElasticsearchScheduler implements Scheduler {
                 tasks.put(taskInfo.getTaskId().getValue(), task);
             }
         }
+    }
+
+    private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.disk(0).getName());
+        return resourceCheck.isEnough(resourcesList, configuration.getDisk());
+    }
+
+    private boolean isEnoughCPU(List<Protos.Resource> resourcesList) {
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.cpus(0).getName());
+        return resourceCheck.isEnough(resourcesList, configuration.getCpus());
+    }
+
+    private boolean isEnoughRAM(List<Protos.Resource> resourcesList) {
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.mem(0).getName());
+        return resourceCheck.isEnough(resourcesList, configuration.getMem());
     }
 
     private boolean containsTwoPorts(List<Protos.Resource> resources) {

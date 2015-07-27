@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  *
  */
 @RestController
-@RequestMapping("/cluster")
+@RequestMapping("/v1/cluster")
 public class ClusterController {
     public static final Logger LOGGER = Logger.getLogger(ClusterController.class);
 
