@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
@@ -66,7 +67,7 @@ public class Main {
     }
 
     private void checkHostConfig() {
-        String ethConfig = "";
+        String ethConfig;
         try {
             Runtime r = Runtime.getRuntime();
             Process p = r.exec("ifconfig docker");
@@ -94,7 +95,7 @@ public class Main {
     private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
         configuration = new Configuration();
 
-        CommandLineParser parser = new BasicParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
