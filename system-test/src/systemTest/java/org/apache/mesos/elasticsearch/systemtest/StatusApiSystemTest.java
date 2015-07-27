@@ -1,8 +1,5 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -13,27 +10,18 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
 /**
- *
+ * Tests scheduler APIs
  */
 public class StatusApiSystemTest extends TestBase {
 
     @Test
-    public void canGet200FromScheduler() throws Exception {
-        String schedulerIp = getSlaveIp(schedulerId);
-        assertThat(schedulerIp, not(isEmptyOrNullString()));
-        final HttpResponse<String> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asString();
-        assertEquals(200, tasksResponse.getStatus());
-    }
+    public void testThreeTasks() throws Exception {
+        TasksResponse tasksResponse = new TasksResponse(getScheduler().getIpAddress());
 
-    @Test
-    public void hasThreeTasksWithValidInformation() throws Exception {
-        String schedulerIp = getSlaveIp(schedulerId);
-        HttpResponse<JsonNode> tasksResponse = Unirest.get("http://" + schedulerIp + ":8080/tasks").asJson();
+        assertEquals(3, tasksResponse.getJson().getBody().getArray().length());
 
-        assertEquals(3, tasksResponse.getBody().getArray().length());
-
-        for (int i = 0; i < tasksResponse.getBody().getArray().length(); i++) {
-            JSONObject taskObject = tasksResponse.getBody().getArray().getJSONObject(i);
+        for (int i = 0; i < tasksResponse.getJson().getBody().getArray().length(); i++) {
+            JSONObject taskObject = tasksResponse.getJson().getBody().getArray().getJSONObject(i);
             assertThat(taskObject.getString("id"), startsWith("elasticsearch_slave"));
             assertEquals("esdemo", taskObject.getString("name"));
             assertThat(taskObject.getString("started_at"), isValidDateTime());

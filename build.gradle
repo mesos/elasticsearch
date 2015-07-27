@@ -162,7 +162,7 @@ subprojects {
                         docker.certPath = new File(System.env.DOCKER_CERT_PATH)
                     }
             }
-            task buildDockerImage(type: DockerBuildImage, dependsOn: [copyJar], description: 'build Docker image') {
+            task buildDockerImage(type: DockerBuildImage, dependsOn: [taskCopyFilesForDocker], description: 'build Docker image') {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
