@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
@@ -42,7 +43,8 @@ public class Main {
 
     public void run(String[] args) {
         checkEnv();
-
+        checkHostConfig();
+        
         try {
             parseCommandlineOptions(args);
         } catch (ParseException | IllegalArgumentException e) {
@@ -64,6 +66,21 @@ public class Main {
         scheduler.run();
     }
 
+    private void checkHostConfig() {
+        String ethConfig;
+        try {
+            Runtime r = Runtime.getRuntime();
+            Process p = r.exec("ifconfig docker");
+            p.waitFor();
+            ethConfig = IOUtils.toString(p.getInputStream());
+        } catch (Exception ex) {
+            throw new IllegalArgumentException("Unable to read machine ifconfig");
+        }
+        if (ethConfig.isEmpty()) {
+            throw new IllegalArgumentException("Docker network mode is not HOST. Please run with --net=host.");
+        }
+    }
+
     private void checkEnv() {
         Map<String, String> env = System.getenv();
         checkHeap(env.get(ExecutorEnvironmentalVariables.JAVA_OPTS));
@@ -78,7 +95,7 @@ public class Main {
     private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
         configuration = new Configuration();
 
-        CommandLineParser parser = new BasicParser();
+        CommandLineParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
