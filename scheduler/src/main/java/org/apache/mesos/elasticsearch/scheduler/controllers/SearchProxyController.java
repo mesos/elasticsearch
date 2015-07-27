@@ -10,6 +10,7 @@ import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 /**
  *
@@ -31,9 +33,16 @@ public class SearchProxyController {
     HttpClient httpClient;
 
     @RequestMapping("/_search")
-    public ResponseEntity<InputStreamResource> search(@RequestParam("query") String query) throws IOException {
+    public ResponseEntity<InputStreamResource> search(@RequestParam("query") String query, @RequestHeader(value = "X-ElasticSearch-Host", required = false) String elasticSearchHost) throws IOException {
+        HttpHost httpHost = null;
         Collection<Task> tasks = scheduler.getTasks().values();
-        HttpHost httpHost = tasks.stream().skip(RandomUtils.nextInt(tasks.size())).findAny().map(task -> toHttpHost(task.getClientAddress())).get();
+        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> toHttpHost(task.getClientAddress()));
+
+        if (elasticSearchHost != null) {
+            httpHost = httpHostStream.filter(host -> host.toHostString().equalsIgnoreCase(elasticSearchHost)).findAny().get();
+        } else {
+            httpHost = httpHostStream.skip(RandomUtils.nextInt(tasks.size())).findAny().get();
+        }
 
         HttpResponse esSearchResponse = httpClient.execute(httpHost, new HttpGet("/_search?=query" + query));
 
