@@ -180,23 +180,23 @@ subprojects {
                 tag = project.imageName
             }
             project.build.dependsOn buildDockerImage
-            [ 'latest', 'release' ].each { aTag ->
+            [ 'latest', 'version' ].each { aTag ->
                 String uppercasedName = aTag.capitalize()
-                task "tagDockerImage$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
+                task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
                     imageId = project.imageName
-                    tag = ( 'release'.equals(aTag) ) ? project.version : aTag
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
                     repository = project.imageName
                     force = true
                 }
-                task "publishDockerImage$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImage$uppercasedName"],
+                task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
                         description: 'publish Docker image') {
                     imageName = project.imageName
-                    tag = ( 'release'.equals(aTag) ) ? project.version : aTag
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
                     doFirst {
                         validateRegistrySetup()
                     }
                 }
-                project.publish.dependsOn "publishDockerImage$uppercasedName"
+                project.publish.dependsOn "publishDockerImageWith$uppercasedName"
             }
         }
     }
