@@ -33,7 +33,7 @@ controllers.controller('MainController', function($scope, $interval, $route, con
 
     /** Tasks monitoring **/
     $scope.tasks = [];
-    $scope.nodesIpAddresses = [];
+    $scope.nodes = [];
     $scope.statesPercentage = [];
     var fetchInterval = 5000; // ms
 
@@ -76,14 +76,14 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     };
     var updateTasks = function(data) {
         $scope.tasks = data;
-        var ips = [];
+        var nodes = [];
         var states = {};
         angular.forEach(data, function(value, key) {
-            ips.push(value.http_address);
+            nodes.push(value.hostname + ":" + value.http_address.split(":")[1]);
             states.hasOwnProperty(value.state) || (states[value.state] = []);
             states[value.state].push(value.http_address);
         });
-        $scope.nodesIpAddresses = ips;
+        $scope.nodes = nodes;
         updateStatesPercentage(states, data);
     };
     var fetchTasks = function() {
@@ -95,39 +95,40 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     $interval(fetchTasks, fetchInterval);
 });
 
-controllers.controller('ClusterController', function($scope, $http, config, Cluster) {
+controllers.controller('ClusterController', function($scope, $http, $location, config, Cluster) {
     $scope.query = {
+        error: '',
         string: '',
         node: '',
-        results: [],
+        results: null,
     };
 
-    $scope.$parent.$watch('nodesIpAddresses', function(value) {
+    $scope.$parent.$watch('nodes', function(value) {
         if (value.length && $scope.query.node == '') {
             $scope.query.node = value[0];
         }
     });
 
-    var searchUrl = function(host, query) {
-        return "http://" + host + "/_search?q=" + query;
-    };
-
     $scope.querySubmit = function() {
         if ($scope.query.node && $scope.query.string) {
-            $http.get(searchUrl($scope.query.node, $scope.query.string)).
-                success(function(data, status, headers) {
-                    console.log(data, status, headers);
-                    $scope.searchResults = data;
-                }).
-                error(function(data, status, headers) {
-                    console.log(data, status, headers);
-                    // @todo add proper error message
-                    alert('Error');
-                });
-        } else {
-            // @todo add proper error message
-            alert('Error');
+            $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
+            var URL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + "/es/_search?q=" + $scope.query.string;
+            $http.get(URL).success(function(data, status, headers) {
+                $scope.query.results = data;
+            }).error(function(data, status, headers) {
+                if (data.hasOwnProperty('error')) {
+                    $scope.query.error = data.error;
+                } else {
+                    $scope.query.error = "Unknown error"
+                }
+            });
         }
+    };
+
+    $scope.resetQuery = function() {
+        $scope.query.error = '';
+        $scope.query.string = '';
+        $scope.query.results = null;
     };
 });
 

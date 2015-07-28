@@ -82,8 +82,8 @@ button {
 .task-list-item td {
   font-family: monospace;
 }
-.query-string-input {
-  width: 350px;
+.query-browser {
+  margin-bottom: 10px;
 }
 #sidebar-wrapper {
   background-color: #000000;
