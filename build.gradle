@@ -93,6 +93,18 @@ afterEvaluate {
     release.dependsOn getTasksByName('publish', true)
 }
 
+            def validateRegistrySetup() {
+                ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                    assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                }
+                docker {
+                    registryCredentials {
+                        username = project.property('dockerHubUsername')
+                        password = project.property('dockerHubPassword')
+                        email = project.property('dockerHubEmail')
+                    }
+                }
+            }
 subprojects {
 
     apply plugin: 'maven-publish'
@@ -167,29 +179,24 @@ subprojects {
                 tag = project.imageName
             }
             project.build.dependsOn buildDockerImage
-            task tagDockerImage(type: DockerTagImage, description: 'tag Docker image') {
-                imageId = project.imageName
-                tag = project.version
-                repository = project.imageName
-                force = true
-            }
-            task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
-                imageName = project.imageName
-                tag = project.version
-                doFirst {
-                    ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-                        assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-                    }
-                    docker {
-                        registryCredentials {
-                            username = project.property('dockerHubUsername')
-                            password = project.property('dockerHubPassword')
-                            email = project.property('dockerHubEmail')
-                        }
+            [ 'latest', 'release' ].each {
+                String uppercasedName = it.capitalize()
+                task "tagDockerImage$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
+                    imageId = project.imageName
+                    tag = ( 'release'.equals(it) ) ? project.version : it
+                    repository = project.imageName
+                    force = true
+                }
+                task "publishDockerImage$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImage$uppercasedName"],
+                        description: 'publish Docker image') {
+                    tag = project.version
+                    tag = ( 'release'.equals(it) ) ? project.version : it
+                    doFirst {
+                        validateRegistrySetup()
                     }
                 }
+                project.publish.dependsOn "publishDockerImage$uppercasedName"
             }
-            project.publish.dependsOn publishDockerImage
         }
     }
 }
