@@ -61,21 +61,23 @@ versions.each { Version v ->
 println "Current version: " + currentVersion
 project.version = currentVersion
 
-task incrementVersion << {
-    if (project.hasProperty('releaseType')) {
-        if (releaseType == "major") {
-            project.version = currentVersion.incrementMajorVersion()
-        } else if (releaseType == "minor") {
-            project.version = currentVersion.incrementMinorVersion()
-        } else if (releaseType == "patch") {
-            project.version = currentVersion.incrementPatchVersion()
+task incrementVersion {
+    if(gradle.startParameter.taskNames.contains('release')) {
+        if (project.hasProperty('releaseType')) {
+            if (releaseType == "major") {
+                project.version = currentVersion.incrementMajorVersion()
+            } else if (releaseType == "minor") {
+                project.version = currentVersion.incrementMinorVersion()
+            } else if (releaseType == "patch") {
+                project.version = currentVersion.incrementPatchVersion()
+            }
+        } else {
+            throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
         }
-    } else {
-        throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
-    }
-    println "Next version: " + project.version
-    subprojects { project ->
-        project.version = rootProject.version.toString()
+        println "Next version: " + project.version
+            subprojects { project ->
+                project.version = rootProject.version.toString()
+            }
     }
 }
 
@@ -144,14 +146,6 @@ subprojects {
         }
     }
 
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
-        }
-    }
-
     afterEvaluate { project ->
         if (new File(project.projectDir, 'Dockerfile').exists()) {
             if (!project.hasProperty('imageName')) {
@@ -178,15 +172,11 @@ subprojects {
                 tag = project.version
                 repository = project.imageName
                 force = true
-                doFirst {
-                    tag = project.version // needed to upgrade on release
-                }
             }
             task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
                 imageName = project.imageName
                 tag = project.version
                 doFirst {
-                    tag = project.version // needed to upgrade on release
                     ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
                         assert project.hasProperty(it) : 'Undefined "' + it + '" property'
                     }
