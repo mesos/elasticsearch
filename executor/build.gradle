@@ -37,6 +37,14 @@ shadowJar {
     classifier = ''
 }
 
+publishing {
+  publications {
+    shadow(MavenPublication) {
+      from components.shadow
+    }
+  }
+}
+
 task taskCopyFilesForDocker(type: Copy) {
     dependsOn "copyShellScript", "copyJar"
 }

@@ -62,6 +62,14 @@ jar {
     }
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+
 test {
     testLogging {
         showStandardStreams = true
