@@ -93,19 +93,6 @@ afterEvaluate {
     release.dependsOn getTasksByName('publish', true)
 }
 
-def validateRegistrySetup() {
-    ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-        assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-    }
-    docker {
-        registryCredentials {
-            username = project.property('dockerHubUsername')
-            password = project.property('dockerHubPassword')
-            email = project.property('dockerHubEmail')
-        }
-    }
-}
-
 subprojects {
 
     apply plugin: 'maven-publish'
@@ -142,6 +129,19 @@ subprojects {
         testCompile 'junit:junit:4.12'
         testCompile "org.mockito:mockito-all:1.9.5"
 
+    }
+
+    ext.validateRegistrySetup = {
+        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+        }
+        docker {
+            registryCredentials {
+                username = project.property('dockerHubUsername')
+                password = project.property('dockerHubPassword')
+                email = project.property('dockerHubEmail')
+            }
+        }
     }
 
     sonarRunner {
