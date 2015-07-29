@@ -13,10 +13,11 @@ public class DataPusherContainer extends AbstractContainer {
 
     public String pusherImageName = "alexglv/es-pusher";
 
-    public String esPort = "9201";
+    public String slaveAddress;
 
-    public DataPusherContainer(DockerClient dockerClient) {
+    public DataPusherContainer(DockerClient dockerClient, String firstSlaveHttpAddress) {
         super(dockerClient);
+        slaveAddress = firstSlaveHttpAddress;
     }
 
     @Override
@@ -28,7 +29,7 @@ public class DataPusherContainer extends AbstractContainer {
     protected CreateContainerCmd dockerCommand() {
         return dockerClient.createContainerCmd(pusherImageName)
                 .withName("es_pusher" + new SecureRandom().nextInt())
-                .withEnv("ELASTICSEARCH_URL=" + "http://" + getIpAddress() + ":" + esPort)
+                .withEnv("ELASTICSEARCH_URL=" + "http://" + slaveAddress)
                 .withCmd("lein", "run", "-d");
 
     }
