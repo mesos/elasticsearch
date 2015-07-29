@@ -13,7 +13,7 @@ public class DataPusherContainer extends AbstractContainer {
 
     public String pusherImageName = "alexglv/es-pusher";
 
-    public String esIp = "9200";
+    public String esPort = "9201";
 
     public DataPusherContainer(DockerClient dockerClient) {
         super(dockerClient);
@@ -21,14 +21,15 @@ public class DataPusherContainer extends AbstractContainer {
 
     @Override
     protected void pullImage() {
-        dockerUtil.pullImage(pusherImageName, "uberjar");
+        dockerClient.pullImageCmd(pusherImageName);
     }
 
     @Override
     protected CreateContainerCmd dockerCommand() {
         return dockerClient.createContainerCmd(pusherImageName)
                 .withName("es_pusher" + new SecureRandom().nextInt())
-                .withCmd("lein", "run", "-e", "http://" + getIpAddress() + ":" + esIp, "-d");
+                .withEnv("ELASTICSEARCH_URL=" + "http://" + getIpAddress() + ":" + esPort)
+                .withCmd("lein", "run", "-d");
 
     }
 }

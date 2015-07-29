@@ -21,13 +21,13 @@ dependencies {
     compile 'com.github.docker-java:docker-java:1.3.0'
     compile 'com.mashape.unirest:unirest-java:1.4.5'
     compile 'com.jayway.awaitility:awaitility:1.6.3'
-    compile 'com.github.ContainerSolutions:mini-mesos:a6f225743c5f02b05af67167fba1d0adec724ed2'
+    compile 'com.github.ContainerSolutions:mini-mesos:7bc19ef062466fa6e22fe4351adf04320f2526bc'
 
     performanceTestCompile 'junit:junit:4.12'
     performanceTestCompile 'com.github.docker-java:docker-java:1.3.0'
     performanceTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
     performanceTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    performanceTestCompile 'com.github.ContainerSolutions:mini-mesos:a6f225743c5f02b05af67167fba1d0adec724ed2'
+    performanceTestCompile 'com.github.ContainerSolutions:mini-mesos:7bc19ef062466fa6e22fe4351adf04320f2526bc'
 
 }
 
