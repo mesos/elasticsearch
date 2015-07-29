@@ -65,7 +65,7 @@ public class State {
      * @throws ClassNotFoundException
      */
     @SuppressWarnings("unchecked")
-    private <T> T get(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+    public <T> T get(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         byte[] existingNodes = zkState.fetch(key).get().value();
         if (existingNodes.length > 0) {
             ByteArrayInputStream bis = new ByteArrayInputStream(existingNodes);
@@ -94,7 +94,7 @@ public class State {
      * @throws InterruptedException
      * @throws IOException
      */
-    private <T> void set(String key, T object) throws InterruptedException, ExecutionException, IOException {
+    public <T> void set(String key, T object) throws InterruptedException, ExecutionException, IOException {
         Variable value = zkState.fetch(key).get();
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream out = null;

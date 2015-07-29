@@ -40,7 +40,6 @@ public class ElasticsearchScheduler implements Scheduler {
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
         frameworkBuilder.setName(configuration.getFrameworkName());
-        frameworkBuilder.setCheckpoint(true);
         frameworkBuilder.setFailoverTimeout(configuration.getFailoverTimeout());
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
 
