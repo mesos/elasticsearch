@@ -1,19 +1,90 @@
 body {
-  background-image: url("../images/bg.jpg") !important;
-}
-
-.row {
-  &.header {
-//    border-bottom: 1px solid #222222;
-  }
+  background-color: #e9ecf3;
+  font-size: 12px;
 }
 
 h1 {
   margin: 10px;
+  span {
+    color: #aaa;
+    font-size: 18px;
+  }
+}
+
+h3 {
+  margin: 0px 0px 20px 0px;
+  font-size: 20px;
+}
+
+input, button {
+  font-size: inherit;
 }
 
 .content-wrapper {
   margin-top: 40px;
+}
+
+.cell {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 5px;
+}
+
+.dashboard-stat {
+  .display {
+    .number {
+      // float: left;
+      display: inline-block;
+      h3 {
+        margin: 0 0 2px 0;
+        padding: 0;
+        font-size: 30px;
+        font-weight: 400;
+      }
+      small {
+        font-size: 14px;
+        color: #AAB5BC;
+        font-weight: 600;
+        text-transform: uppercase;
+      }
+    }
+    .icon {
+      display: inline-block;
+      float: right;
+      padding: 7px 0 0 0;
+      i {
+        color: #cbd4e0;
+        font-size: 26px;
+      }
+    }
+  }
+  .progress-info {
+    clear: both;
+    .progress {
+      margin: 0;
+      height: 4px;
+      clear: both;
+      display: block;
+      border: 0;
+      background-image: none;
+      filter: none;
+    }
+    .status {
+      margin-top: 5px;
+      font-size: 11px;
+      color: #AAB5BC;
+      font-weight: 600;
+      text-transform: uppercase;
+      .status-title {
+        float: left;
+        display: inline-block;
+      }
+      .status-number {
+        float: right;
+        display: inline-block;
+      }
+    }
+  }
 }
 
 .mesos-logo {
@@ -26,6 +97,10 @@ h1 {
   td {
     font-family: monospace;
   }
+}
+
+.query-browser {
+  margin-bottom: 10px;
 }
 
 #sidebar-wrapper {
@@ -42,10 +117,14 @@ ul.sidebar {
     a {
       background: #000000;
       color: #ffffff;
-      &:hover {
+      &:hover, &.active {
         background: #222222;
         color: #74BD43;
         border-left: 3px solid #74BD43;
+        text-indent: 22px;
+        .menu-icon {
+          text-indent: 22px !important;
+        }
       }
     }
   }
