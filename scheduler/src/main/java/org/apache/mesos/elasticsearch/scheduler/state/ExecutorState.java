@@ -34,4 +34,15 @@ public class ExecutorState {
     private String getKey() {
         return frameworkID.getValue() + "/" + STATE + "/" + slaveID.getValue();
     }
+
+    @Override
+    public String toString() {
+        String retVal;
+        try {
+            retVal = getKey() + ": " + getStatus().getMessage();
+        } catch (Exception e) {
+            retVal = getKey() + ": Unable to get message";
+        }
+        return retVal;
+    }
 }

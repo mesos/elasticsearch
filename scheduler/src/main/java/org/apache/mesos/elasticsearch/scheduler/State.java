@@ -27,7 +27,7 @@ public class State {
     }
 
     /**
-     * Return null if no frameworkId found.
+     * Return empty if no frameworkId found.
      */
     public FrameworkID getFrameworkID() {
         try {
@@ -35,7 +35,7 @@ public class State {
             if (existingFrameworkId.length > 0) {
                 return FrameworkID.parseFrom(existingFrameworkId);
             } else {
-                return null;
+                return FrameworkID.newBuilder().setValue("").build();
             }
         } catch (InterruptedException | ExecutionException | InvalidProtocolBufferException e) {
             LOGGER.error(FRAMEWORK_ID_ERROR, e);
@@ -112,5 +112,43 @@ public class State {
                 bos.close();
             }
         }
+    }
+
+    public <T> void setAndCreateParents(String key, T object) throws InterruptedException, ExecutionException, IOException {
+        mkdir(key);
+        set(key, object);
+    }
+
+    /**
+     * Creates the zNode if it does not exist
+     * @param key the zNode path
+     */
+    public void mkdir(String key) {
+        String[] split = key.split("/");
+        StringBuilder builder = new StringBuilder();
+        for (String s : split) {
+            builder.append(s);
+            if (!exists(builder.toString())) {
+                try {
+                    set(builder.toString(), null);
+                } catch (Exception ex) {
+                    LOGGER.error("Unable to create zNode:", ex);
+                }
+            }
+            builder.append("/");
+        }
+    }
+
+    public Boolean exists(String key) {
+        Boolean exists = true;
+        try {
+            Object value = get(key);
+            if (value == null) {
+                exists = false;
+            }
+        } catch (Exception ex) {
+            LOGGER.error("Could not check if zNode exists:", ex);
+        }
+        return exists;
     }
 }
