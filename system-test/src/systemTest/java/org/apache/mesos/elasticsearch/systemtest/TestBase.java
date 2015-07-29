@@ -27,14 +27,14 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void startScheduler() throws Exception {
-//        cluster.injectImage("mesos/elasticsearch-executor");
+        cluster.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting Elasticsearch scheduler");
 
-//        scheduler = new ElasticsearchSchedulerContainer(config.dockerClient, cluster.getMesosContainer().getIpAddress());
-//        cluster.addAndStartContainer(scheduler);
+        scheduler = new ElasticsearchSchedulerContainer(config.dockerClient, cluster.getMesosContainer().getIpAddress());
+        cluster.addAndStartContainer(scheduler);
 
-//        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
