@@ -35,6 +35,7 @@ public class ClusterStateTest {
     public static final MesosCluster cluster = new MesosCluster(config);
 
 
+    // ********** Development tests on local cluster ***********
     /**
      * To run the following tests you need to have a native mesos library installed and route to the mesos local. E.g. for mac.
      * $ brew install mesos
@@ -56,6 +57,10 @@ public class ClusterStateTest {
         List<ExecutorState> executorStateList = clusterState.getState();
         executorStateList.forEach(LOGGER::info);
         assertEquals(3, executorStateList.size());
+        clusterState.removeSlave(Protos.SlaveID.newBuilder().setValue("slave1").build());
+        executorStateList = clusterState.getState();
+        executorStateList.forEach(LOGGER::info);
+        assertEquals(2, executorStateList.size());
     }
 
     private String getMesosStateZKURL(String zkUrl) {
