@@ -61,21 +61,23 @@ versions.each { Version v ->
 println "Current version: " + currentVersion
 project.version = currentVersion
 
-task incrementVersion << {
-    if (project.hasProperty('releaseType')) {
-        if (releaseType == "major") {
-            project.version = currentVersion.incrementMajorVersion()
-        } else if (releaseType == "minor") {
-            project.version = currentVersion.incrementMinorVersion()
-        } else if (releaseType == "patch") {
-            project.version = currentVersion.incrementPatchVersion()
+task incrementVersion {
+    if(gradle.startParameter.taskNames.contains('release')) {
+        if (project.hasProperty('releaseType')) {
+            if (releaseType == "major") {
+                project.version = currentVersion.incrementMajorVersion()
+            } else if (releaseType == "minor") {
+                project.version = currentVersion.incrementMinorVersion()
+            } else if (releaseType == "patch") {
+                project.version = currentVersion.incrementPatchVersion()
+            }
+        } else {
+            throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
         }
-    } else {
-        throw new GradleException('releaseType was not provided. Specify -PreleaseType={major,minor,patch}')
-    }
-    println "Next version: " + project.version
-    subprojects { project ->
-        project.version = rootProject.version.toString()
+        println "Next version: " + project.version
+            subprojects { project ->
+                project.version = rootProject.version.toString()
+            }
     }
 }
 
@@ -129,6 +131,19 @@ subprojects {
 
     }
 
+    ext.validateRegistrySetup = {
+        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+        }
+        docker {
+            registryCredentials {
+                username = project.property('dockerHubUsername')
+                password = project.property('dockerHubPassword')
+                email = project.property('dockerHubEmail')
+            }
+        }
+    }
+
     sonarRunner {
         sonarProperties {
             property "sonar.sourceEncoding", "UTF-8"
@@ -141,14 +156,6 @@ subprojects {
         reports {
             xml.enabled true
             csv.enabled false
-        }
-    }
-
-    publishing {
-        publications {
-            mavenJava(MavenPublication) {
-                from components.java
-            }
         }
     }
 
@@ -173,33 +180,24 @@ subprojects {
                 tag = project.imageName
             }
             project.build.dependsOn buildDockerImage
-            task tagDockerImage(type: DockerTagImage, description: 'tag Docker image') {
-                imageId = project.imageName
-                tag = project.version
-                repository = project.imageName
-                force = true
-                doFirst {
-                    tag = project.version // needed to upgrade on release
+            [ 'latest', 'version' ].each { aTag ->
+                String uppercasedName = aTag.capitalize()
+                task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
+                    imageId = project.imageName
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
+                    repository = project.imageName
+                    force = true
                 }
-            }
-            task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
-                imageName = project.imageName
-                tag = project.version
-                doFirst {
-                    tag = project.version // needed to upgrade on release
-                    ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-                        assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-                    }
-                    docker {
-                        registryCredentials {
-                            username = project.property('dockerHubUsername')
-                            password = project.property('dockerHubPassword')
-                            email = project.property('dockerHubEmail')
-                        }
+                task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
+                        description: 'publish Docker image') {
+                    imageName = project.imageName
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
+                    doFirst {
+                        validateRegistrySetup()
                     }
                 }
+                project.publish.dependsOn "publishDockerImageWith$uppercasedName"
             }
-            project.publish.dependsOn publishDockerImage
         }
     }
 }
