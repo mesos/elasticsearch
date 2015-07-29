@@ -6,8 +6,16 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealthCheck;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.HealthCheck;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.ExecutorState;
+
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Scheduler for Elasticsearch.
@@ -21,13 +29,17 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
+    private final ClusterState clusterState;
+
     Clock clock = new Clock();
 
     Map<String, Task> tasks = new HashMap<String, Task>();
+    private List<ExecutorHealthCheck> healthCheckList = new ArrayList<>();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
+        clusterState = new ClusterState(configuration.getState());
     }
 
     public Map<String, Task> getTasks() {
@@ -109,6 +121,9 @@ public class ElasticsearchScheduler implements Scheduler {
                     new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
                 );
                 tasks.put(taskInfo.getTaskId().getValue(), task);
+                HealthCheck healthCheck = new HealthCheck(driver, taskInfo.getSlaveId(), taskInfo.getExecutor().getExecutorId());
+                ExecutorHealthCheck executorHealthCheck = new ExecutorHealthCheck(new PollService(healthCheck, 5000L));
+                healthCheckList.add(executorHealthCheck);
             }
         }
     }
@@ -138,9 +153,18 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
+    // Todo: test this
+
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
+        try {
+            clusterState.addSlave(status.getSlaveId());
+            ExecutorState state = clusterState.getState(status.getSlaveId());
+            state.setStatus(status);
+        } catch (Exception e) {
+            LOGGER.error("Unable to write executor state to zookeeper", e);
+        }
         Task task = tasks.get(status.getTaskId().getValue());
         if (task != null) {
             task.setState(status.getState());

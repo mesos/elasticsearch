@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.State;
 
 import java.util.ArrayList;
@@ -20,7 +21,11 @@ public class ClusterState {
         this.state = state;
     }
 
-    public List<ExecutorState> getState() {
+    /**
+     * Get a list of all Executors with state
+     * @return a list of Executor states
+     */
+    public List<ExecutorState> getStateList() {
         List<SlaveID> slaveList = getSlaveList();
         List<ExecutorState> executorStateList = new ArrayList<>(slaveList.size());
         for (SlaveID id : slaveList) {
@@ -28,6 +33,15 @@ public class ClusterState {
             executorStateList.add(exState);
         }
         return executorStateList;
+    }
+
+    /**
+     * Get the state of a specific executor
+     * @param executorID
+     * @return
+     */
+    public ExecutorState getState(Protos.SlaveID executorID) {
+        return new ExecutorState(state, state.getFrameworkID(), executorID);
     }
 
     public void addSlave(SlaveID slaveID) {

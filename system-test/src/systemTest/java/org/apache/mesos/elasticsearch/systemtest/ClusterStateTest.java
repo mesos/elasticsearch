@@ -54,11 +54,11 @@ public class ClusterStateTest {
         clusterState.addSlave(Protos.SlaveID.newBuilder().setValue("slave2").build());
         clusterState.addSlave(Protos.SlaveID.newBuilder().setValue("slave3").build());
         LOGGER.info("Set slave list");
-        List<ExecutorState> executorStateList = clusterState.getState();
+        List<ExecutorState> executorStateList = clusterState.getStateList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(3, executorStateList.size());
         clusterState.removeSlave(Protos.SlaveID.newBuilder().setValue("slave1").build());
-        executorStateList = clusterState.getState();
+        executorStateList = clusterState.getStateList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(2, executorStateList.size());
     }

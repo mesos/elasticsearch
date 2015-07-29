@@ -8,12 +8,15 @@ import org.apache.mesos.Protos;
  */
 public class TaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class.getCanonicalName());
-    private Protos.TaskID taskID;
+    private Protos.TaskID taskID = Protos.TaskID.newBuilder().setValue("").build();
+    private Protos.TaskStatus currentState = getTaskStatus(Protos.TaskState.TASK_STAGING);
 
     private Protos.TaskStatus getTaskStatus(Protos.TaskState taskState) {
-        return Protos.TaskStatus.newBuilder()
+        Protos.TaskStatus status = Protos.TaskStatus.newBuilder()
                 .setTaskId(taskID)
                 .setState(taskState).build();
+        currentState = status;
+        return status;
     }
 
     public Protos.TaskStatus running() {
@@ -46,5 +49,9 @@ public class TaskStatus {
             throw new NullPointerException("TaskID cannot be null");
         }
         this.taskID = taskID;
+    }
+
+    public Protos.TaskStatus currentState() {
+        return currentState;
     }
 }

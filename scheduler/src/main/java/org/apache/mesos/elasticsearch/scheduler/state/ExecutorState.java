@@ -17,6 +17,7 @@ public class ExecutorState {
     private final SlaveID slaveID;
     private final State state;
 
+    // TODO: It should be the executor ID, not the slave ID.
     public ExecutorState(State state, FrameworkID frameworkID, SlaveID slaveID) {
         this.state = state;
         this.frameworkID = frameworkID;
