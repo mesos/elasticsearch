@@ -131,19 +131,6 @@ subprojects {
 
     }
 
-    ext.validateRegistrySetup = {
-        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-        }
-        docker {
-            registryCredentials {
-                username = project.property('dockerHubUsername')
-                password = project.property('dockerHubPassword')
-                email = project.property('dockerHubEmail')
-            }
-        }
-    }
-
     sonarRunner {
         sonarProperties {
             property "sonar.sourceEncoding", "UTF-8"
@@ -193,7 +180,16 @@ subprojects {
                     imageName = project.imageName
                     tag = ( 'version'.equals(aTag) ) ? project.version : aTag
                     doFirst {
-                        validateRegistrySetup()
+                        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                        }
+                        docker {
+                            registryCredentials {
+                                username = project.property('dockerHubUsername')
+                                password = project.property('dockerHubPassword')
+                                email = project.property('dockerHubEmail')
+                            }
+                        }
                     }
                 }
                 project.publish.dependsOn "publishDockerImageWith$uppercasedName"
