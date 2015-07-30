@@ -1,90 +1,105 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos;
+import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.State;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.mesos.Protos.SlaveID;
+import static org.apache.mesos.Protos.FrameworkID;
+import static org.apache.mesos.Protos.TaskID;
 
 /**
  * Model of cluster state
  */
 public class ClusterState {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
-    public static final String SLAVE_LIST = "slaveList";
+    public static final String STATE_LIST = "stateList";
     private final State state;
+    private final FrameworkID frameworkID;
 
-    public ClusterState(State state) {
+    public ClusterState(State state, FrameworkID frameworkID) {
         this.state = state;
+        this.frameworkID = frameworkID;
     }
 
     /**
      * Get a list of all Executors with state
      * @return a list of Executor states
      */
-    public List<ExecutorState> getStateList() {
-        List<SlaveID> slaveList = getSlaveList();
-        List<ExecutorState> executorStateList = new ArrayList<>(slaveList.size());
-        for (SlaveID id : slaveList) {
-            ExecutorState exState = new ExecutorState(state, state.getFrameworkID(), id);
-            executorStateList.add(exState);
-        }
-        return executorStateList;
+    public List<TaskInfo> getStateList() {
+        return getTaskInfoList();
     }
 
     /**
      * Get the state of a specific executor
-     * @param executorID
-     * @return
      */
-    public ExecutorState getState(Protos.SlaveID executorID) {
-        return new ExecutorState(state, state.getFrameworkID(), executorID);
+    public ESTaskStatus getStatus(TaskID taskID) {
+        TaskInfo taskInfo = getTask(taskID);
+        return new ESTaskStatus(state, frameworkID, taskInfo);
     }
 
-    public void addSlave(SlaveID slaveID) {
-        List<SlaveID> slaveList = getSlaveList();
-        slaveList.add(slaveID);
-        setSlaveList(slaveList);
-    }
-
-    public void removeSlave(SlaveID slaveID) {
-        List<SlaveID> slaveList = getSlaveList();
-        slaveList.remove(slaveID);
-        setSlaveList(slaveList);
-    }
-
-    private List<SlaveID> getSlaveList() {
-        List<SlaveID> slaveIDList = new ArrayList<>();
-        try {
-            slaveIDList.addAll(state.get(getSlaveListKey()));
-        } catch (Exception ex) {
-            LOGGER.info(getSlaveListKey() + " doesn't exist.");
+    public TaskInfo getTask(TaskID taskID) {
+        LOGGER.debug("Getting TaskInfo to cluster for task: " + taskID.getValue());
+        List<TaskInfo> TaskInfoList = getTaskInfoList();
+        TaskInfo TaskInfo = null;
+        for (TaskInfo info : TaskInfoList) {
+            if (info.getTaskId().equals(taskID)) {
+                TaskInfo = info;
+                break;
+            }
         }
-        return slaveIDList;
+        if (TaskInfo == null) {
+            throw new InvalidParameterException("Could not find executor with that task ID: " + taskID.getValue());
+        }
+        return TaskInfo;
     }
 
-    private void setSlaveList(List<SlaveID> slaveIDList) {
+    public void addTask(TaskInfo taskInfo) {
+        LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
+        List<TaskInfo> taskList = getTaskInfoList();
+        taskList.add(taskInfo);
+        setTaskInfoList(taskList);
+    }
+
+    public void removeTask(TaskInfo taskInfo) {
+        List<TaskInfo> slaveList = getTaskInfoList();
+        slaveList.remove(taskInfo);
+        setTaskInfoList(slaveList);
+    }
+
+    private List<TaskInfo> getTaskInfoList() {
+        List<TaskInfo> TaskInfoList = new ArrayList<>();
         try {
-            state.setAndCreateParents(getSlaveListKey(), slaveIDList);
+            TaskInfoList.addAll(state.get(getKey()));
         } catch (Exception ex) {
-            LOGGER.error("Could not set slave list: ", ex);
+            LOGGER.info(getKey() + " doesn't exist.");
+        }
+        return TaskInfoList;
+    }
+
+    private void setTaskInfoList(List<TaskInfo> taskInfoList) {
+        LOGGER.debug("Writing executor state list: " + Arrays.toString(taskInfoList.toArray()));
+        try {
+            state.setAndCreateParents(getKey(), taskInfoList);
+        } catch (Exception ex) {
+            LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }
     }
 
-    private String getSlaveListKey() {
-        return state.getFrameworkID().getValue() + "/" + SLAVE_LIST;
+    private String getKey() {
+        return state.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 
-
-//    /**
-//     */
-//     * @return a list of executor states
-//     * Get's the current cluster state
-//    public List<ExecutorState> getState() {
-//        update();
-//        return executorStateList;
-//    }
+    public Boolean exists(TaskID taskId) {
+        try {
+            getStatus(taskId);
+        } catch (InvalidParameterException e) {
+            return false;
+        }
+        return true;
+    }
 }

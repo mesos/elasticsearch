@@ -36,7 +36,7 @@ public class StateTest {
 
     @Test
     public void testInitialGetFrameworkID() throws InterruptedException, ExecutionException, InvalidProtocolBufferException {
-        assertNull("FrameworkID should be null if not first time.", state.getFrameworkID());
+        assertTrue("FrameworkID should be empty if not first time.", state.getFrameworkID().getValue().isEmpty());
     }
 
     @Test

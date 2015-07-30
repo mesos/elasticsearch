@@ -20,7 +20,9 @@ import static org.mockito.Mockito.*;
 public class ExecutorStateTest {
 
     public static final String FRAMEWORK_ID = "frameworkId";
-    public static final String SLAVE_ID = "slaveId";
+    public static final String EXECUTOR_ID = "executorId";
+    public static final String TASK_ID = "task1";
+    public static final String SLAVE_ID = "slaveID";
 
     @Test
     public void testExecutorStateMechanism() throws IOException, InterruptedException, ExecutionException, ClassNotFoundException {
@@ -29,8 +31,10 @@ public class ExecutorStateTest {
         when(state.get(anyString())).thenReturn(taskStatus);
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue(FRAMEWORK_ID).build();
         Protos.SlaveID slaveID = Protos.SlaveID.newBuilder().setValue(SLAVE_ID).build();
-
-        ExecutorState executorState = new ExecutorState(state, frameworkID, slaveID);
+        Protos.ExecutorID executorID = Protos.ExecutorID.newBuilder().setValue(EXECUTOR_ID).build();
+        Protos.TaskID taskID = Protos.TaskID.newBuilder().setValue(TASK_ID).build();
+        Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder().setTaskId(taskID).setExecutor(Protos.ExecutorInfo.newBuilder().setExecutorId(executorID)).setSlaveId(slaveID).build();
+        ESTaskStatus executorState = new ESTaskStatus(state, frameworkID, taskInfo);
 
         executorState.setStatus(taskStatus);
         verify(state, times(1)).set(anyString(), any(Protos.TaskStatus.class));

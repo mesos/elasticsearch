@@ -6,16 +6,15 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealth;
 import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealthCheck;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.HealthCheck;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.BumpExecutor;
 import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.ExecutorState;
+import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Scheduler for Elasticsearch.
@@ -39,7 +38,7 @@ public class ElasticsearchScheduler implements Scheduler {
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-        clusterState = new ClusterState(configuration.getState());
+        clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
     }
 
     public Map<String, Task> getTasks() {
@@ -121,9 +120,15 @@ public class ElasticsearchScheduler implements Scheduler {
                     new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
                 );
                 tasks.put(taskInfo.getTaskId().getValue(), task);
-                HealthCheck healthCheck = new HealthCheck(driver, taskInfo.getSlaveId(), taskInfo.getExecutor().getExecutorId());
-                ExecutorHealthCheck executorHealthCheck = new ExecutorHealthCheck(new PollService(healthCheck, 5000L));
-                healthCheckList.add(executorHealthCheck);
+                ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
+                taskStatus.setDefaultState();
+                clusterState.addTask(taskInfo);
+                BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
+                ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+                healthCheckList.add(executorBump);
+                ExecutorHealth health = new ExecutorHealth(this, driver, taskStatus, 10000L);
+                ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
+                healthCheckList.add(executorHealth);
             }
         }
     }
@@ -153,15 +158,19 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
-    // Todo: test this
-
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-        LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
+        LOGGER.info("Status update - " + status.toString());
         try {
-            clusterState.addSlave(status.getSlaveId());
-            ExecutorState state = clusterState.getState(status.getSlaveId());
-            state.setStatus(status);
+            ESTaskStatus executorState;
+            // Update cluster state, if necessary
+            if (clusterState.exists(status.getTaskId())) {
+                executorState = clusterState.getStatus(status.getTaskId());
+                executorState.setStatus(status);
+            } else {
+                LOGGER.warn("Could not find task in cluster state.");
+            }
+            // Update state of Executor
         } catch (Exception e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
         }
@@ -190,6 +199,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
+        // This is never called by Mesos, so we have to call it ourselves via a healthcheck
+        // https://issues.apache.org/jira/browse/MESOS-313
         LOGGER.info("Executor lost: " + executorId.getValue() +
                 "on slave " + slaveId.getValue() +
                 "with status " + status);

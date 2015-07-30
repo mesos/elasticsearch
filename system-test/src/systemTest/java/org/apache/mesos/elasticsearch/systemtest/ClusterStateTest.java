@@ -8,7 +8,6 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.State;
 import org.apache.mesos.elasticsearch.scheduler.ZooKeeperStateInterfaceImpl;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.ExecutorState;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.ClassRule;
@@ -47,20 +46,28 @@ public class ClusterStateTest {
         String zkUrl = "zk://" + cluster.getMesosContainer().getIpAddress() + ":2181";
         ZooKeeperStateInterfaceImpl zkState = new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl));
         State state = new State(zkState);
-        state.setFrameworkId(Protos.FrameworkID.newBuilder().setValue("exampleId").build());
-        ClusterState clusterState = new ClusterState(state);
+        Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
+        state.setFrameworkId(frameworkID);
+        ClusterState clusterState = new ClusterState(state, frameworkID);
         LOGGER.info("Setting slave list");
-        clusterState.addSlave(Protos.SlaveID.newBuilder().setValue("slave1").build());
-        clusterState.addSlave(Protos.SlaveID.newBuilder().setValue("slave2").build());
-        clusterState.addSlave(Protos.SlaveID.newBuilder().setValue("slave3").build());
+        clusterState.addTask(getNewTaskInfo(1));
+        clusterState.addTask(getNewTaskInfo(2));
+        clusterState.addTask(getNewTaskInfo(3));
         LOGGER.info("Set slave list");
-        List<ExecutorState> executorStateList = clusterState.getStateList();
+        List<Protos.TaskInfo> executorStateList = clusterState.getStateList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(3, executorStateList.size());
-        clusterState.removeSlave(Protos.SlaveID.newBuilder().setValue("slave1").build());
+        clusterState.removeTask(clusterState.getTask(Protos.TaskID.newBuilder().setValue("task1").build()));
         executorStateList = clusterState.getStateList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(2, executorStateList.size());
+    }
+
+    private Protos.TaskInfo getNewTaskInfo(int number) {
+        Protos.SlaveID slaveID = Protos.SlaveID.newBuilder().setValue("slave" + number).build();
+        Protos.ExecutorID executorID = Protos.ExecutorID.newBuilder().setValue("executor" + number).build();
+        Protos.TaskID taskID = Protos.TaskID.newBuilder().setValue("task" + number).build();
+        return Protos.TaskInfo.newBuilder().setTaskId(taskID).setExecutor(Protos.ExecutorInfo.newBuilder().setExecutorId(executorID)).setSlaveId(slaveID).build();
     }
 
     private String getMesosStateZKURL(String zkUrl) {
