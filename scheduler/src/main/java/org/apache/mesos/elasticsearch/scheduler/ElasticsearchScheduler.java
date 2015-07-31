@@ -30,18 +30,9 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private ClusterState clusterState;
 
-    Clock clock = new Clock();
-
-    Map<String, Task> tasks = new HashMap<String, Task>();
-    private List<ExecutorHealthCheck> healthCheckList = new ArrayList<>();
-
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-    }
-
-    public Map<String, Task> getTasks() {
-        return tasks;
     }
 
     public void run() {
@@ -93,7 +84,7 @@ public class ElasticsearchScheduler implements Scheduler {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (tasks.size() == configuration.getNumberOfHwNodes()) {
+            } else if (clusterState.getStateList().size() == configuration.getNumberOfHwNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getNumberOfHwNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
@@ -113,24 +104,13 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                Task task = new Task(
-                    offer.getHostname(),
-                    taskInfo.getTaskId().getValue(),
-                    Protos.TaskState.TASK_STAGING,
-                    clock.zonedNow(),
-                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
-                );
-                tasks.put(taskInfo.getTaskId().getValue(), task);
                 ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
                 taskStatus.setDefaultState();
                 clusterState.addTask(taskInfo);
                 BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
                 ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
-                healthCheckList.add(executorBump);
                 ExecutorHealth health = new ExecutorHealth(this, driver, taskStatus, 10000L);
                 ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
-                healthCheckList.add(executorHealth);
             }
         }
     }
@@ -175,12 +155,6 @@ public class ElasticsearchScheduler implements Scheduler {
         } catch (Exception e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
         }
-        Task task = tasks.get(status.getTaskId().getValue());
-        if (task != null) {
-            task.setState(status.getState());
-        } else {
-            throw new RuntimeException("Cannot update status of Task ID: " + status.getTaskId() + ". Unknown Task.");
-        }
     }
 
     @Override
@@ -213,7 +187,14 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        return tasks.containsKey(offer.getId().getValue());
+        Boolean result = false;
+        List<Protos.TaskInfo> stateList = clusterState.getStateList();
+        for (Protos.TaskInfo t : stateList) {
+            if (t.getSlaveId().equals(offer.getSlaveId())) {
+                result = true;
+            }
+        }
+        return result;
     }
 
 }
