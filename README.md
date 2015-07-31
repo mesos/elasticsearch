@@ -165,7 +165,7 @@ $ eval $(docker-machine env mesos-es)
 $ ./gradlew build buildDockerImage system-test:systemTest
 ```
 
-#### How to release
+### How to release
 
 Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
 user/pass.
@@ -184,7 +184,11 @@ Now perform a release and specify the release type: major, minor or patch and yo
 
 ```
 $ ./gradlew build system-test:systemTest
-# If build and tests succeed release
+```
+
+If build and tests succeed release
+
+```
 $ ./gradlew release -PreleaseType={major,minor,patch} -PuserName={user}
 ```
 
