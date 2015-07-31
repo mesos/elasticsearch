@@ -5,16 +5,11 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealth;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealthCheck;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.BumpExecutor;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 
-import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Scheduler for Elasticsearch.
@@ -28,7 +23,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
-    private ClusterState clusterState;
+    private ClusterMonitor clusterMonitor;
+
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
@@ -61,7 +57,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
+        ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
+        clusterMonitor = new ClusterMonitor(configuration, driver, clusterState);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -85,7 +82,7 @@ public class ElasticsearchScheduler implements Scheduler {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterState.getStateList().size() == configuration.getNumberOfHwNodes()) {
+            } else if (clusterMonitor.getClusterState().getStateList().size() == configuration.getNumberOfHwNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getNumberOfHwNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
@@ -106,30 +103,9 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
 
-                ESTaskStatus taskStatus = addNewTaskToCluster(taskInfo);
-
-                createNewExecutorBump(driver, taskInfo);
-
-                createNewExecutorHealthMonitor(driver, taskStatus);
+                clusterMonitor.monitorTask(taskInfo, this); // Add task to cluster monitor
             }
         }
-    }
-
-    private void createNewExecutorHealthMonitor(SchedulerDriver driver, ESTaskStatus taskStatus) {
-        ExecutorHealth health = new ExecutorHealth(this, driver, taskStatus, 10000L);
-        ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
-    }
-
-    private void createNewExecutorBump(SchedulerDriver driver, Protos.TaskInfo taskInfo) {
-        BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-        ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
-    }
-
-    private ESTaskStatus addNewTaskToCluster(Protos.TaskInfo taskInfo) {
-        ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
-        taskStatus.setDefaultState(); // This is a new task, so set default state until we get an update
-        clusterState.addTask(taskInfo);
-        return taskStatus;
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
@@ -157,21 +133,11 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
+    // Todo, move status update call into cluster monitor.
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - " + status.toString());
-        try {
-            // Update cluster state, if necessary
-            if (clusterState.exists(status.getTaskId())) {
-                ESTaskStatus executorState = clusterState.getStatus(status.getTaskId());
-                // Update state of Executor
-                executorState.setStatus(status);
-            } else {
-                LOGGER.warn("Could not find task in cluster state.");
-            }
-        } catch (Exception e) {
-            LOGGER.error("Unable to write executor state to zookeeper", e);
-        }
+        clusterMonitor.updateTask(status);
     }
 
     @Override
@@ -206,7 +172,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
         Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterState.getStateList();
+        List<Protos.TaskInfo> stateList = clusterMonitor.getClusterState().getStateList();
         for (Protos.TaskInfo t : stateList) {
             if (t.getSlaveId().equals(offer.getSlaveId())) {
                 result = true;
