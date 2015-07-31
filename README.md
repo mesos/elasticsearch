@@ -135,7 +135,7 @@ $ ./gradlew build buildDockerImage system-test:main
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ ./gradlew build docker system-test:main
+$ ./gradlew build buildDockerImage system-test:main
 ```
 
 ### System test
@@ -161,7 +161,7 @@ $ ./gradlew build buildDockerImage system-test:systemTest
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ ./gradlew build docker system-test:systemTest
+$ ./gradlew build buildDockerImage system-test:systemTest
 ```
 
 ## Sponsors
