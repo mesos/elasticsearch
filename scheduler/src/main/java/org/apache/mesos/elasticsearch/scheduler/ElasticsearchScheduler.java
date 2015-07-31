@@ -105,15 +105,31 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
-                taskStatus.setDefaultState();
-                clusterState.addTask(taskInfo);
-                BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-                ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
-                ExecutorHealth health = new ExecutorHealth(this, driver, taskStatus, 10000L);
-                ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
+
+                ESTaskStatus taskStatus = addNewTaskToCluster(taskInfo);
+
+                createNewExecutorBump(driver, taskInfo);
+
+                createNewExecutorHealthMonitor(driver, taskStatus);
             }
         }
+    }
+
+    private void createNewExecutorHealthMonitor(SchedulerDriver driver, ESTaskStatus taskStatus) {
+        ExecutorHealth health = new ExecutorHealth(this, driver, taskStatus, 10000L);
+        ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
+    }
+
+    private void createNewExecutorBump(SchedulerDriver driver, Protos.TaskInfo taskInfo) {
+        BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
+        ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+    }
+
+    private ESTaskStatus addNewTaskToCluster(Protos.TaskInfo taskInfo) {
+        ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
+        taskStatus.setDefaultState(); // This is a new task, so set default state until we get an update
+        clusterState.addTask(taskInfo);
+        return taskStatus;
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
