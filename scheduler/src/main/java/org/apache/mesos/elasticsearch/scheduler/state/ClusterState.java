@@ -43,19 +43,19 @@ public class ClusterState {
     }
 
     public TaskInfo getTask(TaskID taskID) {
-        LOGGER.debug("Getting TaskInfo to cluster for task: " + taskID.getValue());
+        LOGGER.debug("Getting taskInfo from cluster for task: " + taskID.getValue());
         List<TaskInfo> TaskInfoList = getTaskInfoList();
-        TaskInfo TaskInfo = null;
+        TaskInfo taskInfo = null;
         for (TaskInfo info : TaskInfoList) {
             if (info.getTaskId().equals(taskID)) {
-                TaskInfo = info;
+                taskInfo = info;
                 break;
             }
         }
-        if (TaskInfo == null) {
+        if (taskInfo == null) {
             throw new InvalidParameterException("Could not find executor with that task ID: " + taskID.getValue());
         }
-        return TaskInfo;
+        return taskInfo;
     }
 
     public void addTask(TaskInfo taskInfo) {
@@ -81,8 +81,16 @@ public class ClusterState {
         return TaskInfoList;
     }
 
+    private String logTaskList(List<TaskInfo> taskInfoList) {
+        List<String> res = new ArrayList<>();
+        for (TaskInfo t : taskInfoList) {
+            res.add(t.getTaskId().getValue());
+        }
+        return Arrays.toString(res.toArray());
+    }
+
     private void setTaskInfoList(List<TaskInfo> taskInfoList) {
-        LOGGER.debug("Writing executor state list: " + Arrays.toString(taskInfoList.toArray()));
+        LOGGER.debug("Writing executor state list: " + logTaskList(taskInfoList));
         try {
             state.setAndCreateParents(getKey(), taskInfoList);
         } catch (Exception ex) {

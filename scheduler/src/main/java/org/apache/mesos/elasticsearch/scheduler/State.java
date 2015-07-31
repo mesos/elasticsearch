@@ -6,6 +6,7 @@ import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.state.Variable;
 
 import java.io.*;
+import java.security.InvalidParameterException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -114,7 +115,7 @@ public class State {
         }
     }
 
-    public <T> void setAndCreateParents(String key, T object) throws InterruptedException, ExecutionException, IOException {
+    public <T> void setAndCreateParents(String key, T object) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         mkdir(key);
         set(key, object);
     }
@@ -123,31 +124,29 @@ public class State {
      * Creates the zNode if it does not exist
      * @param key the zNode path
      */
-    public void mkdir(String key) {
+    public void mkdir(String key) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+        key = key.replace(" ", "");
+        if(key.endsWith("/") && !key.equals("/")) {
+            throw new ExecutionException(new InvalidParameterException("Invalid trailing slash"));
+        }
         String[] split = key.split("/");
         StringBuilder builder = new StringBuilder();
         for (String s : split) {
             builder.append(s);
-            if (!exists(builder.toString())) {
-                try {
+            if (!s.isEmpty()) {
+                if (!exists(builder.toString())) {
                     set(builder.toString(), null);
-                } catch (Exception ex) {
-                    LOGGER.error("Unable to create zNode:", ex);
                 }
             }
             builder.append("/");
         }
     }
 
-    public Boolean exists(String key) {
+    public Boolean exists(String key) throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
         Boolean exists = true;
-        try {
-            Object value = get(key);
-            if (value == null) {
-                exists = false;
-            }
-        } catch (Exception ex) {
-            LOGGER.error("Could not check if zNode exists:", ex);
+        Object value = get(key);
+        if (value == null) {
+            exists = false;
         }
         return exists;
     }

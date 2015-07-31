@@ -9,7 +9,7 @@ public class Configuration {
 
     private double cpus = 0.2;
 
-    private double mem = 512;
+    private double mem = 256;
 
     private double disk = 250;
 

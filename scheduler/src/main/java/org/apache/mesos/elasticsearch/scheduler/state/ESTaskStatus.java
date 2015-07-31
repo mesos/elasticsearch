@@ -8,6 +8,7 @@ import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.elasticsearch.scheduler.State;
 
 import java.io.IOException;
+import java.security.InvalidParameterException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -21,12 +22,18 @@ public class ESTaskStatus {
     private final TaskInfo taskInfo;
 
     public ESTaskStatus(State state, FrameworkID frameworkID, TaskInfo taskInfo) {
+        if (state == null) {
+            throw new InvalidParameterException("State cannot be null");
+        } else if (frameworkID == null || frameworkID.getValue().isEmpty()) {
+            throw new InvalidParameterException("FrameworkID cannot be null or empty");
+        }
         this.state = state;
         this.frameworkID = frameworkID;
         this.taskInfo = taskInfo;
     }
 
-    public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException {
+    public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
+        LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
         state.setAndCreateParents(getKey(), status);
     }
 

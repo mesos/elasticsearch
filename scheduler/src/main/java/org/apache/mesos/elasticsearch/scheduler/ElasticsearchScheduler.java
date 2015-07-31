@@ -28,7 +28,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
-    private final ClusterState clusterState;
+    private ClusterState clusterState;
 
     Clock clock = new Clock();
 
@@ -38,7 +38,6 @@ public class ElasticsearchScheduler implements Scheduler {
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-        clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
     }
 
     public Map<String, Task> getTasks() {
@@ -46,7 +45,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + ", ram:" + configuration.getMem() + "]");
 
         final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
         frameworkBuilder.setUser("");
@@ -55,12 +54,13 @@ public class ElasticsearchScheduler implements Scheduler {
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
 
         Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
-        if (frameworkID != null) {
+        if (frameworkID != null && !frameworkID.getValue().isEmpty()) {
             LOGGER.info("Found previous frameworkID: " + frameworkID);
             frameworkBuilder.setId(frameworkID);
         }
 
         final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
+
         driver.run();
     }
 
@@ -69,6 +69,8 @@ public class ElasticsearchScheduler implements Scheduler {
         configuration.setFrameworkId(frameworkId); // DCOS certification 02
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
+
+        clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -162,15 +164,14 @@ public class ElasticsearchScheduler implements Scheduler {
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - " + status.toString());
         try {
-            ESTaskStatus executorState;
             // Update cluster state, if necessary
             if (clusterState.exists(status.getTaskId())) {
-                executorState = clusterState.getStatus(status.getTaskId());
+                ESTaskStatus executorState = clusterState.getStatus(status.getTaskId());
+                // Update state of Executor
                 executorState.setStatus(status);
             } else {
                 LOGGER.warn("Could not find task in cluster state.");
             }
-            // Update state of Executor
         } catch (Exception e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
         }

@@ -7,10 +7,12 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
 
 /**
  * Tests State class.
@@ -24,8 +26,9 @@ public class StateTest {
         ZooKeeperStateInterface zkState = Mockito.mock(ZooKeeperStateInterface.class);
         Future future = Mockito.mock(Future.class);
         Mockito.when(future.get()).thenReturn(new TestVariable());
-        Mockito.when(zkState.fetch(Mockito.anyString())).thenReturn(future);
-        Mockito.when(zkState.store(Mockito.any(Variable.class))).thenReturn(future);
+        Mockito.when(zkState.store(any(Variable.class))).thenReturn(future);
+        Mockito.when(zkState.fetch(Mockito.matches(".*/$"))).thenThrow(java.util.concurrent.ExecutionException.class);
+        Mockito.when(zkState.fetch(any())).thenReturn(future);
         state = new State(zkState);
     }
 
@@ -60,5 +63,20 @@ public class StateTest {
             myByte = value;
             return this;
         }
+    }
+
+    @Test
+    public void testMkDirJustSlashShouldNotCrash() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
+        state.mkdir("/");
+    }
+
+    @Test(expected = Exception.class)
+    public void testMkDirTrailingSlash() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
+        state.mkdir("/mesos/");
+    }
+
+    @Test
+    public void testMkDirOk() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
+        state.mkdir("/mesos");
     }
 }
