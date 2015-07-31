@@ -178,7 +178,7 @@ systemProp.org.ajoberstar.grgit.auth.password=password
 dockerHubUsername=user
 dockerHubPassword=******
 dockerHubEmail=email
-``
+```
 
 Now perform a release and specify the release type: major, minor or patch and your username.
 
