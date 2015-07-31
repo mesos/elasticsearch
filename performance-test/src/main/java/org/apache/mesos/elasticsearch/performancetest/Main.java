@@ -4,24 +4,21 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
-import com.mashape.unirest.http.Unirest;
 import org.json.JSONObject;
 
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
  */
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
-public class Main {
+public class Main  {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
 
     private static String slaveHttpAddress;
 
-    private static HttpResponse<JsonNode> response;
 
     public static void main(String[] args) throws InterruptedException {
+
         MesosClusterConfig config = MesosClusterConfig.builder()
                 .numberOfSlaves(3)
                 .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
@@ -31,16 +28,10 @@ public class Main {
         MesosCluster cluster = new MesosCluster(config);
         cluster.start();
         cluster.injectImage("mesos/elasticsearch-executor");
-
         LOGGER.info("Starting scheduler");
-
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(config.dockerClient, cluster.getMesosContainer().getIpAddress());
-
         scheduler.start();
-
-        /** Get slave 1 ip address */
-        String tasksEndPoint = "http://" + scheduler.getIpAddress() + ":8080/v1/tasks";
-        LOGGER.debug("Fetching tasks on " + tasksEndPoint);
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":8080");
 
         try {
             TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress());
@@ -52,6 +43,8 @@ public class Main {
 
         DataPusherContainer pusher = new DataPusherContainer(config.dockerClient, slaveHttpAddress);
         pusher.start();
+
+
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -61,12 +54,10 @@ public class Main {
             }
         });
 
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":8080");
 
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
             Thread.sleep(1000);
         }
     }
-
 }
