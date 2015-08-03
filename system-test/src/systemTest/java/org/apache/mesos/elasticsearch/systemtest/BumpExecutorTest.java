@@ -51,7 +51,7 @@ public class BumpExecutorTest {
         assertEquals(0, httpHealthCheck.counter.get());
     }
 
-    private class HTTPHealthCheck implements Runnable {
+    private static class HTTPHealthCheck implements Runnable {
         private final String url;
         public volatile AtomicInteger counter = new AtomicInteger(0);
 

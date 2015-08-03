@@ -34,6 +34,7 @@ public class ClusterStateTest {
 
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+    public static final int ZOOKEEPER_PORT = 2181;
 
 
     // ********** Development tests on local CLUSTER ***********
@@ -45,7 +46,7 @@ public class ClusterStateTest {
     @Ignore
     @Test
     public void localClusterStateTest() throws NotSerializableException {
-        String zkUrl = "zk://" + CLUSTER.getMesosContainer().getIpAddress() + ":2181";
+        String zkUrl = "zk://" + CLUSTER.getMesosContainer().getIpAddress() + ":" + ZOOKEEPER_PORT;
         ZooKeeperImpl zkState = new ZooKeeperImpl(getMesosStateZKURL(zkUrl));
         State state = new State(new SerializableZookeeperState(zkState));
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
