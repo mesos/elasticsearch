@@ -1,15 +1,12 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import org.apache.mesos.Protos;
-import org.apache.mesos.state.Variable;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Tests State class.
@@ -25,34 +22,6 @@ public class StateTest {
     @Test
     public void testSanityCheck() {
         assertNotNull("State should not be null.", state);
-    }
-
-    @Test
-    public void testInitialGetFrameworkID() throws NotSerializableException {
-        assertTrue("FrameworkID should be empty if not first time.", state.getFrameworkID().getValue().isEmpty());
-    }
-
-    @Test
-    public void testThatStoreFrameworkIDStores() throws NotSerializableException {
-        Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("TEST_ID").build();
-        state.setFrameworkId(frameworkID);
-        assertNotNull("FramekworkID should not be null once set.", state.getFrameworkID());
-        assertEquals("FramekworkID should be equal to the one set.", state.getFrameworkID().getValue(), frameworkID.getValue());
-    }
-
-    private static class TestVariable extends Variable {
-        private byte[] myByte = new byte[0];
-
-        @Override
-        public byte[] value() {
-            return myByte;
-        }
-
-        @Override
-        public Variable mutate(byte[] value) {
-            myByte = value;
-            return this;
-        }
     }
 
     @Test

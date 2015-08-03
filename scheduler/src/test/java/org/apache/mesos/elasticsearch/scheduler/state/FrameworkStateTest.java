@@ -26,7 +26,7 @@ public class FrameworkStateTest {
     }
 
     @Test
-    public void testGetFrameworkID() throws NotSerializableException {
+    public void testGetFrameworkID() {
         when(state.get(anyString())).thenReturn(FRAMEWORK_ID);
         FrameworkState frameworkState = new FrameworkState(state);
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
@@ -35,7 +35,7 @@ public class FrameworkStateTest {
     }
 
     @Test
-    public void testGetEmptyWhenNoFrameworkID() throws NotSerializableException {
+    public void testGetEmptyWhenNoFrameworkID() {
         FrameworkState frameworkState = new FrameworkState(state);
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
         verify(state, times(1)).get(anyString());

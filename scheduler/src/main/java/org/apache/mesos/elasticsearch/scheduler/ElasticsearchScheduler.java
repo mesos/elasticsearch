@@ -8,9 +8,13 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.net.InetSocketAddress;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Scheduler for Elasticsearch.
@@ -33,7 +37,7 @@ public class ElasticsearchScheduler implements Scheduler {
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-        clusterMonitor = new ClusterMonitor(configuration, null, new ClusterState(configuration.getState(), configuration.getFrameworkId())); // Default, will be overwritten when registered.
+        clusterMonitor = new ClusterMonitor(configuration, null, new ClusterState(configuration.getState(), configuration.getFrameworkState())); // Default, will be overwritten when registered.
     }
 
     public Map<String, Task> getTasks() {
@@ -62,11 +66,13 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        configuration.setFrameworkId(frameworkId); // DCOS certification 02
+        FrameworkState frameworkState = new FrameworkState(configuration.getState());
+        frameworkState.setFrameworkId(frameworkId);
+        configuration.setFrameworkState(frameworkState); // DCOS certification 02
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkId());
+        ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkState());
         clusterMonitor = new ClusterMonitor(configuration, driver, clusterState);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);

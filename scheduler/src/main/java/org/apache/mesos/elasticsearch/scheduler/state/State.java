@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos.FrameworkID;
 
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
@@ -16,17 +15,6 @@ public class State {
     private SerializableState zkState;
     public State(SerializableState zkState) {
         this.zkState = zkState;
-    }
-
-    /**
-     * Return empty if no frameworkId found.
-     */
-    public FrameworkID getFrameworkID() throws NotSerializableException {
-        return frameworkState.getFrameworkID();
-    }
-
-    public void setFrameworkId(FrameworkID frameworkId) throws NotSerializableException {
-        frameworkState.setFrameworkId(frameworkId);
     }
 
     public <T> void setAndCreateParents(String key, T object) throws NotSerializableException {

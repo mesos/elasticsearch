@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.mesos.Protos.FrameworkID;
 import static org.apache.mesos.Protos.TaskID;
 
 /**
@@ -19,11 +18,11 @@ public class ClusterState {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
     public static final String STATE_LIST = "stateList";
     private final State state;
-    private final FrameworkID frameworkID;
+    private final FrameworkState frameworkState;
 
-    public ClusterState(State state, FrameworkID frameworkID) {
+    public ClusterState(State state, FrameworkState frameworkState) {
         this.state = state;
-        this.frameworkID = frameworkID;
+        this.frameworkState = frameworkState;
     }
 
     /**
@@ -39,7 +38,7 @@ public class ClusterState {
      */
     public ESTaskStatus getStatus(TaskID taskID) {
         TaskInfo taskInfo = getTask(taskID);
-        return new ESTaskStatus(state, frameworkID, taskInfo);
+        return new ESTaskStatus(state, frameworkState.getFrameworkID(), taskInfo);
     }
 
     public TaskInfo getTask(TaskID taskID) {
@@ -99,7 +98,7 @@ public class ClusterState {
     }
 
     private String getKey() throws NotSerializableException {
-        return state.getFrameworkID().getValue() + "/" + STATE_LIST;
+        return frameworkState.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 
     public Boolean exists(TaskID taskId) {
