@@ -1,14 +1,10 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.FrameworkID;
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateInterface;
-import org.apache.mesos.state.Variable;
 
-import java.io.*;
+import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * DCOS certification requirement 02
@@ -63,10 +59,8 @@ public class State {
         StringBuilder builder = new StringBuilder();
         for (String s : split) {
             builder.append(s);
-            if (!s.isEmpty()) {
-                if (!exists(builder.toString())) {
-                    zkState.set(builder.toString(), null);
-                }
+            if (!s.isEmpty() && !exists(builder.toString())) {
+                zkState.set(builder.toString(), null);
             }
             builder.append("/");
         }

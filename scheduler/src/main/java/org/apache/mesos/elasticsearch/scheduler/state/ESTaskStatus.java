@@ -1,10 +1,10 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos.TaskStatus;
-import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.FrameworkID;
+import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
+import org.apache.mesos.Protos.TaskStatus;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
@@ -40,7 +40,6 @@ public class ESTaskStatus {
         return state.get(getKey());
     }
 
-    @SuppressWarnings("REC_CATCH_EXCEPTION")
     public void setDefaultState() {
         try {
             setStatus(TaskStatus.newBuilder()
@@ -48,13 +47,12 @@ public class ESTaskStatus {
                     .setTaskId(taskInfo.getTaskId())
                     .setExecutorId(taskInfo.getExecutor().getExecutorId())
                     .build());
-        } catch (Exception e) {
-            LOGGER.error("Unable to set default task state.");
+        } catch (InterruptedException | ExecutionException | IOException | ClassNotFoundException e) {
+            LOGGER.error("Unable to set default task state.", e);
         }
     }
 
     @Override
-    @SuppressWarnings("REC_CATCH_EXCEPTION")
     public String toString() {
         String retVal;
         try {

@@ -4,6 +4,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateIn
 import org.apache.mesos.state.Variable;
 
 import java.io.*;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Writes serializable data to zookeeper
@@ -22,7 +23,6 @@ public class SerializableZookeeperState implements SerializableState {
      * @return Object
      * @throws NotSerializableException
      */
-    @SuppressWarnings({"unchecked", "REC_CATCH_EXCEPTION"})
     public <T> T get(String key) throws NotSerializableException{
         try {
             byte[] existingNodes = zkState.fetch(key).get().value();
@@ -44,7 +44,7 @@ public class SerializableZookeeperState implements SerializableState {
             } else {
                 return null;
             }
-        } catch (Exception e) {
+        } catch (InterruptedException | ClassNotFoundException | ExecutionException | IOException e) {
             throw new NotSerializableException();
         }
     }
@@ -54,7 +54,6 @@ public class SerializableZookeeperState implements SerializableState {
      *
      * @throws NotSerializableException
      */
-    @SuppressWarnings("REC_CATCH_EXCEPTION")
     public <T> void set(String key, T object) throws NotSerializableException {
         try {
             Variable value = zkState.fetch(key).get();
@@ -74,7 +73,7 @@ public class SerializableZookeeperState implements SerializableState {
                     bos.close();
                 }
             }
-        } catch (Exception e) {
+        } catch (InterruptedException | ExecutionException | IOException e) {
             throw new NotSerializableException();
         }
     }

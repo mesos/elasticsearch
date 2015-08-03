@@ -78,7 +78,7 @@ public class StateTest {
      * Dummy storage class to replace zookeeper.
      */
     @SuppressWarnings("unchecked")
-    public class TestStateImpl implements SerializableState {
+    public static class TestStateImpl implements SerializableState {
         Map<String, Object> map = new HashMap<>();
         @Override
         public <T> T get(String key) throws NotSerializableException {
