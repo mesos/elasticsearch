@@ -17,10 +17,10 @@ public class FrameworkStateTest {
 
     public static final Protos.FrameworkID FRAMEWORK_ID = Protos.FrameworkID.newBuilder().setValue("FrameworkID").build();
     public final State state = mock(State.class);
+    private final FrameworkState frameworkState = new FrameworkState(state);
 
     @Test
     public void testSetFrameworkID() throws NotSerializableException {
-        FrameworkState frameworkState = new FrameworkState(state);
         frameworkState.setFrameworkId(FRAMEWORK_ID);
         verify(state, times(1)).setAndCreateParents(anyString(), eq(FRAMEWORK_ID));
     }
@@ -28,7 +28,6 @@ public class FrameworkStateTest {
     @Test
     public void testGetFrameworkID() {
         when(state.get(anyString())).thenReturn(FRAMEWORK_ID);
-        FrameworkState frameworkState = new FrameworkState(state);
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
         verify(state, times(1)).get(anyString());
         assertEquals(FRAMEWORK_ID, frameworkID);
@@ -36,9 +35,14 @@ public class FrameworkStateTest {
 
     @Test
     public void testGetEmptyWhenNoFrameworkID() {
-        FrameworkState frameworkState = new FrameworkState(state);
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
         verify(state, times(1)).get(anyString());
         assertEquals("", frameworkID.getValue());
+    }
+
+    @Test
+    public void testHandleException() throws NotSerializableException {
+        doThrow(NotSerializableException.class).when(state).setAndCreateParents(anyString(), any());
+        frameworkState.setFrameworkId(FRAMEWORK_ID);
     }
 }
