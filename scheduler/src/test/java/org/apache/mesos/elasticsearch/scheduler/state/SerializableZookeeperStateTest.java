@@ -9,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -103,7 +104,7 @@ public class SerializableZookeeperStateTest {
 
     @Test(expected = NotSerializableException.class)
     public void testInvalidObjectStream() throws NotSerializableException {
-        when(variable.value()).thenReturn("Invalid stream of bytes".getBytes());
+        when(variable.value()).thenReturn("Invalid stream of bytes".getBytes(Charset.forName("UTF-8")));
         serializableState.get("test");
     }
 
