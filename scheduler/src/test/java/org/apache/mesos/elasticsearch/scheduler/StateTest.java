@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
 import org.apache.mesos.state.Variable;
 import org.junit.Before;
@@ -9,8 +8,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
@@ -23,7 +20,7 @@ public class StateTest {
 
     @Before
     public void before() throws ExecutionException, InterruptedException {
-        state = new State(new TestStateImpl());
+        state = new State(new TestSerializableStateImpl());
     }
 
     @Test
@@ -74,23 +71,4 @@ public class StateTest {
         state.mkdir("/mesos");
     }
 
-    /**
-     * Dummy storage class to replace zookeeper.
-     */
-    @SuppressWarnings("unchecked")
-    public static class TestStateImpl implements SerializableState {
-        Map<String, Object> map = new HashMap<>();
-        @Override
-        public <T> T get(String key) throws NotSerializableException {
-            return (T) map.getOrDefault(key, null);
-        }
-
-        @Override
-        public <T> void set(String key, T object) throws NotSerializableException {
-            if (key.endsWith("/") && !key.equals("/")) {
-                throw new NotSerializableException("Trailing slashes are not allowed");
-            }
-            map.put(key, object);
-        }
-    }
 }

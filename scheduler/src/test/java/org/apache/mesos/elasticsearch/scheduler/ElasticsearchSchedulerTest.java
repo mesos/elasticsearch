@@ -4,7 +4,6 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -78,7 +77,7 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getNumberOfHwNodes()).thenReturn(3);
         when(configuration.getZookeeperUrl()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getState()).thenReturn(new State(Mockito.mock(SerializableState.class)));
+        when(configuration.getState()).thenReturn(new State(new TestSerializableStateImpl()));
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
