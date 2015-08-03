@@ -12,7 +12,7 @@ import java.security.InvalidParameterException;
  */
 public class State {
     private static final Logger LOGGER = Logger.getLogger(State.class);
-    private static final String FRAMEWORKID_KEY = "frameworkId";
+    private final FrameworkState frameworkState = new FrameworkState(this);
     private SerializableState zkState;
     public State(SerializableState zkState) {
         this.zkState = zkState;
@@ -22,15 +22,11 @@ public class State {
      * Return empty if no frameworkId found.
      */
     public FrameworkID getFrameworkID() throws NotSerializableException {
-        FrameworkID id = zkState.get(FRAMEWORKID_KEY);
-        if (id == null) {
-            id = FrameworkID.newBuilder().setValue("").build();
-        }
-        return id;
+        return frameworkState.getFrameworkID();
     }
 
     public void setFrameworkId(FrameworkID frameworkId) throws NotSerializableException {
-        setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
+        frameworkState.setFrameworkId(frameworkId);
     }
 
     public <T> void setAndCreateParents(String key, T object) throws NotSerializableException {
