@@ -20,7 +20,7 @@ public class ESTaskStatus {
     private final SerializableState state;
     private final FrameworkID frameworkID;
     private final TaskInfo taskInfo;
-    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
+    private final StatePath statePath;
 
     public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo) {
         if (state == null) {
@@ -31,12 +31,12 @@ public class ESTaskStatus {
         this.state = state;
         this.frameworkID = frameworkID;
         this.taskInfo = taskInfo;
-        stateHelp = new State(state);
+        statePath = new StatePath(state);
     }
 
     public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
-        stateHelp.setAndCreateParents(getKey(), status);
+        statePath.setAndCreateParents(getKey(), status);
     }
 
     public TaskStatus getStatus() throws IllegalStateException {

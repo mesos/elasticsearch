@@ -9,10 +9,10 @@ import java.security.InvalidParameterException;
  * DCOS certification requirement 02
  * This allows the scheduler to persist the key/value pairs to zookeeper.
  */
-public class State {
-    private static final Logger LOGGER = Logger.getLogger(State.class);
+public class StatePath {
+    private static final Logger LOGGER = Logger.getLogger(StatePath.class);
     private SerializableState zkState;
-    public State(SerializableState zkState) {
+    public StatePath(SerializableState zkState) {
         this.zkState = zkState;
     }
 

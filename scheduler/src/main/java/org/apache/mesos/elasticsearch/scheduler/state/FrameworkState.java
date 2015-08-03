@@ -11,11 +11,11 @@ public class FrameworkState {
     public static final Protos.FrameworkID EMPTY_ID = Protos.FrameworkID.newBuilder().setValue("").build();
 
     private final SerializableState state;
-    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
+    private final StatePath statePath;
 
     public FrameworkState(SerializableState state) {
         this.state = state;
-        stateHelp = new State(state);
+        statePath = new StatePath(state);
     }
 
     /**
@@ -33,7 +33,7 @@ public class FrameworkState {
 
     public void setFrameworkId(Protos.FrameworkID frameworkId) {
         try {
-            stateHelp.setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
+            statePath.setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
         } catch (NotSerializableException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }

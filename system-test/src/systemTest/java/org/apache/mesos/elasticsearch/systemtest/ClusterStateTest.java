@@ -7,7 +7,7 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
-import org.apache.mesos.elasticsearch.scheduler.state.State;
+import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperImpl;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
@@ -48,10 +48,10 @@ public class ClusterStateTest {
     public void localClusterStateTest() throws NotSerializableException {
         String zkUrl = "zk://" + CLUSTER.getMesosContainer().getIpAddress() + ":" + ZOOKEEPER_PORT;
         ZooKeeperImpl zkState = new ZooKeeperImpl(getMesosStateZKURL(zkUrl));
-        State state = new State(new SerializableZookeeperState(zkState));
+        StatePath statePath = new StatePath(new SerializableZookeeperState(zkState));
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
-        state.setFrameworkId(frameworkID);
-        ClusterState clusterState = new ClusterState(state, frameworkID);
+        statePath.setFrameworkId(frameworkID);
+        ClusterState clusterState = new ClusterState(statePath, frameworkID);
         LOGGER.info("Setting slave list");
         clusterState.addTask(getNewTaskInfo(1));
         clusterState.addTask(getNewTaskInfo(2));

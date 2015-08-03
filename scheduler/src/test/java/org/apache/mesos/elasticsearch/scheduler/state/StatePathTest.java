@@ -11,32 +11,32 @@ import static org.junit.Assert.assertNotNull;
 /**
  * Tests State class.
  */
-public class StateTest {
-    private State state;
+public class StatePathTest {
+    private StatePath statePath;
 
     @Before
     public void before() throws ExecutionException, InterruptedException {
-        state = new State(new TestSerializableStateImpl());
+        statePath = new StatePath(new TestSerializableStateImpl());
     }
 
     @Test
     public void testSanityCheck() {
-        assertNotNull("State should not be null.", state);
+        assertNotNull("State should not be null.", statePath);
     }
 
     @Test
     public void testMkDirJustSlashShouldNotCrash() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
-        state.mkdir("/");
+        statePath.mkdir("/");
     }
 
     @Test(expected = Exception.class)
     public void testMkDirTrailingSlash() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
-        state.mkdir("/mesos/");
+        statePath.mkdir("/mesos/");
     }
 
     @Test
     public void testMkDirOk() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
-        state.mkdir("/mesos");
+        statePath.mkdir("/mesos");
     }
 
 }

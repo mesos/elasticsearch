@@ -19,12 +19,12 @@ public class ClusterState {
     public static final String STATE_LIST = "stateList";
     private final SerializableState state;
     private final FrameworkState frameworkState;
-    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
+    private final StatePath statePath;
 
     public ClusterState(SerializableState state, FrameworkState frameworkState) {
         this.state = state;
         this.frameworkState = frameworkState;
-        stateHelp = new State(state);
+        statePath = new StatePath(state);
     }
 
     /**
@@ -93,7 +93,7 @@ public class ClusterState {
     private void setTaskInfoList(List<TaskInfo> taskInfoList) {
         LOGGER.debug("Writing executor state list: " + logTaskList(taskInfoList));
         try {
-            stateHelp.setAndCreateParents(getKey(), taskInfoList);
+            statePath.setAndCreateParents(getKey(), taskInfoList);
         } catch (Exception ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }
