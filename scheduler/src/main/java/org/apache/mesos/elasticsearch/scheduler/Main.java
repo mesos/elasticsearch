@@ -78,7 +78,7 @@ public class Main {
     private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
         configuration = new Configuration();
 
-        CommandLineParser parser = new BasicParser();
+        DefaultParser parser = new DefaultParser();
         CommandLine cmd = parser.parse(options, args);
 
         String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);

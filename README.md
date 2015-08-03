@@ -22,6 +22,7 @@
         * [Requirements](#requirements-2)
       * [How to run on Mac](#how-to-run-on-mac-1)
         * [Requirements](#requirements-3)
+    * [How to release](#how-to-release)
   * [Sponsors](#sponsors)
   * [License](#license)
 
@@ -135,7 +136,7 @@ $ ./gradlew build buildDockerImage system-test:main
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ ./gradlew build docker system-test:main
+$ ./gradlew build buildDockerImage system-test:main
 ```
 
 ### System test
@@ -161,7 +162,34 @@ $ ./gradlew build buildDockerImage system-test:systemTest
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ ./gradlew build docker system-test:systemTest
+$ ./gradlew build buildDockerImage system-test:systemTest
+```
+
+### How to release
+
+Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
+user/pass.
+
+```
+systemProp.org.ajoberstar.grgit.auth.interactive.allow=false
+systemProp.org.ajoberstar.grgit.auth.ssh.private=~/.ssh/id_rsa
+systemProp.org.ajoberstar.grgit.auth.username=user
+systemProp.org.ajoberstar.grgit.auth.password=password
+dockerHubUsername=user
+dockerHubPassword=******
+dockerHubEmail=email
+```
+
+Now perform a release and specify the release type: major, minor or patch and your username.
+
+```
+$ ./gradlew build system-test:systemTest
+```
+
+If build and tests succeed release
+
+```
+$ ./gradlew release -PreleaseType={major,minor,patch} -PuserName={user}
 ```
 
 ## Sponsors

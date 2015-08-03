@@ -95,6 +95,10 @@ afterEvaluate {
 
 subprojects {
 
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+
     apply plugin: 'maven-publish'
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
