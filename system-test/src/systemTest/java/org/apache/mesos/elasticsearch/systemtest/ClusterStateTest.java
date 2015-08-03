@@ -6,17 +6,19 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFor
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
-import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperImpl;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.apache.mesos.state.ZooKeeperState;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.NotSerializableException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 
@@ -31,6 +33,9 @@ public class ClusterStateTest {
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build();
+    public static final long ZK_TIMEOUT = 20000L;
+    public static final String CLUSTER_NAME = "/mesos-ha";
+    public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
 
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
@@ -47,11 +52,11 @@ public class ClusterStateTest {
     @Test
     public void localClusterStateTest() throws NotSerializableException {
         String zkUrl = "zk://" + CLUSTER.getMesosContainer().getIpAddress() + ":" + ZOOKEEPER_PORT;
-        ZooKeeperImpl zkState = new ZooKeeperImpl(getMesosStateZKURL(zkUrl));
-        StatePath statePath = new StatePath(new SerializableZookeeperState(zkState));
+        SerializableState zkState = getState(getMesosStateZKURL(zkUrl));
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
-        statePath.setFrameworkId(frameworkID);
-        ClusterState clusterState = new ClusterState(statePath, frameworkID);
+        FrameworkState frameworkState = new FrameworkState(zkState);
+        frameworkState.setFrameworkId(frameworkID);
+        ClusterState clusterState = new ClusterState(zkState, frameworkState);
         LOGGER.info("Setting slave list");
         clusterState.addTask(getNewTaskInfo(1));
         clusterState.addTask(getNewTaskInfo(2));
@@ -76,5 +81,14 @@ public class ClusterStateTest {
     private String getMesosStateZKURL(String zkUrl) {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
         return mesosStateZKFormatter.format(zkUrl);
+    }
+
+    private SerializableState getState(String zkUrl) {
+        org.apache.mesos.state.State state = new ZooKeeperState(
+                getMesosStateZKURL(zkUrl),
+                ZK_TIMEOUT,
+                TimeUnit.MILLISECONDS,
+                FRAMEWORK_NAME + CLUSTER_NAME);
+        return  new SerializableZookeeperState(state);
     }
 }
