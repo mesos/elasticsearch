@@ -6,6 +6,7 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
+import java.io.InputStream;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -34,6 +35,9 @@ public class DataPusherContainer extends AbstractContainer {
                 .withName("es_pusher" + new SecureRandom().nextInt())
                 .withEnv("ELASTICSEARCH_URL=" + "http://" + slaveAddress);
 //                .withCmd("lein", "run", "-d");
+    }
 
+    public InputStream getLogStreamStdOut() {
+        return dockerClient.logContainerCmd(getContainerId()).withStdOut().exec();
     }
 }

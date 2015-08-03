@@ -83,4 +83,8 @@ public abstract class TestBase {
     public static ElasticsearchSchedulerContainer getScheduler() {
         return scheduler;
     }
+
+    public static DataPusherContainer getPusher() {
+        return pusher;
+    }
 }
