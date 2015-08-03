@@ -7,7 +7,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
 /**
- * Base test class which launches Mesos cluster and Elasticsearch scheduler
+ * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
  */
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {

@@ -9,7 +9,7 @@ import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmen
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateInterfaceImpl;
+import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperImpl;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
@@ -99,7 +99,7 @@ public class Main {
         configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        SerializableState serializableState = new SerializableZookeeperState(new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl)));
+        SerializableState serializableState = new SerializableZookeeperState(new ZooKeeperImpl(getMesosStateZKURL(zkUrl)));
         configuration.setState(new State(serializableState));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));

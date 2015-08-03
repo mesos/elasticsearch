@@ -5,10 +5,10 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateInterfaceImpl;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperImpl;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.ClassRule;
@@ -21,22 +21,22 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 /**
- * Tests cluster state mechanism
+ * Tests CLUSTER state mechanism
  */
 public class ClusterStateTest {
     private static final Logger LOGGER = Logger.getLogger(ClusterStateTest.class);
 
-    protected static final MesosClusterConfig config = MesosClusterConfig.builder()
+    protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build();
 
     @ClassRule
-    public static final MesosCluster cluster = new MesosCluster(config);
+    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
 
-    // ********** Development tests on local cluster ***********
+    // ********** Development tests on local CLUSTER ***********
     /**
      * To run the following tests you need to have a native mesos library installed and route to the mesos local. E.g. for mac.
      * $ brew install mesos
@@ -45,8 +45,8 @@ public class ClusterStateTest {
     @Ignore
     @Test
     public void localClusterStateTest() throws NotSerializableException {
-        String zkUrl = "zk://" + cluster.getMesosContainer().getIpAddress() + ":2181";
-        ZooKeeperStateInterfaceImpl zkState = new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl));
+        String zkUrl = "zk://" + CLUSTER.getMesosContainer().getIpAddress() + ":2181";
+        ZooKeeperImpl zkState = new ZooKeeperImpl(getMesosStateZKURL(zkUrl));
         State state = new State(new SerializableZookeeperState(zkState));
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
         state.setFrameworkId(frameworkID);

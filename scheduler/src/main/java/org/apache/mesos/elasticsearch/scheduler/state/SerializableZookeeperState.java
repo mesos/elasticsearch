@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateInterface;
+import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeper;
 import org.apache.mesos.state.Variable;
 
 import java.io.*;
@@ -10,9 +10,9 @@ import java.util.concurrent.ExecutionException;
  * Writes serializable data to zookeeper
  */
 public class SerializableZookeeperState implements SerializableState {
-    private ZooKeeperStateInterface zkState;
+    private ZooKeeper zkState;
 
-    public SerializableZookeeperState(ZooKeeperStateInterface zkState) {
+    public SerializableZookeeperState(ZooKeeper zkState) {
         this.zkState = zkState;
     }
 
@@ -23,6 +23,7 @@ public class SerializableZookeeperState implements SerializableState {
      * @return Object
      * @throws NotSerializableException
      */
+    @SuppressWarnings("unchecked")
     public <T> T get(String key) throws NotSerializableException{
         try {
             byte[] existingNodes = zkState.fetch(key).get().value();

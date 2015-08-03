@@ -7,7 +7,7 @@ import java.util.concurrent.Future;
 /**
  * A wrapper class to decouple ZooKeeper from the ES project.
  */
-public interface ZooKeeperStateInterface {
+public interface ZooKeeper {
     Future<Variable> fetch(final String name);
     Future<Variable> store(Variable variable);
 }
