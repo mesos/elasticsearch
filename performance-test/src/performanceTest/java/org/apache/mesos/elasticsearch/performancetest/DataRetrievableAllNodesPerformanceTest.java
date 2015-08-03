@@ -25,7 +25,9 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
 
     private static class PusherStartedTester implements Callable<Boolean> {
         public Boolean call() {
-            return false;
+            // todo: test that output contains "riemann.elastic - elasticized"
+
+            return true;
         }
     }
 }

@@ -32,12 +32,14 @@ public abstract class TestBase {
 
     private static ElasticsearchSchedulerContainer scheduler;
 
+    private static DataPusherContainer pusher;
+
     private static String slaveHttpAddress;
 
     /**
      *
      */
-    public static class ElasticsearchNodesCall implements Callable<Boolean> {
+    public static class ElasticsearchPusherStarter implements Callable<Boolean> {
 
         @Override
         public Boolean call() throws Exception {
@@ -45,6 +47,8 @@ public abstract class TestBase {
                 if (!(Unirest.get("http://" + slaveHttpAddress + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
                 }
+                pusher = new DataPusherContainer(CONFIG.dockerClient, slaveHttpAddress);
+                CLUSTER.addAndStartContainer(pusher);
                 return true;
             } catch (UnirestException e) {
                 return false;
@@ -72,11 +76,7 @@ public abstract class TestBase {
             throw new RuntimeException(e.getMessage());
         }
 
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
-
-        DataPusherContainer pusher = new DataPusherContainer(CONFIG.dockerClient, slaveHttpAddress);
-        pusher.start();
-
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).until(new ElasticsearchPusherStarter());
 
     }
 
