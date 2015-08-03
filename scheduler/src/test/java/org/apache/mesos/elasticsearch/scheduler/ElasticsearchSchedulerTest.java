@@ -5,6 +5,7 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
+import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;

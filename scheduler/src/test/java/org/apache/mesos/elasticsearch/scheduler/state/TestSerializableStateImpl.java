@@ -1,6 +1,4 @@
-package org.apache.mesos.elasticsearch.scheduler;
-
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
+package org.apache.mesos.elasticsearch.scheduler.state;
 
 import java.io.NotSerializableException;
 import java.util.HashMap;
