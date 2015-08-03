@@ -103,15 +103,19 @@ public class Main {
         configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
+        configuration.setState(getState(zkUrl));
+        configuration.setMem(Double.parseDouble(ram));
+        configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+    }
+
+    private State getState(String zkUrl) {
         org.apache.mesos.state.State state = new ZooKeeperState(
                 getMesosStateZKURL(zkUrl),
                 ZK_TIMEOUT,
                 TimeUnit.MILLISECONDS,
                 FRAMEWORK_NAME + CLUSTER_NAME);
         SerializableState serializableState = new SerializableZookeeperState(state);
-        configuration.setState(new State(serializableState));
-        configuration.setMem(Double.parseDouble(ram));
-        configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+        return new State(serializableState);
     }
 
     private String getMesosStateZKURL(String zkUrl) {
