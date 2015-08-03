@@ -5,6 +5,9 @@ import org.apache.mesos.Protos;
 
 import java.io.NotSerializableException;
 
+/**
+ * Model of framework state
+ */
 public class FrameworkState {
     private static final Logger LOGGER = Logger.getLogger(FrameworkState.class);
     private static final String FRAMEWORKID_KEY = "frameworkId";
