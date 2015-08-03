@@ -13,14 +13,15 @@ import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.UUID;
 
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests Scheduler API.
@@ -169,12 +170,16 @@ public class ElasticsearchSchedulerTest {
                                         .setName(configuration.getTaskName())
                                         .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
                                         .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
+                                        .setExecutor(Protos.ExecutorInfo.newBuilder()
+                                                .setExecutorId(Protos.ExecutorID.newBuilder().setValue("executorID").build())
+                                                .setCommand(Protos.CommandInfo.newBuilder().setValue("").build())
+                                                .build())
                                         .setDiscovery(
                                                 Protos.DiscoveryInfo.newBuilder()
                                                         .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
                                                         .setPorts(Protos.Ports.newBuilder()
-                                                                .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
-                                                                .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
+                                                                        .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
+                                                                        .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
                                                         )
                                         )
                                         .build();
