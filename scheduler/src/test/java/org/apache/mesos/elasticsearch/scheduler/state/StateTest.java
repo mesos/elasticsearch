@@ -1,8 +1,6 @@
-package org.apache.mesos.elasticsearch.scheduler;
+package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.scheduler.state.State;
-import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
 import org.apache.mesos.state.Variable;
 import org.junit.Before;
 import org.junit.Test;

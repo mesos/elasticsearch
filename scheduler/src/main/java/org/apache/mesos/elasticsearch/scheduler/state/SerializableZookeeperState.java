@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeper;
 import org.apache.mesos.state.Variable;
 
 import java.io.*;
@@ -10,9 +9,9 @@ import java.util.concurrent.ExecutionException;
  * Writes serializable data to zookeeper
  */
 public class SerializableZookeeperState implements SerializableState {
-    private ZooKeeper zkState;
+    private org.apache.mesos.state.State zkState;
 
-    public SerializableZookeeperState(ZooKeeper zkState) {
+    public SerializableZookeeperState(org.apache.mesos.state.State zkState) {
         this.zkState = zkState;
     }
 

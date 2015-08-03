@@ -9,11 +9,12 @@ import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmen
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
 import org.apache.mesos.elasticsearch.scheduler.state.State;
-import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperImpl;
+import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -26,6 +27,9 @@ public class Main {
 
     public static final String MANAGEMENT_API_PORT = "m";
     public static final String RAM = "ram";
+    public static final long ZK_TIMEOUT = 20000L;
+    public static final String CLUSTER_NAME = "/mesos-ha";
+    public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
 
     private Options options;
 
@@ -99,7 +103,12 @@ public class Main {
         configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        SerializableState serializableState = new SerializableZookeeperState(new ZooKeeperImpl(getMesosStateZKURL(zkUrl)));
+        org.apache.mesos.state.State state = new ZooKeeperState(
+                getMesosStateZKURL(zkUrl),
+                ZK_TIMEOUT,
+                TimeUnit.MILLISECONDS,
+                FRAMEWORK_NAME + CLUSTER_NAME);
+        SerializableState serializableState = new SerializableZookeeperState(state);
         configuration.setState(new State(serializableState));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
