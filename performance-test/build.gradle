@@ -9,6 +9,7 @@ repositories {
 sourceSets {
     performanceTest {
         java.srcDir file('src/main/java')
+        java.srcDir file('src/performanceTest/java')
         resources.srcDir file('src/performanceTest/resources')
     }
 }
@@ -28,7 +29,6 @@ dependencies {
     performanceTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
     performanceTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
     performanceTestCompile 'com.github.ContainerSolutions:mini-mesos:7bc19ef062466fa6e22fe4351adf04320f2526bc'
-
 }
 
 task main(type:JavaExec, dependsOn: 'compileJava') {

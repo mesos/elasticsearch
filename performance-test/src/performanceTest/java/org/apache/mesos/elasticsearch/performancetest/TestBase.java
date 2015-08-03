@@ -1,10 +1,17 @@
 package org.apache.mesos.elasticsearch.performancetest;
 
+import com.jayway.awaitility.Awaitility;
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
@@ -25,9 +32,28 @@ public abstract class TestBase {
 
     private static ElasticsearchSchedulerContainer scheduler;
 
+    private static String slaveHttpAddress;
+
+    /**
+     *
+     */
+    public static class ElasticsearchNodesCall implements Callable<Boolean> {
+
+        @Override
+        public Boolean call() throws Exception {
+            try {
+                if (!(Unirest.get("http://" + slaveHttpAddress + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
+                    return false;
+                }
+                return true;
+            } catch (UnirestException e) {
+                return false;
+            }
+        }
+    }
+
     @BeforeClass
     public static void startScheduler() throws Exception {
-        CLUSTER.start();
         CLUSTER.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting Elasticsearch scheduler");
@@ -36,6 +62,22 @@ public abstract class TestBase {
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        slaveHttpAddress = "";
+        try {
+            TasksResponse tasksResponse = new TasksResponse(getScheduler().getIpAddress());
+            JSONObject taskObject = tasksResponse.getJson().getBody().getArray().getJSONObject(0);
+            slaveHttpAddress = taskObject.getString("http_address");
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            throw new RuntimeException(e.getMessage());
+        }
+
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
+
+        DataPusherContainer pusher = new DataPusherContainer(CONFIG.dockerClient, slaveHttpAddress);
+        pusher.start();
+
+
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
