@@ -5,11 +5,12 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
-import java.util.Collections;
-import java.util.List;
+import java.net.InetSocketAddress;
+import java.util.*;
 
 /**
  * Scheduler for Elasticsearch.
@@ -25,10 +26,18 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private ClusterMonitor clusterMonitor;
 
+    Clock clock = new Clock();
+
+    Map<String, Task> tasks = new HashMap<>();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
+        clusterMonitor = new ClusterMonitor(configuration, null, new ClusterState(configuration.getState(), configuration.getFrameworkId())); // Default, will be overwritten when registered.
+    }
+
+    public Map<String, Task> getTasks() {
+        return tasks;
     }
 
     public void run() {
@@ -102,7 +111,15 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-
+                Task task = new Task(
+                        offer.getHostname(),
+                        taskInfo.getTaskId().getValue(),
+                        Protos.TaskState.TASK_STAGING,
+                        clock.zonedNow(),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+                );
+                tasks.put(taskInfo.getTaskId().getValue(), task);
                 clusterMonitor.monitorTask(taskInfo, this); // Add task to cluster monitor
             }
         }

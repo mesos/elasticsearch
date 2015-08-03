@@ -44,12 +44,12 @@ public class ClusterMonitor {
 
     private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
         ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, 10000L);
-        ExecutorHealthCheck executorHealth = new ExecutorHealthCheck(new PollService(health, 5000L));
+        new ExecutorHealthCheck(new PollService(health, 5000L));
     }
 
     private void createNewExecutorBump(Protos.TaskInfo taskInfo) {
         BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-        ExecutorHealthCheck executorBump = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+        new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
     }
 
 

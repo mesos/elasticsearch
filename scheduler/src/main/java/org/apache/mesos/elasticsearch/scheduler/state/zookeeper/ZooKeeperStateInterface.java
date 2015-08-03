@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.scheduler;
+package org.apache.mesos.elasticsearch.scheduler.state.zookeeper;
 
 import org.apache.mesos.state.Variable;
 

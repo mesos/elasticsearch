@@ -5,8 +5,9 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
-import org.apache.mesos.elasticsearch.scheduler.State;
-import org.apache.mesos.elasticsearch.scheduler.ZooKeeperStateInterfaceImpl;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.elasticsearch.scheduler.state.State;
+import org.apache.mesos.elasticsearch.scheduler.state.zookeeper.ZooKeeperStateInterfaceImpl;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
@@ -14,6 +15,7 @@ import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.NotSerializableException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -42,10 +44,10 @@ public class ClusterStateTest {
      */
     @Ignore
     @Test
-    public void localClusterStateTest() {
+    public void localClusterStateTest() throws NotSerializableException {
         String zkUrl = "zk://" + cluster.getMesosContainer().getIpAddress() + ":2181";
         ZooKeeperStateInterfaceImpl zkState = new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl));
-        State state = new State(zkState);
+        State state = new State(new SerializableZookeeperState(zkState));
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("frameworkId").build();
         state.setFrameworkId(frameworkID);
         ClusterState clusterState = new ClusterState(state, frameworkID);

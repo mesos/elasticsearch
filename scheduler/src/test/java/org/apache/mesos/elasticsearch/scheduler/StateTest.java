@@ -1,18 +1,19 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
+import org.apache.mesos.elasticsearch.scheduler.state.State;
 import org.apache.mesos.state.Variable;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
 
 /**
  * Tests State class.
@@ -20,16 +21,9 @@ import static org.mockito.Matchers.any;
 public class StateTest {
     private State state;
 
-    @SuppressWarnings("unchecked")
     @Before
     public void before() throws ExecutionException, InterruptedException {
-        ZooKeeperStateInterface zkState = Mockito.mock(ZooKeeperStateInterface.class);
-        Future future = Mockito.mock(Future.class);
-        Mockito.when(future.get()).thenReturn(new TestVariable());
-        Mockito.when(zkState.store(any(Variable.class))).thenReturn(future);
-        Mockito.when(zkState.fetch(Mockito.matches(".*/$"))).thenThrow(java.util.concurrent.ExecutionException.class);
-        Mockito.when(zkState.fetch(any())).thenReturn(future);
-        state = new State(zkState);
+        state = new State(new TestStateImpl());
     }
 
     @Test
@@ -38,12 +32,12 @@ public class StateTest {
     }
 
     @Test
-    public void testInitialGetFrameworkID() throws InterruptedException, ExecutionException, InvalidProtocolBufferException {
+    public void testInitialGetFrameworkID() throws NotSerializableException {
         assertTrue("FrameworkID should be empty if not first time.", state.getFrameworkID().getValue().isEmpty());
     }
 
     @Test
-    public void testThatStoreFrameworkIDStores() throws ExecutionException, InterruptedException, InvalidProtocolBufferException {
+    public void testThatStoreFrameworkIDStores() throws NotSerializableException {
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("TEST_ID").build();
         state.setFrameworkId(frameworkID);
         assertNotNull("FramekworkID should not be null once set.", state.getFrameworkID());
@@ -78,5 +72,25 @@ public class StateTest {
     @Test
     public void testMkDirOk() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
         state.mkdir("/mesos");
+    }
+
+    /**
+     * Dummy storage class to replace zookeeper.
+     */
+    @SuppressWarnings("unchecked")
+    public class TestStateImpl implements SerializableState {
+        Map<String, Object> map = new HashMap<>();
+        @Override
+        public <T> T get(String key) throws NotSerializableException {
+            return (T) map.getOrDefault(key, null);
+        }
+
+        @Override
+        public <T> void set(String key, T object) throws NotSerializableException {
+            if (key.endsWith("/") && !key.equals("/")) {
+                throw new NotSerializableException("Trailing slashes are not allowed");
+            }
+            map.put(key, object);
+        }
     }
 }

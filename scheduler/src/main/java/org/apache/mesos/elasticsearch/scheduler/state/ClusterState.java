@@ -2,8 +2,8 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.elasticsearch.scheduler.State;
 
+import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -44,9 +44,9 @@ public class ClusterState {
 
     public TaskInfo getTask(TaskID taskID) {
         LOGGER.debug("Getting taskInfo from cluster for task: " + taskID.getValue());
-        List<TaskInfo> TaskInfoList = getTaskInfoList();
+        List<TaskInfo> taskInfoList = getTaskInfoList();
         TaskInfo taskInfo = null;
-        for (TaskInfo info : TaskInfoList) {
+        for (TaskInfo info : taskInfoList) {
             if (info.getTaskId().equals(taskID)) {
                 taskInfo = info;
                 break;
@@ -72,13 +72,13 @@ public class ClusterState {
     }
 
     private List<TaskInfo> getTaskInfoList() {
-        List<TaskInfo> TaskInfoList = new ArrayList<>();
+        List<TaskInfo> taskinfolist = new ArrayList<>();
         try {
-            TaskInfoList.addAll(state.get(getKey()));
+            taskinfolist.addAll(state.get(getKey()));
         } catch (Exception ex) {
-            LOGGER.info(getKey() + " doesn't exist.");
+            LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.");
         }
-        return TaskInfoList;
+        return taskinfolist;
     }
 
     private String logTaskList(List<TaskInfo> taskInfoList) {
@@ -98,7 +98,7 @@ public class ClusterState {
         }
     }
 
-    private String getKey() {
+    private String getKey() throws NotSerializableException {
         return state.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 

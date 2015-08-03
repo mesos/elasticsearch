@@ -5,7 +5,6 @@ import org.apache.mesos.Protos.TaskStatus;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.FrameworkID;
 import org.apache.mesos.Protos.TaskState;
-import org.apache.mesos.elasticsearch.scheduler.State;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
@@ -37,10 +36,11 @@ public class ESTaskStatus {
         state.setAndCreateParents(getKey(), status);
     }
 
-    public TaskStatus getStatus() throws InterruptedException, ExecutionException, ClassNotFoundException, IOException {
+    public TaskStatus getStatus() throws IllegalStateException {
         return state.get(getKey());
     }
 
+    @SuppressWarnings("REC_CATCH_EXCEPTION")
     public void setDefaultState() {
         try {
             setStatus(TaskStatus.newBuilder()
@@ -54,6 +54,7 @@ public class ESTaskStatus {
     }
 
     @Override
+    @SuppressWarnings("REC_CATCH_EXCEPTION")
     public String toString() {
         String retVal;
         try {

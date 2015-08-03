@@ -1,6 +1,9 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.state.State;
+
+import java.io.NotSerializableException;
 
 /**
  * Holder object for framework configuration.
@@ -67,11 +70,20 @@ public class Configuration {
     }
 
     public Protos.FrameworkID getFrameworkId() {
-        return state.getFrameworkID();
+        try {
+            return state.getFrameworkID();
+        } catch (NotSerializableException e) {
+            e.printStackTrace();
+            return Protos.FrameworkID.newBuilder().setValue("").build();
+        }
     }
 
     public void setFrameworkId(Protos.FrameworkID frameworkId) {
-        this.state.setFrameworkId(frameworkId);
+        try {
+            this.state.setFrameworkId(frameworkId);
+        } catch (NotSerializableException e) {
+            e.printStackTrace();
+        }
     }
 
     public String getTaskName() {
