@@ -81,7 +81,7 @@ task taskCopyFilesForDocker(type: Copy) {
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'jar'
+    dependsOn   'bootRepackage'
     from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"
     into        'build/docker'
     rename { String fileName ->
