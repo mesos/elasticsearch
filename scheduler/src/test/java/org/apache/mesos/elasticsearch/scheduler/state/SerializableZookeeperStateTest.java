@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests
  */
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class SerializableZookeeperStateTest {
     public static final String SERIALIZABLE_OBJECT = "Serializable object";
     private State state;
