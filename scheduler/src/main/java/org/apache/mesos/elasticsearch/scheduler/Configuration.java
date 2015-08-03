@@ -2,7 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.State;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 
 /**
  * Holder object for framework configuration.
@@ -17,7 +17,7 @@ public class Configuration {
 
     private int numberOfHwNodes;
 
-    private State state;
+    private SerializableState state;
 
     private String version;
 
@@ -42,11 +42,11 @@ public class Configuration {
         return disk;
     }
 
-    public State getState() {
+    public SerializableState getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(SerializableState state) {
         this.state = state;
     }
 

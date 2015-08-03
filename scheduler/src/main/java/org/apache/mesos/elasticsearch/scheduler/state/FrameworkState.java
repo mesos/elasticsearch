@@ -8,27 +8,32 @@ import java.io.NotSerializableException;
 public class FrameworkState {
     private static final Logger LOGGER = Logger.getLogger(FrameworkState.class);
     private static final String FRAMEWORKID_KEY = "frameworkId";
+    public static final Protos.FrameworkID EMPTY_ID = Protos.FrameworkID.newBuilder().setValue("").build();
 
-    private final State state;
+    private final SerializableState state;
+    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
 
-    public FrameworkState(State state) {
+    public FrameworkState(SerializableState state) {
         this.state = state;
+        stateHelp = new State(state);
     }
 
     /**
      * Return empty if no frameworkId found.
      */
     public Protos.FrameworkID getFrameworkID() {
-        Protos.FrameworkID id = state.get(FRAMEWORKID_KEY);
-        if (id == null) {
-            id = Protos.FrameworkID.newBuilder().setValue("").build();
+        Protos.FrameworkID id = null;
+        try {
+            id = state.get(FRAMEWORKID_KEY);
+        } catch (NotSerializableException e) {
+            LOGGER.warn("Unable to get FrameworkID from zookeeper", e);
         }
-        return id;
+        return id == null ? EMPTY_ID : id;
     }
 
     public void setFrameworkId(Protos.FrameworkID frameworkId) {
         try {
-            state.setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
+            stateHelp.setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
         } catch (NotSerializableException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }

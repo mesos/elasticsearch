@@ -7,6 +7,7 @@ import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
 import java.io.IOException;
+import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 import java.util.concurrent.ExecutionException;
 
@@ -16,11 +17,12 @@ import java.util.concurrent.ExecutionException;
 public class ESTaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);
     public static final String STATE = "state";
-    private final State state;
+    private final SerializableState state;
     private final FrameworkID frameworkID;
     private final TaskInfo taskInfo;
+    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
 
-    public ESTaskStatus(State state, FrameworkID frameworkID, TaskInfo taskInfo) {
+    public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo) {
         if (state == null) {
             throw new InvalidParameterException("State cannot be null");
         } else if (frameworkID == null || frameworkID.getValue().isEmpty()) {
@@ -29,15 +31,20 @@ public class ESTaskStatus {
         this.state = state;
         this.frameworkID = frameworkID;
         this.taskInfo = taskInfo;
+        stateHelp = new State(state);
     }
 
     public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
-        state.setAndCreateParents(getKey(), status);
+        stateHelp.setAndCreateParents(getKey(), status);
     }
 
     public TaskStatus getStatus() throws IllegalStateException {
-        return state.get(getKey());
+        try {
+            return state.get(getKey());
+        } catch (NotSerializableException e) {
+            throw new IllegalStateException("Unable to get task status from zookeeper", e);
+        }
     }
 
     public void setDefaultState() {

@@ -41,7 +41,7 @@ public class ExecutorStateTest {
                 .setSlaveId(slaveID)
                 .setName("Test")
                 .build();
-        ESTaskStatus executorState = new ESTaskStatus(new State(state), frameworkID, taskInfo);
+        ESTaskStatus executorState = new ESTaskStatus(state, frameworkID, taskInfo);
 
         executorState.setStatus(taskStatus);
         verify(state, times(1)).set(anyString(), any(Protos.TaskStatus.class));

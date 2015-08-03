@@ -11,7 +11,6 @@ import java.security.InvalidParameterException;
  */
 public class State {
     private static final Logger LOGGER = Logger.getLogger(State.class);
-    private final FrameworkState frameworkState = new FrameworkState(this);
     private SerializableState zkState;
     public State(SerializableState zkState) {
         this.zkState = zkState;
@@ -20,14 +19,6 @@ public class State {
     public <T> void setAndCreateParents(String key, T object) throws NotSerializableException {
         mkdir(key);
         zkState.set(key, object);
-    }
-
-    public <T> T get(String key) throws IllegalStateException {
-        try {
-            return zkState.get(key);
-        } catch (NotSerializableException e) {
-            throw new IllegalStateException("Unable to get key: " + key, e);
-        }
     }
 
     /**

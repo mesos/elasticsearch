@@ -8,7 +8,6 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
-import org.apache.mesos.elasticsearch.scheduler.state.State;
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
@@ -108,14 +107,13 @@ public class Main {
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
     }
 
-    private State getState(String zkUrl) {
+    private SerializableState getState(String zkUrl) {
         org.apache.mesos.state.State state = new ZooKeeperState(
                 getMesosStateZKURL(zkUrl),
                 ZK_TIMEOUT,
                 TimeUnit.MILLISECONDS,
                 FRAMEWORK_NAME + CLUSTER_NAME);
-        SerializableState serializableState = new SerializableZookeeperState(state);
-        return new State(serializableState);
+        return  new SerializableZookeeperState(state);
     }
 
     private String getMesosStateZKURL(String zkUrl) {

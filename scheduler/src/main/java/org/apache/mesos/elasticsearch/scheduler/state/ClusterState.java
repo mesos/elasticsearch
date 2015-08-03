@@ -17,12 +17,14 @@ import static org.apache.mesos.Protos.TaskID;
 public class ClusterState {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
     public static final String STATE_LIST = "stateList";
-    private final State state;
+    private final SerializableState state;
     private final FrameworkState frameworkState;
+    private final org.apache.mesos.elasticsearch.scheduler.state.State stateHelp;
 
-    public ClusterState(State state, FrameworkState frameworkState) {
+    public ClusterState(SerializableState state, FrameworkState frameworkState) {
         this.state = state;
         this.frameworkState = frameworkState;
+        stateHelp = new State(state);
     }
 
     /**
@@ -91,7 +93,7 @@ public class ClusterState {
     private void setTaskInfoList(List<TaskInfo> taskInfoList) {
         LOGGER.debug("Writing executor state list: " + logTaskList(taskInfoList));
         try {
-            state.setAndCreateParents(getKey(), taskInfoList);
+            stateHelp.setAndCreateParents(getKey(), taskInfoList);
         } catch (Exception ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }
