@@ -41,8 +41,14 @@ public class FrameworkStateTest {
     }
 
     @Test
-    public void testHandleException() throws NotSerializableException {
+    public void testHandleSetException() throws NotSerializableException {
         doThrow(NotSerializableException.class).when(state).set(anyString(), any());
         frameworkState.setFrameworkId(FRAMEWORK_ID);
+    }
+
+    @Test
+    public void testHandleGetException() throws NotSerializableException {
+        doThrow(NotSerializableException.class).when(state).get(anyString());
+        frameworkState.getFrameworkID();
     }
 }

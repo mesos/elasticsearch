@@ -55,7 +55,7 @@ public class ClusterMonitor {
 
     private ESTaskStatus addNewTaskToCluster(Protos.TaskInfo taskInfo) {
         ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
-        taskStatus.setDefaultState(); // This is a new task, so set default state until we get an update
+        taskStatus.setStatus(taskStatus.getDefaultStatus()); // This is a new task, so set default state until we get an update
         clusterState.addTask(taskInfo);
         return taskStatus;
     }

@@ -2,9 +2,9 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
+import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -165,23 +165,7 @@ public class ElasticsearchSchedulerTest {
         offerBuilder.addResources(portRange(9200, 9200));
         offerBuilder.addResources(portRange(9300, 9300));
 
-        Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
-                                        .setName(configuration.getTaskName())
-                                        .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
-                                        .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
-                                        .setExecutor(Protos.ExecutorInfo.newBuilder()
-                                                .setExecutorId(Protos.ExecutorID.newBuilder().setValue("executorID").build())
-                                                .setCommand(Protos.CommandInfo.newBuilder().setValue("").build())
-                                                .build())
-                                        .setDiscovery(
-                                                Protos.DiscoveryInfo.newBuilder()
-                                                        .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
-                                                        .setPorts(Protos.Ports.newBuilder()
-                                                                        .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
-                                                                        .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
-                                                        )
-                                        )
-                                        .build();
+        Protos.TaskInfo taskInfo = ProtoTestUtil.getDefaultTaskInfo();
 
         when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
 

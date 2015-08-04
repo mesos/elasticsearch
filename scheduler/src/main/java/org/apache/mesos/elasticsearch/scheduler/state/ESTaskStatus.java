@@ -6,17 +6,16 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
-import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Status of task
  */
 public class ESTaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);
-    public static final String STATE = "state";
+    public static final String STATE_KEY = "state";
+    public static final String DEFAULT_STATUS_NO_MESSAGE_SET = "Default status. No message set.";
     private final SerializableState state;
     private final FrameworkID frameworkID;
     private final TaskInfo taskInfo;
@@ -34,10 +33,14 @@ public class ESTaskStatus {
         statePath = new StatePath(state);
     }
 
-    public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
-        LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
-        statePath.mkdir(getKey());
-        state.set(getKey(), status);
+    public void setStatus(TaskStatus status) throws IllegalStateException {
+        try {
+            LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
+            statePath.mkdir(getKey());
+            state.set(getKey(), status);
+        } catch (NotSerializableException e) {
+            throw new IllegalStateException("Unable to write task status to zookeeper", e);
+        }
     }
 
     public TaskStatus getStatus() throws IllegalStateException {
@@ -48,23 +51,20 @@ public class ESTaskStatus {
         }
     }
 
-    public void setDefaultState() {
-        try {
-            setStatus(TaskStatus.newBuilder()
+    public TaskStatus getDefaultStatus() {
+        return TaskStatus.newBuilder()
                     .setState(TaskState.TASK_STARTING)
                     .setTaskId(taskInfo.getTaskId())
                     .setExecutorId(taskInfo.getExecutor().getExecutorId())
-                    .build());
-        } catch (InterruptedException | ExecutionException | IOException | ClassNotFoundException e) {
-            LOGGER.error("Unable to set default task state.", e);
-        }
+                    .setMessage(DEFAULT_STATUS_NO_MESSAGE_SET)
+                    .build();
     }
 
     @Override
     public String toString() {
         String retVal;
         try {
-            retVal = getKey() + ": " + getStatus().getMessage();
+            retVal = getKey() + ": [" + getStatus().getState() + "] " +  getStatus().getMessage();
         } catch (Exception e) {
             retVal = getKey() + ": Unable to get message";
         }
@@ -72,7 +72,7 @@ public class ESTaskStatus {
     }
 
     private String getKey() {
-        return frameworkID.getValue() + "/" + STATE + "/" + taskInfo.getTaskId().getValue();
+        return frameworkID.getValue() + "/" + STATE_KEY + "/" + taskInfo.getTaskId().getValue();
     }
 
 }
