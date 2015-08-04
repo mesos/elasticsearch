@@ -37,7 +37,7 @@ public class ESTaskStatus {
 
     public void setStatus(TaskStatus status) throws IllegalStateException {
         try {
-            LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
+            LOGGER.debug("Writing task status to zk: [" + status.getState() + "] " + status.getTaskId().getValue());
             statePath.mkdir(getKey());
             state.set(getKey(), status);
         } catch (NotSerializableException e) {

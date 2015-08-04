@@ -30,7 +30,7 @@ public class ElasticsearchScheduler implements Scheduler {
     Clock clock = new Clock();
 
     Map<String, Task> tasks = new HashMap<>();
-    private Observable statusUpdateWatchers = new Observable();
+    private Observable statusUpdateWatchers = new StatusUpdateObservable();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
@@ -200,5 +200,16 @@ public class ElasticsearchScheduler implements Scheduler {
             }
         }
         return result;
+    }
+
+    /**
+     * Implementation of Observable to fix the setChanged problem.
+     */
+    private static class StatusUpdateObservable extends Observable {
+        @Override
+        public void notifyObservers(Object arg) {
+            this.setChanged(); // This is ridiculous.
+            super.notifyObservers(arg);
+        }
     }
 }

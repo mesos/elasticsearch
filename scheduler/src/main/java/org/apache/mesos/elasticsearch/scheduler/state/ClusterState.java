@@ -53,13 +53,14 @@ public class ClusterState {
     }
 
     public void addTask(TaskInfo taskInfo) {
-    LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
+        LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
         List<TaskInfo> taskList = getTaskList();
         taskList.add(taskInfo);
         setTaskInfoList(taskList);
     }
 
     public void removeTask(TaskInfo taskInfo) {
+        LOGGER.debug("Removing TaskInfo from cluster for task: " + taskInfo.getTaskId().getValue());
         List<TaskInfo> slaveList = getTaskList();
         slaveList.remove(taskInfo);
         setTaskInfoList(slaveList);

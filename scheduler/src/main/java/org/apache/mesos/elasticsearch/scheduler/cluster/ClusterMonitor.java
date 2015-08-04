@@ -80,11 +80,13 @@ public class ClusterMonitor implements Observer {
         try {
             // Update cluster state, if necessary
             if (getClusterState().exists(status.getTaskId())) {
+                LOGGER.debug("Updating task status for: " + status.getTaskId());
                 ESTaskStatus executorState = getClusterState().getStatus(status.getTaskId());
                 // Update state of Executor
                 executorState.setStatus(status);
                 // If task in error
                 if (executorState.taskInError()) {
+                    LOGGER.error("Task in error state. Performing reconciliation: " + executorState.toString());
                     this.stopPollTask(executorState.getTaskInfo()); // Stop polling
                     clusterState.removeTask(executorState.getTaskInfo()); // Remove task from cluster state.
                 }
