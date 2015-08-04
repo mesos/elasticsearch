@@ -78,6 +78,9 @@ public class Configuration {
     }
 
     public FrameworkState getFrameworkState() {
+        if (frameworkState == null) {
+            frameworkState = new FrameworkState(state);
+        }
         return frameworkState;
     }
 
