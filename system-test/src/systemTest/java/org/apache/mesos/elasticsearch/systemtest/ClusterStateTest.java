@@ -58,14 +58,15 @@ public class ClusterStateTest {
         frameworkState.setFrameworkId(frameworkID);
         ClusterState clusterState = new ClusterState(zkState, frameworkState);
         LOGGER.info("Setting slave list");
-        clusterState.addTask(getNewTaskInfo(1));
+        Protos.TaskInfo task1Info = getNewTaskInfo(1);
+        clusterState.addTask(task1Info);
         clusterState.addTask(getNewTaskInfo(2));
         clusterState.addTask(getNewTaskInfo(3));
         LOGGER.info("Set slave list");
         List<Protos.TaskInfo> executorStateList = clusterState.getTaskList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(3, executorStateList.size());
-        clusterState.removeTask(clusterState.getTask(Protos.TaskID.newBuilder().setValue("task1").build()));
+        clusterState.removeTask(task1Info);
         executorStateList = clusterState.getTaskList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(2, executorStateList.size());
