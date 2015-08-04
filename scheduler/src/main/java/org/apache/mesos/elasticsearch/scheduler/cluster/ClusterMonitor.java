@@ -50,14 +50,12 @@ public class ClusterMonitor implements Observer {
         return clusterState;
     }
 
-    // TODO (pnw): These will continue for ever. Even if the executor has died.
     private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
         ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, 10000L);
         ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(health, 5000L));
         pollList.put(taskStatus.getTaskInfo(), healthCheck);
     }
 
-    // TODO (pnw): These will continue for ever. Even if the executor has died.
     private void createNewExecutorBump(ESTaskStatus taskStatus) {
         Protos.TaskInfo taskInfo = taskStatus.getTaskInfo();
         BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);

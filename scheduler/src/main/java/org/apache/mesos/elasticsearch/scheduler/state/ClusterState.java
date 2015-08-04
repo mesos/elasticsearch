@@ -54,16 +54,33 @@ public class ClusterState {
 
     public void addTask(TaskInfo taskInfo) {
         LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
+        if (exists(taskInfo.getTaskId())) {
+            removeTask(taskInfo);
+        }
         List<TaskInfo> taskList = getTaskList();
         taskList.add(taskInfo);
         setTaskInfoList(taskList);
     }
 
-    public void removeTask(TaskInfo taskInfo) {
-        LOGGER.debug("Removing TaskInfo from cluster for task: " + taskInfo.getTaskId().getValue());
-        List<TaskInfo> slaveList = getTaskList();
-        slaveList.remove(taskInfo);
-        setTaskInfoList(slaveList);
+    public void removeTask(TaskInfo taskInfo) throws InvalidParameterException {
+        List<TaskInfo> taskList = getTaskList();
+        Boolean found = false;
+        for (TaskInfo info : taskList) {
+            if (isEqual(info, taskInfo)) {
+                LOGGER.debug("Removing TaskInfo from cluster for task: " + taskInfo.getTaskId().getValue());
+                taskList.remove(info);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            throw new InvalidParameterException("TaskInfo does not exist in list: " + taskInfo.getTaskId().getValue());
+        }
+        setTaskInfoList(taskList);
+    }
+
+    private boolean isEqual(TaskInfo taskInfo1, TaskInfo taskInfo2) {
+        return taskInfo1.getTaskId().getValue().equals(taskInfo2.getTaskId().getValue());
     }
 
     public Boolean exists(TaskID taskId) {
