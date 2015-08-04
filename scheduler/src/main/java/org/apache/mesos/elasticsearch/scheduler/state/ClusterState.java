@@ -93,7 +93,8 @@ public class ClusterState {
     private void setTaskInfoList(List<TaskInfo> taskInfoList) {
         LOGGER.debug("Writing executor state list: " + logTaskList(taskInfoList));
         try {
-            statePath.setAndCreateParents(getKey(), taskInfoList);
+            statePath.mkdir(getKey());
+            state.set(getKey(), taskInfoList);
         } catch (Exception ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }

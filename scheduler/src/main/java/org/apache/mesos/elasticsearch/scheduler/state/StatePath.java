@@ -6,8 +6,7 @@ import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 
 /**
- * DCOS certification requirement 02
- * This allows the scheduler to persist the key/value pairs to zookeeper.
+ * Path utilities
  */
 public class StatePath {
     private static final Logger LOGGER = Logger.getLogger(StatePath.class);
@@ -16,13 +15,8 @@ public class StatePath {
         this.zkState = zkState;
     }
 
-    public <T> void setAndCreateParents(String key, T object) throws NotSerializableException {
-        mkdir(key);
-        zkState.set(key, object);
-    }
-
     /**
-     * Creates the zNode if it does not exist
+     * Creates the zNode if it does not exist. Will create parent directories.
      * @param key the zNode path
      */
     public void mkdir(String key) throws NotSerializableException {

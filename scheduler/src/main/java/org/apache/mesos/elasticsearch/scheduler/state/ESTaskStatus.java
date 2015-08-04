@@ -36,7 +36,8 @@ public class ESTaskStatus {
 
     public void setStatus(TaskStatus status) throws InterruptedException, ExecutionException, IOException, ClassNotFoundException {
         LOGGER.debug("Writing task status to zk: [" + status.getTimestamp() + "] " + status.getTaskId().getValue());
-        statePath.setAndCreateParents(getKey(), status);
+        statePath.mkdir(getKey());
+        state.set(getKey(), status);
     }
 
     public TaskStatus getStatus() throws IllegalStateException {

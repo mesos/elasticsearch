@@ -36,7 +36,8 @@ public class FrameworkState {
 
     public void setFrameworkId(Protos.FrameworkID frameworkId) {
         try {
-            statePath.setAndCreateParents(FRAMEWORKID_KEY, frameworkId);
+            statePath.mkdir(FRAMEWORKID_KEY);
+            state.set(FRAMEWORKID_KEY, frameworkId);
         } catch (NotSerializableException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }
