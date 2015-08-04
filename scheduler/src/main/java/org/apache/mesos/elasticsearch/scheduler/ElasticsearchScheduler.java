@@ -35,7 +35,7 @@ public class ElasticsearchScheduler implements Scheduler {
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-        clusterMonitor = new ClusterMonitor(configuration, null, new ClusterState(configuration.getState(), configuration.getFrameworkState())); // Default, will be overwritten when registered.
+        clusterMonitor = new ClusterMonitor(configuration, this, null, new ClusterState(configuration.getState(), configuration.getFrameworkState())); // Default, will be overwritten when registered.
     }
 
     public Map<String, Task> getTasks() {
@@ -71,7 +71,7 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkState());
-        clusterMonitor = new ClusterMonitor(configuration, driver, clusterState);
+        clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
@@ -125,7 +125,7 @@ public class ElasticsearchScheduler implements Scheduler {
                         new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
                 );
                 tasks.put(taskInfo.getTaskId().getValue(), task);
-                clusterMonitor.monitorTask(taskInfo, this); // Add task to cluster monitor
+                clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
     }

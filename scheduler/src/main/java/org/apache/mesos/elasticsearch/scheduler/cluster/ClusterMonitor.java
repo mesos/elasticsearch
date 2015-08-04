@@ -21,35 +21,40 @@ import java.util.Observer;
 public class ClusterMonitor implements Observer {
     private static final Logger LOGGER = Logger.getLogger(ClusterMonitor.class);
     private final Configuration configuration;
+    private final Scheduler callback;
     private final SchedulerDriver driver;
     private final ClusterState clusterState;
 
-    public ClusterMonitor(Configuration configuration, SchedulerDriver driver, ClusterState clusterState) {
+    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, ClusterState clusterState) {
         this.configuration = configuration;
+        this.callback = callback;
         this.driver = driver;
         this.clusterState = clusterState;
+        clusterState.getTaskList().forEach(this::monitorTask); // Get all previous executors and start monitoring them.
     }
 
     /**
      * Monitor a new, or existing task.
      * @param task The task to monitor
-     * @param callback The Scheduler to call with status updates.
      */
-    public void monitorTask(Protos.TaskInfo task, Scheduler callback) {
+    public void monitorTask(Protos.TaskInfo task) {
         ESTaskStatus taskStatus = addNewTaskToCluster(task);
         createNewExecutorBump(task);
         createNewExecutorHealthMonitor(callback, taskStatus);
     }
 
+    // TODO (pnw): Cluster state is not responsibility of cluster monitor.
     public ClusterState getClusterState() {
         return clusterState;
     }
 
+    // TODO (pnw): These will continue for ever. Even if the executor has died.
     private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
         ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, 10000L);
         new ExecutorHealthCheck(new PollService(health, 5000L));
     }
 
+    // TODO (pnw): These will continue for ever. Even if the executor has died.
     private void createNewExecutorBump(Protos.TaskInfo taskInfo) {
         BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
         new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
