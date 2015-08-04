@@ -117,7 +117,7 @@ public class SerializableZookeeperStateTest {
 
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptionIfKeyDoesntExist() throws IOException {
-        when(variable.value()).thenReturn("".getBytes());
+        when(variable.value()).thenReturn("".getBytes(Charset.forName("UTF-8")));
         future = CompletableFuture.completedFuture(variable);
         when(state.fetch(anyString())).thenReturn(future);
         serializableState.delete("test");
