@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import java.io.NotSerializableException;
+import java.security.InvalidParameterException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -22,5 +23,12 @@ public class TestSerializableStateImpl implements SerializableState {
             throw new NotSerializableException("Trailing slashes are not allowed");
         }
         map.put(key, object);
+    }
+
+    @Override
+    public void delete(String key) throws InvalidParameterException {
+        if (map.remove(key) == null) {
+            throw new InvalidParameterException("Unable to delete key.");
+        }
     }
 }
