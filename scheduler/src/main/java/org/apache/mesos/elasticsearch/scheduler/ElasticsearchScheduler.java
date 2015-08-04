@@ -11,10 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Scheduler for Elasticsearch.
@@ -33,6 +30,7 @@ public class ElasticsearchScheduler implements Scheduler {
     Clock clock = new Clock();
 
     Map<String, Task> tasks = new HashMap<>();
+    private Observable statusUpdateWatchers = new Observable();
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
@@ -74,6 +72,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
         ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkState());
         clusterMonitor = new ClusterMonitor(configuration, driver, clusterState);
+        statusUpdateWatchers.addObserver(clusterMonitor);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -156,11 +155,10 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Offer " + offerId.getValue() + " rescinded");
     }
 
-    // Todo, move status update call into cluster monitor.
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - " + status.toString());
-        clusterMonitor.updateTask(status);
+        statusUpdateWatchers.notifyObservers(status);
     }
 
     @Override
@@ -203,5 +201,4 @@ public class ElasticsearchScheduler implements Scheduler {
         }
         return result;
     }
-
 }

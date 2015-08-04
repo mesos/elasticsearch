@@ -12,10 +12,13 @@ import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 
+import java.util.Observable;
+import java.util.Observer;
+
 /**
  * Contains all cluster information. Monitors state of cluster elements.
  */
-public class ClusterMonitor {
+public class ClusterMonitor implements Observer {
     private static final Logger LOGGER = Logger.getLogger(ClusterMonitor.class);
     private final Configuration configuration;
     private final SchedulerDriver driver;
@@ -72,6 +75,15 @@ public class ClusterMonitor {
             }
         } catch (IllegalStateException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
+        }
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        try {
+            this.updateTask((Protos.TaskStatus) arg);
+        } catch (ClassCastException e) {
+            LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
         }
     }
 }
