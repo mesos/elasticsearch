@@ -19,9 +19,10 @@ public class ESTaskStatus {
     public static final String DEFAULT_STATUS_NO_MESSAGE_SET = "Default status. No message set.";
     private final SerializableState state;
     private final FrameworkID frameworkID;
-    private final TaskInfo taskInfo;
-    private final StatePath statePath;
 
+    private final TaskInfo taskInfo;
+
+    private final StatePath statePath;
     public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo) {
         if (state == null) {
             throw new InvalidParameterException("State cannot be null");
@@ -61,6 +62,10 @@ public class ESTaskStatus {
                     .build();
     }
 
+    public TaskInfo getTaskInfo() {
+        return taskInfo;
+    }
+
     @Override
     public String toString() {
         String retVal;
@@ -76,4 +81,8 @@ public class ESTaskStatus {
         return frameworkID.getValue() + "/" + STATE_KEY + "/" + taskInfo.getTaskId().getValue();
     }
 
+    public boolean taskInError() {
+        TaskState state = getStatus().getState();
+        return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED) || state.equals(TaskState.TASK_LOST);
+    }
 }

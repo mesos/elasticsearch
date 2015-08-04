@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.cluster;
 
+import org.apache.commons.collections4.map.MultiValueMap;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
@@ -24,6 +25,7 @@ public class ClusterMonitor implements Observer {
     private final Scheduler callback;
     private final SchedulerDriver driver;
     private final ClusterState clusterState;
+    private MultiValueMap<Protos.TaskInfo, ExecutorHealthCheck> pollList = new MultiValueMap<>();
 
     public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, ClusterState clusterState) {
         this.configuration = configuration;
@@ -39,7 +41,7 @@ public class ClusterMonitor implements Observer {
      */
     public void monitorTask(Protos.TaskInfo task) {
         ESTaskStatus taskStatus = addNewTaskToCluster(task);
-        createNewExecutorBump(task);
+        createNewExecutorBump(taskStatus);
         createNewExecutorHealthMonitor(callback, taskStatus);
     }
 
@@ -51,21 +53,27 @@ public class ClusterMonitor implements Observer {
     // TODO (pnw): These will continue for ever. Even if the executor has died.
     private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
         ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, 10000L);
-        new ExecutorHealthCheck(new PollService(health, 5000L));
+        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(health, 5000L));
+        pollList.put(taskStatus.getTaskInfo(), healthCheck);
     }
 
     // TODO (pnw): These will continue for ever. Even if the executor has died.
-    private void createNewExecutorBump(Protos.TaskInfo taskInfo) {
+    private void createNewExecutorBump(ESTaskStatus taskStatus) {
+        Protos.TaskInfo taskInfo = taskStatus.getTaskInfo();
         BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-        new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+        pollList.put(taskInfo, healthCheck);
     }
-
 
     private ESTaskStatus addNewTaskToCluster(Protos.TaskInfo taskInfo) {
         ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
         taskStatus.setStatus(taskStatus.getDefaultStatus()); // This is a new task, so set default state until we get an update
         clusterState.addTask(taskInfo);
         return taskStatus;
+    }
+
+    private void stopPollTask(Protos.TaskInfo taskInfo) {
+        pollList.getCollection(taskInfo).forEach(ExecutorHealthCheck::stopHealthcheck);
     }
 
     public void updateTask(Protos.TaskStatus status) {
@@ -75,6 +83,11 @@ public class ClusterMonitor implements Observer {
                 ESTaskStatus executorState = getClusterState().getStatus(status.getTaskId());
                 // Update state of Executor
                 executorState.setStatus(status);
+                // If task in error
+                if (executorState.taskInError()) {
+                    this.stopPollTask(executorState.getTaskInfo()); // Stop polling
+                    clusterState.removeTask(executorState.getTaskInfo()); // Remove task from cluster state.
+                }
             } else {
                 LOGGER.warn("Could not find task in cluster state.");
             }
