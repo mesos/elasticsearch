@@ -87,6 +87,9 @@ public class SerializableZookeeperState implements SerializableState {
     public void delete(String key) throws InvalidParameterException {
         try {
             Variable value = zkState.fetch(key).get();
+            if (value.value().length == 0) {
+                throw new InvalidParameterException("Key does not exist:" + key);
+            }
             zkState.expunge(value);
         } catch (InterruptedException | ExecutionException e) {
             throw new InvalidParameterException("Unable to delete key:" + key);

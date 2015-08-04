@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
+import java.security.InvalidParameterException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -107,6 +108,19 @@ public class SerializableZookeeperStateTest {
     public void testInvalidObjectStream() throws NotSerializableException {
         when(variable.value()).thenReturn("Invalid stream of bytes".getBytes(Charset.forName("UTF-8")));
         serializableState.get("test");
+    }
+
+    @Test
+    public void shouldDeleteKey() {
+        serializableState.delete("test");
+    }
+
+    @Test(expected = InvalidParameterException.class)
+    public void shouldExceptionIfKeyDoesntExist() throws IOException {
+        when(variable.value()).thenReturn("".getBytes());
+        future = CompletableFuture.completedFuture(variable);
+        when(state.fetch(anyString())).thenReturn(future);
+        serializableState.delete("test");
     }
 
 
