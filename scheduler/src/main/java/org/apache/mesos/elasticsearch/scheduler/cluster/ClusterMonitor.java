@@ -70,7 +70,7 @@ public class ClusterMonitor {
             } else {
                 LOGGER.warn("Could not find task in cluster state.");
             }
-        } catch (Exception e) {
+        } catch (IllegalStateException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
         }
     }

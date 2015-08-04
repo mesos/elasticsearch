@@ -10,7 +10,8 @@ import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 
 /**
- * Status of task
+ * Status of task. This is necessary because the raw TaskInfo packet doesn't contain the frameworkID or a link to
+ * the respective TaskStatus packet.
  */
 public class ESTaskStatus {
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);

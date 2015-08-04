@@ -62,11 +62,11 @@ public class ClusterStateTest {
         clusterState.addTask(getNewTaskInfo(2));
         clusterState.addTask(getNewTaskInfo(3));
         LOGGER.info("Set slave list");
-        List<Protos.TaskInfo> executorStateList = clusterState.getStateList();
+        List<Protos.TaskInfo> executorStateList = clusterState.getTaskList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(3, executorStateList.size());
         clusterState.removeTask(clusterState.getTask(Protos.TaskID.newBuilder().setValue("task1").build()));
-        executorStateList = clusterState.getStateList();
+        executorStateList = clusterState.getTaskList();
         executorStateList.forEach(LOGGER::info);
         assertEquals(2, executorStateList.size());
     }

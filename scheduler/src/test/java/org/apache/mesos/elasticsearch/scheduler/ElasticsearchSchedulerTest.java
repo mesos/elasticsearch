@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.joda.time.DateTime;
@@ -71,8 +72,11 @@ public class ElasticsearchSchedulerTest {
         when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
         frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
+        FrameworkState frameworkState = mock(FrameworkState.class);
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
 
         configuration = mock(org.apache.mesos.elasticsearch.scheduler.Configuration.class);
+        when(configuration.getFrameworkState()).thenReturn(frameworkState);
         when(configuration.getFrameworkId()).thenReturn(frameworkID);
         when(configuration.getNumberOfHwNodes()).thenReturn(3);
         when(configuration.getZookeeperUrl()).thenReturn("zk://zookeeper:2181/mesos");

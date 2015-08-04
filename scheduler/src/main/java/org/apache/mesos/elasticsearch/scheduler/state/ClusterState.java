@@ -12,7 +12,7 @@ import java.util.List;
 import static org.apache.mesos.Protos.TaskID;
 
 /**
- * Model of cluster state
+ * Model of cluster state. User is able to add, remove and monitor task status.
  */
 public class ClusterState {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
@@ -28,24 +28,61 @@ public class ClusterState {
     }
 
     /**
-     * Get a list of all Executors with state
-     * @return a list of Executor states
+     * Get a list of all tasks with state
+     * @return a list of TaskInfo
      */
-    public List<TaskInfo> getStateList() {
-        return getTaskInfoList();
+    public List<TaskInfo> getTaskList() {
+        List<TaskInfo> taskInfoList = null;
+        try {
+            taskInfoList = state.get(getKey());
+        } catch (NotSerializableException ex) {
+            LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.");
+        }
+        return taskInfoList == null ? new ArrayList<>(0) : taskInfoList;
     }
 
     /**
-     * Get the state of a specific executor
+     * Get the status of a specific task
+     * @param taskID the taskID to retreive the task status for
+     * @return a POJO representing TaskInfo, TaskStatus and FrameworkID packets
+     * @throws InvalidParameterException when the taskId does not exist in the Task list.
      */
-    public ESTaskStatus getStatus(TaskID taskID) {
+    public ESTaskStatus getStatus(TaskID taskID) throws InvalidParameterException {
         TaskInfo taskInfo = getTask(taskID);
         return new ESTaskStatus(state, frameworkState.getFrameworkID(), taskInfo);
     }
 
-    public TaskInfo getTask(TaskID taskID) {
+    public void addTask(TaskInfo taskInfo) {
+    LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
+        List<TaskInfo> taskList = getTaskList();
+        taskList.add(taskInfo);
+        setTaskInfoList(taskList);
+    }
+
+    public void removeTask(TaskInfo taskInfo) {
+        List<TaskInfo> slaveList = getTaskList();
+        slaveList.remove(taskInfo);
+        setTaskInfoList(slaveList);
+    }
+
+    public Boolean exists(TaskID taskId) {
+        try {
+            getStatus(taskId);
+        } catch (InvalidParameterException e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Get the TaskInfo packet for a specific task.
+     * @param taskID the taskID to retreive the TaskInfo for
+     * @return a TaskInfo packet
+     * @throws InvalidParameterException when the taskId does not exist in the Task list.
+     */
+    private TaskInfo getTask(TaskID taskID) throws InvalidParameterException {
         LOGGER.debug("Getting taskInfo from cluster for task: " + taskID.getValue());
-        List<TaskInfo> taskInfoList = getTaskInfoList();
+        List<TaskInfo> taskInfoList = getTaskList();
         TaskInfo taskInfo = null;
         for (TaskInfo info : taskInfoList) {
             if (info.getTaskId().equals(taskID)) {
@@ -57,29 +94,6 @@ public class ClusterState {
             throw new InvalidParameterException("Could not find executor with that task ID: " + taskID.getValue());
         }
         return taskInfo;
-    }
-
-    public void addTask(TaskInfo taskInfo) {
-        LOGGER.debug("Adding TaskInfo to cluster for task: " + taskInfo.getTaskId().getValue());
-        List<TaskInfo> taskList = getTaskInfoList();
-        taskList.add(taskInfo);
-        setTaskInfoList(taskList);
-    }
-
-    public void removeTask(TaskInfo taskInfo) {
-        List<TaskInfo> slaveList = getTaskInfoList();
-        slaveList.remove(taskInfo);
-        setTaskInfoList(slaveList);
-    }
-
-    private List<TaskInfo> getTaskInfoList() {
-        List<TaskInfo> taskinfolist = new ArrayList<>();
-        try {
-            taskinfolist.addAll(state.get(getKey()));
-        } catch (Exception ex) {
-            LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.");
-        }
-        return taskinfolist;
     }
 
     private String logTaskList(List<TaskInfo> taskInfoList) {
@@ -95,21 +109,12 @@ public class ClusterState {
         try {
             statePath.mkdir(getKey());
             state.set(getKey(), taskInfoList);
-        } catch (Exception ex) {
+        } catch (NotSerializableException ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }
     }
 
     private String getKey() throws NotSerializableException {
         return frameworkState.getFrameworkID().getValue() + "/" + STATE_LIST;
-    }
-
-    public Boolean exists(TaskID taskId) {
-        try {
-            getStatus(taskId);
-        } catch (InvalidParameterException e) {
-            return false;
-        }
-        return true;
     }
 }
