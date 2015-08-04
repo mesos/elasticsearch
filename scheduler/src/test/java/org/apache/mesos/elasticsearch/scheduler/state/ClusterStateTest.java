@@ -18,6 +18,7 @@ import static org.mockito.Mockito.*;
 /**
  * `Tests
  */
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class ClusterStateTest {
     private SerializableState state = mock(SerializableState.class);
     private FrameworkState frameworkState = mock(FrameworkState.class);
