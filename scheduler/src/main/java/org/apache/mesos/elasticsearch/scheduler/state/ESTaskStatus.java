@@ -85,4 +85,12 @@ public class ESTaskStatus {
         TaskState state = getStatus().getState();
         return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED) || state.equals(TaskState.TASK_LOST);
     }
+
+    public void destroy() {
+        try {
+            state.delete(getKey());
+        } catch (InvalidParameterException e) {
+            LOGGER.error("Could not destroy Task in ZK.", e);
+        }
+    }
 }

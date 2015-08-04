@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 import org.apache.mesos.state.Variable;
 
 import java.io.*;
+import java.security.InvalidParameterException;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -75,6 +76,20 @@ public class SerializableZookeeperState implements SerializableState {
             }
         } catch (InterruptedException | ExecutionException | IOException e) {
             throw new NotSerializableException();
+        }
+    }
+
+    /**
+     * Delete a path in zk
+     * @param key the key to delete
+     * @throws InvalidParameterException if cannot read path
+     */
+    public void delete(String key) throws InvalidParameterException {
+        try {
+            Variable value = zkState.fetch(key).get();
+            zkState.expunge(value);
+        } catch (InterruptedException | ExecutionException e) {
+            throw new InvalidParameterException("Unable to delete key:" + key);
         }
     }
 }

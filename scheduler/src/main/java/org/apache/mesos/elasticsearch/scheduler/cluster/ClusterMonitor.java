@@ -89,6 +89,7 @@ public class ClusterMonitor implements Observer {
                     LOGGER.error("Task in error state. Performing reconciliation: " + executorState.toString());
                     this.stopPollTask(executorState.getTaskInfo()); // Stop polling
                     clusterState.removeTask(executorState.getTaskInfo()); // Remove task from cluster state.
+                    executorState.destroy(); // Destroy task in ZK.
                 }
             } else {
                 LOGGER.warn("Could not find task in cluster state.");
