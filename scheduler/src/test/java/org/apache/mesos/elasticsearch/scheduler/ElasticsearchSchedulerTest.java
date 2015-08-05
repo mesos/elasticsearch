@@ -90,12 +90,11 @@ public class ElasticsearchSchedulerTest {
         driver = mock(SchedulerDriver.class);
 
         masterInfo = newMasterInfo();
+        scheduler.registered(driver, frameworkID, masterInfo);
     }
 
     @Test
     public void testRegistered() {
-        scheduler.registered(driver, frameworkID, masterInfo);
-
         Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(configuration.getCpus()).mem(configuration.getMem()).disk(configuration.getDisk())));
     }
 

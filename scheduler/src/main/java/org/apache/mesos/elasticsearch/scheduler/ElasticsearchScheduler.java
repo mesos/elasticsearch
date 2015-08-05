@@ -25,17 +25,17 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
-    private ClusterMonitor clusterMonitor;
+    private ClusterMonitor clusterMonitor = null;
 
     Clock clock = new Clock();
 
     Map<String, Task> tasks = new HashMap<>();
     private Observable statusUpdateWatchers = new StatusUpdateObservable();
+    private Boolean registered = false;
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
-        clusterMonitor = new ClusterMonitor(configuration, this, null, new ClusterState(configuration.getState(), configuration.getFrameworkState())); // Default, will be overwritten when registered.
     }
 
     public Map<String, Task> getTasks() {
@@ -70,7 +70,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkState());
+        ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
         clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
 
@@ -82,6 +82,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
         List<Protos.Request> requests = Collections.singletonList(request);
         driver.requestResources(requests);
+        registered = true;
     }
 
     @Override
@@ -92,6 +93,10 @@ public class ElasticsearchScheduler implements Scheduler {
     // Todo, this massive if statement needs to be performed better.
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
+        if (!registered) {
+            LOGGER.debug("Not registered, can't accept resource offers.");
+            return;
+        }
         for (Protos.Offer offer : offers) {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
