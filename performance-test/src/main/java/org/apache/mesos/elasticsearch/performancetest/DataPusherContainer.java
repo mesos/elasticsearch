@@ -2,12 +2,10 @@ package org.apache.mesos.elasticsearch.performancetest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.jayway.awaitility.Awaitility;
 import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
 import java.io.InputStream;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Data Pusher container implementation
@@ -38,6 +36,6 @@ public class DataPusherContainer extends AbstractContainer {
     }
 
     public InputStream getLogStreamStdOut() {
-        return dockerClient.logContainerCmd(getContainerId()).withStdOut().exec();
+        return dockerClient.logContainerCmd(getContainerId()).withStdOut().withStdErr().exec();
     }
 }

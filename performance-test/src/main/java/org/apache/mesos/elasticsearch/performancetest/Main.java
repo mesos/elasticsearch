@@ -34,7 +34,7 @@ public class Main  {
         LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":8080");
 
         try {
-            TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress());
+            TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), 3);
             JSONObject taskObject = tasksResponse.getJson().getBody().getArray().getJSONObject(0);
             slaveHttpAddress = taskObject.getString("http_address");
         } catch (Exception e) {

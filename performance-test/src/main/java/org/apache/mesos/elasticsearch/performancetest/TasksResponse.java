@@ -23,9 +23,11 @@ public class TasksResponse {
 
     private HttpResponse<JsonNode> response;
     private String schedulerIpAddress;
+    private int nodesCount;
 
-    public TasksResponse(String schedulerIpAddress) {
+    public TasksResponse(String schedulerIpAddress, int nodesCount) {
         this.schedulerIpAddress = schedulerIpAddress;
+        this.nodesCount = nodesCount;
         await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
     }
 
@@ -37,7 +39,7 @@ public class TasksResponse {
                 String tasksEndPoint = "http://" + schedulerIpAddress + ":8080/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
-                return response.getBody().getArray().length() == 3;
+                return response.getBody().getArray().length() == nodesCount;
             } catch (UnirestException e) {
                 LOGGER.debug("Waiting until 3 tasks are started...");
                 return false;
