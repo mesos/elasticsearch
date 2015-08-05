@@ -38,7 +38,7 @@ public class ReconcilliationTest {
     @BeforeClass
     public static void beforeScheduler() throws Exception {
         cluster.injectImage("mesos/elasticsearch-executor");
-        await().atMost(60, TimeUnit.SECONDS).until(() -> config.dockerClient.listContainersCmd().exec().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> config.dockerClient.listContainersCmd().exec().size() == 3);
         List<Container> containers = config.dockerClient.listContainersCmd().exec();
 
         // Find a single executor container
@@ -54,14 +54,14 @@ public class ReconcilliationTest {
     @Test
     public void ifSchedulerLostShouldReconcileExecutors() throws IOException {
         ElasticsearchSchedulerContainer scheduler = startSchedulerContainer();
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() == 3);
         List<String> result = clusterPs();
         assertEquals(3, result.size());
 
         // Stop and restart container
         scheduler.remove();
         scheduler = startSchedulerContainer();
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() == 3);
         result = clusterPs();
         assertEquals(3, result.size());
         scheduler.remove();
@@ -70,11 +70,11 @@ public class ReconcilliationTest {
     @Test
     public void ifExecutorIsLostShouldStartAnother() throws IOException {
         ElasticsearchSchedulerContainer scheduler = startSchedulerContainer();
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() == 3);
         List<String> result = clusterPs();
         assertEquals(3, result.size());
 
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() == 3);
         result = clusterPs();
         assertEquals(3, result.size());
 
@@ -83,7 +83,7 @@ public class ReconcilliationTest {
         LOGGER.debug("Deleted " + another);
 
         // Should restart an executor, so there should still be three
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterPs().size() == 3);
         result = clusterPs();
         assertEquals(3, result.size());
     }
