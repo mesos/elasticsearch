@@ -38,7 +38,7 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
             }
             LOGGER.info("Fetched " + httpAddress + ". Response:");
             LOGGER.info(responseElements);
-            TestCase.assertEquals(responseElements.getJSONObject(0).getString("count"), "999");
+            TestCase.assertEquals(responseElements.getJSONObject(0).getInt("count"), 999);
         }
     }
 }
