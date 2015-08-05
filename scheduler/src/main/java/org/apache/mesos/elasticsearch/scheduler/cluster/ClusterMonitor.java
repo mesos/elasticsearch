@@ -13,6 +13,7 @@ import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 
+import java.security.InvalidParameterException;
 import java.util.Observable;
 import java.util.Observer;
 
@@ -28,6 +29,9 @@ public class ClusterMonitor implements Observer {
     private MultiValueMap<Protos.TaskInfo, ExecutorHealthCheck> pollList = new MultiValueMap<>();
 
     public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, ClusterState clusterState) {
+        if (configuration == null || callback == null || driver == null || clusterState == null) {
+            throw new InvalidParameterException("Constructor parameters cannot be null.");
+        }
         this.configuration = configuration;
         this.callback = callback;
         this.driver = driver;
