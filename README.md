@@ -109,6 +109,7 @@ The user interface uses REST API of the Elasticsearch Mesos Framework. You can f
 
 ### Known issues
 - Issue #206: The GUI will not represent the true state of the cluster after a scheduler or executor reconcillication event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
+- Issue #208: Task reconciliation does not destroy executors
 
 ## Developers Guide
 
