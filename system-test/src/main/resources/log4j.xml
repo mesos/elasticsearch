@@ -12,7 +12,9 @@
     <category name="org.apache.mesos.mini">
         <level value="DEBUG"/>
     </category>
-
+    <category name="org.apache.mesos.elasticsearch">
+        <level value="DEBUG"/>
+    </category>
     <root>
         <level value="INFO"/>
         <appender-ref ref="console" />
