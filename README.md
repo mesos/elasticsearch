@@ -34,7 +34,7 @@
 - [x] Durable cluster topology (via ZooKeeper)
 - [x] Web UI on scheduler port 8080
 - [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
-- [ ] Fault tolerance
+- [x] Fault tolerance
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
 - [ ] Scale cluster horizontally
@@ -56,8 +56,8 @@
 
 ### User tools
 
-- [ ] One click DCOS install
-- [ ] One JSON post to marathon install
+- [x] One click DCOS install
+- [x] One JSON post to marathon install
 
 ### Certification
 
@@ -107,6 +107,8 @@ The web based user interface is available on port 8080 of the scheduler by defau
 
 The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
 
+### Known issues
+- Issue #206: The GUI will not represent the true state of the cluster after a scheduler or executor reconcillication event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
 
 ## Developers Guide
 
