@@ -47,7 +47,7 @@ public class ReconciliationSystemTest {
     public static void beforeScheduler() throws Exception {
         LOGGER.debug("Injecting executor");
         CLUSTER.injectImage("mesos/elasticsearch-executor");
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CONFIG.dockerClient.listContainersCmd().exec().size() == CLUSTER_SIZE);
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CONFIG.dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
         List<Container> containers = CONFIG.dockerClient.listContainersCmd().exec();
 
         // Find the mesos-local container so we can do docker in docker commands.
