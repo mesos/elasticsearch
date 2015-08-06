@@ -45,6 +45,8 @@ public class SerializableZookeeperState implements SerializableState {
             } else {
                 return null;
             }
+        } catch (StreamCorruptedException e) {
+            throw new IOException("Corrupted zookeeper zNode. Please delete (rmr) the zNode path using the zookeeper/bin/zkCli.sh tool.", e);
         } catch (InterruptedException | ClassNotFoundException | ExecutionException | IOException e) {
             throw new IOException("Unable to get zNode", e);
         }
