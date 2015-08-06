@@ -4,6 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Container;
+import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
@@ -30,7 +31,7 @@ import static org.junit.Assert.assertFalse;
  */
 public class ExecutorSystemTest extends TestBase {
 
-    public static final String DOCKER_PORT = "2376";
+    public static final int DOCKER_PORT = 2376;
 
     private static DockerClient clusterClient;
 
@@ -57,8 +58,9 @@ public class ExecutorSystemTest extends TestBase {
                     return dockerClient
                             .createContainerCmd(DOCKER_IMAGE)
                             .withLinks(Link.parse(cluster.getMesosContainer().getContainerId() + ":docker"))
-                            .withPortBindings(PortBinding.parse("0.0.0.0:3376:2376"))
-                            .withCmd("-l=:2376", "-r=docker:2376");
+                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
+                            .withPortBindings(PortBinding.parse("0.0.0.0:3376:" + DOCKER_PORT))
+                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
                 }
             };
             dockerForwarder.start();
