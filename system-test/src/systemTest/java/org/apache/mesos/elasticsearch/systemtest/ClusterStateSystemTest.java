@@ -25,8 +25,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Tests CLUSTER state mechanism
  */
-public class ClusterStateTest {
-    private static final Logger LOGGER = Logger.getLogger(ClusterStateTest.class);
+public class ClusterStateSystemTest {
+    private static final Logger LOGGER = Logger.getLogger(ClusterStateSystemTest.class);
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(3)

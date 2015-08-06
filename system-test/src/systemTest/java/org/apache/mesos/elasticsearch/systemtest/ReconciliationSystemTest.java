@@ -26,8 +26,8 @@ import static org.junit.Assert.assertEquals;
  * Tests cluster state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ReconciliationTest {
-    private static final Logger LOGGER = Logger.getLogger(ReconciliationTest.class);
+public class ReconciliationSystemTest {
+    private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
     private static final int CLUSTER_SIZE = 3;
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";

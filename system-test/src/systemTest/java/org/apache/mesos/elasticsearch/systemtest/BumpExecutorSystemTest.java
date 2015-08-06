@@ -21,8 +21,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests healthcheck mechanism.
  */
-public class BumpExecutorTest {
-    private static final Logger LOGGER = Logger.getLogger(BumpExecutorTest.class);
+public class BumpExecutorSystemTest {
+    private static final Logger LOGGER = Logger.getLogger(BumpExecutorSystemTest.class);
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(3)
