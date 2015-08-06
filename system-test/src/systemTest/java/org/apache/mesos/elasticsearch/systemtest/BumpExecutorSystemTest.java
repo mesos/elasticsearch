@@ -63,7 +63,6 @@ public class BumpExecutorSystemTest {
         @Override
         public void run() {
             try {
-                Unirest.setTimeouts(1000L, 1000L);
                 Integer status = Unirest.get(url).asString().getStatus();
                 LOGGER.debug("Status = " + status);
                 if (status == HttpStatus.OK.value()) {
