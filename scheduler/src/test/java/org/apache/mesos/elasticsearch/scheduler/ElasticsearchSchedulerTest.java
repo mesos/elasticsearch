@@ -2,8 +2,10 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
+import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,14 +13,15 @@ import org.mockito.Mockito;
 
 import java.net.InetSocketAddress;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.UUID;
 
-import static java.util.Collections.*;
+import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests Scheduler API.
@@ -69,12 +72,16 @@ public class ElasticsearchSchedulerTest {
         when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
 
         frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
+        FrameworkState frameworkState = mock(FrameworkState.class);
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
 
         configuration = mock(org.apache.mesos.elasticsearch.scheduler.Configuration.class);
+        when(configuration.getFrameworkState()).thenReturn(frameworkState);
         when(configuration.getFrameworkId()).thenReturn(frameworkID);
         when(configuration.getNumberOfHwNodes()).thenReturn(3);
         when(configuration.getZookeeperUrl()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getTaskName()).thenReturn("esdemo");
+        when(configuration.getState()).thenReturn(new TestSerializableStateImpl());
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
@@ -83,12 +90,11 @@ public class ElasticsearchSchedulerTest {
         driver = mock(SchedulerDriver.class);
 
         masterInfo = newMasterInfo();
+        scheduler.registered(driver, frameworkID, masterInfo);
     }
 
     @Test
     public void testRegistered() {
-        scheduler.registered(driver, frameworkID, masterInfo);
-
         Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(configuration.getCpus()).mem(configuration.getMem()).disk(configuration.getDisk())));
     }
 
@@ -162,19 +168,7 @@ public class ElasticsearchSchedulerTest {
         offerBuilder.addResources(portRange(9200, 9200));
         offerBuilder.addResources(portRange(9300, 9300));
 
-        Protos.TaskInfo taskInfo = Protos.TaskInfo.newBuilder()
-                                        .setName(configuration.getTaskName())
-                                        .setTaskId(Protos.TaskID.newBuilder().setValue(UUID.randomUUID().toString()))
-                                        .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()).build())
-                                        .setDiscovery(
-                                                Protos.DiscoveryInfo.newBuilder()
-                                                        .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
-                                                        .setPorts(Protos.Ports.newBuilder()
-                                                                .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9200))
-                                                                .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
-                                                        )
-                                        )
-                                        .build();
+        Protos.TaskInfo taskInfo = ProtoTestUtil.getDefaultTaskInfo();
 
         when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
 

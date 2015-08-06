@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.executor.mesos;
 
+import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
@@ -89,7 +90,13 @@ public class ElasticsearchExecutor implements Executor {
 
     @Override
     public void frameworkMessage(ExecutorDriver driver, byte[] data) {
-        LOGGER.info("Framework message: " + Arrays.toString(data));
+        try {
+            Protos.HealthCheck healthCheck = Protos.HealthCheck.parseFrom(data);
+            LOGGER.info("HealthCheck request received: " + healthCheck.toString());
+            driver.sendStatusUpdate(taskStatus.currentState());
+        } catch (InvalidProtocolBufferException e) {
+            LOGGER.debug("Unable to parse framework message as HealthCheck", e);
+        }
     }
 
     @Override

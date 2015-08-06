@@ -2,7 +2,6 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
@@ -19,7 +18,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the main method.
  */
-public class SchedulerMainTest {
+public class SchedulerMainSystemTest {
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself

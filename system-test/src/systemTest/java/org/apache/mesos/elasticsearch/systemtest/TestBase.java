@@ -11,7 +11,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 /**
- * Base test class which launches Mesos cluster and Elasticsearch scheduler
+ * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
  */
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {

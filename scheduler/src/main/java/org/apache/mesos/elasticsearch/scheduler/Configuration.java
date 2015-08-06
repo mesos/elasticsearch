@@ -1,6 +1,8 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 
 /**
  * Holder object for framework configuration.
@@ -9,7 +11,7 @@ public class Configuration {
 
     private double cpus = 0.2;
 
-    private double mem = 512;
+    private double mem = 256;
 
     private String memUnits = "MB";
 
@@ -19,13 +21,14 @@ public class Configuration {
 
     private int numberOfHwNodes;
 
-    private State state;
+    private SerializableState state;
 
     private String version;
 
     private String zookeeperUrl;
 
     private int managementApiPort;
+    private FrameworkState frameworkState;
 
     public double getCpus() {
         return cpus;
@@ -50,11 +53,11 @@ public class Configuration {
         return diskUnits;
     }
 
-    public State getState() {
+    public SerializableState getState() {
         return state;
     }
 
-    public void setState(State state) {
+    public void setState(SerializableState state) {
         this.state = state;
     }
 
@@ -78,11 +81,18 @@ public class Configuration {
     }
 
     public Protos.FrameworkID getFrameworkId() {
-        return state.getFrameworkID();
+        return getFrameworkState().getFrameworkID();
     }
 
-    public void setFrameworkId(Protos.FrameworkID frameworkId) {
-        this.state.setFrameworkId(frameworkId);
+    public void setFrameworkState(FrameworkState frameworkState) {
+        this.frameworkState = frameworkState;
+    }
+
+    public FrameworkState getFrameworkState() {
+        if (frameworkState == null) {
+            frameworkState = new FrameworkState(state);
+        }
+        return frameworkState;
     }
 
     public String getTaskName() {

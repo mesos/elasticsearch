@@ -58,15 +58,14 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration, acceptedResources)).build();
+                .setExecutor(newExecutorInfo(configuration)).build();
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, List<Protos.Resource> resources) {
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
         return Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(configuration.getFrameworkId())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
-                .addAllResources(resources)
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
