@@ -4,7 +4,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 
 ext {
     mesosVer = "0.22.1"
-    elasticsearchVersion="1.4.5"
+    elasticsearchVersion="1.7.1"
     imagePrefix = 'mesos'
 }
 
@@ -95,6 +95,10 @@ afterEvaluate {
 
 subprojects {
 
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+
     apply plugin: 'maven-publish'
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
@@ -129,19 +133,6 @@ subprojects {
         testCompile 'junit:junit:4.12'
         testCompile "org.mockito:mockito-all:1.9.5"
 
-    }
-
-    ext.validateRegistrySetup = {
-        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-        }
-        docker {
-            registryCredentials {
-                username = project.property('dockerHubUsername')
-                password = project.property('dockerHubPassword')
-                email = project.property('dockerHubEmail')
-            }
-        }
     }
 
     sonarRunner {
@@ -193,7 +184,16 @@ subprojects {
                     imageName = project.imageName
                     tag = ( 'version'.equals(aTag) ) ? project.version : aTag
                     doFirst {
-                        validateRegistrySetup()
+                        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                        }
+                        docker {
+                            registryCredentials {
+                                username = project.property('dockerHubUsername')
+                                password = project.property('dockerHubPassword')
+                                email = project.property('dockerHubEmail')
+                            }
+                        }
                     }
                 }
                 project.publish.dependsOn "publishDockerImageWith$uppercasedName"

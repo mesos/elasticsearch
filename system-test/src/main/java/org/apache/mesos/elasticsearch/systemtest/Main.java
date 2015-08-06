@@ -4,6 +4,8 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
  */
@@ -20,20 +22,24 @@ public class Main {
                 .build();
 
         MesosCluster cluster = new MesosCluster(config);
+        final AtomicReference<ElasticsearchSchedulerContainer> schedulerReference = new AtomicReference<>(null);
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                if (schedulerReference.get() != null) {
+                    schedulerReference.get().remove();
+                }
+                cluster.stop();
+            }
+        });
         cluster.start();
         cluster.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting scheduler");
 
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(config.dockerClient, cluster.getMesosContainer().getIpAddress());
-
-        Runtime.getRuntime().addShutdownHook(new Thread() {
-            @Override
-            public void run() {
-                scheduler.remove();
-                cluster.stop();
-            }
-        });
+        schedulerReference.set(scheduler);
 
         scheduler.start();
 
