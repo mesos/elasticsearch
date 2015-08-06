@@ -3,7 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 
-import java.io.NotSerializableException;
+import java.io.IOException;
 
 /**
  * Model of framework state
@@ -28,7 +28,7 @@ public class FrameworkState {
         Protos.FrameworkID id = null;
         try {
             id = state.get(FRAMEWORKID_KEY);
-        } catch (NotSerializableException e) {
+        } catch (IOException e) {
             LOGGER.warn("Unable to get FrameworkID from zookeeper", e);
         }
         return id == null ? EMPTY_ID : id;
@@ -38,7 +38,7 @@ public class FrameworkState {
         try {
             statePath.mkdir(FRAMEWORKID_KEY);
             state.set(FRAMEWORKID_KEY, frameworkId);
-        } catch (NotSerializableException e) {
+        } catch (IOException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }
     }

@@ -6,7 +6,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.io.NotSerializableException;
+import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,29 +25,29 @@ public class ClusterStateTest {
     private ClusterState clusterState = new ClusterState(state, frameworkState);
 
     @Before
-    public void before() throws NotSerializableException {
+    public void before() throws IOException {
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("FrameworkID").build();
         when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
         when(state.get(anyString())).thenReturn(new ArrayList<Protos.TaskInfo>());
     }
 
     @Test
-    public void shouldGetListFromZK() throws NotSerializableException {
+    public void shouldGetListFromZK() throws IOException {
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         verify(state, times(1)).get(anyString());
         assertEquals(0, taskList.size());
     }
 
     @Test
-    public void shouldHandleGetException() throws NotSerializableException {
-        when(state.get(anyString())).thenThrow(NotSerializableException.class);
+    public void shouldHandleGetException() throws IOException {
+        when(state.get(anyString())).thenThrow(IOException.class);
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         verify(state, times(1)).get(anyString());
         assertEquals(0, taskList.size());
     }
 
     @Test
-    public void shouldHandleGetNull() throws NotSerializableException {
+    public void shouldHandleGetNull() throws IOException {
         when(state.get(anyString())).thenReturn(null);
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         verify(state, times(1)).get(anyString());
@@ -55,12 +55,12 @@ public class ClusterStateTest {
     }
 
     @Test(expected = InvalidParameterException.class)
-    public void shouldThrowExceptionWhenGetStatusTaskIDDesntExist() throws NotSerializableException {
+    public void shouldThrowExceptionWhenGetStatusTaskIDDesntExist() throws IOException {
         clusterState.getStatus(Protos.TaskID.newBuilder().setValue("").build());
     }
 
     @Test
-    public void shouldReturnStatusWhenDoesExist() throws NotSerializableException {
+    public void shouldReturnStatusWhenDoesExist() throws IOException {
         ArrayList<Protos.TaskInfo> taskInfos = new ArrayList<>();
         taskInfos.add(ProtoTestUtil.getDefaultTaskInfo());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
@@ -71,7 +71,7 @@ public class ClusterStateTest {
     }
 
     @Test
-    public void shouldAddTask() throws NotSerializableException {
+    public void shouldAddTask() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         when(state.get(anyString())).thenReturn(mock);
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
@@ -81,16 +81,16 @@ public class ClusterStateTest {
     }
 
     @Test
-    public void shouldHandleExceptionWhenAddingTask() throws NotSerializableException {
+    public void shouldHandleExceptionWhenAddingTask() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         when(state.get(anyString())).thenReturn(mock);
-        doThrow(NotSerializableException.class).when(state).set(anyString(), any());
+        doThrow(IOException.class).when(state).set(anyString(), any());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         clusterState.addTask(defaultTaskInfo);
     }
 
     @Test
-    public void shouldDeleteTask() throws NotSerializableException {
+    public void shouldDeleteTask() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         mock.add(defaultTaskInfo);
@@ -101,7 +101,7 @@ public class ClusterStateTest {
     }
 
     @Test
-    public void shouldReturnTrueIfExists() throws NotSerializableException {
+    public void shouldReturnTrueIfExists() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         mock.add(defaultTaskInfo);
@@ -111,7 +111,7 @@ public class ClusterStateTest {
     }
 
     @Test
-    public void shouldReturnFalseIfNotExists() throws NotSerializableException {
+    public void shouldReturnFalseIfNotExists() throws IOException {
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         assertFalse(clusterState.exists(defaultTaskInfo.getTaskId()));
         verify(state, times(1)).get(anyString());

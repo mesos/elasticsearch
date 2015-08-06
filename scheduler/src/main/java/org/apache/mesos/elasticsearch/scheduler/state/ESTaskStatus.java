@@ -6,7 +6,7 @@ import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.Protos.TaskState;
 import org.apache.mesos.Protos.TaskStatus;
 
-import java.io.NotSerializableException;
+import java.io.IOException;
 import java.security.InvalidParameterException;
 
 /**
@@ -40,7 +40,7 @@ public class ESTaskStatus {
             LOGGER.debug("Writing task status to zk: [" + status.getState() + "] " + status.getTaskId().getValue());
             statePath.mkdir(getKey());
             state.set(getKey(), status);
-        } catch (NotSerializableException e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Unable to write task status to zookeeper", e);
         }
     }
@@ -48,7 +48,7 @@ public class ESTaskStatus {
     public TaskStatus getStatus() throws IllegalStateException {
         try {
             return state.get(getKey());
-        } catch (NotSerializableException e) {
+        } catch (IOException e) {
             throw new IllegalStateException("Unable to get task status from zookeeper", e);
         }
     }
@@ -89,7 +89,7 @@ public class ESTaskStatus {
     public void destroy() {
         try {
             state.delete(getKey());
-        } catch (InvalidParameterException e) {
+        } catch (IOException e) {
             LOGGER.error("Could not destroy Task in ZK.", e);
         }
     }

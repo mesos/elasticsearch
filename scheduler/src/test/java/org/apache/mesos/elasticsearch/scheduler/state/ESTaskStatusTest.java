@@ -6,7 +6,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.NotSerializableException;
+import java.io.IOException;
 import java.security.InvalidParameterException;
 
 import static org.mockito.Matchers.any;
@@ -32,14 +32,14 @@ public class ESTaskStatusTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testHandleSetException() throws IllegalStateException, NotSerializableException {
-        doThrow(NotSerializableException.class).when(state).set(anyString(), any());
+    public void testHandleSetException() throws IllegalStateException, IOException {
+        doThrow(IOException.class).when(state).set(anyString(), any());
         status.setStatus(taskStatus);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void testHandleGetException() throws IllegalStateException, NotSerializableException {
-        doThrow(NotSerializableException.class).when(state).get(anyString());
+    public void testHandleGetException() throws IllegalStateException, IOException {
+        doThrow(IOException.class).when(state).get(anyString());
         status.getStatus();
     }
 
@@ -64,7 +64,7 @@ public class ESTaskStatusTest {
     }
 
     @Test
-    public void shouldPrintOk() throws NotSerializableException {
+    public void shouldPrintOk() throws IOException {
         when(state.get(anyString())).thenReturn(status.getDefaultStatus());
         String s = status.toString();
         Assert.assertTrue(s.contains(Protos.TaskState.TASK_STARTING.toString()));

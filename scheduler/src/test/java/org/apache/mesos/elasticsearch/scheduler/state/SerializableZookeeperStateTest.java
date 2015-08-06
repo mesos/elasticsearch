@@ -7,7 +7,6 @@ import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.nio.charset.Charset;
 import java.security.InvalidParameterException;
@@ -42,31 +41,31 @@ public class SerializableZookeeperStateTest {
     }
 
     @Test
-    public void testSetValid() throws NotSerializableException {
+    public void testSetValid() throws IOException {
         serializableState.set("test", "Serializable object");
         verify(state, times(1)).store(any(Variable.class));
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void interrupted() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void interrupted() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(InterruptedException.class);
         serializableState.set("test", "Serializable object");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void executionException() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void executionException() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(ExecutionException.class);
         serializableState.set("test", "Serializable object");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void ioException() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void ioException() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(IOException.class);
         serializableState.set("test", "Serializable object");
     }
 
     @Test
-    public void testGetValid() throws NotSerializableException {
+    public void testGetValid() throws IOException {
         String variable = serializableState.get("test");
         verify(state, times(1)).fetch(anyString());
         assertEquals(SERIALIZABLE_OBJECT, variable);
@@ -80,38 +79,38 @@ public class SerializableZookeeperStateTest {
         assertNull(variable);
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void testInterrupted() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void testInterrupted() throws IOException {
         when(state.fetch(anyString())).thenThrow(InterruptedException.class);
         serializableState.get("test");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void testClassNotFound() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void testClassNotFound() throws IOException {
         when(state.fetch(anyString())).thenThrow(ClassNotFoundException.class);
         serializableState.get("test");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void testExecution() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void testExecution() throws IOException {
         when(state.fetch(anyString())).thenThrow(ExecutionException.class);
         serializableState.get("test");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void testIOException() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void testIOException() throws IOException {
         when(state.fetch(anyString())).thenThrow(IOException.class);
         serializableState.get("test");
     }
 
-    @Test(expected = NotSerializableException.class)
-    public void testInvalidObjectStream() throws NotSerializableException {
+    @Test(expected = IOException.class)
+    public void testInvalidObjectStream() throws IOException {
         when(variable.value()).thenReturn("Invalid stream of bytes".getBytes(Charset.forName("UTF-8")));
         serializableState.get("test");
     }
 
     @Test
-    public void shouldDeleteKey() {
+    public void shouldDeleteKey() throws IOException {
         serializableState.delete("test");
     }
 

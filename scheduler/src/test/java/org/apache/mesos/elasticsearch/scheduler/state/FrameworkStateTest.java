@@ -3,7 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 import org.apache.mesos.Protos;
 import org.junit.Test;
 
-import java.io.NotSerializableException;
+import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.anyString;
@@ -20,13 +20,13 @@ public class FrameworkStateTest {
     private final FrameworkState frameworkState = new FrameworkState(state);
 
     @Test
-    public void testSetFrameworkID() throws NotSerializableException {
+    public void testSetFrameworkID() throws IOException {
         frameworkState.setFrameworkId(FRAMEWORK_ID);
         verify(state, times(1)).set(anyString(), eq(FRAMEWORK_ID));
     }
 
     @Test
-    public void testGetFrameworkID() throws NotSerializableException {
+    public void testGetFrameworkID() throws IOException {
         when(state.get(anyString())).thenReturn(FRAMEWORK_ID);
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
         verify(state, times(1)).get(anyString());
@@ -34,21 +34,21 @@ public class FrameworkStateTest {
     }
 
     @Test
-    public void testGetEmptyWhenNoFrameworkID() throws NotSerializableException {
+    public void testGetEmptyWhenNoFrameworkID() throws IOException {
         Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
         verify(state, times(1)).get(anyString());
         assertEquals("", frameworkID.getValue());
     }
 
     @Test
-    public void testHandleSetException() throws NotSerializableException {
-        doThrow(NotSerializableException.class).when(state).set(anyString(), any());
+    public void testHandleSetException() throws IOException {
+        doThrow(IOException.class).when(state).set(anyString(), any());
         frameworkState.setFrameworkId(FRAMEWORK_ID);
     }
 
     @Test
-    public void testHandleGetException() throws NotSerializableException {
-        doThrow(NotSerializableException.class).when(state).get(anyString());
+    public void testHandleGetException() throws IOException {
+        doThrow(IOException.class).when(state).get(anyString());
         frameworkState.getFrameworkID();
     }
 }

@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.TaskInfo;
 
+import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
@@ -35,8 +36,8 @@ public class ClusterState {
         List<TaskInfo> taskInfoList = null;
         try {
             taskInfoList = state.get(getKey());
-        } catch (NotSerializableException ex) {
-            LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.");
+        } catch (IOException e) {
+            LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.", e);
         }
         return taskInfoList == null ? new ArrayList<>(0) : taskInfoList;
     }
@@ -127,7 +128,7 @@ public class ClusterState {
         try {
             statePath.mkdir(getKey());
             state.set(getKey(), taskInfoList);
-        } catch (NotSerializableException ex) {
+        } catch (IOException ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }
     }

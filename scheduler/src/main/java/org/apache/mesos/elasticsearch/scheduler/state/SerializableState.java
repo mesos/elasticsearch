@@ -1,13 +1,12 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import java.io.NotSerializableException;
-import java.security.InvalidParameterException;
+import java.io.IOException;
 
 /**
  * Represents a serializable interface
  */
 public interface SerializableState {
-    <T> T get(String key) throws NotSerializableException;
-    <T> void set(String key, T object) throws NotSerializableException;
-    void delete(String key) throws InvalidParameterException;
+    <T> T get(String key) throws IOException;
+    <T> void set(String key, T object) throws IOException;
+    void delete(String key) throws IOException;
 }

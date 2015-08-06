@@ -21,10 +21,10 @@ public class SerializableZookeeperState implements SerializableState {
      * null if none
      *
      * @return Object
-     * @throws NotSerializableException
+     * @throws IOException
      */
     @SuppressWarnings("unchecked")
-    public <T> T get(String key) throws NotSerializableException{
+    public <T> T get(String key) throws IOException {
         try {
             byte[] existingNodes = zkState.fetch(key).get().value();
             if (existingNodes.length > 0) {
@@ -46,16 +46,16 @@ public class SerializableZookeeperState implements SerializableState {
                 return null;
             }
         } catch (InterruptedException | ClassNotFoundException | ExecutionException | IOException e) {
-            throw new NotSerializableException();
+            throw new IOException("Unable to get zNode", e);
         }
     }
 
     /**
      * Set serializable object in store
      *
-     * @throws NotSerializableException
+     * @throws IOException
      */
-    public <T> void set(String key, T object) throws NotSerializableException {
+    public <T> void set(String key, T object) throws IOException {
         try {
             Variable value = zkState.fetch(key).get();
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -75,7 +75,7 @@ public class SerializableZookeeperState implements SerializableState {
                 }
             }
         } catch (InterruptedException | ExecutionException | IOException e) {
-            throw new NotSerializableException();
+            throw new IOException("Unable to set zNode", e);
         }
     }
 
@@ -83,8 +83,9 @@ public class SerializableZookeeperState implements SerializableState {
      * Delete a path in zk
      * @param key the key to delete
      * @throws InvalidParameterException if cannot read path
+     * @throws IOException
      */
-    public void delete(String key) throws InvalidParameterException {
+    public void delete(String key) throws IOException {
         try {
             Variable value = zkState.fetch(key).get();
             if (value.value().length == 0) {
@@ -92,7 +93,7 @@ public class SerializableZookeeperState implements SerializableState {
             }
             zkState.expunge(value);
         } catch (InterruptedException | ExecutionException e) {
-            throw new InvalidParameterException("Unable to delete key:" + key);
+            throw new IOException("Unable to delete key:" + key, e);
         }
     }
 }
