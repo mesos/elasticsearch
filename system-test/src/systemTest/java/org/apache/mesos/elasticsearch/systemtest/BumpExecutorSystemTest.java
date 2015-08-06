@@ -45,7 +45,8 @@ public class BumpExecutorSystemTest {
         assertTrue(httpHealthCheck.counter.get() > 0);
 
         // Stop healthcheck, wait for a bit, and make sure we have stopped sending updates.
-        healthCheck.stopHealthcheck();
+        healthCheck.stopHealthcheck(); // It might be in the middle of a poll, so might take a bit to shut down.
+        Thread.sleep(1000L);
         httpHealthCheck.counter.set(0);
         Thread.sleep(1000L);
         assertEquals(0, httpHealthCheck.counter.get());
