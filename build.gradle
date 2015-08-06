@@ -95,6 +95,10 @@ afterEvaluate {
 
 subprojects {
 
+    tasks.withType(JavaCompile) {
+        options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+    }
+
     apply plugin: 'maven-publish'
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
@@ -167,29 +171,33 @@ subprojects {
                 tag = project.imageName
             }
             project.build.dependsOn buildDockerImage
-            task tagDockerImage(type: DockerTagImage, description: 'tag Docker image') {
-                imageId = project.imageName
-                tag = project.version
-                repository = project.imageName
-                force = true
-            }
-            task publishDockerImage(type: DockerPushImage, dependsOn: [tagDockerImage], description: 'publish Docker image') {
-                imageName = project.imageName
-                tag = project.version
-                doFirst {
-                    ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-                        assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-                    }
-                    docker {
-                        registryCredentials {
-                            username = project.property('dockerHubUsername')
-                            password = project.property('dockerHubPassword')
-                            email = project.property('dockerHubEmail')
+            [ 'latest', 'version' ].each { aTag ->
+                String uppercasedName = aTag.capitalize()
+                task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
+                    imageId = project.imageName
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
+                    repository = project.imageName
+                    force = true
+                }
+                task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
+                        description: 'publish Docker image') {
+                    imageName = project.imageName
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
+                    doFirst {
+                        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                        }
+                        docker {
+                            registryCredentials {
+                                username = project.property('dockerHubUsername')
+                                password = project.property('dockerHubPassword')
+                                email = project.property('dockerHubEmail')
+                            }
                         }
                     }
                 }
+                project.publish.dependsOn "publishDockerImageWith$uppercasedName"
             }
-            project.publish.dependsOn publishDockerImage
         }
     }
 }

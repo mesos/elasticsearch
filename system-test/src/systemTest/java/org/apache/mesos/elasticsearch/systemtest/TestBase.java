@@ -5,6 +5,10 @@ import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 /**
  * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
@@ -24,6 +28,15 @@ public abstract class TestBase {
     public static final MesosCluster cluster = new MesosCluster(config);
 
     private static ElasticsearchSchedulerContainer scheduler;
+
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            cluster.stop();
+            scheduler.remove();
+        }
+    };
 
     @BeforeClass
     public static void startScheduler() throws Exception {
