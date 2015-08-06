@@ -1,8 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.github.dockerjava.api.command.ExecCreateCmdResponse;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
-import org.apache.commons.io.IOUtils;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Link;
+import com.github.dockerjava.api.model.PortBinding;
+import com.github.dockerjava.core.DockerClientBuilder;
+import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.container.AbstractContainer;
@@ -13,11 +18,12 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
@@ -31,6 +37,7 @@ public class ReconciliationSystemTest {
     private static final int CLUSTER_SIZE = 3;
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
+    public static final int DOCKER_PORT = 2376;
 
     private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
     private static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
@@ -42,9 +49,49 @@ public class ReconciliationSystemTest {
     public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
     private static String mesosClusterId;
+    private static DockerClient innerDockerClient;
 
     @BeforeClass
     public static void beforeScheduler() throws Exception {
+        final DockerClient dockerClient = CONFIG.dockerClient;
+
+        final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
+        String innerDockerHost;
+
+        if (dockerUri.getScheme().startsWith("http")) {
+            LOGGER.debug("Non local docker environment");
+
+            final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
+                private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
+
+                @Override
+                protected void pullImage() {
+                    pullImage(DOCKER_IMAGE, "latest");
+                }
+
+                @Override
+                protected CreateContainerCmd dockerCommand() {
+                    return dockerClient
+                            .createContainerCmd(DOCKER_IMAGE)
+                            .withLinks(Link.parse(CLUSTER.getMesosContainer().getContainerId() + ":docker"))
+                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
+                            .withPortBindings(PortBinding.parse("0.0.0.0:3376:" + DOCKER_PORT))
+                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
+                }
+            };
+            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
+            dockerForwarder.start();
+
+            innerDockerHost = dockerUri.getHost() + ":" + 3376; //TODO: fetch port from docker inspect
+        } else {
+            LOGGER.debug("Local docker environment");
+            innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
+        }
+
+        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
+
+        innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
+
         LOGGER.debug("Injecting executor");
         CLUSTER.injectImage("mesos/elasticsearch-executor");
         await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CONFIG.dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
@@ -82,8 +129,7 @@ public class ReconciliationSystemTest {
         startSchedulerContainer();
         assertCorrectNumberOfExecutors();
 
-        String id = clusterKillOne();
-        LOGGER.debug("Deleted " + id);
+        killOneExecutor();
 
         // Should restart an executor, so there should still be three
         assertCorrectNumberOfExecutors();
@@ -99,8 +145,7 @@ public class ReconciliationSystemTest {
         CONTAINER_MANGER.stopContainer(scheduler);
 
         // Kill executor
-        String id = clusterKillOne();
-        LOGGER.debug("Deleted " + id);
+        killOneExecutor();
 
         startSchedulerContainer();
         // Should restart an executor, so there should still be three
@@ -109,28 +154,24 @@ public class ReconciliationSystemTest {
 
     private void assertCorrectNumberOfExecutors() throws IOException {
         await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == CLUSTER_SIZE);
-        List<String> result = clusterPs();
-        LOGGER.debug("Mini-mesos PS command = " + Arrays.toString(result.toArray()));
+        List<Container> result = clusterPs();
+        LOGGER.debug("Mini-mesos PS command = " + Arrays.toString(result.stream().map(Container::getId).collect(Collectors.toList()).toArray()));
         assertEquals(CLUSTER_SIZE, result.size());
     }
 
-    private String clusterKillOne() throws IOException {
+    private void killOneExecutor() throws IOException {
         String executorId = getLastExecutor();
-        ExecCreateCmdResponse exec = CONFIG.dockerClient.execCreateCmd(mesosClusterId).withAttachStdout().withAttachStderr().withCmd("docker", "kill", executorId).exec();
-        InputStream execCmdStream = CONFIG.dockerClient.execStartCmd(exec.getId()).exec();
-        return IOUtils.toString(execCmdStream, "UTF-8");
+        LOGGER.debug("Killing container: " + executorId);
+        innerDockerClient.killContainerCmd(executorId).exec();
     }
 
     // Note: we cant use the task response again because the tasks are only added when created.
-    private List<String> clusterPs() throws IOException {
-        ExecCreateCmdResponse exec = CONFIG.dockerClient.execCreateCmd(mesosClusterId).withAttachStdout().withAttachStderr().withCmd("docker", "ps", "-q").exec();
-        InputStream execCmdStream = CONFIG.dockerClient.execStartCmd(exec.getId()).exec();
-        String result = IOUtils.toString(execCmdStream, "UTF-8");
-        return Arrays.asList(result.replaceAll("[^0-9a-zA-Z\n.]", "").split("\n"));
+    private List<Container> clusterPs() throws IOException {
+        return innerDockerClient.listContainersCmd().exec();
     }
 
     private String getLastExecutor() throws IOException {
-        return clusterPs().get(0);
+        return clusterPs().get(0).getId();
     }
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
