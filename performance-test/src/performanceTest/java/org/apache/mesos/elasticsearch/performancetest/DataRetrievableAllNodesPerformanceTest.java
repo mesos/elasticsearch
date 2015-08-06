@@ -30,7 +30,7 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
                     return false;
                 }
                 LOGGER.info(responseElements);
-                if (responseElements.getJSONObject(0).getInt("count") != 9) {
+                if (9 != responseElements.getJSONObject(0).getInt("count")) {
                     return false;
                 }
             }
@@ -42,6 +42,6 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
     public void testAllNodesContainData() throws Exception {
         LOGGER.info("Addresses:");
         LOGGER.info(getSlavesElasticAddresses());
-        Awaitility.await().atMost(10, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(new FetchAllNodesData());
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(new FetchAllNodesData());
     }
 }
