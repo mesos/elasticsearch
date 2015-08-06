@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.performancetest;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import com.sun.org.apache.xerces.internal.xs.StringList;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
@@ -13,7 +12,8 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -40,7 +40,7 @@ public abstract class TestBase {
 
     private static DataPusherContainer pusher;
 
-    private static List<String> slavesElasticAddresses = new ArrayList<String>();
+    private static List<String> slavesElasticAddresses = new ArrayList<>();
 
     /**
      *
@@ -84,8 +84,8 @@ public abstract class TestBase {
             throw new RuntimeException(e.getMessage());
         }
 
-        Awaitility.await().atMost(180, TimeUnit.SECONDS).until(new ElasticsearchPusherStarter());
-        Awaitility.await().atMost(60, TimeUnit.SECONDS).until(new ElasticSearchDataInserted());
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(new ElasticsearchPusherStarter());
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(new ElasticSearchDataInserted());
 
     }
 
