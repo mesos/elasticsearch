@@ -10,6 +10,7 @@ import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.apache.mesos.mini.container.AbstractContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,6 +31,7 @@ import static org.junit.Assert.assertFalse;
  * System test for the executor
  */
 public class ExecutorSystemTest extends TestBase {
+    public static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
     public static final int DOCKER_PORT = 2376;
 
@@ -45,6 +47,8 @@ public class ExecutorSystemTest extends TestBase {
         String innerDockerHost;
 
         if (dockerUri.getScheme().startsWith("http")) {
+            LOGGER.debug("Non local docker environment");
+
             final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
                 private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
 
@@ -63,10 +67,12 @@ public class ExecutorSystemTest extends TestBase {
                             .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
                 }
             };
+            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
             dockerForwarder.start();
 
             innerDockerHost = dockerUri.getHost() + ":" + 3376; //TODO: fetch port from docker inspect
         } else {
+            LOGGER.debug("Local docker environment");
             innerDockerHost = cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
         }
 
