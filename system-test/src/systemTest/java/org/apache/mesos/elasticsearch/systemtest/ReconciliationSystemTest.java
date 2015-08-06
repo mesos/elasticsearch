@@ -90,6 +90,23 @@ public class ReconciliationSystemTest {
 
     }
 
+    @Test
+    public void ifExecutorIsLostWhileSchedulerIsDead() throws IOException {
+        ElasticsearchSchedulerContainer scheduler = startSchedulerContainer();
+        assertCorrectNumberOfExecutors();
+
+        // Kill scheduler
+        CONTAINER_MANGER.stopContainer(scheduler);
+
+        // Kill executor
+        String id = clusterKillOne();
+        LOGGER.debug("Deleted " + id);
+
+        startSchedulerContainer();
+        // Should restart an executor, so there should still be three
+        assertCorrectNumberOfExecutors();
+    }
+
     private void assertCorrectNumberOfExecutors() throws IOException {
         await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == CLUSTER_SIZE);
         List<String> result = clusterPs();
