@@ -109,8 +109,8 @@ The web based user interface is available on port 8080 of the scheduler by defau
 The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
 
 ### Known issues
-- Issue #206: The GUI will not represent the true state of the cluster after a scheduler or executor reconcillication event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
-- Issue #208: Task reconciliation does not destroy executors
+- Issue [#206](https://github.com/mesos/elasticsearch/issues/206): The GUI will not represent the true state of the cluster after a scheduler or executor reconciliation event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
+- Issue [#188](https://github.com/mesos/elasticsearch/issues/188): Database data IS NOT persisted to disk. Data storage is wholly reliant on cluster redundancy. This means that the framework is not yet recommended for production use.
 
 ## Developers Guide
 
