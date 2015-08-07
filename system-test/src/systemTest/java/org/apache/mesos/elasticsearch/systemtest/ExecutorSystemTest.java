@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.jayway.awaitility.Awaitility.*;
+import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -79,7 +79,13 @@ public class ExecutorSystemTest extends TestBase {
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
 
         clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
-        await().atMost(60, TimeUnit.SECONDS).until(() -> clusterClient.listContainersCmd().exec().size() > 0);
+        await().atMost(60, TimeUnit.SECONDS).until(() -> {
+            try {
+                return clusterClient.listContainersCmd().exec().size() > 0;
+            } catch (javax.ws.rs.ProcessingException ignored) {
+                return false;
+            }
+        });
         List<Container> containers = clusterClient.listContainersCmd().exec();
 
         // Find a single executor container
