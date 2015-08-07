@@ -39,7 +39,7 @@ public class FrameworkInfoFactory {
 
     private void setWebuiUrl(Protos.FrameworkInfo.Builder frameworkBuilder) {
         try {
-            String hostName = InetAddress.getLocalHost().getHostName();
+            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getManagementApiPort();
             LOGGER.debug("Setting webuiUrl to " + hostName);
             frameworkBuilder.setWebuiUrl(hostName);
         } catch (UnknownHostException e) {
