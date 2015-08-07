@@ -30,7 +30,7 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
                     return false;
                 }
                 LOGGER.info(responseElements);
-                if (9 != responseElements.getJSONObject(0).getInt("count")) {
+                if (9 > responseElements.getJSONObject(0).getInt("count")) {
                     return false;
                 }
             }
