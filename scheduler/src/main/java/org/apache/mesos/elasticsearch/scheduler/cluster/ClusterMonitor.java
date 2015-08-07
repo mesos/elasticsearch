@@ -108,5 +108,13 @@ public class ClusterMonitor implements Observer {
         } catch (ClassCastException e) {
             LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
         }
+        checkForTooManyExecutors(); // Todo (pnw): We check for too many executors here, for now. In the future, the configuration will be dynamically alterable, so we will have to do this somewhere else.
+    }
+
+    private void checkForTooManyExecutors() {
+        if (getClusterState().getTaskList().size() > configuration.getNumberOfHwNodes()) {
+            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getNumberOfHwNodes());
+            driver.killTask(getClusterState().getTaskList().get(getClusterState().getTaskList().size() - 1).getTaskId());
+        }
     }
 }
