@@ -41,7 +41,7 @@ public class ExecutorSystemTest extends TestBase {
 
     @BeforeClass
     public static void beforeClass() {
-        final DockerClient dockerClient = config.dockerClient;
+        final DockerClient dockerClient = CONFIG.dockerClient;
 
         final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
         String innerDockerHost;
@@ -61,24 +61,23 @@ public class ExecutorSystemTest extends TestBase {
                 protected CreateContainerCmd dockerCommand() {
                     return dockerClient
                             .createContainerCmd(DOCKER_IMAGE)
-                            .withLinks(Link.parse(cluster.getMesosContainer().getContainerId() + ":docker"))
+                            .withLinks(Link.parse(CLUSTER.getMesosContainer().getContainerId() + ":docker"))
                             .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
                             .withPortBindings(PortBinding.parse("0.0.0.0:3376:" + DOCKER_PORT))
                             .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
                 }
             };
-            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
+            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
             dockerForwarder.start();
 
             innerDockerHost = dockerUri.getHost() + ":" + 3376; //TODO: fetch port from docker inspect
         } else {
             LOGGER.debug("Local docker environment");
-            innerDockerHost = cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
+            innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
         }
 
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-
-	clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
+        clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         await().atMost(60, TimeUnit.SECONDS).until(() -> {
             try {
                 return clusterClient.listContainersCmd().exec().size() > 0;
