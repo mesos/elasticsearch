@@ -19,11 +19,11 @@ public class DiscoverySystemTest extends TestBase {
     public void testNodeDiscoveryRest() throws InterruptedException {
         ElasticsearchSchedulerContainer scheduler = getScheduler();
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress());
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), NODE_COUNT);
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks);
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, NODE_COUNT);
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
 

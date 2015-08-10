@@ -6,18 +6,20 @@ import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
-import org.junit.rules.TestRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 /**
- * Base test class which launches Mesos cluster and Elasticsearch scheduler
+ * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
  */
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
 
-    protected static final MesosClusterConfig config = MesosClusterConfig.builder()
-            .numberOfSlaves(3)
+
+    protected static final int NODE_COUNT = 3;
+
+    protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
+            .numberOfSlaves(NODE_COUNT)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build();
@@ -25,7 +27,7 @@ public abstract class TestBase {
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
 
     @ClassRule
-    public static final MesosCluster cluster = new MesosCluster(config);
+    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
     private static ElasticsearchSchedulerContainer scheduler;
 
@@ -33,24 +35,27 @@ public abstract class TestBase {
     public TestWatcher watchman = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
-            cluster.stop();
+            CLUSTER.stop();
             scheduler.remove();
         }
     };
 
     @BeforeClass
     public static void startScheduler() throws Exception {
-        cluster.injectImage("mesos/elasticsearch-executor");
+        CLUSTER.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(config.dockerClient, cluster.getMesosContainer().getIpAddress());
-        cluster.addAndStartContainer(scheduler);
+        scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+
+
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
         return scheduler;
     }
+
 }

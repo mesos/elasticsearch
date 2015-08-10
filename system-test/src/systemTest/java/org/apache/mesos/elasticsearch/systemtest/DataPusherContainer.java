@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.performancetest;
+package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;

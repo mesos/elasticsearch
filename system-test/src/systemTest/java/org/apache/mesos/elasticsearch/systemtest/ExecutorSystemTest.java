@@ -5,7 +5,6 @@ import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
-import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +34,7 @@ public class ExecutorSystemTest extends TestBase {
     @BeforeClass
     public static void beforeClass() {
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder()
-                .withUri("http://" + cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
+                .withUri("http://" + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
         clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         await().atMost(60, TimeUnit.SECONDS).until(() -> clusterClient.listContainersCmd().exec().size() > 0);
         List<Container> containers = clusterClient.listContainersCmd().exec();
