@@ -6,6 +6,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import com.mashape.unirest.http.Unirest;
@@ -15,16 +16,15 @@ import org.junit.runner.Description;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 
 /**
  * Tests scheduler APIs
  */
-public class DataRetrievableAllNodesPerformanceTest extends TestBase {
+public class DataRetrievableAllNodesSystemTest extends TestBase {
 
-    private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesPerformanceTest.class);
+    private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
 
     private static DataPusherContainer pusher;
 
@@ -39,9 +39,8 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
         }
     };
 
-
-    @Test
-    public void testPusherStarted() throws Exception {
+    @BeforeClass
+    public static void startDataPusher() {
 
         try {
             List<JSONObject> tasks = new TasksResponse(getScheduler().getIpAddress(), NODE_COUNT).getTasks();
@@ -55,22 +54,7 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
             throw new RuntimeException(e.getMessage());
         }
 
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(new ElasticsearchPusherStarter());
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(new ElasticSearchDataInserted());
-
-
-        LOGGER.info("Addresses:");
-        LOGGER.info(getSlavesElasticAddresses());
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(new FetchAllNodesData());
-    }
-
-    /**
-     *
-     */
-    public static class ElasticsearchPusherStarter implements Callable<Boolean> {
-
-        @Override
-        public Boolean call() throws Exception {
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
                 if (!(Unirest.get("http://" + getSlavesElasticAddresses().get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
@@ -81,14 +65,9 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
             } catch (UnirestException e) {
                 return false;
             }
-        }
-    }
+        });
 
-    /**
-     *
-     */
-    public static class ElasticSearchDataInserted implements Callable<Boolean> {
-        public Boolean call() throws Exception {
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             InputStream exec = getPusher().getLogStreamStdOut();
             String log = IOUtils.toString(exec);
 
@@ -97,16 +76,16 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
             }
 
             return false;
-        }
+        });
     }
 
-
-    private static class FetchAllNodesData implements Callable<Boolean> {
-
-        @Override
-        public Boolean call() throws Exception {
+    @Test
+    public void testDataConsistency() throws Exception {
+        LOGGER.info("Addresses:");
+        LOGGER.info(getSlavesElasticAddresses());
+        Awaitility.await().atMost(20, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
-            for (String httpAddress: DataRetrievableAllNodesPerformanceTest.getSlavesElasticAddresses()) {
+            for (String httpAddress: DataRetrievableAllNodesSystemTest.getSlavesElasticAddresses()) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
                 } catch (Exception e) {
@@ -119,7 +98,7 @@ public class DataRetrievableAllNodesPerformanceTest extends TestBase {
                 }
             }
             return true;
-        }
+        });
     }
 
     public static DataPusherContainer getPusher() {
