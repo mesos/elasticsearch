@@ -6,10 +6,14 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatte
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -22,6 +26,9 @@ public class Main {
 
     public static final String MANAGEMENT_API_PORT = "m";
     public static final String RAM = "ram";
+    public static final long ZK_TIMEOUT = 20000L;
+    public static final String CLUSTER_NAME = "/mesos-ha";
+    public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
 
     private Options options;
 
@@ -95,9 +102,18 @@ public class Main {
         configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
         configuration.setVersion(getClass().getPackage().getImplementationVersion());
         configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(new State(new ZooKeeperStateInterfaceImpl(getMesosStateZKURL(zkUrl))));
+        configuration.setState(getState(zkUrl));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+    }
+
+    private SerializableState getState(String zkUrl) {
+        org.apache.mesos.state.State state = new ZooKeeperState(
+                getMesosStateZKURL(zkUrl),
+                ZK_TIMEOUT,
+                TimeUnit.MILLISECONDS,
+                FRAMEWORK_NAME + CLUSTER_NAME);
+        return  new SerializableZookeeperState(state);
     }
 
     private String getMesosStateZKURL(String zkUrl) {

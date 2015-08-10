@@ -6,6 +6,10 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+
 import java.net.InetSocketAddress;
 import java.util.*;
 
@@ -21,9 +25,13 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final TaskInfoFactory taskInfoFactory;
 
+    private ClusterMonitor clusterMonitor = null;
+
     Clock clock = new Clock();
 
-    Map<String, Task> tasks = new HashMap<String, Task>();
+    Map<String, Task> tasks = new HashMap<>();
+    private Observable statusUpdateWatchers = new StatusUpdateObservable();
+    private Boolean registered = false;
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
@@ -35,30 +43,27 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + ", ram:" + configuration.getMem() + "]");
 
-        final Protos.FrameworkInfo.Builder frameworkBuilder = Protos.FrameworkInfo.newBuilder();
-        frameworkBuilder.setUser("");
-        frameworkBuilder.setName(configuration.getFrameworkName());
-        frameworkBuilder.setCheckpoint(true);
-        frameworkBuilder.setFailoverTimeout(configuration.getFailoverTimeout());
-        frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
-
-        Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
-        if (frameworkID != null) {
-            LOGGER.info("Found previous frameworkID: " + frameworkID);
-            frameworkBuilder.setId(frameworkID);
-        }
+        FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
+        final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
 
         final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
+
         driver.run();
     }
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        configuration.setFrameworkId(frameworkId); // DCOS certification 02
+        FrameworkState frameworkState = new FrameworkState(configuration.getState());
+        frameworkState.setFrameworkId(frameworkId);
+        configuration.setFrameworkState(frameworkState); // DCOS certification 02
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
+
+        ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
+        clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
+        statusUpdateWatchers.addObserver(clusterMonitor);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -68,6 +73,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
         List<Protos.Request> requests = Collections.singletonList(request);
         driver.requestResources(requests);
+        registered = true;
     }
 
     @Override
@@ -75,13 +81,18 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework re-registered");
     }
 
+    // Todo, this massive if statement needs to be performed better.
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
+        if (!registered) {
+            LOGGER.debug("Not registered, can't accept resource offers.");
+            return;
+        }
         for (Protos.Offer offer : offers) {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (tasks.size() == configuration.getNumberOfHwNodes()) {
+            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getNumberOfHwNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getNumberOfHwNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
@@ -102,14 +113,15 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 Task task = new Task(
-                    offer.getHostname(),
-                    taskInfo.getTaskId().getValue(),
-                    Protos.TaskState.TASK_STAGING,
-                    clock.zonedNow(),
-                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                    new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+                        offer.getHostname(),
+                        taskInfo.getTaskId().getValue(),
+                        Protos.TaskState.TASK_STAGING,
+                        clock.zonedNow(),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
                 );
                 tasks.put(taskInfo.getTaskId().getValue(), task);
+                clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
     }
@@ -141,13 +153,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-        LOGGER.info("Status update - Task ID: " + status.getTaskId() + ", State: " + status.getState());
-        Task task = tasks.get(status.getTaskId().getValue());
-        if (task != null) {
-            task.setState(status.getState());
-        } else {
-            throw new RuntimeException("Cannot update status of Task ID: " + status.getTaskId() + ". Unknown Task.");
-        }
+        LOGGER.info("Status update - " + status.toString());
+        statusUpdateWatchers.notifyObservers(status);
     }
 
     @Override
@@ -165,8 +172,11 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Slave lost: " + slaveId.getValue());
     }
 
+    // Todo, we still don't perform reconciliation
     @Override
     public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
+        // This is never called by Mesos, so we have to call it ourselves via a healthcheck
+        // https://issues.apache.org/jira/browse/MESOS-313
         LOGGER.info("Executor lost: " + executorId.getValue() +
                 "on slave " + slaveId.getValue() +
                 "with status " + status);
@@ -178,7 +188,24 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        return tasks.containsKey(offer.getId().getValue());
+        Boolean result = false;
+        List<Protos.TaskInfo> stateList = clusterMonitor.getClusterState().getTaskList();
+        for (Protos.TaskInfo t : stateList) {
+            if (t.getSlaveId().equals(offer.getSlaveId())) {
+                result = true;
+            }
+        }
+        return result;
     }
 
+    /**
+     * Implementation of Observable to fix the setChanged problem.
+     */
+    private static class StatusUpdateObservable extends Observable {
+        @Override
+        public void notifyObservers(Object arg) {
+            this.setChanged(); // This is ridiculous.
+            super.notifyObservers(arg);
+        }
+    }
 }
