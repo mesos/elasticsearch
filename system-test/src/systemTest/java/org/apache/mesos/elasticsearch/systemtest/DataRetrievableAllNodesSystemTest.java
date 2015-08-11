@@ -54,7 +54,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
             throw new RuntimeException(e.getMessage());
         }
 
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
+        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
                 if (!(Unirest.get("http://" + getSlavesElasticAddresses().get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
@@ -67,7 +67,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
             }
         });
 
-        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
+        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             InputStream exec = getPusher().getLogStreamStdOut();
             String log = IOUtils.toString(exec);
 
@@ -83,7 +83,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
     public void testDataConsistency() throws Exception {
         LOGGER.info("Addresses:");
         LOGGER.info(getSlavesElasticAddresses());
-        Awaitility.await().atMost(20, TimeUnit.SECONDS).pollDelay(2, TimeUnit.SECONDS).until(() -> {
+        Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
             for (String httpAddress: DataRetrievableAllNodesSystemTest.getSlavesElasticAddresses()) {
                 try {
