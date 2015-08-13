@@ -57,7 +57,7 @@ public class ClusterController {
             }
             return result.toString();
         } catch (Exception e) {
-            LOGGER.warn("Failed to invoce method", e);
+            LOGGER.warn("Failed to invoke method", e);
             return "--ERROR--";
         }
     }
