@@ -11,6 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -44,10 +45,14 @@ public class Main {
 
     public static void main(String[] args) {
         Main main = new Main();
-        main.run(args);
+        try {
+            main.run(args);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
-    public void run(String[] args) {
+    public void run(String[] args) throws IOException {
         checkEnv();
 
         try {
