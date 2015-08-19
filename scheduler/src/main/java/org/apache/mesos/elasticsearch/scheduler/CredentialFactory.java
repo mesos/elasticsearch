@@ -6,6 +6,9 @@ import org.apache.mesos.Protos;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/**
+ * Factory to read credentials and return credential builder.
+ */
 public class CredentialFactory {
     private final Configuration configuration;
 
