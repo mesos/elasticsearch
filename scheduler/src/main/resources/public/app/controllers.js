@@ -112,7 +112,7 @@ controllers.controller('ClusterController', function($scope, $http, $location, c
     $scope.querySubmit = function() {
         if ($scope.query.node && $scope.query.string) {
             $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
-            var URL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + "/es/_search?q=" + $scope.query.string;
+            var URL = window.location.protocol + '//' + window.location.host + window.location.pathname + "es/_search?q=" + $scope.query.string;
             $http.get(URL).success(function(data, status, headers) {
                 $scope.query.results = data;
             }).error(function(data, status, headers) {
