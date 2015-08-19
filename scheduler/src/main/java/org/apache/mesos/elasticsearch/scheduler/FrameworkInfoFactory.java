@@ -28,6 +28,8 @@ public class FrameworkInfoFactory {
         setFrameworkId(frameworkBuilder);
 
         if (!configuration.getMesosAuthenticationPrincipal().isEmpty()) {
+            LOGGER.debug("frameworkBuilder.setPrincipal = " + configuration.getMesosAuthenticationPrincipal());
+            LOGGER.debug("Be aware that you cannot alter the principal once set. See MESOS-703.");
             frameworkBuilder.setPrincipal(configuration.getMesosAuthenticationPrincipal());
         }
         return frameworkBuilder;

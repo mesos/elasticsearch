@@ -53,6 +53,7 @@ public class ElasticsearchScheduler implements Scheduler {
         final Protos.Credential.Builder credentialBuilder = credentialFactory.getBuilder();
         final MesosSchedulerDriver driver;
         if (credentialBuilder.isInitialized()) {
+            LOGGER.debug("Creating Scheduler driver with principal: " + credentialBuilder.toString());
             driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl(), credentialBuilder.build());
         } else {
             driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
