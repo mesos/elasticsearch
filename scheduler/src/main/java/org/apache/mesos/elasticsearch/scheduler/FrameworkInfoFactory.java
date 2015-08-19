@@ -26,6 +26,10 @@ public class FrameworkInfoFactory {
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
         setWebuiUrl(frameworkBuilder);
         setFrameworkId(frameworkBuilder);
+
+        if (!configuration.getMesosAuthenticationPrincipal().isEmpty()) {
+            frameworkBuilder.setPrincipal(configuration.getMesosAuthenticationPrincipal());
+        }
         return frameworkBuilder;
     }
 

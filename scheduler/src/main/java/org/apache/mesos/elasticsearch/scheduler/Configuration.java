@@ -29,6 +29,8 @@ public class Configuration {
 
     private int managementApiPort;
     private FrameworkState frameworkState;
+    private String mesosAuthenticationPrincipal = "";
+    private String mesosAuthenticationSecretFile = "";
 
     public double getCpus() {
         return cpus;
@@ -121,5 +123,21 @@ public class Configuration {
 
     public int getManagementApiPort() {
         return managementApiPort;
+    }
+
+    public String getMesosAuthenticationPrincipal() {
+        return mesosAuthenticationPrincipal;
+    }
+
+    public void setMesosAuthenticationPrincipal(String mesosAuthenticationPrincipal) {
+        this.mesosAuthenticationPrincipal = mesosAuthenticationPrincipal;
+    }
+
+    public String getMesosAuthenticationSecretFile() {
+        return mesosAuthenticationSecretFile;
+    }
+
+    public void setMesosAuthenticationSecretFile(String mesosAuthenticationSecretFile) {
+        this.mesosAuthenticationSecretFile = mesosAuthenticationSecretFile;
     }
 }
