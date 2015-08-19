@@ -51,10 +51,9 @@ public class ElasticsearchScheduler implements Scheduler {
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
         final Protos.Credential.Builder credentialBuilder = credentialFactory.getBuilder();
-        final Protos.Credential credential = credentialBuilder.build();
         final MesosSchedulerDriver driver;
-        if (credential.isInitialized()) {
-            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl(), credential);
+        if (credentialBuilder.isInitialized()) {
+            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl(), credentialBuilder.build());
         } else {
             driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
         }
