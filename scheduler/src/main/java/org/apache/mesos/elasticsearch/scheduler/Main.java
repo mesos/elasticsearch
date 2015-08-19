@@ -30,6 +30,8 @@ public class Main {
     public static final long ZK_TIMEOUT = 20000L;
     public static final String CLUSTER_NAME = "/mesos-ha";
     public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
+    public static final String PRINCIPAL = "principal";
+    public static final String SECRET = "secret";
 
     private Options options;
 
@@ -41,6 +43,8 @@ public class Main {
         this.options.addOption(ZK_URL, "zookeeperUrl", true, "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)");
         this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
         this.options.addOption(RAM, "ElasticsearchRam", true, "Amount of RAM to give the Elasticsearch instances");
+        this.options.addOption(PRINCIPAL, "mesosAuthenticationPrincipal", true, "(Optional): The Mesos principal used for authentication");
+        this.options.addOption(SECRET, "mesosAuthenticationSecretFile", true, "(Optional): The path to the Mesos secret file containing the authentication secret");
     }
 
     public static void main(String[] args) {
@@ -110,6 +114,8 @@ public class Main {
         configuration.setState(getState(zkUrl));
         configuration.setMem(Double.parseDouble(ram));
         configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
+        configuration.setMesosAuthenticationPrincipal(cmd.getOptionValue(PRINCIPAL, ""));
+        configuration.setMesosAuthenticationSecretFile(cmd.getOptionValue(SECRET, ""));
     }
 
     private SerializableState getState(String zkUrl) {
