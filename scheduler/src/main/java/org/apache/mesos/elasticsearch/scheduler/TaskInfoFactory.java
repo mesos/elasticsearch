@@ -70,6 +70,7 @@ public class TaskInfoFactory {
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
                         .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
+                        .addVolumes(Protos.Volume.newBuilder().setContainerPath("/data").setHostPath("/var/lib/elasticsearch").setMode(Protos.Volume.Mode.RW).build())
                         .build());
     }
 
