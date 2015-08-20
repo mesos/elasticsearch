@@ -38,6 +38,9 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     var fetchInterval = 5000; // ms
 
     $scope.taskStatesMapping = {
+        TASK_STAGING: {
+            progressBarType: "warning"
+        },
         TASK_RUNNING: {
             progressBarType: "success"
         },
