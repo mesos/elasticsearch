@@ -18,8 +18,11 @@ public class ElasticsearchNodesResponse {
 
     private List<JSONObject> tasks;
 
-    public ElasticsearchNodesResponse(List<JSONObject> tasks) {
+    private int nodesCount;
+
+    public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
         this.tasks = tasks;
+        this.nodesCount = nodesCount;
         await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall(), is(true));
     }
 
@@ -31,7 +34,7 @@ public class ElasticsearchNodesResponse {
         public Boolean call() throws Exception {
             try {
                 for (JSONObject task : tasks) {
-                    if (!(Unirest.get("http://" + task.getString("http_address") + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
+                    if (!(Unirest.get("http://" + task.getString("http_address") + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == nodesCount)) {
                         discoverySuccessful = false;
                     }
                 }
