@@ -112,8 +112,8 @@ public class ClusterMonitor implements Observer {
     }
 
     private void checkForTooManyExecutors() {
-        if (getClusterState().getTaskList().size() > configuration.getNumberOfHwNodes()) {
-            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getNumberOfHwNodes());
+        if (getClusterState().getTaskList().size() > configuration.getNumberOfElasticsearchNodes()) {
+            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getNumberOfElasticsearchNodes());
             driver.killTask(getClusterState().getTaskList().get(getClusterState().getTaskList().size() - 1).getTaskId());
         }
     }

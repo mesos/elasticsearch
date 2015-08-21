@@ -43,7 +43,7 @@ public class Main {
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put("server.port", String.valueOf(configuration.getManagementApiPort()));
+        properties.put("server.port", String.valueOf(configuration.getWebUiPort()));
         new SpringApplicationBuilder(WebApplication.class)
                 .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))

@@ -18,7 +18,7 @@ public class FrameworkInfoFactoryTest {
 public void shouldGetBuilder() {
     Configuration configuration = mock(Configuration.class);
     when(configuration.getFrameworkName()).thenReturn("TestFrameworkName");
-    when(configuration.getManagementApiPort()).thenReturn(DUMMY_PORT);
+    when(configuration.getWebUiPort()).thenReturn(DUMMY_PORT);
     FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
     Protos.FrameworkInfo frameworkInfo = frameworkInfoFactory.getBuilder().build();
     assertTrue(frameworkInfo.getWebuiUrl().contains("http://"));
