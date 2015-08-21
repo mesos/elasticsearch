@@ -153,8 +153,16 @@ The project contains a system-test module which tests if the framework interacts
 
 * Docker
 
+Run all system tests
+
 ```
 $ ./gradlew build system-test:systemTest
+```
+
+Run a single system test
+
+```
+$ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 ```
 
 #### How to run on Mac 
