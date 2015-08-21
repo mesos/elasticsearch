@@ -32,7 +32,7 @@ public class Main {
         configuration = new Configuration();
         final JCommander jCommander = new JCommander(configuration);
         try {
-            jCommander.parse(args);// Parse command line args into configuration class.
+            jCommander.parse(args); // Parse command line args into configuration class.
         } catch (com.beust.jcommander.ParameterException ex) {
             System.out.println(ex);
             jCommander.setProgramName("(Options preceded by an asterisk are required)");

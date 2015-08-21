@@ -24,7 +24,7 @@ public class Configuration {
     private double cpus = 0.2;
 
     // Todo (pnw): Remove ram parameter
-    @Parameter(names={"-ram", "--elasticsearchRam"}, description = "The amount of ram to allocate to the elasticsearch instance")
+    @Parameter(names = {"-ram", "--elasticsearchRam"}, description = "The amount of ram to allocate to the elasticsearch instance")
     private double mem = 256;
 
     private String memUnits = "MB";
@@ -33,18 +33,18 @@ public class Configuration {
 
     private String diskUnits = "GB";
 
-    @Parameter(names={"-n", "--numberOfNodes"}, description = "Number of elasticsearch instances.")
+    @Parameter(names = {"-n", "--numberOfNodes"}, description = "Number of elasticsearch instances.")
     private int numberOfHwNodes = 3;
 
     private SerializableState state;
 
     private String version;
 
-    @Parameter(names={"-zk", "--zookeeperUrl"}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)")
+    @Parameter(names = {"-zk", "--zookeeperUrl"}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)")
     private String zookeeperUrl;
 
     // Todo (pnw): Remove m parameter
-    @Parameter(names={"-m", "--webUiPort"}, description = "TCP port for web ui interface.")
+    @Parameter(names = {"-m", "--webUiPort"}, description = "TCP port for web ui interface.")
     private int managementApiPort = 8080;
     private FrameworkState frameworkState;
 
