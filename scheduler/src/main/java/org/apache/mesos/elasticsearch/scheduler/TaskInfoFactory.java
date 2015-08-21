@@ -77,7 +77,7 @@ public class TaskInfoFactory {
         ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
-                .addAllArguments(asList("-zk", configuration.getZookeeperUrl()))
+                .addAllArguments(asList("-zk", configuration.getMesosZKURL()))
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
     }

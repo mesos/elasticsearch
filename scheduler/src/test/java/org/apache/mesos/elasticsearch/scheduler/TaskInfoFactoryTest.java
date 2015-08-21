@@ -34,7 +34,7 @@ public class TaskInfoFactoryTest {
         Configuration configuration = mock(Configuration.class);
         when(configuration.getFrameworkId()).thenReturn(frameworkId);
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getZookeeperUrl()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
 
         Protos.Offer offer = Protos.Offer.newBuilder()
                                             .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))

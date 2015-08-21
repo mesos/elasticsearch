@@ -43,12 +43,12 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + ", ram:" + configuration.getMem() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getMesosZKURL() + ", ram:" + configuration.getMem() + "]");
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL());
 
         driver.run();
     }
