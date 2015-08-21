@@ -18,8 +18,6 @@ import java.util.concurrent.TimeUnit;
  * Holder object for framework configuration.
  */
 public class Configuration {
-    public static final String CLUSTER_NAME = "/mesos-ha";
-
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander(this);
         try {
@@ -33,9 +31,8 @@ public class Configuration {
     }
 
     // **** ZOOKEEPER
-    @Parameter(names = {"--zookeeperTimeout"}, description = "The timeout for connecting to zookeeper.")
+    @Parameter(names = {"--zookeeperTimeout"}, description = "The timeout for connecting to zookeeper (ms).")
     private long zookeeperTimeout = 20000L;
-
     public long getZookeeperTimeout() {
         return zookeeperTimeout;
     }
@@ -43,7 +40,6 @@ public class Configuration {
     public static final String ZOOKEEPER_URL = "--zookeeperUrl";
     @Parameter(names = {"-zk", ZOOKEEPER_URL}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)")
     private String zookeeperUrl = "zk://mesos.master:2181";
-
     private String getZookeeperUrl() {
         return zookeeperUrl;
     }
@@ -52,55 +48,53 @@ public class Configuration {
     // **** ELASTICSEARCH
     @Parameter(names = {"--elasticsearchCpu"}, description = "The amount of CPU resource to allocate to the elasticsearch instance.")
     private double cpus = 1.0;
-
     public double getCpus() {
         return cpus;
     }
 
     // Todo (pnw): Remove ram parameter
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
-    @Parameter(names = {"-ram", ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance.")
+    @Parameter(names = {"-ram", ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance (MB).")
     private double mem = 256;
-
     public double getMem() {
         return mem;
     }
 
-    @Parameter(names = {"--elasticsearchDisk"}, description = "The amount of Disk resource to allocate to the elasticsearch instance.")
+    @Parameter(names = {"--elasticsearchDisk"}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).")
     private double disk = 1024;
-
     public double getDisk() {
         return disk;
     }
 
-    @Parameter(names = {"-n", "--numberOfElasticsearchNodes"}, description = "Number of elasticsearch instances.")
-    private int numberOfElasticsearchNodes = 3;
-
-    public int getNumberOfElasticsearchNodes() {
-        return numberOfElasticsearchNodes;
+    @Parameter(names = {"-n", "--elasticsearchNodes"}, description = "Number of elasticsearch instances.")
+    private int elasticsearchNodes = 3;
+    public int getElasticsearchNodes() {
+        return elasticsearchNodes;
     }
 
+    @Parameter(names = {"--elasticsearchClusterName"}, description = "Name of the elasticsearch cluster")
+    private String elasticsearchClusterName = "mesos-ha";
+    public String getElasticsearchClusterName() {
+        return elasticsearchClusterName;
+    }
 
     // **** WEB UI
     // Todo (pnw): Remove m parameter
     @Parameter(names = {"-m", "--webUiPort"}, description = "TCP port for web ui interface.")
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-
     public int getWebUiPort() {
         return webUiPort;
     }
 
 
     // **** FRAMEWORK
-    private String version = "0.3.0";
-
+    private String version = "0.3.RC0";
     public String getVersion() {
         return version;
     }
 
     @Parameter(names = {"--frameworkName"}, description = "The name given to the framework.")
     private String frameworkName = "elasticsearch";
-
     public String getFrameworkName() {
         return frameworkName;
     }
@@ -112,12 +106,23 @@ public class Configuration {
     }
 
     // DCOS Certification requirement 01
-    @Parameter(names = {"--frameworkFailoverTimeout"}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered.")
+    @Parameter(names = {"--frameworkFailoverTimeout"}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).")
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     public double getFailoverTimeout() {
         return frameworkFailoverTimeout;
     }
 
+    @Parameter(names = {"--executorHealthDelay"}, description = "The delay between executor healthcheck requests (ms).")
+    private Long executorHealthDelay = 30000L;
+    public Long getExecutorHealthDelay() {
+        return executorHealthDelay;
+    }
+
+    @Parameter(names = {"--executorTimeout"}, description = "The maximum executor healthcheck timeout (ms). Will start new executor after this lenght of time.")
+    private Long executorTimeout = 60000L;
+    public Long getExecutorTimeout() {
+        return executorTimeout;
+    }
 
     // ****************** Runtime configuration **********************
     private SerializableState state;
@@ -147,7 +152,7 @@ public class Configuration {
                     getMesosStateZKURL(),
                     getZookeeperTimeout(),
                     TimeUnit.MILLISECONDS,
-                    "/" + getFrameworkName() + CLUSTER_NAME);
+                    "/" + getFrameworkName() + "/" + getElasticsearchClusterName());
             state = new SerializableZookeeperState(zkState);
         }
         return state;

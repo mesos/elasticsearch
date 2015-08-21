@@ -18,10 +18,6 @@ import static java.util.Arrays.asList;
 public class TaskInfoFactory {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    /**
-     * The fraction of offered resources that will be consumed
-     */
-    public static final double RESOURCE_CONSUMPTION_FRACTION = 0.5;
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
     Clock clock = new Clock();
 

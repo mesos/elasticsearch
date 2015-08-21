@@ -8,15 +8,7 @@ import java.util.HashMap;
  * Application which starts the Elasticsearch scheduler
  */
 public class Main {
-
-    public static final String NUMBER_OF_HARDWARE_NODES = "n";
-
-    public static final String ZK_URL = "zk";
-
-    public static final String MANAGEMENT_API_PORT = "m";
-    public static final String RAM = "ram";
     private final Environment env;
-
     private Configuration configuration;
 
     public Main(Environment env) {
