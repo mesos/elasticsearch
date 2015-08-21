@@ -1,11 +1,8 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import com.beust.jcommander.JCommander;
-import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
-import java.util.Map;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -18,27 +15,23 @@ public class Main {
 
     public static final String MANAGEMENT_API_PORT = "m";
     public static final String RAM = "ram";
+    private final Environment env;
 
     private Configuration configuration;
 
+    public Main(Environment env) {
+        this.env = env;
+    }
+
     public static void main(String[] args) {
-        Main main = new Main();
+        Main main = new Main(new Environment());
         main.run(args);
     }
 
     public void run(String[] args) {
         checkEnv();
 
-        configuration = new Configuration();
-        final JCommander jCommander = new JCommander(configuration);
-        try {
-            jCommander.parse(args); // Parse command line args into configuration class.
-        } catch (com.beust.jcommander.ParameterException ex) {
-            System.out.println(ex);
-            jCommander.setProgramName("(Options preceded by an asterisk are required)");
-            jCommander.usage();
-            return;
-        }
+        configuration = new Configuration(args);
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
 
@@ -55,8 +48,7 @@ public class Main {
     }
 
     private void checkEnv() {
-        Map<String, String> env = System.getenv();
-        checkHeap(env.get(ExecutorEnvironmentalVariables.JAVA_OPTS));
+        checkHeap(env.getJavaHeap());
     }
 
     private void checkHeap(String s) {

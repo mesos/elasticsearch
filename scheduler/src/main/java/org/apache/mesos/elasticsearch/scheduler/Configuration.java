@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
@@ -19,6 +20,17 @@ import java.util.concurrent.TimeUnit;
 public class Configuration {
     public static final String CLUSTER_NAME = "/mesos-ha";
 
+    public Configuration(String[] args) {
+        final JCommander jCommander = new JCommander(this);
+        try {
+            jCommander.parse(args); // Parse command line args into configuration class.
+        } catch (com.beust.jcommander.ParameterException ex) {
+            System.out.println(ex);
+            jCommander.setProgramName("(Options preceded by an asterisk are required)");
+            jCommander.usage();
+            throw ex;
+        }
+    }
 
     // **** ZOOKEEPER
     @Parameter(names = {"--zookeeperTimeout"}, description = "The timeout for connecting to zookeeper.")
@@ -28,7 +40,8 @@ public class Configuration {
         return zookeeperTimeout;
     }
 
-    @Parameter(names = {"-zk", "--zookeeperUrl"}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)")
+    public static final String ZOOKEEPER_URL = "--zookeeperUrl";
+    @Parameter(names = {"-zk", ZOOKEEPER_URL}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)")
     private String zookeeperUrl = "zk://mesos.master:2181";
 
     private String getZookeeperUrl() {
@@ -45,7 +58,8 @@ public class Configuration {
     }
 
     // Todo (pnw): Remove ram parameter
-    @Parameter(names = {"-ram", "--elasticsearchRam"}, description = "The amount of ram resource to allocate to the elasticsearch instance.")
+    public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
+    @Parameter(names = {"-ram", ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance.")
     private double mem = 256;
 
     public double getMem() {
