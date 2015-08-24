@@ -29,7 +29,7 @@ public class FrameworkInfoFactory {
         return frameworkBuilder;
     }
 
-    private void setFrameworkId( Protos.FrameworkInfo.Builder frameworkBuilder) {
+    private void setFrameworkId (Protos.FrameworkInfo.Builder frameworkBuilder) {
         Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
         if (frameworkID != null && !frameworkID.getValue().isEmpty()) {
             LOGGER.info("Found previous frameworkID: " + frameworkID);
