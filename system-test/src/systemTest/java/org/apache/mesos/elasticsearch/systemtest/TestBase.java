@@ -15,7 +15,6 @@ import org.junit.runner.Description;
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
 
-
     protected static final int NODE_COUNT = 3;
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
