@@ -17,6 +17,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Holder object for framework configuration.
  */
+@SuppressWarnings("PMD.TooManyFields")
 public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
 
@@ -131,7 +132,9 @@ public class Configuration {
     }
 
     public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
-    @Parameter(names = {EXECUTOR_TIMEOUT}, description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.", validateValueWith = GreaterThanHealthDelay.class)
+    @Parameter(names = {EXECUTOR_TIMEOUT},
+            description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
+            validateValueWith = GreaterThanHealthDelay.class)
     private Long executorTimeout = 60000L;
     public Long getExecutorTimeout() {
         return executorTimeout;
