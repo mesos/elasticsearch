@@ -49,7 +49,8 @@ public class Configuration {
 
 
     // **** ELASTICSEARCH
-    @Parameter(names = {"--elasticsearchCpu"}, description = "The amount of CPU resource to allocate to the elasticsearch instance.", validateValueWith = PositiveDouble.class)
+    public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
+    @Parameter(names = {ELASTICSEARCH_CPU}, description = "The amount of CPU resource to allocate to the elasticsearch instance.", validateValueWith = PositiveDouble.class)
     private double cpus = 1.0;
     public double getCpus() {
         return cpus;
@@ -63,13 +64,15 @@ public class Configuration {
         return mem;
     }
 
-    @Parameter(names = {"--elasticsearchDisk"}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = PositiveDouble.class)
+    public static final String ELASTICSEARCH_DISK = "--elasticsearchDisk";
+    @Parameter(names = {ELASTICSEARCH_DISK}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = PositiveDouble.class)
     private double disk = 1024;
     public double getDisk() {
         return disk;
     }
 
-    @Parameter(names = {"-n", "--elasticsearchNodes"}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
+    public static final String ELASTICSEARCH_NODES = "--elasticsearchNodes";
+    @Parameter(names = {"-n", ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
     private int elasticsearchNodes = 3;
     public int getElasticsearchNodes() {
         return elasticsearchNodes;
@@ -84,7 +87,8 @@ public class Configuration {
 
     // **** WEB UI
     // Todo (pnw): Remove m parameter
-    @Parameter(names = {"-m", "--webUiPort"}, description = "TCP port for web ui interface.", validateValueWith = PositiveInteger.class)
+    public static final String WEB_UI_PORT = "--webUiPort";
+    @Parameter(names = {"-m", WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     public int getWebUiPort() {
         return webUiPort;
@@ -97,20 +101,23 @@ public class Configuration {
         return version;
     }
 
-    @Parameter(names = {"--frameworkName"}, description = "The name given to the framework.", validateWith = NotEmptyString.class)
+    public static final String FRAMEWORK_NAME = "--frameworkName";
+    @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     public String getFrameworkName() {
         return frameworkName;
     }
 
-    @Parameter(names = {"--executorName"}, description = "The name given to the executor task.", validateWith = NotEmptyString.class)
+    public static final String EXECUTOR_NAME = "--executorName";
+    @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = NotEmptyString.class)
     private String executorName = "elasticsearch-executor";
     public String getTaskName() {
         return executorName;
     }
 
     // DCOS Certification requirement 01
-    @Parameter(names = {"--frameworkFailoverTimeout"}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = PositiveDouble.class)
+    public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
+    @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = PositiveDouble.class)
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     public double getFailoverTimeout() {
         return frameworkFailoverTimeout;
