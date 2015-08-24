@@ -34,7 +34,7 @@
 - [x] Deployment
 - [x] Durable cluster topology (via ZooKeeper)
 - [x] Web UI on scheduler port 8080
-- [ ] Support deploying multiple Elasticsearch clusters to single Mesos cluster
+- [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
@@ -76,7 +76,7 @@ This framework requires:
 
 ### How to install on Marathon
 
-Create a Marathon file like the one below and fill in the IP addresses and other configuration.
+Create a Marathon file like the one below and fill in the IP addresses and other configuration. This is the minimum viable command; there are many more options.
 
 ```
 {
@@ -87,7 +87,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
       "network": "HOST"
     }
   },
-  "args": ["-n", "3", "-zk", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos", "-ram", "2048"],
+  "args": ["--zookeeperUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
   "cpus": 0.2,
   "mem": 512.0,
   "env": {
@@ -102,9 +102,61 @@ Then post to marathon to instantiate the scheduler:
 
 Note: the JAVA_OPTS line is required. If this is not set, then the Java heap space will be incorrectly set.
 
+Other command line options include:
+```
+Usage: (Options preceded by an asterisk are required) [options]
+  Options:
+    --elasticsearchClusterName
+       Name of the elasticsearch cluster
+       Default: mesos-ha
+    --elasticsearchCpu
+       The amount of CPU resource to allocate to the elasticsearch instance.
+       Default: 1.0
+    --elasticsearchDisk
+       The amount of Disk resource to allocate to the elasticsearch instance
+       (MB).
+       Default: 1024.0
+    --elasticsearchNodes
+       Number of elasticsearch instances.
+       Default: 3
+    --elasticsearchRam
+       The amount of ram resource to allocate to the elasticsearch instance
+       (MB).
+       Default: 256.0
+    --executorHealthDelay
+       The delay between executor healthcheck requests (ms).
+       Default: 1000
+    --executorImage
+       The docker executor image to use.
+       Default: mesos/elasticsearch-executor
+    --executorName
+       The name given to the executor task.
+       Default: elasticsearch-executor
+    --executorTimeout
+       The maximum executor healthcheck timeout (ms). Must be greater than
+       --executorHealthDelay. Will start new executor after this length of time.
+       Default: 60000
+    --frameworkFailoverTimeout
+       The time before Mesos kills a scheduler and tasks if it has not recovered
+       (ms).
+       Default: 2592000.0
+    --frameworkName
+       The name given to the framework.
+       Default: elasticsearch
+    --webUiPort
+       TCP port for web ui interface.
+       Default: 31100
+    --zookeeperTimeout
+       The timeout for connecting to zookeeper (ms).
+       Default: 20000
+  * --zookeeperUrl
+       Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)
+       Default: zk://mesos.master:2181
+```
+
 ### User Interface
 
-The web based user interface is available on port 8080 of the scheduler by default. It displays real time information about the tasks running in the cluster and a basic configuration overview of the cluster. 
+The web based user interface is available on port 31100 of the scheduler by default. It displays real time information about the tasks running in the cluster and a basic configuration overview of the cluster. 
 
 The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
 
@@ -139,7 +191,7 @@ $ ./gradlew build system-test:main
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ ./gradlew build buildDockerImage system-test:main
+$ ./gradlew build system-test:main
 ```
 
 ### System test
@@ -154,18 +206,6 @@ The project contains a system-test module which tests if the framework interacts
 
 ```
 $ ./gradlew build system-test:systemTest
-```
-
-#### How to run on Mac 
-
-##### Requirements
-
-* Docker Machine
-
-```
-$ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
-$ eval $(docker-machine env mesos-es)
-$ ./gradlew build buildDockerImage system-test:systemTest
 ```
 
 ### How to release
