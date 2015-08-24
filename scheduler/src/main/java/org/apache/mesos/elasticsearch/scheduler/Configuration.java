@@ -42,7 +42,7 @@ public class Configuration {
     }
 
     public static final String ZOOKEEPER_URL = "--zookeeperUrl";
-    @Parameter(names = {"-zk", ZOOKEEPER_URL}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)", validateWith = NotEmptyString.class)
+    @Parameter(names = {ZOOKEEPER_URL}, required = true, description = "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)", validateWith = NotEmptyString.class)
     private String zookeeperUrl = "zk://mesos.master:2181";
     private String getZookeeperUrl() {
         return zookeeperUrl;
@@ -57,9 +57,8 @@ public class Configuration {
         return cpus;
     }
 
-    // Todo (pnw): Remove ram parameter
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
-    @Parameter(names = {"-ram", ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance (MB).", validateValueWith = PositiveDouble.class)
+    @Parameter(names = {ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance (MB).", validateValueWith = PositiveDouble.class)
     private double mem = 256;
     public double getMem() {
         return mem;
@@ -73,7 +72,7 @@ public class Configuration {
     }
 
     public static final String ELASTICSEARCH_NODES = "--elasticsearchNodes";
-    @Parameter(names = {"-n", ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
+    @Parameter(names = {ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
     private int elasticsearchNodes = 3;
     public int getElasticsearchNodes() {
         return elasticsearchNodes;
@@ -87,9 +86,8 @@ public class Configuration {
     }
 
     // **** WEB UI
-    // Todo (pnw): Remove m parameter
     public static final String WEB_UI_PORT = "--webUiPort";
-    @Parameter(names = {"-m", WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = PositiveInteger.class)
+    @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     public int getWebUiPort() {
         return webUiPort;
