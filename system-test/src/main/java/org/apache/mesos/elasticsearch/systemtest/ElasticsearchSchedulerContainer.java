@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
@@ -35,6 +36,11 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + mesosIp + ":2181/mesos", "-n", "3", "-ram", "256");
+                .withCmd(
+                        Configuration.ZOOKEEPER_URL, "zk://" + mesosIp + ":2181/mesos",
+                        Configuration.ELASTICSEARCH_NODES, "3",
+                        Configuration.ELASTICSEARCH_RAM, "256",
+                        Configuration.WEB_UI_PORT, "8080",
+                        Configuration.EXECUTOR_NAME, "esdemo");
     }
 }

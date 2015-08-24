@@ -43,12 +43,12 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void run() {
-        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getNumberOfHwNodes() + ", zk: " + configuration.getZookeeperUrl() + ", ram:" + configuration.getMem() + "]");
+        LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() + ", zk: " + configuration.getMesosZKURL() + ", ram:" + configuration.getMem() + "]");
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
 
-        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getZookeeperUrl());
+        final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL());
 
         driver.run();
     }
@@ -92,9 +92,9 @@ public class ElasticsearchScheduler implements Scheduler {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getNumberOfHwNodes()) {
+            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getElasticsearchNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getNumberOfHwNodes() + " Elasticsearch tasks");
+                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
