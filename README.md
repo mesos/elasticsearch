@@ -1,5 +1,6 @@
 # Elasticsearch
 
+[http://mesos.github.io/elasticsearch](http://mesos.github.io/elasticsearch)
 
   * [Roadmap](#roadmap)
     * [Features](#features)
@@ -152,8 +153,16 @@ The project contains a system-test module which tests if the framework interacts
 
 * Docker
 
+Run all system tests
+
 ```
 $ ./gradlew build system-test:systemTest
+```
+
+Run a single system test
+
+```
+$ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 ```
 
 #### How to run on Mac 
@@ -183,16 +192,18 @@ dockerHubPassword=******
 dockerHubEmail=email
 ```
 
-Now perform a release and specify the release type: major, minor or patch and your username.
+Update the version number in the Configuration.class so that the Web UI shows the correct version number.
+
+Build and make sure the system tests pass (skip if you have tested on jenkins)
 
 ```
 $ ./gradlew build system-test:systemTest
 ```
 
-If build and tests succeed release
+Now perform a release and specify the release type: major, minor or patch (only one!) and your username.
 
 ```
-$ ./gradlew release -PreleaseType={major,minor,patch} -PuserName={user}
+$ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
 ```
 
 ## Sponsors
