@@ -65,7 +65,7 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()))
                         .build());
     }
 
@@ -75,7 +75,7 @@ public class TaskInfoFactory {
                 .setShell(false)
                 .addAllArguments(asList("-zk", configuration.getMesosZKURL()))
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
-                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage("mesos/elasticsearch-executor").build());
+                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getEexecutorImage()).build());
     }
 
     private String taskId(Protos.Offer offer) {

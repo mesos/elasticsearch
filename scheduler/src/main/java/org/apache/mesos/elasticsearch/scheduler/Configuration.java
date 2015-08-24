@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    public static final String EXECUTOR_IMAGE = "--executorImage";
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander(this);
@@ -135,6 +136,13 @@ public class Configuration {
     private Long executorTimeout = 60000L;
     public Long getExecutorTimeout() {
         return executorTimeout;
+    }
+
+    public static final String EXECUTOR_IMAGE = "--executorImage";
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = NotEmptyString.class)
+    private String executorImage = "mesos/elasticsearch-executor";
+    public String getEexecutorImage() {
+        return executorImage;
     }
 
     // ****************** Runtime configuration **********************
