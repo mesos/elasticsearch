@@ -139,8 +139,9 @@ public class Configuration {
     }
 
     public static final String EXECUTOR_IMAGE = "--executorImage";
+    public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
     @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = NotEmptyString.class)
-    private String executorImage = "mesos/elasticsearch-executor";
+    private String executorImage = DEFAULT_EXECUTOR_IMAGE;
     public String getEexecutorImage() {
         return executorImage;
     }
