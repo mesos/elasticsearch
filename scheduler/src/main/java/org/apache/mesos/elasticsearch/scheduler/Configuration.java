@@ -19,7 +19,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
-    public static final String EXECUTOR_IMAGE = "--executorImage";
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander(this);
