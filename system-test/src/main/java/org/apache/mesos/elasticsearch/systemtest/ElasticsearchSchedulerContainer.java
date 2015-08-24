@@ -40,6 +40,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.ZOOKEEPER_URL, "zk://" + mesosIp + ":2181/mesos",
                         Configuration.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
-                        Configuration.WEB_UI_PORT, "8080");
+                        Configuration.WEB_UI_PORT, "8080",
+                        Configuration.EXECUTOR_NAME, "esdemo");
     }
 }
