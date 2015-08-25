@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.junit.Before;
 import org.junit.Test;
@@ -64,7 +65,7 @@ public class CLITest {
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldFailIfParamIsEmpty() {
-        String[] args = {Configuration.ELASTICSEARCH_CLUSTER_NAME, " ", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, " ", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 }
