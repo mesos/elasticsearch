@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.executor.mesos;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.runners.MockitoJUnitRunner;
 
 import static org.mockito.Matchers.any;
@@ -31,6 +33,9 @@ public class ElasticsearchExecutorTest {
 
     @InjectMocks
     private ElasticsearchExecutor executor;
+
+    @Spy
+    private Configuration configuration = new Configuration();
 
     @Mock
     private ExecutorDriver driver;
@@ -77,6 +82,14 @@ public class ElasticsearchExecutorTest {
         executor.launchTask(driver, getDefaultTaskInfo().build());
         // Should send starting
         verify(status, times(1)).running();
+    }
+
+    @Test
+    public void shouldReadDefaultSettings() {
+        // When launching
+        executor.launchTask(driver, getDefaultTaskInfo().build());
+        // Should read settings
+        verify(configuration, atLeastOnce()).getElasticsearchSettingsLocation();
     }
 
     private Protos.TaskInfo.Builder getDefaultTaskInfo() {
