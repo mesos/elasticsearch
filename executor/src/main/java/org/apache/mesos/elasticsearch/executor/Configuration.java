@@ -10,6 +10,8 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 
 import java.net.URISyntaxException;
 
+import java.net.URISyntaxException;
+
 /**
  * Executor configuration
  */
