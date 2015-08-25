@@ -1,10 +1,9 @@
 package org.apache.mesos.elasticsearch.executor;
 
 import com.beust.jcommander.JCommander;
-import com.beust.jcommander.Parameter;
 import org.apache.log4j.Logger;
-import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 
@@ -16,6 +15,7 @@ import java.net.URISyntaxException;
 public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String ELASTICSEARCH_YML = "elasticsearch.yml";
+    private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
 
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
@@ -23,6 +23,7 @@ public class Configuration {
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
+        jCommander.addObject(elasticsearchCLI);
         jCommander.addObject(this);
         try {
             jCommander.parse(args); // Parse command line args into configuration class.
@@ -35,12 +36,14 @@ public class Configuration {
     }
 
     // ******* ELASTICSEARCH
-    public static final String ELASTICSEARCH_SETTINGS_LOCATION = "--elasticsearchSettingsLocation";
-    @Parameter(names = {ELASTICSEARCH_SETTINGS_LOCATION}, description = "Local path to custom elasticsearch.yml settings file", validateWith = CLIValidators.NotEmptyString.class)
-    private String elasticsearchSettingsLocation = getElasticsearchSettingsPath();
     public String getElasticsearchSettingsLocation() {
-        return elasticsearchSettingsLocation;
+        String result = elasticsearchCLI.getElasticsearchSettingsLocation();
+        if (result.isEmpty()) {
+            result = getElasticsearchSettingsPath();
+        }
+        return result;
     }
+
     private String getElasticsearchSettingsPath() {
         String path = "";
         try {
@@ -54,5 +57,9 @@ public class Configuration {
     public String getElasticsearchZKURL() {
         ElasticsearchZKFormatter zkFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
         return zkFormatter.format(zookeeperCLI.getZookeeperUrl());
+    }
+
+    public String getElasticsearchClusterName() {
+        return elasticsearchCLI.getElasticsearchClusterName();
     }
 }
