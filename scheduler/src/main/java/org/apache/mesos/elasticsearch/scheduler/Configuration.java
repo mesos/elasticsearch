@@ -78,6 +78,13 @@ public class Configuration {
         return elasticsearchClusterName;
     }
 
+    public static final String ELASTICSEARCH_SETTINGS_LOCATION = "--elasticsearchSettingsLocation";
+    @Parameter(names = {ELASTICSEARCH_SETTINGS_LOCATION}, description = "Local path to custom elasticsearch.yml settings file", validateWith = CLIValidators.NotEmptyString.class)
+    private String elasticsearchSettingsLocation = "";
+    public String getElasticsearchSettingsLocation() {
+        return elasticsearchSettingsLocation;
+    }
+
     // **** WEB UI
     public static final String WEB_UI_PORT = "--webUiPort";
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
