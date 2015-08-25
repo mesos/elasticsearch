@@ -3,8 +3,8 @@ package org.apache.mesos.elasticsearch.executor;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 

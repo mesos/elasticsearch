@@ -3,7 +3,7 @@ package org.apache.mesos.elasticsearch.executor.mesos;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;

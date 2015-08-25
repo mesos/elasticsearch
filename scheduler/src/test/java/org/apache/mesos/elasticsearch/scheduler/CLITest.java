@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;

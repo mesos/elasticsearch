@@ -6,7 +6,7 @@ import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.Test;

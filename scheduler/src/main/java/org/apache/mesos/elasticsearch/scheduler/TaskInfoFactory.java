@@ -3,7 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
 import java.text.SimpleDateFormat;

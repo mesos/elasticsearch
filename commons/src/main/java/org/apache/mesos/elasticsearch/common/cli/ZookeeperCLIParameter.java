@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.common.zookeeper;
+package org.apache.mesos.elasticsearch.common.cli;
 
 import com.beust.jcommander.Parameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
