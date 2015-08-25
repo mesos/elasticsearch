@@ -43,12 +43,13 @@
 - [ ] Scale cluster vertically
 - [ ] Upgrade
 - [ ] Rollback
-- [ ] Snapshot and restore
+- [ ] Snapshot and restore 
 
-### Depends on upcoming Mesos features
+### Blocked features
 
-- [ ] Faster task recovery with Mesos dynamic reservations (https://issues.apache.org/jira/browse/MESOS-1554)
-- [ ] Persistent storage
+- [ ] [Authorization](https://github.com/mesos/elasticsearch/issues/218)
+- [ ] [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
+- [ ] [Dynamic Reservations](https://github.com/mesos/elasticsearch/issues/98)
 
 ### Developer Tools
 

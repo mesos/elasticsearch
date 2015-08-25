@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.executor.mesos;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
@@ -102,7 +103,7 @@ public class ElasticsearchExecutorTest {
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo() {
         return Protos.ExecutorInfo.newBuilder()
-                .setCommand(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("zk://master:2181/mesos"))
+                .setCommand(Protos.CommandInfo.newBuilder().addArguments(ZookeeperCLIParameter.ZOOKEEPER_URL).addArguments("zk://master:2181/mesos"))
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue("0"));
     }
 }
