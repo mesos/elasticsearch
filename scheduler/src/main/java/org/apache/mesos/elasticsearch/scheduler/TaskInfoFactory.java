@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
 import java.text.SimpleDateFormat;
@@ -73,7 +74,7 @@ public class TaskInfoFactory {
         ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
-                .addAllArguments(asList("-zk", configuration.getMesosZKURL()))
+                .addAllArguments(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getMesosZKURL()))
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getEexecutorImage()).build());
     }
