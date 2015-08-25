@@ -219,7 +219,9 @@ $ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 
 ### How to release
 
-Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
+1 First update the CHANGELOG.md by listing fixed issues and bugs
+
+2 Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
 user/pass.
 
 ```
@@ -232,15 +234,15 @@ dockerHubPassword=******
 dockerHubEmail=email
 ```
 
-Update the version number in the Configuration.class so that the Web UI shows the correct version number.
+3 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
 
-Build and make sure the system tests pass (skip if you have tested on jenkins)
+4 Build and make sure the system tests pass (skip if you have tested on jenkins)
 
 ```
 $ ./gradlew build system-test:systemTest
 ```
 
-Now perform a release and specify the release type: major, minor or patch (only one!) and your username.
+5 Now perform a release and specify the release type: major, minor or patch (only one!) and your username.
 
 ```
 $ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
