@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
 
 
@@ -62,6 +63,12 @@ public class ElasticsearchLauncherTest {
 
         // Ensure settings are updated
         verify(settings, times(1)).put(runtimeSettings.build());
+    }
+
+    @Test
+    public void shouldBeAbleToLoadSettingsFromResources() {
+        ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromClasspath("elasticsearch.yml");
+        assertNotNull(esSettings);
     }
 
     private ImmutableSettings.Builder getClientPort() {
