@@ -13,6 +13,8 @@ import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidParameterException;
 
 /**
@@ -58,8 +60,9 @@ public class ElasticsearchExecutor implements Executor {
 
         try {
             // Read elasticsearch.yml
-            LOGGER.debug("Loading settings from: " + configuration.getElasticsearchSettingsLocation());
-            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromSource(configuration.getElasticsearchSettingsLocation());
+            URL elasticsearchSettingsPath = java.net.URI.create(configuration.getElasticsearchSettingsLocation()).toURL();
+            LOGGER.debug("Using elasticsearch settings file: " + elasticsearchSettingsPath);
+            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromUrl(elasticsearchSettingsPath);
             launcher.addRuntimeSettings(esSettings);
 
             // Parse ports
@@ -84,7 +87,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidParameterException e) {
+        } catch (InvalidParameterException | MalformedURLException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }
