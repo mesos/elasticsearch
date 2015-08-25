@@ -38,7 +38,7 @@ public class ExecutorHealth implements Runnable {
     @Override
     public void run() {
         try {
-            Double thisUpdate = taskStatus.getStatus().getTimestamp(); // TODO (pnw): Bug here. NPE on getStatus when restarting executor.
+            Double thisUpdate = taskStatus.getStatus().getTimestamp();
             Double timeSinceUpdate = thisUpdate - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);

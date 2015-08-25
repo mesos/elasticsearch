@@ -55,15 +55,16 @@ public class ClusterMonitor implements Observer {
     }
 
     private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
-        ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, 10000L);
-        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(health, 5000L));
+        ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, configuration.getExecutorTimeout());
+        Long updateRate = configuration.getExecutorHealthDelay() / 2; // Make sure we check more often than the ping.
+        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(health, updateRate));
         pollList.put(taskStatus.getTaskInfo(), healthCheck);
     }
 
     private void createNewExecutorBump(ESTaskStatus taskStatus) {
         Protos.TaskInfo taskInfo = taskStatus.getTaskInfo();
         BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(bumpExecutor, 5000L));
+        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(bumpExecutor, configuration.getExecutorHealthDelay()));
         pollList.put(taskInfo, healthCheck);
     }
 
@@ -112,8 +113,8 @@ public class ClusterMonitor implements Observer {
     }
 
     private void checkForTooManyExecutors() {
-        if (getClusterState().getTaskList().size() > configuration.getNumberOfHwNodes()) {
-            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getNumberOfHwNodes());
+        if (getClusterState().getTaskList().size() > configuration.getElasticsearchNodes()) {
+            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getElasticsearchNodes());
             driver.killTask(getClusterState().getTaskList().get(getClusterState().getTaskList().size() - 1).getTaskId());
         }
     }

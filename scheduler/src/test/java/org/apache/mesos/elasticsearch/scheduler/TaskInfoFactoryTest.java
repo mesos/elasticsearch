@@ -34,7 +34,8 @@ public class TaskInfoFactoryTest {
         Configuration configuration = mock(Configuration.class);
         when(configuration.getFrameworkId()).thenReturn(frameworkId);
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getZookeeperUrl()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getEexecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
 
         Protos.Offer offer = Protos.Offer.newBuilder()
                                             .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
@@ -78,6 +79,7 @@ public class TaskInfoFactoryTest {
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
         assertEquals(configuration.getFrameworkId(), taskInfo.getExecutor().getFrameworkId());
+        assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
         assertEquals("mesos/elasticsearch-executor", taskInfo.getExecutor().getContainer().getDocker().getImage());
 
         assertEquals(1, taskInfo.getExecutor().getContainer().getVolumesCount());

@@ -3,21 +3,24 @@ package org.apache.mesos.elasticsearch.scheduler.configuration;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests
  */
 public class ExecutorEnvironmentalVariablesTest {
+    private Configuration configuration = Mockito.mock(Configuration.class);
+
     @Test
     public void ensureOver1GBHeapIs256MB() throws Exception {
         int ram = 2048;
-        Configuration configuration = new Configuration();
-        configuration.setMem(ram);
+        Mockito.when(configuration.getMem()).thenReturn((double) ram);
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
         for (Protos.Environment.Variable var : env.getList()) {
@@ -34,8 +37,7 @@ public class ExecutorEnvironmentalVariablesTest {
     @Test
     public void ensureUnder1GBIsLessThan256MB() throws Exception {
         int ram = 512;
-        Configuration configuration = new Configuration();
-        configuration.setMem(ram);
+        Mockito.when(configuration.getMem()).thenReturn((double) ram);
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
         for (Protos.Environment.Variable var : env.getList()) {

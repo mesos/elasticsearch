@@ -29,7 +29,7 @@ public class FrameworkInfoFactory {
         return frameworkBuilder;
     }
 
-    private void setFrameworkId (Protos.FrameworkInfo.Builder frameworkBuilder) {
+    private void setFrameworkId(Protos.FrameworkInfo.Builder frameworkBuilder) {
         Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
         if (frameworkID != null && !frameworkID.getValue().isEmpty()) {
             LOGGER.info("Found previous frameworkID: " + frameworkID);
@@ -39,7 +39,7 @@ public class FrameworkInfoFactory {
 
     private void setWebuiUrl(Protos.FrameworkInfo.Builder frameworkBuilder) {
         try {
-            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getManagementApiPort();
+            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getWebUiPort();
             LOGGER.debug("Setting webuiUrl to " + hostName);
             frameworkBuilder.setWebuiUrl(hostName);
         } catch (UnknownHostException e) {
