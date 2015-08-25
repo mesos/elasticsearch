@@ -190,6 +190,11 @@ public class Configuration {
         return mesosZKFormatter.format(zookeeperCLI.getZookeeperUrl());
     }
 
+    public String getFrameworkZKURL() {
+        ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
+        return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+    }
+
     /**
      * Ensures that the number is > than the EXECUTOR_HEALTH_DELAY
      */

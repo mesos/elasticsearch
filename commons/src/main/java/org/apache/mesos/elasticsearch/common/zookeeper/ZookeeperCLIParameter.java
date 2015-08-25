@@ -20,4 +20,12 @@ public class ZookeeperCLIParameter {
     public long getZookeeperTimeout() {
         return zookeeperTimeout;
     }
+
+    public static final String ZOOKEEPER_FRAMEWORK_URL = "--zookeeperFrameworkUrl";
+    @Parameter(names = {ZOOKEEPER_FRAMEWORK_URL}, required = false, description = "Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)", validateWith = CLIValidators.NotEmptyString.class)
+    private String zookeeperFrameworkUrl = "zk://mesos.master:2181";
+    public String getZookeeperFrameworkUrl() {
+        return zookeeperFrameworkUrl;
+    }
+
 }
