@@ -13,7 +13,11 @@ import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidParameterException;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Executor for Elasticsearch.
@@ -22,12 +26,11 @@ public class ElasticsearchExecutor implements Executor {
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
-    private final Configuration configuration;
+    private Configuration configuration;
 
-    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus, Configuration configuration) {
+    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
         this.launcher = launcher;
         this.taskStatus = taskStatus;
-        this.configuration = configuration;
     }
 
     @Override
@@ -57,9 +60,16 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(taskStatus.starting());
 
         try {
-            // Read elasticsearch.yml
-            LOGGER.debug("Loading settings from: " + configuration.getElasticsearchSettingsLocation());
-            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromSource(configuration.getElasticsearchSettingsLocation());
+            // Parse CommandInfo arguments
+            List<String> list = task.getExecutor().getCommand().getArgumentsList();
+            String[] args = list.toArray(new String[list.size()]);
+            LOGGER.debug("Using arguments: " + Arrays.toString(args));
+            configuration = new Configuration(args);
+
+            // Add settings provided in es Settings file
+            URL elasticsearchSettingsPath = java.net.URI.create(configuration.getElasticsearchSettingsLocation()).toURL();
+            LOGGER.debug("Using elasticsearch settings file: " + elasticsearchSettingsPath);
+            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromUrl(elasticsearchSettingsPath);
             launcher.addRuntimeSettings(esSettings);
 
             // Parse ports
@@ -67,7 +77,7 @@ public class ElasticsearchExecutor implements Executor {
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
 
             // Parse ZooKeeper address
-            RunTimeSettings zk = new ZooKeeperModel(task);
+            RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL());
             launcher.addRuntimeSettings(zk.getRuntimeSettings());
 
             // Launch Node
@@ -84,7 +94,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidParameterException e) {
+        } catch (InvalidParameterException | MalformedURLException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }

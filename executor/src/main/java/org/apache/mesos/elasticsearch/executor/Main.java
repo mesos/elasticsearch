@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) throws Exception {
         Launcher launcher = new ElasticsearchLauncher(new ElasticsearchSettings().defaultSettings());
-        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor(launcher, new TaskStatus(), new Configuration(args)));
+        MesosExecutorDriver driver = new MesosExecutorDriver(new ElasticsearchExecutor(launcher, new TaskStatus()));
         System.exit(driver.run() == Protos.Status.DRIVER_STOPPED ? 0 : 1);
     }
 }

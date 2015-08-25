@@ -87,14 +87,6 @@ public class ElasticsearchExecutorTest {
         verify(status, times(1)).running();
     }
 
-    @Test
-    public void shouldReadDefaultSettings() {
-        // When launching
-        executor.launchTask(driver, getDefaultTaskInfo().build());
-        // Should read settings
-        verify(configuration, atLeastOnce()).getElasticsearchSettingsLocation();
-    }
-
     private Protos.TaskInfo.Builder getDefaultTaskInfo() {
         return Protos.TaskInfo.newBuilder()
                 .setName("")
@@ -118,7 +110,7 @@ public class ElasticsearchExecutorTest {
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo() {
         return Protos.ExecutorInfo.newBuilder()
-                .setCommand(Protos.CommandInfo.newBuilder().addArguments("-zk").addArguments("zk://master:2181/mesos"))
+                .setCommand(Protos.CommandInfo.newBuilder().addArguments(ZookeeperCLIParameter.ZOOKEEPER_URL).addArguments("zk://master:2181/mesos"))
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue("0"));
     }
 }
