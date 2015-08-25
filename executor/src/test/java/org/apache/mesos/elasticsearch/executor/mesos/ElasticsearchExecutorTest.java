@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.executor.mesos;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.elasticsearch.common.settings.ImmutableSettings;
@@ -34,8 +35,10 @@ public class ElasticsearchExecutorTest {
     @InjectMocks
     private ElasticsearchExecutor executor;
 
+    private String[] args = {ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummy:2182"};
+
     @Spy
-    private Configuration configuration = new Configuration();
+    private Configuration configuration = new Configuration(args);
 
     @Mock
     private ExecutorDriver driver;
