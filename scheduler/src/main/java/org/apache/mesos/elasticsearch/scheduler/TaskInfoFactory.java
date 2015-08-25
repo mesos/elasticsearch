@@ -72,7 +72,7 @@ public class TaskInfoFactory {
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
         ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
-        List<String> args = new ArrayList<>(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getMesosZKURL()));
+        List<String> args = new ArrayList<>(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getFrameworkZKURL()));
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             args.addAll(asList(Configuration.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation()));
         }

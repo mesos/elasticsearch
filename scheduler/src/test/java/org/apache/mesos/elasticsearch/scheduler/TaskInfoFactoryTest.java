@@ -34,7 +34,7 @@ public class TaskInfoFactoryTest {
         Configuration configuration = mock(Configuration.class);
         when(configuration.getFrameworkId()).thenReturn(frameworkId);
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getEexecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
         when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var/null");
 
