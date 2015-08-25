@@ -80,7 +80,6 @@ public class TaskInfoFactoryTest {
 
         assertEquals(configuration.getFrameworkId(), taskInfo.getExecutor().getFrameworkId());
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
-        assertEquals("mesos/elasticsearch-executor", taskInfo.getExecutor().getContainer().getDocker().getImage());
 
         assertEquals(1, taskInfo.getExecutor().getContainer().getVolumesCount());
         assertEquals("/data", taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
