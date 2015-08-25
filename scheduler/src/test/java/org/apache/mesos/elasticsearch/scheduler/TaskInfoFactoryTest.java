@@ -36,6 +36,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getEexecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
+        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var/null");
 
         Protos.Offer offer = Protos.Offer.newBuilder()
                                             .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))

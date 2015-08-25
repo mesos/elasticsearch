@@ -172,7 +172,6 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Slave lost: " + slaveId.getValue());
     }
 
-    // Todo, we still don't perform reconciliation
     @Override
     public void executorLost(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, int status) {
         // This is never called by Mesos, so we have to call it ourselves via a healthcheck

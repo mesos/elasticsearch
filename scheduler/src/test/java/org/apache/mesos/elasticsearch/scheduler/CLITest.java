@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -26,7 +27,7 @@ public class CLITest {
 
     @Test
     public void shouldPassIfOnlyRequiredParams() {
-        String[] args = {Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
@@ -38,32 +39,32 @@ public class CLITest {
     
     @Test
     public void randomParamTest() {
-        String[] args = {Configuration.ELASTICSEARCH_RAM, "512", Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {Configuration.ELASTICSEARCH_RAM, "512", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         Configuration configuration = new Configuration(args);
         assertEquals(512.0, configuration.getMem(), 0.1);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldRejectNumbersEqualTo0() {
-        String[] args = {Configuration.ZOOKEEPER_TIMEOUT, "0", Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_TIMEOUT, "0", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldRejectNumbersLessThan0() {
-        String[] args = {Configuration.ZOOKEEPER_TIMEOUT, "-1", Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldFailIfExecutorTimeoutLessThanHealthDelay() {
-        String[] args = {Configuration.EXECUTOR_HEALTH_DELAY, "1000", Configuration.EXECUTOR_TIMEOUT, "10", Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {Configuration.EXECUTOR_HEALTH_DELAY, "1000", Configuration.EXECUTOR_TIMEOUT, "10", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldFailIfParamIsEmpty() {
-        String[] args = {Configuration.ELASTICSEARCH_CLUSTER_NAME, " ", Configuration.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        String[] args = {Configuration.ELASTICSEARCH_CLUSTER_NAME, " ", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 }

@@ -5,14 +5,15 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
 import java.security.InvalidParameterException;
-import java.util.Arrays;
 
 /**
  * Executor for Elasticsearch.
@@ -21,10 +22,12 @@ public class ElasticsearchExecutor implements Executor {
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
+    private final Configuration configuration;
 
-    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
+    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus, Configuration configuration) {
         this.launcher = launcher;
         this.taskStatus = taskStatus;
+        this.configuration = configuration;
     }
 
     @Override
@@ -54,6 +57,11 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(taskStatus.starting());
 
         try {
+            // Read elasticsearch.yml
+            LOGGER.debug("Loading settings from: " + configuration.getElasticsearchSettingsLocation());
+            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromSource(configuration.getElasticsearchSettingsLocation());
+            launcher.addRuntimeSettings(esSettings);
+
             // Parse ports
             RunTimeSettings ports = new PortsModel(task);
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
