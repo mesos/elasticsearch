@@ -37,6 +37,7 @@
 - [x] Web UI on scheduler port 8080
 - [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
+- [x] Customised ES configuration
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
 - [ ] Scale cluster horizontally
@@ -125,9 +126,14 @@ Usage: (Options preceded by an asterisk are required) [options]
        The amount of ram resource to allocate to the elasticsearch instance
        (MB).
        Default: 256.0
+    --elasticsearchSettingsLocation
+       URI to ES yml settings file. If file is copied to all slaves, the file
+       must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml',
+       'http://webserver.com/elasticsearch.yml'
+       Default: <empty string>
     --executorHealthDelay
        The delay between executor healthcheck requests (ms).
-       Default: 1000
+       Default: 30000
     --executorImage
        The docker executor image to use.
        Default: mesos/elasticsearch-executor
