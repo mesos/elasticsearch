@@ -261,7 +261,7 @@ gateway.recover_after_time: 10m
 # are up (and recover_after_nodes is met), begin recovery process immediately
 # (without waiting for recover_after_time to expire):
 #
-gateway.expected_nodes: 2
+#gateway.expected_nodes: SET_BY_FRAMEWORK
 
 # Require explicit index creation
 # action.auto_create_index: false
