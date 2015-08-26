@@ -131,6 +131,9 @@ Usage: (Options preceded by an asterisk are required) [options]
        must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml',
        'http://webserver.com/elasticsearch.yml'
        Default: <empty string>
+    --executorForcePullImage
+       Option to force pull the executor image.
+       Default: false
     --executorHealthDelay
        The delay between executor healthcheck requests (ms).
        Default: 30000

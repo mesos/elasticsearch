@@ -143,6 +143,13 @@ public class Configuration {
         return executorImage;
     }
 
+    public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
+    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
+    private Boolean executorForcePullImage = false;
+    public Boolean getExecutorForcePullImage() {
+        return executorForcePullImage;
+    }
+
     // ****************** Runtime configuration **********************
     private SerializableState state;
 
