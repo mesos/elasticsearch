@@ -69,7 +69,7 @@ public class TaskInfoFactory {
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
                         .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()))
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
                         .build());
     }
 
