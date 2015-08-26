@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
@@ -29,21 +30,15 @@ public class DataVolumesSystemTest extends TestBase {
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, NODE_COUNT);
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        try (InputStream inputstream = CONFIG.dockerClient.copyFileFromContainerCmd(CLUSTER.getMesosContainer().getContainerId(), "/var/lib/elasticsearch/mesos-elasticsearch").withHostPath("/tmp").exec()) {
+        ExecCreateCmdResponse execResponse = CONFIG.dockerClient.execCreateCmd(CLUSTER.getMesosContainer().getContainerId()).withCmd("ls", "/var/lib/elasticsearch/elasticsearch/nodes").withTty(true).withAttachStderr().withAttachStdout().exec();
+        try (InputStream inputstream = CONFIG.dockerClient.execStartCmd(CLUSTER.getMesosContainer().getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
             String contents = IOUtils.toString(inputstream);
-            inputstream.close();
-            assertTrue(contents.contains("mesos-elasticsearch/nodes"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/0"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/0/_state"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/0/node.lock"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/1"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/1/_state"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/1/node.lock"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/2"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/2/_state"));
-            assertTrue(contents.contains("mesos-elasticsearch/nodes/2/node.lock"));
+            LOGGER.info("Mesos-local contents of /var/lib/elasticsearch/elasticsearch: " + contents);
+            assertTrue(contents.contains("0"));
+            assertTrue(contents.contains("1"));
+            assertTrue(contents.contains("2"));
         } catch (IOException e) {
-            LOGGER.error("Could not copy /var/lib/elasticsearch/mesos-elasticsearch from Mesos-Local container");
+            LOGGER.error("Could not list contents of /var/lib/elasticsearch/elasticsearch in Mesos-Local");
         }
     }
 
