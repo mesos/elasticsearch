@@ -21,6 +21,7 @@ public class TaskInfoFactory {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
+    public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
     Clock clock = new Clock();
 
     /**
@@ -67,6 +68,7 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
+                        .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                         .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()))
                         .build());
     }
