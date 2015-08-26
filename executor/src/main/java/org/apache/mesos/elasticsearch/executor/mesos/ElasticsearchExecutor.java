@@ -83,6 +83,9 @@ public class ElasticsearchExecutor implements Executor {
             // Parse cluster name
             launcher.addRuntimeSettings(ImmutableSettings.builder().put("cluster.name", configuration.getElasticsearchClusterName()));
 
+            // Parse expected number of nodes
+            launcher.addRuntimeSettings(ImmutableSettings.builder().put("gateway.expected_nodes", configuration.getElasticsearchNodes()));
+
             // Print final settings for logs.
             LOGGER.debug(launcher.toString());
 
