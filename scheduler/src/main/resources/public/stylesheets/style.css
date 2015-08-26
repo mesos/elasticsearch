@@ -9,6 +9,11 @@ h1 span {
   color: #aaa;
   font-size: 18px;
 }
+@media (max-width: 768px) {
+  h1 span {
+    display: none;
+  }
+}
 h3 {
   margin: 0px 0px 20px 0px;
   font-size: 20px;
@@ -43,7 +48,7 @@ button {
 .dashboard-stat .display .icon {
   display: inline-block;
   float: right;
-  padding: 7px 0 0 0;
+  padding: 3px 0 0 0;
 }
 .dashboard-stat .display .icon i {
   color: #cbd4e0;

@@ -19,8 +19,12 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
+    
+    public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
+    
+    public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
+    
     Clock clock = new Clock();
 
     /**
@@ -67,8 +71,8 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()))
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage("mesos/elasticsearch-executor"))
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                        .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                         .addVolumes(Protos.Volume.newBuilder().setContainerPath("/data").setHostPath("/var/lib/elasticsearch").setMode(Protos.Volume.Mode.RW).build())
                         .build());
     }
@@ -78,6 +82,7 @@ public class TaskInfoFactory {
         List<String> args = new ArrayList<>(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getMesosZKURL()));
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
+        args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
                 .addAllArguments(args)

@@ -44,6 +44,10 @@ public class Configuration {
         return result;
     }
 
+    public int getElasticsearchNodes() {
+        return elasticsearchCLI.getElasticsearchNodes();
+    }
+
     private String getElasticsearchSettingsPath() {
         String path = "";
         try {
