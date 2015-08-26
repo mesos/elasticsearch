@@ -6,6 +6,7 @@ import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
@@ -32,7 +33,7 @@ public class SchedulerMainSystemTest {
         final String schedulerImage = "mesos/elasticsearch-scheduler";
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", Configuration.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -54,7 +55,7 @@ public class SchedulerMainSystemTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", Configuration.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -77,7 +78,7 @@ public class SchedulerMainSystemTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", Configuration.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
