@@ -80,6 +80,12 @@ public class ElasticsearchExecutor implements Executor {
             RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL());
             launcher.addRuntimeSettings(zk.getRuntimeSettings());
 
+            // Parse cluster name
+            launcher.addRuntimeSettings(ImmutableSettings.builder().put("cluster.name", configuration.getElasticsearchClusterName()));
+
+            // Print final settings for logs.
+            LOGGER.debug(launcher.toString());
+
             // Launch Node
             final Node node = launcher.launch();
 
