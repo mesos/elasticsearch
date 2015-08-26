@@ -24,7 +24,11 @@ public class TaskInfoFactory {
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     
     public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
-    
+
+    public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
+
+    public static final String SETTINGS_DATA_VOLUME_HOST = "/var/lib/elasticsearch";
+
     Clock clock = new Clock();
 
     /**
@@ -73,7 +77,7 @@ public class TaskInfoFactory {
                         .setType(Protos.ContainerInfo.Type.DOCKER)
                         .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
                         .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                        .addVolumes(Protos.Volume.newBuilder().setContainerPath("/data").setHostPath("/var/lib/elasticsearch").setMode(Protos.Volume.Mode.RW).build())
+                        .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(SETTINGS_DATA_VOLUME_HOST).setMode(Protos.Volume.Mode.RW).build())
                         .build());
     }
 
