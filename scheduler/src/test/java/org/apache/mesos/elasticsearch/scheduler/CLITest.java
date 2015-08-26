@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * CLI Tests
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class CLITest {
     private Environment env = Mockito.mock(Environment.class);
 
