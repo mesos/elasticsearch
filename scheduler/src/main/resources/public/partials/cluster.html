@@ -1,9 +1,9 @@
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.NumberOfHwNodes}}</h3>
+                    <h3 class="font-red-haze">{{configuration.ElasticsearchNodes}}</h3>
                     <small>NODES</small>
                 </div>
                 <div class="icon">
@@ -27,11 +27,11 @@
             <!--</div>-->
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.Mem}}{{configuration.MemUnits}}</h3>
+                    <h3 class="font-red-haze">{{configuration.Mem}}MB</h3>
                     <small>MEMORY</small>
                 </div>
                 <div class="icon">
@@ -40,11 +40,11 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.Disk}}{{configuration.DiskUnits}}</h3>
+                    <h3 class="font-red-haze">{{configuration.Disk}}GB</h3>
                     <small>DISK</small>
                 </div>
                 <div class="icon">
@@ -72,7 +72,7 @@
     <div class="col-md-7">
         <div class="cell">
             <h3>Elasticsearch Query Browser</h3>
-            <form class="form-inline query-browser" ng-submit="querySubmit()">
+            <form class="query-browser" ng-submit="querySubmit()">
                 <div class="form-group">
                     <input type="text" class="form-control query-string-input" ng-model="query.string" placeholder="Enter your query...">
                 </div>

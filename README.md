@@ -258,6 +258,9 @@ $ ./gradlew build system-test:systemTest
 $ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
 ```
 
+## Support
+Get in touch with the Elasticsearch Mesos framework developers via [mesos-es@container-solutions.com](mesos-es@container-solutions.com)
+
 ## Sponsors
 This project is sponsored by Cisco Cloud Services
 
