@@ -22,4 +22,24 @@ public class ElasticsearchCLIParameter {
     public String getElasticsearchSettingsLocation() {
         return elasticsearchSettingsLocation;
     }
+
+    public static final String ELASTICSEARCH_NODES = "--elasticsearchNodes";
+    @Parameter(names = {ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
+    private int elasticsearchNodes = 3;
+    public int getElasticsearchNodes() {
+        return elasticsearchNodes;
+    }
+
+    /**
+     * Adds a warning message if an even number is encountered
+     */
+    public static class OddNumberOfNodes extends CLIValidators.PositiveInteger {
+        @Override
+        public Boolean notValid(Integer value) {
+            if (value % 2 == 0) {
+                System.out.println("Setting number of ES nodes to an even number. Not recommended!"); // Log4j not in commons package.
+            }
+            return super.notValid(value);
+        }
+    }
 }

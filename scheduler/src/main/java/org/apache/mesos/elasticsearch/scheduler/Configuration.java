@@ -67,11 +67,8 @@ public class Configuration {
         return disk;
     }
 
-    public static final String ELASTICSEARCH_NODES = "--elasticsearchNodes";
-    @Parameter(names = {ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
-    private int elasticsearchNodes = 3;
     public int getElasticsearchNodes() {
-        return elasticsearchNodes;
+        return elasticsearchCLI.getElasticsearchNodes();
     }
 
     public String getElasticsearchSettingsLocation() {
@@ -196,19 +193,6 @@ public class Configuration {
             if (notValid(value) || value <= Configuration.executorHealthDelay) {
                 throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
             }
-        }
-    }
-
-    /**
-     * Adds a warning message if an even number is encountered
-     */
-    public static class OddNumberOfNodes extends CLIValidators.PositiveInteger {
-        @Override
-        public Boolean notValid(Integer value) {
-            if (value % 2 == 0) {
-                LOGGER.warn("Setting number of ES nodes to an even number. Not recommended!");
-            }
-            return super.notValid(value);
         }
     }
 }
