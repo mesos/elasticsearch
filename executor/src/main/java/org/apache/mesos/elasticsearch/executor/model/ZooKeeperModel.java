@@ -22,6 +22,6 @@ public class ZooKeeperModel implements RunTimeSettings {
 
     @Override
     public ImmutableSettings.Builder getRuntimeSettings() {
-        return ImmutableSettings.settingsBuilder().put(getAddress().build());
+        return getAddress();
     }
 }
