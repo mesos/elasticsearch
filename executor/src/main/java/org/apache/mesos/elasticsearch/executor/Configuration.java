@@ -60,7 +60,7 @@ public class Configuration {
 
     public String getElasticsearchZKURL() {
         ElasticsearchZKFormatter zkFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
-        return zkFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return zkFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
     public String getElasticsearchClusterName() {

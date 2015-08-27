@@ -33,7 +33,7 @@ public class SchedulerMainSystemTest {
         final String schedulerImage = "mesos/elasticsearch-scheduler";
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -55,7 +55,7 @@ public class SchedulerMainSystemTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -78,7 +78,7 @@ public class SchedulerMainSystemTest {
         CreateContainerCmd createCommand = CONFIG.dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();

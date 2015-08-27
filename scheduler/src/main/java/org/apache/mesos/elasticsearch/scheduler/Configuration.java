@@ -173,7 +173,7 @@ public class Configuration {
         if (state == null) {
             org.apache.mesos.state.State zkState = new ZooKeeperState(
                     getMesosStateZKURL(),
-                    zookeeperCLI.getZookeeperTimeout(),
+                    zookeeperCLI.getZookeeperMesosTimeout(),
                     TimeUnit.MILLISECONDS,
                     "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
             state = new SerializableZookeeperState(zkState);
@@ -183,12 +183,12 @@ public class Configuration {
 
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
     public String getMesosZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
-        return mesosZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
     public String getFrameworkZKURL() {
