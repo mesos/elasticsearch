@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.URLEncoder;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -44,7 +45,7 @@ public class SearchProxyController {
             httpHost = httpHostStream.skip(RandomUtils.nextInt(tasks.size())).findAny().get();
         }
 
-        HttpResponse esSearchResponse = httpClient.execute(httpHost, new HttpGet("/_search?q=" + query));
+        HttpResponse esSearchResponse = httpClient.execute(httpHost, new HttpGet("/_search?q=" + URLEncoder.encode(query, "UTF-8")));
 
         InputStreamResource inputStreamResource = new InputStreamResource(esSearchResponse.getEntity().getContent());
 
