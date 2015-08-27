@@ -12,6 +12,7 @@
   * [Users Guide](#users-guide)
     * [How to install on Marathon](#how-to-install-on-marathon)
     * [User Interface](#user-interface)
+    * [Known Issues](#known-issues)
   * [Developers Guide](#developers-guide)
     * [Quickstart](#quickstart)
     * [How to run on Linux](#how-to-run-on-linux)
@@ -189,6 +190,7 @@ Tasks list displays detailed information about all tasks in the cluster, not onl
 
 - Issue [#206](https://github.com/mesos/elasticsearch/issues/206): The GUI will not represent the true state of the cluster after a scheduler or executor reconciliation event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
 - Issue [#188](https://github.com/mesos/elasticsearch/issues/188): Database data IS NOT persisted to disk. Data storage is wholly reliant on cluster redundancy. This means that the framework is not yet recommended for production use.
+- Issue [#177](https://github.com/mesos/elasticsearch/issues/177#issuecomment-135367451): Executors keep running if the scheduler is killed unless the DCOS CLI is used.
 
 ## Developers Guide
 
