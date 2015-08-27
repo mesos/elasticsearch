@@ -30,6 +30,15 @@ public abstract class TestBase {
 
     private static ElasticsearchSchedulerContainer scheduler;
 
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            CLUSTER.stop();
+            scheduler.remove();
+        }
+    };
+
     @BeforeClass
     public static void startScheduler() throws Exception {
         CLUSTER.injectImage("mesos/elasticsearch-executor");
