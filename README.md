@@ -34,7 +34,7 @@
 
 - [x] Deployment
 - [x] Durable cluster topology (via ZooKeeper)
-- [x] Web UI on scheduler port 8080
+- [x] Web UI on scheduler port 31100
 - [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
 - [x] Customised ES configuration

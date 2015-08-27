@@ -43,7 +43,7 @@ public class Main {
 
         scheduler.start();
 
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
 
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
