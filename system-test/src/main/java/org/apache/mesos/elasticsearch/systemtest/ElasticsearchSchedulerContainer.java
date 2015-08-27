@@ -41,6 +41,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + mesosIp + ":2181/mesos",
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://" + mesosIp + ":2181/mesos",
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
                         Configuration.WEB_UI_PORT, "8080",

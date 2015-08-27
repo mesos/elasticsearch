@@ -196,6 +196,10 @@ public class Configuration {
         return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
     }
 
+    public long getFrameworkZKTimeout() {
+        return zookeeperCLI.getZookeeperFrameworkTimeout();
+    }
+
     /**
      * Ensures that the number is > than the EXECUTOR_HEALTH_DELAY
      */

@@ -48,14 +48,26 @@ public class CLITest {
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectNumbersEqualTo0() {
+    public void shouldRejectZookeeperMesosTimeoutEqualTo0() {
         String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_TIMEOUT, "0", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectNumbersLessThan0() {
+    public void shouldRejectZookeeperMesosTimeoutLessThan0() {
         String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
+
+    @Test(expected = com.beust.jcommander.ParameterException.class)
+    public void shouldRejectZookeeperFrameworkTimeoutEqualTo0() {
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "0", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
+
+    @Test(expected = com.beust.jcommander.ParameterException.class)
+    public void shouldRejectZookeeperFrameworkTimeoutLessThan0() {
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 

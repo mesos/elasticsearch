@@ -63,6 +63,10 @@ public class Configuration {
         return zkFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
+    public long getElasticsearchZKTimeout() {
+        return zookeeperCLI.getZookeeperFrameworkTimeout();
+    }
+
     public String getElasticsearchClusterName() {
         return elasticsearchCLI.getElasticsearchClusterName();
     }

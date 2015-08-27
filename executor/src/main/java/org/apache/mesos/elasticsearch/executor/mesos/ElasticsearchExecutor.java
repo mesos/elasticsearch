@@ -77,7 +77,7 @@ public class ElasticsearchExecutor implements Executor {
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
 
             // Parse ZooKeeper address
-            RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL());
+            RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL(), configuration.getElasticsearchZKTimeout());
             launcher.addRuntimeSettings(zk.getRuntimeSettings());
 
             // Parse cluster name

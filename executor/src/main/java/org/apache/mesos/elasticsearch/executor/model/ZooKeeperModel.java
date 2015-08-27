@@ -10,14 +10,18 @@ public class ZooKeeperModel implements RunTimeSettings {
     private static final Logger LOGGER = Logger.getLogger(ZooKeeperModel.class);
     public static final String ZOOKEEPER_ADDRESS_KEY = "sonian.elasticsearch.zookeeper.client.host";
     private final String address;
+    private long timeout;
 
-    public ZooKeeperModel(String address) {
+    public ZooKeeperModel(String address, long timeout) {
         this.address = address;
+        this.timeout = timeout;
     }
 
     private ImmutableSettings.Builder getAddress() {
         LOGGER.debug(ZOOKEEPER_ADDRESS_KEY + ": " + address);
-        return ImmutableSettings.settingsBuilder().put(ZOOKEEPER_ADDRESS_KEY, address);
+        return ImmutableSettings.settingsBuilder()
+                .put(ZOOKEEPER_ADDRESS_KEY, address)
+                .put("sonian.elasticsearch.zookeeper.client.session.timeout", timeout);
     }
 
     @Override
