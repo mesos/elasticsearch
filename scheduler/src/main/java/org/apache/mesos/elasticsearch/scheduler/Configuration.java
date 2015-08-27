@@ -5,8 +5,9 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
@@ -26,10 +27,12 @@ public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
+    private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
+        jCommander.addObject(elasticsearchCLI);
         jCommander.addObject(this);
         try {
             jCommander.parse(args); // Parse command line args into configuration class.
@@ -64,25 +67,16 @@ public class Configuration {
         return disk;
     }
 
-    public static final String ELASTICSEARCH_NODES = "--elasticsearchNodes";
-    @Parameter(names = {ELASTICSEARCH_NODES}, description = "Number of elasticsearch instances.", validateValueWith = OddNumberOfNodes.class)
-    private int elasticsearchNodes = 3;
     public int getElasticsearchNodes() {
-        return elasticsearchNodes;
+        return elasticsearchCLI.getElasticsearchNodes();
     }
 
-    public static final String ELASTICSEARCH_CLUSTER_NAME = "--elasticsearchClusterName";
-    @Parameter(names = {ELASTICSEARCH_CLUSTER_NAME}, description = "Name of the elasticsearch cluster", validateWith = CLIValidators.NotEmptyString.class)
-    private String elasticsearchClusterName = "mesos-ha";
-    public String getElasticsearchClusterName() {
-        return elasticsearchClusterName;
-    }
-
-    public static final String ELASTICSEARCH_SETTINGS_LOCATION = "--elasticsearchSettingsLocation";
-    @Parameter(names = {ELASTICSEARCH_SETTINGS_LOCATION}, description = "Local path to custom elasticsearch.yml settings file", validateWith = CLIValidators.NotEmptyString.class)
-    private String elasticsearchSettingsLocation = "";
     public String getElasticsearchSettingsLocation() {
-        return elasticsearchSettingsLocation;
+        return elasticsearchCLI.getElasticsearchSettingsLocation();
+    }
+
+    public String getElasticsearchClusterName() {
+        return elasticsearchCLI.getElasticsearchClusterName();
     }
 
     // **** WEB UI
@@ -146,6 +140,13 @@ public class Configuration {
         return executorImage;
     }
 
+    public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
+    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
+    private Boolean executorForcePullImage = false;
+    public Boolean getExecutorForcePullImage() {
+        return executorForcePullImage;
+    }
+
     // ****************** Runtime configuration **********************
     private SerializableState state;
 
@@ -174,7 +175,7 @@ public class Configuration {
                     getMesosStateZKURL(),
                     zookeeperCLI.getZookeeperTimeout(),
                     TimeUnit.MILLISECONDS,
-                    "/" + getFrameworkName() + "/" + getElasticsearchClusterName());
+                    "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
             state = new SerializableZookeeperState(zkState);
         }
         return state;
@@ -204,19 +205,6 @@ public class Configuration {
             if (notValid(value) || value <= Configuration.executorHealthDelay) {
                 throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
             }
-        }
-    }
-
-    /**
-     * Adds a warning message if an even number is encountered
-     */
-    public static class OddNumberOfNodes extends CLIValidators.PositiveInteger {
-        @Override
-        public Boolean notValid(Integer value) {
-            if (value % 2 == 0) {
-                LOGGER.warn("Setting number of ES nodes to an even number. Not recommended!");
-            }
-            return super.notValid(value);
         }
     }
 }

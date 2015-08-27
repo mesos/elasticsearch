@@ -37,7 +37,7 @@
 # Node names are generated dynamically on startup, so you're relieved
 # from configuring them manually. You can tie this node to a specific name:
 #
-# cluster.name: SET_BY_FRAMEWORK
+# node.name: SET_BY_FRAMEWORK
 
 # Every node can be configured to allow or deny being eligible as the master,
 # and to allow or deny to store the data.
@@ -102,11 +102,11 @@ node.data: true
 
 # Set the number of shards (splits) of an index (5 by default):
 #
-index.number_of_shards: 5
+#index.number_of_shards: 5
 
 # Set the number of replicas (additional copies) of an index (1 by default):
 #
-index.number_of_replicas: 2
+#index.number_of_replicas: 2
 
 # Note, that for development on a local machine, with small indices, it usually
 # makes sense to "disable" the distributed features:
@@ -250,18 +250,18 @@ bootstrap.mlockall: true
 
 # Allow recovery process after N nodes in a cluster are up:
 #
-gateway.recover_after_nodes: 1
+#gateway.recover_after_nodes: 1
 
 # Set the timeout to initiate the recovery process, once the N nodes
 # from previous setting are up (accepts time value):
 #
-gateway.recover_after_time: 10m
+#gateway.recover_after_time: 10m
 
 # Set how many nodes are expected in this cluster. Once these N nodes
 # are up (and recover_after_nodes is met), begin recovery process immediately
 # (without waiting for recover_after_time to expire):
 #
-gateway.expected_nodes: 2
+#gateway.expected_nodes: SET_BY_FRAMEWORK
 
 # Require explicit index creation
 # action.auto_create_index: false
@@ -269,9 +269,9 @@ gateway.expected_nodes: 2
 # Protect against accidental close/delete operations
 # on all indices. You can still close/delete individual
 # indices
-action.disable_close_all_indices: true
-action.disable_delete_all_indices: true
-action.disable_shutdown: true
+#action.disable_close_all_indices: true
+#action.disable_delete_all_indices: true
+#action.disable_shutdown: true
 
 ############################# Recovery Throttling #############################
 

@@ -3,7 +3,8 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.zookeeper.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
 import java.text.SimpleDateFormat;
@@ -18,8 +19,16 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
+    
+    public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
+    
+    public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
+
+    public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
+
+    public static final String SETTINGS_DATA_VOLUME_HOST = "/var/lib/elasticsearch";
+
     Clock clock = new Clock();
 
     /**
@@ -66,13 +75,19 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()))
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                        .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
+                        .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(SETTINGS_DATA_VOLUME_HOST).setMode(Protos.Volume.Mode.RW).build())
                         .build());
     }
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
         ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
-        List<String> args = new ArrayList<>(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getFrameworkZKURL()));
+
+        List<String> args = new ArrayList<>(asList(ZookeeperCLIParameter.ZOOKEEPER_URL, configuration.getMesosZKURL()));
+        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
+        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
+        args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             args.addAll(asList(Configuration.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation()));
         }
@@ -81,6 +96,12 @@ public class TaskInfoFactory {
                 .addAllArguments(args)
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
                 .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getEexecutorImage()).build());
+    }
+
+    private void addIfNotEmpty(List<String> args, String key, String value) {
+        if (!value.isEmpty()) {
+            args.addAll(asList(key, value));
+        }
     }
 
     private String taskId(Protos.Offer offer) {
