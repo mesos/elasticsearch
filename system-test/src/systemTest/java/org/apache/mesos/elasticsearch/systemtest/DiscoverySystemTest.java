@@ -16,7 +16,7 @@ public class DiscoverySystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
 
     @Test
-    public void testNodeDiscoveryRest() throws InterruptedException {
+    public void testNodeDiscoveryRest() {
         ElasticsearchSchedulerContainer scheduler = getScheduler();
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), NODE_COUNT);
@@ -25,6 +25,6 @@ public class DiscoverySystemTest extends TestBase {
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, NODE_COUNT);
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
-    }
+   }
 
 }

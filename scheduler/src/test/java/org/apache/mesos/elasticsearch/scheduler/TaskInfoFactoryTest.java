@@ -82,5 +82,13 @@ public class TaskInfoFactoryTest {
 
         assertEquals(configuration.getFrameworkId(), taskInfo.getExecutor().getFrameworkId());
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
+
+        assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
+        assertEquals(TaskInfoFactory.SETTINGS_PATH_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
+        assertEquals(TaskInfoFactory.SETTINGS_PATH_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
+        assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
+        assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_CONTAINER, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
+        assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_HOST, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
+        assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
     }
 }

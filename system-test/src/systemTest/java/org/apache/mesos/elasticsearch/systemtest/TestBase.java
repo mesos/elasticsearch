@@ -15,7 +15,6 @@ import org.junit.runner.Description;
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
 
-
     protected static final int NODE_COUNT = 3;
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
@@ -50,8 +49,6 @@ public abstract class TestBase {
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
-
-
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
