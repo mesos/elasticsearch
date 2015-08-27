@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.container.AbstractContainer;
@@ -40,7 +41,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + mesosIp + ":2181/mesos",
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://" + mesosIp + ":2181/mesos",
-                        Configuration.ELASTICSEARCH_NODES, "3",
+                        ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
                         Configuration.WEB_UI_PORT, "8080",
                         Configuration.EXECUTOR_NAME, "esdemo");
