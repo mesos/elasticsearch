@@ -102,4 +102,10 @@ public class CLITest {
         String[] args = {ZookeeperCLIParameter.ZOOKEEPER_URL + "=zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
+
+    @Test(expected = com.beust.jcommander.ParameterException.class)
+    public void doesNotAcceptBlank() {
+        String[] args = {ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, "", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
 }
