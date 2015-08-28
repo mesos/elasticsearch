@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
@@ -193,7 +194,11 @@ public class Configuration {
 
     public String getFrameworkZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
-        return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+        } else {
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        }
     }
 
     public long getFrameworkZKTimeout() {

@@ -21,6 +21,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private String mesosIp;
 
+    private String zookeeperFrameworkUrl;
+
     protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp) {
         super(dockerClient);
         this.mesosIp = mesosIp;
@@ -33,18 +35,35 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected CreateContainerCmd dockerCommand() {
+        zookeeperFrameworkUrl = "zk://" + mesosIp + ":2181/mesos";
         return dockerClient
                 .createContainerCmd(SCHEDULER_IMAGE)
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                 .withCmd(
-                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + mesosIp + ":2181/mesos",
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://" + mesosIp + ":2181/mesos",
+                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, zookeeperFrameworkUrl,
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
                         Configuration.WEB_UI_PORT, "8080",
                         Configuration.EXECUTOR_NAME, "esdemo");
+    }
+
+    public String getZookeeperMesosUrl() {
+        return "zk://" + mesosIp + ":2181/mesos";
+    }
+
+    public String getZookeeperFrameworkUrl() {
+        if (zookeeperFrameworkUrl == null) {
+            return getZookeeperMesosUrl();
+        } else {
+            return zookeeperFrameworkUrl;
+        }
+    }
+
+    public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
+        this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
     }
 }

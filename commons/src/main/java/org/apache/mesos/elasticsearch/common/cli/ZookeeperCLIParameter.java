@@ -29,7 +29,7 @@ public class ZookeeperCLIParameter {
     }
 
     public static final String ZOOKEEPER_FRAMEWORK_TIMEOUT = "--zookeeperFrameworkTimeout";
-    @Parameter(names = {ZOOKEEPER_FRAMEWORK_TIMEOUT}, description = "The timeout for connecting to zookeeper for the framework (ms).", validateValueWith = CLIValidators.PositiveLong.class)
+    @Parameter(names = {ZOOKEEPER_FRAMEWORK_TIMEOUT}, required = false, description = "The timeout for connecting to zookeeper for the framework (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private long zookeeperFrameworkTimeout = 20000L;
     public long getZookeeperFrameworkTimeout() {
         return zookeeperFrameworkTimeout;
