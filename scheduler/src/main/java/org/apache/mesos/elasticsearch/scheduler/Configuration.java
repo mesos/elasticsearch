@@ -195,8 +195,10 @@ public class Configuration {
     public String getFrameworkZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
         } else {
+            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
             return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
         }
     }

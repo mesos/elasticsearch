@@ -35,7 +35,6 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected CreateContainerCmd dockerCommand() {
-        zookeeperFrameworkUrl = "zk://" + mesosIp + ":2181/mesos";
         return dockerClient
                 .createContainerCmd(SCHEDULER_IMAGE)
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
@@ -56,11 +55,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     }
 
     public String getZookeeperFrameworkUrl() {
-        if (zookeeperFrameworkUrl == null) {
-            return getZookeeperMesosUrl();
-        } else {
-            return zookeeperFrameworkUrl;
-        }
+        return "zk://" + mesosIp + ":2181/mesos";
     }
 
     public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {

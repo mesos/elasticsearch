@@ -26,6 +26,6 @@ public class ElasticsearchZookeeperResponse {
     }
 
     public String getHost() {
-        return "http://" + host.replace("/mesos", "");
+        return "zk://" + host.replace("/mesos", "");
     }
 }
