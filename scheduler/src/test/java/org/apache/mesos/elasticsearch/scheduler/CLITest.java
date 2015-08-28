@@ -96,4 +96,10 @@ public class CLITest {
         String[] args = {Configuration.EXECUTOR_FORCE_PULL_IMAGE, "afds", ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
+
+    @Test(expected = com.beust.jcommander.ParameterException.class)
+    public void doesNotAcceptEquals() {
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_URL + "=zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
 }
