@@ -184,7 +184,7 @@ public class Configuration {
 
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
     }
 
     public String getMesosZKURL() {
@@ -193,13 +193,12 @@ public class Configuration {
     }
 
     public String getFrameworkZKURL() {
-        ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+            return zookeeperCLI.getZookeeperMesosUrl();
         } else {
             LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+            return zookeeperCLI.getZookeeperFrameworkUrl();
         }
     }
 

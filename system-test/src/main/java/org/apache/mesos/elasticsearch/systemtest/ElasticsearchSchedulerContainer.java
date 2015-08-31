@@ -54,10 +54,6 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         return "zk://" + mesosIp + ":2181/mesos";
     }
 
-    public String getZookeeperFrameworkUrl() {
-        return "zk://" + mesosIp + ":2181/mesos";
-    }
-
     public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
         this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
     }
