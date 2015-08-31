@@ -20,6 +20,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * System tests which verifies configuring a separate Zookeeper cluster for the framework.
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest {
 
     protected static final int NODE_COUNT = 3;
