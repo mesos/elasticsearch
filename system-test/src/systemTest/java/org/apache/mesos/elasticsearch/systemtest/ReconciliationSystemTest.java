@@ -1,13 +1,7 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.container.AbstractContainer;
@@ -18,7 +12,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,7 +30,6 @@ public class ReconciliationSystemTest {
     private static final int CLUSTER_SIZE = 3;
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
-    public static final int DOCKER_PORT = 2376;
 
     private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
     private static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
@@ -47,51 +39,13 @@ public class ReconciliationSystemTest {
             .build();
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
-    public static final int PROXY_DOCKER_PORT = 3377; // A different port is required for each instantiation
 
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
 
     @BeforeClass
     public static void beforeScheduler() throws Exception {
-        final DockerClient dockerClient = CONFIG.dockerClient;
-
-        final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
-        String innerDockerHost;
-
-        if (dockerUri.getScheme().startsWith("http")) {
-            LOGGER.debug("Non local docker environment");
-
-            final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
-                private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
-
-                @Override
-                protected void pullImage() {
-                    pullImage(DOCKER_IMAGE, "latest");
-                }
-
-                @Override
-                protected CreateContainerCmd dockerCommand() {
-                    return dockerClient
-                            .createContainerCmd(DOCKER_IMAGE)
-                            .withLinks(Link.parse(CLUSTER.getMesosContainer().getContainerId() + ":docker"))
-                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
-                            .withPortBindings(PortBinding.parse("0.0.0.0:" + PROXY_DOCKER_PORT + ":" + DOCKER_PORT))
-                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
-                }
-            };
-            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
-            dockerForwarder.start();
-
-            innerDockerHost = dockerUri.getHost() + ":" + PROXY_DOCKER_PORT; //TODO: fetch port from docker inspect
-        } else {
-            LOGGER.debug("Local docker environment");
-            innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-        }
-
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-
-        innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
+        innerDockerClient = CLUSTER.getInnerDockerClient();
 
         LOGGER.debug("Injecting executor");
         CLUSTER.injectImage("mesos/elasticsearch-executor");
