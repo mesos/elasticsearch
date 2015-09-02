@@ -21,14 +21,14 @@ dependencies {
     compile 'com.github.docker-java:docker-java:1.3.0'
     compile 'com.mashape.unirest:unirest-java:1.4.5'
     compile 'com.jayway.awaitility:awaitility:1.6.3'
-    compile 'com.github.ContainerSolutions:mini-mesos:3ef4e419e1991306b8445c83c199cecea10ac2d4'
+    compile 'com.github.ContainerSolutions:mini-mesos:d7722467c6154aabb22302a2a8db8ede9199404e'
 
     systemTestCompile project(':scheduler')
     systemTestCompile 'junit:junit:4.12'
     systemTestCompile 'com.github.docker-java:docker-java:1.3.0'
     systemTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
     systemTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    systemTestCompile 'com.github.ContainerSolutions:mini-mesos:3ef4e419e1991306b8445c83c199cecea10ac2d4'
+    systemTestCompile 'com.github.ContainerSolutions:mini-mesos:d7722467c6154aabb22302a2a8db8ede9199404e'
 }
 
 task main(type:JavaExec, dependsOn: 'compileJava') {
