@@ -98,42 +98,8 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     $interval(fetchTasks, fetchInterval);
 });
 
-controllers.controller('ClusterController', function($scope, $http, $location, config, Search) {
-    $scope.query = {
-        error: '',
-        string: '',
-        node: '',
-        results: null,
-    };
+controllers.controller('ClusterController', function($scope) {
 
-    $scope.$parent.$watch('nodes', function(value) {
-        if (value.length && $scope.query.node == '') {
-            $scope.query.node = value[0];
-        }
-    });
-
-    $scope.querySubmit = function() {
-        if ($scope.query.node && $scope.query.string) {
-            $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
-            var success = function(data) {
-                $scope.query.results = data.hits;
-            }
-            var error = function(data) {
-                if (data.hasOwnProperty('error')) {
-                    $scope.query.error = data.error;
-                } else {
-                    $scope.query.error = "Unknown error"
-                }
-            }
-            Search.get({q: $scope.query.string}, success, error);
-        }
-    };
-
-    $scope.resetQuery = function() {
-        $scope.query.error = '';
-        $scope.query.string = '';
-        $scope.query.results = null;
-    };
 });
 
 controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
@@ -259,4 +225,42 @@ controllers.controller('TasksController', function ($scope) {
 
 controllers.controller('ConfigurationController', function ($scope) {
 
+});
+
+controllers.controller('QueryBrowserController', function ($scope, $http, $location, config, Search) {
+    $scope.query = {
+        error: '',
+        string: '',
+        node: '',
+        results: null,
+    };
+
+    $scope.$parent.$watch('nodes', function(value) {
+        if (value.length && $scope.query.node == '') {
+            $scope.query.node = value[0];
+        }
+    });
+
+    $scope.querySubmit = function() {
+        if ($scope.query.node && $scope.query.string) {
+            $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
+            var success = function(data) {
+                $scope.query.results = data.hits;
+            }
+            var error = function(data) {
+                if (data.hasOwnProperty('error')) {
+                    $scope.query.error = data.error;
+                } else {
+                    $scope.query.error = "Unknown error"
+                }
+            }
+            Search.get({q: $scope.query.string}, success, error);
+        }
+    };
+
+    $scope.resetQuery = function() {
+        $scope.query.error = '';
+        $scope.query.string = '';
+        $scope.query.results = null;
+    };
 });

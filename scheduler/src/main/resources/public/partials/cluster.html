@@ -62,30 +62,6 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-md-12">
-        <div class="cell">
-            <h3>Elasticsearch Query Browser</h3>
-            <form class="query-browser" ng-submit="querySubmit()">
-                <div class="form-group">
-                    <input type="text" class="form-control query-string-input" ng-model="query.string" placeholder="Enter your query...">
-                </div>
-                <div class="form-group">
-                    <select class="form-control" ng-model="query.node" ng-options="node for node in nodes"></select>
-                </div>
-                <button type="submit" class="btn btn-primary">Search</button>
-                <button type="button" class="btn btn-default" ng-click="resetQuery()">Reset</button>
-            </form>
-            <div class="alert alert-danger" role="alert" ng-show="query.error">
-                {{query.error}}
-            </div>
-            <div class="search-results" ng-show="query.results">
-                <json-formatter json="query.results" open="3"></json-formatter>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="row" ng-controller="StatsController">
     <div class="col-md-12">
         <div class="cell">

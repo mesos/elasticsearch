@@ -104,12 +104,6 @@ ul.sidebar .sidebar-list a:hover,
 ul.sidebar .sidebar-list a.active {
   background: #222222;
   color: #74BD43;
-  border-left: 3px solid #74BD43;
-  text-indent: 22px;
-}
-ul.sidebar .sidebar-list a:hover .menu-icon,
-ul.sidebar .sidebar-list a.active .menu-icon {
-  text-indent: 22px !important;
 }
 .sidebar-footer {
   background-color: #000000;

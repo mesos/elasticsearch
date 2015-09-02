@@ -24,6 +24,10 @@ app.config(['$routeProvider', function ($routeProvider) {
         templateUrl: 'partials/configuration.html',
         controller: 'ConfigurationController',
         activeTab: 'configuration'
+    }).when('/query-browser', {
+        templateUrl: 'partials/query-browser.html',
+        controller: 'QueryBrowserController',
+        activeTab: 'query-browser'
     }).otherwise({
         redirectTo: '/'
     });
