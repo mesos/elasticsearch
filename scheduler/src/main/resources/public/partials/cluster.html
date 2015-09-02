@@ -92,3 +92,27 @@
     </div>
 </div>
 
+<div class="row" ng-controller="StatsController">
+    <div class="col-md-12">
+        <div class="cell">
+            <h3>Performance Overview</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <highchart id="chart1" config="charts.indices"></highchart>
+                </div>
+                <div class="col-md-6">
+                    <highchart id="chart2" config="charts.shards"></highchart>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <highchart id="chart1" config="charts.docs"></highchart>
+                </div>
+                <div class="col-md-6">
+                    <highchart id="chart2" config="charts.store"></highchart>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+

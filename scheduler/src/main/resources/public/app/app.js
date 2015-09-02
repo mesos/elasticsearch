@@ -4,6 +4,7 @@ var app = angular.module('mesos-es-ui', [
     'ui.bootstrap',
     'angularMoment',
     'jsonFormatter',
+    'highcharts-ng',
 	'mesos-es-ui.config',
 	'mesos-es-ui.controllers',
 	'mesos-es-ui.directives',
