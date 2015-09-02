@@ -20,6 +20,10 @@ app.config(['$routeProvider', function ($routeProvider) {
         templateUrl: 'partials/tasks.html',
         controller: 'TasksController',
         activeTab: 'tasks'
+    }).when('/configuration', {
+        templateUrl: 'partials/configuration.html',
+        controller: 'ConfigurationController',
+        activeTab: 'configuration'
     }).otherwise({
         redirectTo: '/'
     });

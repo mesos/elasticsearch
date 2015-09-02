@@ -136,10 +136,6 @@ controllers.controller('ClusterController', function($scope, $http, $location, c
     };
 });
 
-controllers.controller('TasksController', function ($scope, $interval, config, Tasks) {
-
-});
-
 controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
     var chartConfig = {
         options: {
@@ -261,4 +257,12 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
 
     fetchStats();
     $interval(fetchStats, fetchInterval);
+});
+
+controllers.controller('TasksController', function ($scope) {
+
+});
+
+controllers.controller('ConfigurationController', function ($scope) {
+
 });
