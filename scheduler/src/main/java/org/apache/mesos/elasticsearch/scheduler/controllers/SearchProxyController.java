@@ -24,13 +24,29 @@ import java.util.stream.Stream;
  *
  */
 @RestController
-@RequestMapping("/es")
+@RequestMapping("/v1/es")
 public class SearchProxyController {
     @Autowired
     ElasticsearchScheduler scheduler;
 
     @Autowired
     HttpClient httpClient;
+
+    @RequestMapping("/_cluster/stats")
+    public ResponseEntity<InputStreamResource> stats() throws IOException {
+        Collection<Task> tasks = scheduler.getTasks().values();
+        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> toHttpHost(task.getClientAddress()));
+        HttpHost httpHost = httpHostStream.skip(RandomUtils.nextInt(tasks.size())).findAny().get();
+
+        HttpResponse esSearchResponse = httpClient.execute(httpHost, new HttpGet("/_cluster/stats"));
+        InputStreamResource inputStreamResource = new InputStreamResource(esSearchResponse.getEntity().getContent());
+
+        return ResponseEntity.ok()
+            .contentLength(esSearchResponse.getEntity().getContentLength())
+            .contentType(MediaType.APPLICATION_JSON)
+            .header("X-elasticsearch-host", httpHost.toHostString())
+            .body(inputStreamResource);
+    }
 
     @RequestMapping("/_search")
     public ResponseEntity<InputStreamResource> search(@RequestParam("q") String query, @RequestHeader(value = "X-ElasticSearch-Host", required = false) String elasticSearchHost) throws IOException {
