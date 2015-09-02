@@ -157,16 +157,6 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
                             [1, '#3366AA']
                         ]
                     }
-//                    marker: {
-//                        radius: 2
-//                    },
-//                    lineWidth: 1,
-//                    states: {
-//                        hover: {
-//                            lineWidth: 1
-//                        }
-//                    },
-//                    threshold: null
                }
             },
             legend: {
@@ -178,18 +168,7 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
         },
         series: [{
             type: 'area',
-            data: (function () {
-                var data = [],
-                    time = (new Date()).getTime(),
-                    i;
-                for (i = -19; i <= 0; i += 1) {
-                    data.push({
-                        x: time + i * 1000,
-                        y: Math.random()
-                    });
-                }
-                return data;
-            }())
+            data: []
         }],
         title: {
             text: ''
@@ -220,18 +199,33 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
     $scope.charts.indices.title.text = "Number of indices";
     $scope.charts.indices.yAxis.title.text = "Count";
     $scope.charts.indices.options.plotOptions.area.fillColor.stops = [[0, '#74BD43'], [1, '#74BD43']];
+    $scope.charts.indices.series.data = (function () {
+        var data = [],
+            time = (new Date()).getTime(),
+            i;
+        for (i = -19; i <= 0; i += 1) {
+            data.push({
+                x: time + i * 1000,
+                y: Math.random()
+            });
+        }
+        return data;
+    }());
 
     $scope.charts.shards.title.text = "Number of shards";
     $scope.charts.shards.yAxis.title.text = "Count";
     $scope.charts.shards.options.plotOptions.area.fillColor.stops = [[0, '#3D9953'], [1, '#3D9953']];
+    $scope.charts.shards.series.data = [];
 
     $scope.charts.docs.title.text = "Number of documents";
     $scope.charts.docs.yAxis.title.text = "Count";
-    $scope.charts.docs.options.plotOptions.area.fillColor.stops = [[0, '#C340FF'], [1, '#C340FF']];
+    $scope.charts.docs.options.plotOptions.area.fillColor.stops = [[0, '#14CC40'], [1, '#14CC40']];
+    $scope.charts.docs.series.data = [];
 
     $scope.charts.store.title.text = "Data size";
     $scope.charts.store.yAxis.title.text = "Gigabytes";
-    $scope.charts.store.options.plotOptions.area.fillColor.stops = [[0, '#14CC40'], [1, '#14CC40']];
+    $scope.charts.store.options.plotOptions.area.fillColor.stops = [[0, '#C340FF'], [1, '#C340FF']];
+    $scope.charts.store.series.data = [];
 
     var fetchInterval = 5000; // ms
     var dataLimit = 50;
