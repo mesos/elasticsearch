@@ -114,4 +114,11 @@ public class CLITest {
         String[] args = {ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, "", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
+
+    @Test
+    public void shouldUseMesosZKURLIfFrameworkZKURLNotSupplied() {
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
+        Configuration configuration = new Configuration(args);
+        assertEquals(configuration.getMesosZKURL(), configuration.getFrameworkZKURL());
+    }
 }
