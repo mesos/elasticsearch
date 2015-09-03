@@ -1,23 +1,14 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.container.AbstractContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -33,59 +24,18 @@ import static org.junit.Assert.assertFalse;
 public class ExecutorSystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
-    public static final int DOCKER_PORT = 2376;
-
-    private static DockerClient clusterClient;
-
     private static String executorId;
 
     @BeforeClass
     public static void beforeClass() {
-        final DockerClient dockerClient = CONFIG.dockerClient;
-
-        final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
-        String innerDockerHost;
-
-        if (dockerUri.getScheme().startsWith("http")) {
-            LOGGER.debug("Non local docker environment");
-
-            final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
-                private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
-
-                @Override
-                protected void pullImage() {
-                    pullImage(DOCKER_IMAGE, "latest");
-                }
-
-                @Override
-                protected CreateContainerCmd dockerCommand() {
-                    return dockerClient
-                            .createContainerCmd(DOCKER_IMAGE)
-                            .withLinks(Link.parse(CLUSTER.getMesosContainer().getContainerId() + ":docker"))
-                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
-                            .withPortBindings(PortBinding.parse("0.0.0.0:3376:" + DOCKER_PORT))
-                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
-                }
-            };
-            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
-            dockerForwarder.start();
-
-            innerDockerHost = dockerUri.getHost() + ":" + 3376; //TODO: fetch port from docker inspect
-        } else {
-            LOGGER.debug("Local docker environment");
-            innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-        }
-
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-        clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         await().atMost(60, TimeUnit.SECONDS).until(() -> {
             try {
-                return clusterClient.listContainersCmd().exec().size() > 0;
+                return CLUSTER.getInnerDockerClient().listContainersCmd().exec().size() > 0;
             } catch (javax.ws.rs.ProcessingException ignored) {
                 return false;
             }
         });
-        List<Container> containers = clusterClient.listContainersCmd().exec();
+        List<Container> containers = CLUSTER.getInnerDockerClient().listContainersCmd().exec();
 
         // Find a single executor container
         executorId = "";
@@ -104,8 +54,8 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureLibMesosExists() throws IOException {
         // Remote execute an ls command to make sure the file exists
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        ExecCreateCmdResponse exec = CLUSTER.getInnerDockerClient().execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
+        InputStream execCmdStream = CLUSTER.getInnerDockerClient().execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
     }
@@ -117,8 +67,8 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        ExecCreateCmdResponse exec = CLUSTER.getInnerDockerClient().execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
+        InputStream execCmdStream = CLUSTER.getInnerDockerClient().execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
@@ -127,8 +77,8 @@ public class ExecutorSystemTest extends TestBase {
 
         // Remote execute the ENV var to make sure it points to a real file
         String path = env.get(0).split("=")[1];
-        exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
-        execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        exec = CLUSTER.getInnerDockerClient().execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
+        execCmdStream = CLUSTER.getInnerDockerClient().execStartCmd(exec.getId()).exec();
         result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
 
