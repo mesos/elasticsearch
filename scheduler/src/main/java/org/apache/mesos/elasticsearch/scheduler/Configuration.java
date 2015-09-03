@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
@@ -173,7 +174,7 @@ public class Configuration {
         if (state == null) {
             org.apache.mesos.state.State zkState = new ZooKeeperState(
                     getMesosStateZKURL(),
-                    zookeeperCLI.getZookeeperTimeout(),
+                    zookeeperCLI.getZookeeperMesosTimeout(),
                     TimeUnit.MILLISECONDS,
                     "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
             state = new SerializableZookeeperState(zkState);
@@ -183,12 +184,26 @@ public class Configuration {
 
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
     }
 
     public String getMesosZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
-        return mesosZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+    }
+
+    public String getFrameworkZKURL() {
+        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
+            return zookeeperCLI.getZookeeperMesosUrl();
+        } else {
+            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
+            return zookeeperCLI.getZookeeperFrameworkUrl();
+        }
+    }
+
+    public long getFrameworkZKTimeout() {
+        return zookeeperCLI.getZookeeperFrameworkTimeout();
     }
 
     /**

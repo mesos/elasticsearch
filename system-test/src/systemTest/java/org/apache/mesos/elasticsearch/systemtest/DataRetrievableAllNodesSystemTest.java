@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests scheduler APIs
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class DataRetrievableAllNodesSystemTest extends TestBase {
 
     private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
