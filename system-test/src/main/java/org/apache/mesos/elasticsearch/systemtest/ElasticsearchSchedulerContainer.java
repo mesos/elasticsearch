@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -42,7 +43,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, zookeeperFrameworkUrl,
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
@@ -56,5 +57,13 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
         this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
+    }
+
+    public String getZookeeperFrameworkUrl() {
+        if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
+            return getZookeeperMesosUrl();
+        } else {
+            return zookeeperFrameworkUrl;
+        }
     }
 }
