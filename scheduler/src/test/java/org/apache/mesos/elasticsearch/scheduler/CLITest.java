@@ -117,8 +117,9 @@ public class CLITest {
 
     @Test
     public void shouldUseMesosZKURLIfFrameworkZKURLNotSupplied() {
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
+        String frameworkFormattedZKURL = "dummyIPAddress:2181";
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
         Configuration configuration = new Configuration(args);
-        assertEquals(configuration.getMesosZKURL(), configuration.getFrameworkZKURL());
+        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
     }
 }
