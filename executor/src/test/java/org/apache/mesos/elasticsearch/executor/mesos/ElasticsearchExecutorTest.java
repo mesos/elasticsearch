@@ -103,7 +103,7 @@ public class ElasticsearchExecutorTest {
 
     private Protos.ExecutorInfo.Builder getDefaultExecutorInfo() {
         return Protos.ExecutorInfo.newBuilder()
-                .setCommand(Protos.CommandInfo.newBuilder().addArguments(ZookeeperCLIParameter.ZOOKEEPER_URL).addArguments("zk://master:2181/mesos"))
+                .setCommand(Protos.CommandInfo.newBuilder().addArguments(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL).addArguments("zk://master:2181/mesos"))
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue("0"));
     }
 }

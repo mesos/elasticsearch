@@ -80,6 +80,7 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getFrameworkId()).thenReturn(frameworkID);
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getState()).thenReturn(new TestSerializableStateImpl());
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);

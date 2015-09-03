@@ -91,7 +91,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
       "network": "HOST"
     }
   },
-  "args": ["--zookeeperUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
+  "args": ["--zookeeperMesosUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
   "cpus": 0.2,
   "mem": 512.0,
   "env": {
@@ -158,11 +158,11 @@ Usage: (Options preceded by an asterisk are required) [options]
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
-    --zookeeperTimeout
-       The timeout for connecting to zookeeper (ms).
+    --zookeeperMesosTimeout
+       The timeout for connecting to Zookeeper for Mesos (ms).
        Default: 20000
-  * --zookeeperUrl
-       Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)
+  * --zookeeperMesosUrl
+       Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
        Default: zk://mesos.master:2181
 ```
 
