@@ -26,6 +26,7 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     var fetchClusterConfiguration = function() {
         Cluster.get(function (data) {
             $scope.name = data.name;
+            data.configuration.Disk = Math.round(data.configuration.Disk / 1024); // MB to GB
             $scope.configuration = data.configuration;
         });
     };

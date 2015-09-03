@@ -42,7 +42,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         ZookeeperCLIParameter.ZOOKEEPER_URL, "zk://" + mesosIp + ":2181/mesos",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
-                        Configuration.WEB_UI_PORT, "8080",
+                        Configuration.WEB_UI_PORT, "31100",
                         Configuration.EXECUTOR_NAME, "esdemo");
     }
 }
