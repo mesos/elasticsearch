@@ -47,47 +47,16 @@ public class ReconciliationSystemTest {
             .build();
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
-    public static final int PROXY_DOCKER_PORT = 3377; // A different port is required for each instantiation
 
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
 
     @BeforeClass
     public static void beforeScheduler() throws Exception {
-        final DockerClient dockerClient = CONFIG.dockerClient;
-
-        final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
         String innerDockerHost;
 
-        if (dockerUri.getScheme().startsWith("http")) {
-            LOGGER.debug("Non local docker environment");
-
-            final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
-                private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
-
-                @Override
-                protected void pullImage() {
-                    pullImage(DOCKER_IMAGE, "latest");
-                }
-
-                @Override
-                protected CreateContainerCmd dockerCommand() {
-                    return dockerClient
-                            .createContainerCmd(DOCKER_IMAGE)
-                            .withLinks(Link.parse(CLUSTER.getMesosContainer().getContainerId() + ":docker"))
-                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
-                            .withPortBindings(PortBinding.parse("0.0.0.0:" + PROXY_DOCKER_PORT + ":" + DOCKER_PORT))
-                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
-                }
-            };
-            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
-            dockerForwarder.start();
-
-            innerDockerHost = dockerUri.getHost() + ":" + PROXY_DOCKER_PORT; //TODO: fetch port from docker inspect
-        } else {
-            LOGGER.debug("Local docker environment");
-            innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-        }
+        LOGGER.debug("Local docker environment");
+        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
 
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
 
