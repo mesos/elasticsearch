@@ -35,7 +35,7 @@
 
 - [x] Deployment
 - [x] Durable cluster topology (via ZooKeeper)
-- [x] Web UI on scheduler port 8080
+- [x] Web UI on scheduler port 31100
 - [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
 - [x] Customised ES configuration
@@ -172,7 +172,22 @@ The web based user interface is available on port 31100 of the scheduler by defa
 
 The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
 
+#### Cluster Overview
+
+![Tasks List](docs/screenshot-cluster.png)
+
+Cluster overview page shows on the top the number of Elasticsearch nodes in the cluster, the overall amount of RAM and disk space allocated by the cluster. State of individual nodes is displayed in a bar, one color representing each state and the percentage of nodes being in this state.
+
+Below you can find Configuration Overview section and Query Browser, that allows you to examine data stored on individual Elasticsearch nodes.
+
+#### Tasks List
+
+![Tasks List](docs/screenshot-tasks.png)
+
+Tasks list displays detailed information about all tasks in the cluster, not only those currently running, but also tasks being staged, finished or failed. Click through individual tasks to get access to Elasticsearch REST API.
+
 ### Known issues
+
 - Issue [#206](https://github.com/mesos/elasticsearch/issues/206): The GUI will not represent the true state of the cluster after a scheduler or executor reconciliation event. E.g. If the scheduler is killed and restarted, the GUI will show zero executors, even though there are executors present.
 - Issue [#188](https://github.com/mesos/elasticsearch/issues/188): Database data IS NOT persisted to disk. Data storage is wholly reliant on cluster redundancy. This means that the framework is not yet recommended for production use.
 - Issue [#177](https://github.com/mesos/elasticsearch/issues/177#issuecomment-135367451): Executors keep running if the scheduler is killed unless the DCOS CLI is used.
@@ -261,10 +276,13 @@ $ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
 ```
 
 ## Support
+
 Get in touch with the Elasticsearch Mesos framework developers via [mesos-es@container-solutions.com](mesos-es@container-solutions.com)
 
 ## Sponsors
+
 This project is sponsored by Cisco Cloud Services
 
 ## License
+
 Apache License 2.0

@@ -48,7 +48,7 @@ public abstract class TestBase {
         scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
