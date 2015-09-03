@@ -103,6 +103,8 @@ controllers.controller('ClusterController', function($scope) {
 });
 
 controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
+
+    // chart config template object
     var chartConfig = {
         options: {
             chart: {
@@ -145,11 +147,13 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
         },
         yAxis: {
             title: {
-                text: "Values"
+                text: ""
             }
         },
         func: function(chart) {}
     };
+
+    // generate chart config objects from template
 
     $scope.charts = {
         indices: {},
@@ -157,66 +161,62 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
         docs: {},
         store: {}
     };
-    
+
     angular.forEach($scope.charts, function(value, key) {
         $scope.charts[key] = angular.copy(chartConfig);
     });
 
+    // configure charts
+
     $scope.charts.indices.title.text = "Number of indices";
-    $scope.charts.indices.yAxis.title.text = "Count";
     $scope.charts.indices.options.plotOptions.area.fillColor.stops = [[0, '#74BD43'], [1, '#74BD43']];
-    $scope.charts.indices.series.data = (function () {
-        var data = [],
-            time = (new Date()).getTime(),
-            i;
-        for (i = -19; i <= 0; i += 1) {
-            data.push({
-                x: time + i * 1000,
-                y: Math.random()
-            });
-        }
-        return data;
+    $scope.charts.indices.series.data = (function() {
+        return [];
     }());
 
     $scope.charts.shards.title.text = "Number of shards";
-    $scope.charts.shards.yAxis.title.text = "Count";
     $scope.charts.shards.options.plotOptions.area.fillColor.stops = [[0, '#3D9953'], [1, '#3D9953']];
     $scope.charts.shards.series.data = [];
 
     $scope.charts.docs.title.text = "Number of documents";
-    $scope.charts.docs.yAxis.title.text = "Count";
     $scope.charts.docs.options.plotOptions.area.fillColor.stops = [[0, '#14CC40'], [1, '#14CC40']];
     $scope.charts.docs.series.data = [];
 
     $scope.charts.store.title.text = "Data size";
-    $scope.charts.store.yAxis.title.text = "Gigabytes";
     $scope.charts.store.options.plotOptions.area.fillColor.stops = [[0, '#C340FF'], [1, '#C340FF']];
     $scope.charts.store.series.data = [];
 
-    var fetchInterval = 5000; // ms
-    var dataLimit = 50;
+    // updating charts
 
-    var updateChart = function(data, chart) {
+    var updateChart = function(chart, x, y) {
         var series = $scope.charts[chart].series[0].data;
-        var x = (new Date()).getTime(),
-            y = Math.random();
         series.push({x: x,y: y});
-        if (series.length > dataLimit) {
-            $scope.charts[chart].series[0].data = series.slice(series.length - dataLimit);
+        if (series.length > config.charts.history) {
+            $scope.charts[chart].series[0].data = series.slice(series.length - config.charts.history);
         }
     };
 
     var fetchStats = function() {
         Stats.get({}, function(data) {
-            updateChart(data, 'indices');
-            updateChart(data, 'shards');
-            updateChart(data, 'docs');
-            updateChart(data, 'store');
+//            if (true) {
+//                data.indices.count = 4
+//                data.indices.docs.count = 42005;
+//                data.indices.shards.total = 7;
+//                data.indices.store.size_in_bytes = 78726352635;
+//            }
+            updateChart('docs', data.timestamp, data.indices.docs.count);
+//            updateChart('docs', data.timestamp, data.indices.docs.deleted);
+            updateChart('indices', data.timestamp, data.indices.count);
+            if (data.indices.shards) {
+                updateChart('shards', data.timestamp, data.indices.shards.total);
+//                updateChart('shards', data.timestamp, data.indices.shards.primaries);
+            }
+            updateChart('store', data.timestamp, data.indices.store.size_in_bytes);
         });
     };
 
     fetchStats();
-    $interval(fetchStats, fetchInterval);
+    $interval(fetchStats, config.charts.interval);
 });
 
 controllers.controller('TasksController', function ($scope) {
