@@ -36,7 +36,7 @@ public class TasksResponse {
         @Override
         public Boolean call() throws Exception {
             try {
-                String tasksEndPoint = "http://" + schedulerIpAddress + ":8080/v1/tasks";
+                String tasksEndPoint = "http://" + schedulerIpAddress + ":31100/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
                 return response.getBody().getArray().length() == nodesCount;
