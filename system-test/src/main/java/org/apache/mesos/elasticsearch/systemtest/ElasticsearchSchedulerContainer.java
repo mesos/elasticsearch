@@ -60,10 +60,10 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     }
 
     public String getZookeeperFrameworkUrl() {
-        if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
-            return getZookeeperMesosUrl();
-        } else {
-            return zookeeperFrameworkUrl;
-        }
+      if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
+        return getZookeeperMesosUrl();
+      } else {
+        return zookeeperFrameworkUrl;
+      }
     }
 }
