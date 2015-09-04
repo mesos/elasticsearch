@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
-## [0.3] - [4 September 2015]
+## [0.3.0] - [4 September 2015]
 ### Added
 - [Full configuration of framework via CLI](https://github.com/mesos/elasticsearch/issues/111)
 - [User can override ES settings with their own elasticsearch.yml](https://github.com/mesos/elasticsearch/issues/242)
