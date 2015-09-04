@@ -108,68 +108,68 @@ Note: the JAVA_OPTS line is required. If this is not set, then the Java heap spa
 
 Other command line options include:
 ```
-    Usage: (Options preceded by an asterisk are required) [options]
-      Options:
-        --elasticsearchClusterName
-           Name of the elasticsearch cluster
-           Default: mesos-ha
-        --elasticsearchCpu
-           The amount of CPU resource to allocate to the elasticsearch instance.
-           Default: 1.0
-        --elasticsearchDisk
-           The amount of Disk resource to allocate to the elasticsearch instance
-           (MB).
-           Default: 1024.0
-        --elasticsearchNodes
-           Number of elasticsearch instances.
-           Default: 3
-        --elasticsearchRam
-           The amount of ram resource to allocate to the elasticsearch instance
-           (MB).
-           Default: 256.0
-        --elasticsearchSettingsLocation
-           URI to ES yml settings file. If file is copied to all slaves, the file
-           must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml',
-           'http://webserver.com/elasticsearch.yml'
-           Default: <empty string>
-        --executorForcePullImage
-           Option to force pull the executor image.
-           Default: false
-        --executorHealthDelay
-           The delay between executor healthcheck requests (ms).
-           Default: 1000
-        --executorImage
-           The docker executor image to use.
-           Default: mesos/elasticsearch-executor
-        --executorName
-           The name given to the executor task.
-           Default: elasticsearch-executor
-        --executorTimeout
-           The maximum executor healthcheck timeout (ms). Must be greater than
-           --executorHealthDelay. Will start new executor after this length of time.
-           Default: 60000
-        --frameworkFailoverTimeout
-           The time before Mesos kills a scheduler and tasks if it has not recovered
-           (ms).
-           Default: 2592000.0
-        --frameworkName
-           The name given to the framework.
-           Default: elasticsearch
-        --webUiPort
-           TCP port for web ui interface.
-           Default: 31100
-        --zookeeperFrameworkTimeout
-           The timeout for connecting to zookeeper for the framework (ms).
-           Default: 20000
-        --zookeeperFrameworkUrl
-           Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)
-           Default: <empty string>
-        --zookeeperMesosTimeout
-           The timeout for connecting to zookeeper for Mesos (ms).
-           Default: 20000
-      * --zookeeperMesosUrl
-           Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
-           Default: zk://mesos.master:2181
+Usage: (Options preceded by an asterisk are required) [options]
+  Options:
+    --elasticsearchClusterName
+       Name of the elasticsearch cluster
+       Default: mesos-ha
+    --elasticsearchCpu
+       The amount of CPU resource to allocate to the elasticsearch instance.
+       Default: 1.0
+    --elasticsearchDisk
+       The amount of Disk resource to allocate to the elasticsearch instance
+       (MB).
+       Default: 1024.0
+    --elasticsearchNodes
+       Number of elasticsearch instances.
+       Default: 3
+    --elasticsearchRam
+       The amount of ram resource to allocate to the elasticsearch instance
+       (MB).
+       Default: 256.0
+    --elasticsearchSettingsLocation
+       URI to ES yml settings file. If file is copied to all slaves, the file
+       must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml',
+       'http://webserver.com/elasticsearch.yml'
+       Default: <empty string>
+    --executorForcePullImage
+       Option to force pull the executor image.
+       Default: false
+    --executorHealthDelay
+       The delay between executor healthcheck requests (ms).
+       Default: 30000
+    --executorImage
+       The docker executor image to use.
+       Default: mesos/elasticsearch-executor
+    --executorName
+       The name given to the executor task.
+       Default: elasticsearch-executor
+    --executorTimeout
+       The maximum executor healthcheck timeout (ms). Must be greater than
+       --executorHealthDelay. Will start new executor after this length of time.
+       Default: 60000
+    --frameworkFailoverTimeout
+       The time before Mesos kills a scheduler and tasks if it has not recovered
+       (ms).
+       Default: 2592000.0
+    --frameworkName
+       The name given to the framework.
+       Default: elasticsearch
+    --webUiPort
+       TCP port for web ui interface.
+       Default: 31100
+    --zookeeperFrameworkTimeout
+       The timeout for connecting to zookeeper for the framework (ms).
+       Default: 20000
+    --zookeeperFrameworkUrl
+       Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)
+       Default: <empty string>
+    --zookeeperMesosTimeout
+       The timeout for connecting to zookeeper for Mesos (ms).
+       Default: 20000
+  * --zookeeperMesosUrl
+       Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
+       Default: zk://mesos.master:2181
 ```
 
 ### User Interface
