@@ -130,4 +130,9 @@ public class CLITest {
         Configuration configuration = new Configuration(args);
         assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
     }
+
+    @Test
+    public void printHelpWithValidDefaults() {
+        new Configuration(new String[]{});
+    }
 }
