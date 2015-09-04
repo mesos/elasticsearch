@@ -122,4 +122,12 @@ public class CLITest {
         Configuration configuration = new Configuration(args);
         assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
     }
+
+    @Test
+    public void shouldReturnBlankIfDefaultFrameworkZKURL() {
+        String frameworkFormattedZKURL = "dummyIPAddress:2181";
+        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, ZookeeperCLIParameter.DEFAULT, ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
+        Configuration configuration = new Configuration(args);
+        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
+    }
 }
