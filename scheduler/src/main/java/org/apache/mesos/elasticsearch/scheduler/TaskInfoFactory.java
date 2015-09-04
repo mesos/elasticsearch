@@ -86,7 +86,7 @@ public class TaskInfoFactory {
         List<String> args = new ArrayList<>(
                 asList(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, configuration.getMesosZKURL(),
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, configuration.getFrameworkZKURL(),
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://" + configuration.getFrameworkZKURL(), // Make framework url a valid url again.
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, String.valueOf(configuration.getFrameworkZKTimeout())
                 ));
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());

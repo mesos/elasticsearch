@@ -9,6 +9,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
@@ -184,7 +185,13 @@ public class Configuration {
 
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
+            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+        } else {
+            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
+            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        }
     }
 
     public String getMesosZKURL() {
@@ -193,12 +200,13 @@ public class Configuration {
     }
 
     public String getFrameworkZKURL() {
+        ZKFormatter mesosZKFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return zookeeperCLI.getZookeeperMesosUrl();
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
         } else {
             LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return zookeeperCLI.getZookeeperFrameworkUrl();
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
         }
     }
 
