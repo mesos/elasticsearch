@@ -131,7 +131,7 @@ public class CLITest {
         assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
     }
 
-    @Test
+    @Test(expected = com.beust.jcommander.ParameterException.class)
     public void printHelpWithValidDefaults() {
         new Configuration(new String[]{});
     }
