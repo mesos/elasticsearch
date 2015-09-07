@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest {
 
-    private static final Logger LOGGER = Logger.getLogger(TestBase.class);
+    private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
 
     @Rule
     public final MesosCluster CLUSTER = new MesosCluster(
