@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.0] - [7 September 2015]
+
+### Added
+
+- [Configurable data directory](https://github.com/mesos/elasticsearch/issues/275)
+
+###
+
+- Upgraded to [Mini-Mesos 0.2.6](https://github.com/ContainerSolutions/mini-mesos/releases/tag/0.2.6) with fast-fail logging
+
 ## [0.3.0] - [4 September 2015]
 ### Added
 - [Full configuration of framework via CLI](https://github.com/mesos/elasticsearch/issues/111)
