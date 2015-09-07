@@ -41,12 +41,22 @@ public abstract class TestBase {
     public static void startScheduler() throws Exception {
         CLUSTER.injectImage("mesos/elasticsearch-executor");
 
-        LOGGER.info("Starting Elasticsearch scheduler");
+        startNewSchedulerWithFrameworkName("elasticsearch");
+    }
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+    protected static ElasticsearchSchedulerContainer startNewSchedulerWithFrameworkName(String frameworkName) {
+        LOGGER.info("Starting Elasticsearch scheduler with framework name: " + frameworkName);
+
+        scheduler = new ElasticsearchSchedulerContainer(
+                CLUSTER.getConfig().dockerClient,
+                CLUSTER.getMesosContainer().getIpAddress(),
+                frameworkName
+        );
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
+
+        return scheduler;
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {
