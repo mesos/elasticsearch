@@ -75,7 +75,7 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()
                         .setType(Protos.ContainerInfo.Type.DOCKER)
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getEexecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
                         .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                         .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(SETTINGS_DATA_VOLUME_HOST).setMode(Protos.Volume.Mode.RW).build())
                         .build());
@@ -96,7 +96,7 @@ public class TaskInfoFactory {
                 .setShell(false)
                 .addAllArguments(args)
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
-                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getEexecutorImage()).build());
+                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getExecutorImage()).build());
     }
 
     private void addIfNotEmpty(List<String> args, String key, String value) {
