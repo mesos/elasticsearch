@@ -24,17 +24,15 @@ public class DiscoverySystemTest extends TestBase {
 
     @Test
     public void testSchedulerRegistration() {
-        await().atMost(60, TimeUnit.SECONDS).until(new Callable<Boolean>() {
-            @Override
-            public Boolean call() throws Exception {
-                ArrayList<Framework> frameworks = CLUSTER.getStateInfo().getFrameworks();
-                Set<String> registeredFrameworkNames = frameworks.stream().map((Framework f) -> f.getName()).collect(Collectors.toSet());
-                LOGGER.info("Waiting for one framework in cluster; got: " + registeredFrameworkNames.toString());
-                return registeredFrameworkNames.size() == 1;
-            }
+        await().atMost(60, TimeUnit.SECONDS).until(() -> {
+            ArrayList<Framework> frameworks = CLUSTER.getStateInfo().getFrameworks();
+            Set<String> registeredFrameworkNames = frameworks.stream().map((Framework f) -> f.getName()).collect(Collectors.toSet());
+            LOGGER.info("Waiting for one framework in cluster; got: " + registeredFrameworkNames.toString());
+            return registeredFrameworkNames.contains("elasticsearch");
         });
     }
 
+    @Test
     public void testNodeDiscoveryRest() {
         ElasticsearchSchedulerContainer scheduler = getScheduler();
 
