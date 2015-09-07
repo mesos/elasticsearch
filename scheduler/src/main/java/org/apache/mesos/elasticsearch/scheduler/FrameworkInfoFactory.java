@@ -24,6 +24,7 @@ public class FrameworkInfoFactory {
         frameworkBuilder.setName(configuration.getFrameworkName());
         frameworkBuilder.setFailoverTimeout(configuration.getFailoverTimeout());
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
+        frameworkBuilder.setRole(configuration.getFrameworkRole()); // DCOS certification FIXME WHICH ONE
         setWebuiUrl(frameworkBuilder);
         setFrameworkId(frameworkBuilder);
         return frameworkBuilder;
