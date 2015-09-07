@@ -51,7 +51,9 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.ELASTICSEARCH_RAM, "256",
                         Configuration.WEB_UI_PORT, "31100",
                         Configuration.EXECUTOR_NAME, "esdemo",
-                        Configuration.DATA_DIR, getDataDirectory());
+                        Configuration.DATA_DIR, getDataDirectory(),
+                        Configuration.FRAMEWORK_ROLE, "*" // The default
+                );
     }
 
     private String getDataDirectory() {
