@@ -22,11 +22,20 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private String mesosIp;
 
+    private String frameworkName;
+
     private String zookeeperFrameworkUrl;
 
     protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp) {
         super(dockerClient);
         this.mesosIp = mesosIp;
+        this.frameworkName = "elasticsearch";
+    }
+
+    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp, String frameworkName) {
+        super(dockerClient);
+        this.mesosIp = mesosIp;
+        this.frameworkName = frameworkName;
     }
 
     @Override
@@ -48,7 +57,9 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                         Configuration.ELASTICSEARCH_RAM, "256",
                         Configuration.WEB_UI_PORT, "31100",
-                        Configuration.EXECUTOR_NAME, "esdemo");
+                        Configuration.EXECUTOR_NAME, "esdemo",
+                        Configuration.FRAMEWORK_NAME, frameworkName
+                );
     }
 
     public String getZookeeperMesosUrl() {
