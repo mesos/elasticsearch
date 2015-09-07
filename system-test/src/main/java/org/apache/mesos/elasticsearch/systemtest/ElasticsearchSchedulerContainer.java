@@ -22,6 +22,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     protected String mesosIp;
 
+    private String frameworkName;
+
     private String frameworkRole;
 
     private String zookeeperFrameworkUrl;
@@ -32,12 +34,21 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         super(dockerClient);
         this.mesosIp = mesosIp;
         this.frameworkRole = "*"; // The default
+        this.frameworkName = "elasticsearch";
     }
 
     protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp, String frameworkRole) {
         super(dockerClient);
         this.mesosIp = mesosIp;
         this.frameworkRole = frameworkRole;
+        this.frameworkName = "elasticsearch";
+    }
+
+    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp, String frameworkRole, String frameworkName) {
+        super(dockerClient);
+        this.mesosIp = mesosIp;
+        this.frameworkRole = frameworkRole;
+        this.frameworkName = frameworkName;
     }
 
     @Override
@@ -61,7 +72,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.WEB_UI_PORT, "31100",
                         Configuration.EXECUTOR_NAME, "esdemo",
                         Configuration.DATA_DIR, getDataDirectory(),
-                        Configuration.FRAMEWORK_ROLE, frameworkRole
+                        Configuration.FRAMEWORK_ROLE, frameworkRole,
+                        Configuration.FRAMEWORK_NAME, frameworkName
                 );
     }
 
