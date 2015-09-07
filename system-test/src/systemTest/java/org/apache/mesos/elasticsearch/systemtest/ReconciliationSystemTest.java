@@ -1,11 +1,7 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
@@ -18,7 +14,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -39,7 +34,7 @@ public class ReconciliationSystemTest {
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     public static final int DOCKER_PORT = 2376;
 
-    private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
+    private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(CLUSTER_SIZE)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
@@ -80,7 +75,7 @@ public class ReconciliationSystemTest {
 
     @After
     public void after() {
-        CONTAINER_MANGER.stopAll();
+        CONTAINER_MANAGER.stopAll();
     }
 
     @Test
@@ -89,7 +84,7 @@ public class ReconciliationSystemTest {
         assertCorrectNumberOfExecutors();
 
         // Stop and restart container
-        CONTAINER_MANGER.stopContainer(scheduler);
+        CONTAINER_MANAGER.stopContainer(scheduler);
         startSchedulerContainer();
         assertCorrectNumberOfExecutors();
     }
@@ -112,7 +107,7 @@ public class ReconciliationSystemTest {
         assertCorrectNumberOfExecutors();
 
         // Kill scheduler
-        CONTAINER_MANGER.stopContainer(scheduler);
+        CONTAINER_MANAGER.stopContainer(scheduler);
 
         // Kill executor
         killOneExecutor();
@@ -146,7 +141,7 @@ public class ReconciliationSystemTest {
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-        CONTAINER_MANGER.addAndStart(scheduler);
+        CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
 
