@@ -153,7 +153,7 @@ public class Configuration {
     public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
     @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = CLIValidators.NotEmptyString.class)
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
-    public String getEexecutorImage() {
+    public String getExecutorImage() {
         return executorImage;
     }
 
