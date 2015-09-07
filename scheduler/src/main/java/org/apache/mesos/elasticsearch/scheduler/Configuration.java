@@ -3,11 +3,13 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
@@ -173,7 +175,7 @@ public class Configuration {
         if (state == null) {
             org.apache.mesos.state.State zkState = new ZooKeeperState(
                     getMesosStateZKURL(),
-                    zookeeperCLI.getZookeeperTimeout(),
+                    zookeeperCLI.getZookeeperMesosTimeout(),
                     TimeUnit.MILLISECONDS,
                     "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
             state = new SerializableZookeeperState(zkState);
@@ -183,12 +185,33 @@ public class Configuration {
 
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
+            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+        } else {
+            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
+            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        }
     }
 
     public String getMesosZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
-        return mesosZKFormatter.format(zookeeperCLI.getZookeeperUrl());
+        return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+    }
+
+    public String getFrameworkZKURL() {
+        ZKFormatter mesosZKFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
+        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
+            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
+        } else {
+            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
+            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
+        }
+    }
+
+    public long getFrameworkZKTimeout() {
+        return zookeeperCLI.getZookeeperFrameworkTimeout();
     }
 
     /**

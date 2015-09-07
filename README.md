@@ -91,7 +91,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
       "network": "HOST"
     }
   },
-  "args": ["--zookeeperUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
+  "args": ["--zookeeperMesosUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
   "cpus": 0.2,
   "mem": 512.0,
   "env": {
@@ -158,11 +158,17 @@ Usage: (Options preceded by an asterisk are required) [options]
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
-    --zookeeperTimeout
-       The timeout for connecting to zookeeper (ms).
+    --zookeeperFrameworkTimeout
+       The timeout for connecting to zookeeper for the framework (ms).
        Default: 20000
-  * --zookeeperUrl
-       Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)
+    --zookeeperFrameworkUrl
+       Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)
+       Default: <empty string>
+    --zookeeperMesosTimeout
+       The timeout for connecting to zookeeper for Mesos (ms).
+       Default: 20000
+  * --zookeeperMesosUrl
+       Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
        Default: zk://mesos.master:2181
 ```
 
@@ -219,6 +225,7 @@ $ ./gradlew build system-test:main
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
+$ sudo route -n add 172.17.0.0/16 $(docker-machine ip mesos-es)
 $ ./gradlew build system-test:main
 ```
 
