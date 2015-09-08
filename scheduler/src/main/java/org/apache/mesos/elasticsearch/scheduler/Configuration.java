@@ -126,7 +126,8 @@ public class Configuration {
         return frameworkFailoverTimeout;
     }
 
-    // DCOS Certification requirement TODO WHICH ONE
+    // DCOS Certification requirement
+    // TODO (jhf@trifork.com): WHICH ONE
     public static final String FRAMEWORK_ROLE = "--frameworkRole";
     @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkRole = "*"; // This is the default if none is passed to Mesos
