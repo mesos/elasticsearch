@@ -8,7 +8,9 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.apache.mesos.mini.state.Framework;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -33,21 +35,18 @@ public class FrameworkRoleSystemTest {
 
     public static final Logger LOGGER = Logger.getLogger(FrameworkRoleSystemTest.class);
 
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+    @Rule
+    public final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
-    @BeforeClass
-    public static void startScheduler() throws Exception {
+    @Before
+    public void before() throws Exception {
         CLUSTER.injectImage("mesos/elasticsearch-executor");
     }
 
-    @Rule
-    public TestWatcher watchman = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            CLUSTER.stop();
-        }
-    };
+    @After
+    public void after() {
+        CLUSTER.stop();
+    }
 
     @Test
     public void miniMesosReportsTheRequestedFrameworkRole() throws UnirestException, JsonParseException, JsonMappingException {
@@ -62,11 +61,7 @@ public class FrameworkRoleSystemTest {
         CLUSTER.addAndStartContainer(scheduler);
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
 
-        Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> {
-            LOGGER.info("State info: " + CLUSTER.getStateInfo().toString());
-            LOGGER.info("Framework names: " + CLUSTER.getStateInfo().getFrameworks().stream().map((Framework f) -> f.getName()).collect(Collectors.toSet()).toString());
-            return CLUSTER.getStateInfo().getFramework("elasticsearch") != null;
-        });
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(ARBITRARY_ROLE_STRING, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());
         scheduler.remove();
     }
