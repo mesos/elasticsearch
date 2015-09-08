@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class DataVolumesSystemTest {
 
-    public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
+    public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
 
     protected static final int NODE_COUNT = 3;
 
