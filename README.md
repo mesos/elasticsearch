@@ -39,7 +39,7 @@
 - [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
 - [x] Customised ES configuration
-- [ ] Configurable data directory
+- [X] Configurable data directory
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
 - [ ] Scale cluster horizontally
