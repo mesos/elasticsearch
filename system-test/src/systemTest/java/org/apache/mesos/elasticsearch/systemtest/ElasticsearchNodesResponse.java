@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.is;
 
 /**
  * Response for Elasticsearch nodes
@@ -26,7 +25,7 @@ public class ElasticsearchNodesResponse {
     public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
         this.tasks = tasks;
         this.nodesCount = nodesCount;
-        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall(), is(true));
+        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
     }
 
     private boolean discoverySuccessful = false;
