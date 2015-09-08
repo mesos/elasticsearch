@@ -35,20 +35,22 @@ import static org.junit.Assert.assertTrue;
 public class ReconciliationSystemTest {
     public static final int DOCKER_PORT = 2376;
     private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
-    private static final int CLUSTER_SIZE = 3;
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-            .numberOfSlaves(CLUSTER_SIZE)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build()
-    );
+    private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
+
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
+
+    @ClassRule
+    public static final MesosCluster CLUSTER = new MesosCluster(
+        MesosClusterConfig.builder()
+            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
+            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
+            .slaveResources(TEST_CONFIG.getPortRanges())
+            .build()
+    );
 
     @BeforeClass
     public static void beforeScheduler() throws Exception {
@@ -62,7 +64,7 @@ public class ReconciliationSystemTest {
         innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
 
         LOGGER.debug("Injecting executor");
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
+        CLUSTER.injectImage(TEST_CONFIG.getExecutorImageName());
         await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CLUSTER.getConfig().dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
         List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
 
@@ -93,7 +95,7 @@ public class ReconciliationSystemTest {
         ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
-        assertLessThan(CLUSTER_SIZE); // Then should be less than 3, because at some point we kill an executor
+        assertLessThan(TEST_CONFIG.getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
@@ -137,7 +139,7 @@ public class ReconciliationSystemTest {
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
-        assertCorrectNumberOfExecutors(CLUSTER_SIZE);
+        assertCorrectNumberOfExecutors(TEST_CONFIG.getElasticsearchNodesCount());
     }
 
     private void assertLessThan(int expected) throws IOException {
@@ -181,8 +183,8 @@ public class ReconciliationSystemTest {
         @Override
         protected CreateContainerCmd dockerCommand() {
             return dockerClient
-                    .createContainerCmd(SCHEDULER_IMAGE)
-                    .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
+                    .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
+                    .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                     .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                     .withCmd(

@@ -23,7 +23,7 @@ public class StatusApiSystemTest extends TestBase {
         for (int i = 0; i < tasksResponse.getJson().getBody().getArray().length(); i++) {
             JSONObject taskObject = tasksResponse.getJson().getBody().getArray().getJSONObject(i);
             assertThat(taskObject.getString("id"), startsWith("elasticsearch_slave"));
-            assertEquals("esdemo", taskObject.getString("name"));
+            assertEquals(TEST_CONFIG.getElasticsearchJobName(), taskObject.getString("name"));
             assertThat(taskObject.getString("started_at"), isValidDateTime());
             assertThat(taskObject.getString("http_address"), isValidAddress());
             assertThat(taskObject.getString("transport_address"), isValidAddress());
