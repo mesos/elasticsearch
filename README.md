@@ -39,6 +39,7 @@
 - [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
 - [x] Fault tolerance
 - [x] Customised ES configuration
+- [ ] Configurable data directory
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
 - [ ] Scale cluster horizontally
@@ -110,6 +111,9 @@ Other command line options include:
 ```
 Usage: (Options preceded by an asterisk are required) [options]
   Options:
+    --dataDir
+       The data directory used by Docker volumes in the executors
+       Default: /var/lib/mesos/slave/elasticsearch
     --elasticsearchClusterName
        Name of the elasticsearch cluster
        Default: mesos-ha
