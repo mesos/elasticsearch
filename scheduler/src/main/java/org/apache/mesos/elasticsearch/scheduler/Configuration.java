@@ -91,7 +91,7 @@ public class Configuration {
 
 
     // **** FRAMEWORK
-    private String version = "0.3.RC0";
+    private String version = "0.4.0";
     public String getVersion() {
         return version;
     }
