@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
@@ -7,6 +8,7 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
+import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,9 +22,9 @@ import static java.util.Arrays.asList;
 public class TaskInfoFactory {
 
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
-    
+
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    
+
     public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
 
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
@@ -58,6 +60,7 @@ public class TaskInfoFactory {
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
+                .setData(ByteString.copyFromUtf8(new InetSocketAddress(offer.getHostname(), 1).getAddress().getHostAddress())) //TODO: store startedTime and hostname as well
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)

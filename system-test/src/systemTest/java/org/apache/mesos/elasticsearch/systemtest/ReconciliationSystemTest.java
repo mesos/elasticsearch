@@ -7,6 +7,8 @@ import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.hamcrest.CoreMatchers;
+import org.json.JSONObject;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -20,6 +22,7 @@ import java.util.stream.Collectors;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  * Tests cluster state monitoring and reconciliation.
@@ -113,6 +116,32 @@ public class ReconciliationSystemTest {
         startSchedulerContainer();
         // Should restart an executor, so there should still be three
         assertCorrectNumberOfExecutors();
+    }
+
+    @Test
+    public void canPickUpStateAfterSchedulerIsDead() throws IOException {
+        ElasticsearchSchedulerContainer schedulerBeforeReconcilliation = startSchedulerContainer();
+        assertCorrectNumberOfExecutors();
+        TasksResponse tasksBeforeReconcilliation = new TasksResponse(schedulerBeforeReconcilliation.getIpAddress(), CLUSTER_SIZE);
+        assertEquals(3, tasksBeforeReconcilliation.getJson().getBody().getArray().length());
+        for (JSONObject task : tasksBeforeReconcilliation.getTasks()) {
+            assertThat(task.getString("http_address"), CoreMatchers.startsWith("172.17.0"));
+            assertThat(task.getString("transport_address"), CoreMatchers.startsWith("172.17.0"));
+        }
+
+        // Kill scheduler
+        CONTAINER_MANGER.stopContainer(schedulerBeforeReconcilliation);
+
+        ElasticsearchSchedulerContainer schedulerAfterReconcilliation = startSchedulerContainer();
+        // Should restart an executor, so there should still be three
+        assertCorrectNumberOfExecutors();
+
+        TasksResponse tasksAfterReconcilliation = new TasksResponse(schedulerAfterReconcilliation.getIpAddress(), CLUSTER_SIZE);
+        for (JSONObject task : tasksAfterReconcilliation.getTasks()) {
+            assertThat(task.getString("http_address"), CoreMatchers.startsWith("172.17.0"));
+            assertThat(task.getString("transport_address"), CoreMatchers.startsWith("172.17.0"));
+        }
+        assertEquals(3, tasksAfterReconcilliation.getJson().getBody().getArray().length());
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
