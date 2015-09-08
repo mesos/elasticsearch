@@ -110,6 +110,14 @@ public class Configuration {
         return executorName;
     }
 
+    public static final String DATA_DIR = "--dataDir";
+    public static final String DEFAULT_HOST_DATA_DIR = "/var/lib/mesos/slave/elasticsearch";
+    @Parameter(names = {DATA_DIR}, description = "The data directory used by Docker volumes in the executors.")
+    private String dataDir = DEFAULT_HOST_DATA_DIR;
+    public String getDataDir() {
+        return dataDir;
+    }
+
     // DCOS Certification requirement 01
     public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
     @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
