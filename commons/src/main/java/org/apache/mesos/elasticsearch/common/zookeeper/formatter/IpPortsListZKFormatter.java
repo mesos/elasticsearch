@@ -13,9 +13,9 @@ import java.util.List;
  *
  * Example: zk://host1:port1,host2:port2
  */
-public class MesosStateZKFormatter extends AbstractZKFormatter {
+public class IpPortsListZKFormatter extends AbstractZKFormatter {
 
-    public MesosStateZKFormatter(ZKAddressParser parser) {
+    public IpPortsListZKFormatter(ZKAddressParser parser) {
         super(parser);
     }
 

@@ -9,8 +9,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
@@ -200,7 +199,7 @@ public class Configuration {
     }
 
     public String getMesosStateZKURL() {
-        ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
+        ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
@@ -216,7 +215,7 @@ public class Configuration {
     }
 
     public String getFrameworkZKURL() {
-        ZKFormatter mesosZKFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
+        ZKFormatter mesosZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
