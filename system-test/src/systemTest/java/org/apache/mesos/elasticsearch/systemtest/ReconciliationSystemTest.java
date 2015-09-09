@@ -139,8 +139,8 @@ public class ReconciliationSystemTest {
 
         TasksResponse tasksAfterReconcilliation = new TasksResponse(schedulerAfterReconcilliation.getIpAddress(), CLUSTER_SIZE);
         for (JSONObject task : tasksAfterReconcilliation.getTasks()) {
-            assertThat(task.getString("http_address"), CoreMatchers.startsWith("172.17.0"));
-            assertThat(task.getString("transport_address"), CoreMatchers.startsWith("172.17.0"));
+            assertThat(task.getString("http_address"), CoreMatchers.startsWith("172.17."));
+            assertThat(task.getString("transport_address"), CoreMatchers.startsWith("172.17."));
         }
         assertEquals(3, tasksAfterReconcilliation.getJson().getBody().getArray().length());
     }
