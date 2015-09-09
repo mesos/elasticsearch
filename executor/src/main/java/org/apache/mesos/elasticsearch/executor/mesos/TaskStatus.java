@@ -44,6 +44,11 @@ public class TaskStatus {
         return getTaskStatus(Protos.TaskState.TASK_FINISHED);
     }
 
+    public Protos.TaskStatus killed() {
+        LOGGER.info("TASK_KILLED");
+        return getTaskStatus(Protos.TaskState.TASK_KILLED);
+    }
+
     public void setTaskID(Protos.TaskID taskID) {
         if (taskID == null) {
             throw new NullPointerException("TaskID cannot be null");

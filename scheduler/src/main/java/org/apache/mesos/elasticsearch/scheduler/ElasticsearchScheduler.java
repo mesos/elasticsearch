@@ -11,11 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Observable;
+import java.util.*;
 
 /**
  * Scheduler for Elasticsearch.
@@ -89,19 +85,24 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     // Todo, this massive if statement needs to be performed better.
+    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.StdCyclomaticComplexity", "PMD.ModifiedCyclomaticComplexity"})
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         if (!registered) {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
+        LOGGER.debug("Recieved " + offers.size() + " offers.");
         for (Protos.Offer offer : offers) {
-            if (isHostAlreadyRunningTask(offer)) {
+            List<Protos.TaskInfo> taskList = clusterMonitor.getClusterState().getTaskList();
+            if (taskList.size() == configuration.getElasticsearchNodes()) {
+                LOGGER.info("Declined offer: Mesos already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
                 driver.declineOffer(offer.getId()); // DCOS certification 05
+            } else if (taskList.size() > configuration.getElasticsearchNodes()) {
+                killLastStartedExecutor(driver);
+            } else if (isHostAlreadyRunningTask(offer)) {
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getElasticsearchNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
@@ -131,6 +132,13 @@ public class ElasticsearchScheduler implements Scheduler {
                 clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
+    }
+
+    private void killLastStartedExecutor(SchedulerDriver driver) {
+        List<Protos.TaskInfo> taskList = clusterMonitor.getClusterState().getTaskList();
+        Protos.TaskInfo taskInfo = taskList.get(taskList.size() - 1);
+        LOGGER.debug("Killing last created task: " + taskInfo.getTaskId());
+        driver.killTask(taskInfo.getTaskId());
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {

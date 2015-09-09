@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.controllers;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -7,6 +8,7 @@ import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
@@ -75,6 +77,18 @@ public class ClusterController {
         final ClusterSchedulerInfoResponse response = new ClusterSchedulerInfoResponse();
         response.docker = dockerMap("image", "tag", "id");
         return response;
+    }
+
+    @RequestMapping(value = "/scale", method = RequestMethod.POST)
+    public void scaleCluster(@RequestParam("to") String scaleTo) {
+        if (!StringUtils.isBlank(scaleTo)) {
+            try {
+                int i = Integer.parseInt(scaleTo);
+                configuration.setElasticsearchNodes(i);
+            } catch (IllegalArgumentException ex) {
+                LOGGER.error("Could not parse scale integer", ex);
+            }
+        }
     }
 
     /**

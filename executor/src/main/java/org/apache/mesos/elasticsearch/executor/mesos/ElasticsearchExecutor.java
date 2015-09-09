@@ -27,6 +27,7 @@ public class ElasticsearchExecutor implements Executor {
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
     private Configuration configuration;
+    private Node node;
 
     public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
         this.launcher = launcher;
@@ -90,16 +91,7 @@ public class ElasticsearchExecutor implements Executor {
             LOGGER.debug(launcher.toString());
 
             // Launch Node
-            final Node node = launcher.launch();
-
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    // Send status update, finished
-                    driver.sendStatusUpdate(taskStatus.finished());
-                    node.close();
-                }
-            }));
+            node = launcher.launch();
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
@@ -112,7 +104,9 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void killTask(ExecutorDriver driver, Protos.TaskID taskId) {
         LOGGER.info("Kill task: " + taskId.getValue());
-        driver.sendStatusUpdate(taskStatus.failed());
+        node.close();
+        driver.sendStatusUpdate(taskStatus.finished());
+        driver.stop();
     }
 
     @Override
@@ -129,6 +123,9 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void shutdown(ExecutorDriver driver) {
         LOGGER.info("Shutting down framework...");
+        node.close();
+        driver.sendStatusUpdate(taskStatus.finished());
+        driver.stop();
     }
 
     @Override
