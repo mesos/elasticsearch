@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.matcher;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.Resources;
 import org.hamcrest.BaseMatcher;
 import org.hamcrest.Description;
 
@@ -14,6 +15,7 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
     private double cpus;
     private double mem;
     private double disk;
+    private String frameworkRole;
 
     @SuppressWarnings("unchecked")
     @Override
@@ -21,21 +23,24 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
         Collection<Protos.Request> requests = (Collection<Protos.Request>) o;
 
         Protos.Resource cpuResource = Protos.Resource.newBuilder()
-                .setName("cpus")
+                .setName(Resources.RESOURCE_CPUS)
                 .setType(Protos.Value.Type.SCALAR)
                 .setScalar(Protos.Value.Scalar.newBuilder().setValue(cpus).build())
+                .setRole(frameworkRole)
                 .build();
 
         Protos.Resource memResource = Protos.Resource.newBuilder()
-                .setName("mem")
+                .setName(Resources.RESOURCE_MEM)
                 .setType(Protos.Value.Type.SCALAR)
                 .setScalar(Protos.Value.Scalar.newBuilder().setValue(mem).build())
+                .setRole(frameworkRole)
                 .build();
 
         Protos.Resource diskResource = Protos.Resource.newBuilder()
-                .setName("disk")
+                .setName(Resources.RESOURCE_DISK)
                 .setType(Protos.Value.Type.SCALAR)
                 .setScalar(Protos.Value.Scalar.newBuilder().setValue(disk).build())
+                .setRole(frameworkRole)
                 .build();
 
         Protos.Request request = Protos.Request.newBuilder()
@@ -52,19 +57,10 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
         description.appendText(cpus + " cpu(s)");
     }
 
-    public RequestMatcher cpus(double cpus) {
+    public RequestMatcher(double cpus, double mem, double disk, String frameworkRole) {
         this.cpus = cpus;
-        return this;
-    }
-
-    public RequestMatcher mem(double mem) {
         this.mem = mem;
-        return this;
-    }
-
-    public RequestMatcher disk(double disk) {
         this.disk = disk;
-        return this;
+        this.frameworkRole = frameworkRole;
     }
-
 }

@@ -41,6 +41,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
         when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
+        when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
 
         Protos.Offer offer = Protos.Offer.newBuilder()
                                             .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
@@ -48,11 +49,11 @@ public class TaskInfoFactoryTest {
                                             .setFrameworkId(frameworkId)
                                             .setHostname("host1")
                                             .addAllResources(asList(
-                                                    Resources.singlePortRange(9200),
-                                                    Resources.singlePortRange(9300),
-                                                    Resources.cpus(1.0),
-                                                    Resources.disk(2.0),
-                                                    Resources.mem(3.0)))
+                                                    Resources.singlePortRange(9200, "some-framework-role"),
+                                                    Resources.singlePortRange(9300, "some-framework-role"),
+                                                    Resources.cpus(1.0, "some-framework-role"),
+                                                    Resources.disk(2.0, "some-framework-role"),
+                                                    Resources.mem(3.0, "some-framework-role")))
                                         .build();
 
         Protos.TaskInfo taskInfo = factory.createTask(configuration, offer);
