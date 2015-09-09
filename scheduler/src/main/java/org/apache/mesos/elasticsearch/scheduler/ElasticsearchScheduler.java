@@ -100,7 +100,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
             } else if (clusterMonitor.getClusterState().getTaskList().size() > configuration.getElasticsearchNodes()) {
-                driver.killTask(clusterMonitor.getClusterState().getTaskList().get(0).getTaskId());
+                killLastStartedExecutor(driver);
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
@@ -130,6 +130,11 @@ public class ElasticsearchScheduler implements Scheduler {
                 clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
+    }
+
+    private void killLastStartedExecutor(SchedulerDriver driver) {
+        List<Protos.TaskInfo> taskList = clusterMonitor.getClusterState().getTaskList();
+        driver.killTask(taskList.get(taskList.size()-1).getTaskId());
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
