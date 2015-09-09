@@ -5,12 +5,10 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
-import java.net.InetSocketAddress;
 import java.util.*;
 
 /**
@@ -65,7 +63,7 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
-        clusterState.getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo)));
+        clusterState.getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, clusterState)));
 
         clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
@@ -122,7 +120,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo));
+                tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, clusterMonitor.getClusterState()));
                 clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
@@ -164,6 +162,9 @@ public class ElasticsearchScheduler implements Scheduler {
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task with ID '" + status.getTaskId().getValue() + "' is now in state '" + status.getState() + "'. Message: " + status.getMessage());
         statusUpdateWatchers.notifyObservers(status);
+        // Todo (mwl): Should be in an observer
+        tasks.clear();
+        clusterMonitor.getClusterState().getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, clusterMonitor.getClusterState())));
     }
 
     @Override
