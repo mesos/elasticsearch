@@ -11,11 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Observable;
+import java.util.*;
 
 /**
  * Scheduler for Elasticsearch.
@@ -89,6 +85,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     // Todo, this massive if statement needs to be performed better.
+    @SuppressWarnings({"PMD.CyclomaticComplexity", "PMD.StdCyclomaticComplexity", "PMD.ModifiedCyclomaticComplexity"})
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         if (!registered) {
@@ -102,6 +99,8 @@ public class ElasticsearchScheduler implements Scheduler {
             } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getElasticsearchNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
+            } else if (clusterMonitor.getClusterState().getTaskList().size() > configuration.getElasticsearchNodes()) {
+                driver.killTask(clusterMonitor.getClusterState().getTaskList().get(0).getTaskId());
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
