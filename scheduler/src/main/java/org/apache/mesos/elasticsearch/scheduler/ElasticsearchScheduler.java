@@ -92,15 +92,17 @@ public class ElasticsearchScheduler implements Scheduler {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
+        LOGGER.debug("Recieved " + offers.size() + " offers.");
         for (Protos.Offer offer : offers) {
-            if (isHostAlreadyRunningTask(offer)) {
+            List<Protos.TaskInfo> taskList = clusterMonitor.getClusterState().getTaskList();
+            if (taskList.size() == configuration.getElasticsearchNodes()) {
+                LOGGER.info("Declined offer: Mesos already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
                 driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getElasticsearchNodes()) {
-                driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
-            } else if (clusterMonitor.getClusterState().getTaskList().size() > configuration.getElasticsearchNodes()) {
+            } else if (taskList.size() > configuration.getElasticsearchNodes()) {
                 killLastStartedExecutor(driver);
+            } else if (isHostAlreadyRunningTask(offer)) {
+                LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
+                driver.declineOffer(offer.getId()); // DCOS certification 05
             } else if (!containsTwoPorts(offer.getResourcesList())) {
                 LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
                 driver.declineOffer(offer.getId());
@@ -134,7 +136,9 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private void killLastStartedExecutor(SchedulerDriver driver) {
         List<Protos.TaskInfo> taskList = clusterMonitor.getClusterState().getTaskList();
-        driver.killTask(taskList.get(taskList.size()-1).getTaskId());
+        Protos.TaskInfo taskInfo = taskList.get(taskList.size() - 1);
+        LOGGER.debug("Killing last created task: " + taskInfo.getTaskId());
+        driver.killTask(taskInfo.getTaskId());
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {

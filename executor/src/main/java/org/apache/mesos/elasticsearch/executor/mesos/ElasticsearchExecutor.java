@@ -106,6 +106,7 @@ public class ElasticsearchExecutor implements Executor {
         LOGGER.info("Kill task: " + taskId.getValue());
         node.close();
         driver.sendStatusUpdate(taskStatus.finished());
+        driver.stop();
     }
 
     @Override
@@ -124,6 +125,7 @@ public class ElasticsearchExecutor implements Executor {
         LOGGER.info("Shutting down framework...");
         node.close();
         driver.sendStatusUpdate(taskStatus.finished());
+        driver.stop();
     }
 
     @Override
