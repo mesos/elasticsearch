@@ -5,8 +5,7 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
@@ -33,12 +32,12 @@ public class ZookeeperFrameworkSystemTest {
 
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
 
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+    @Rule
+    public final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
-    private static ElasticsearchSchedulerContainer scheduler;
+    private ElasticsearchSchedulerContainer scheduler;
 
-    private static ZookeeperContainer zookeeper;
+    private ZookeeperContainer zookeeper;
 
     @Rule
     public TestWatcher watchman = new TestWatcher() {
@@ -49,8 +48,8 @@ public class ZookeeperFrameworkSystemTest {
         }
     };
 
-    @BeforeClass
-    public static void startScheduler() throws Exception {
+    @Before
+    public void startScheduler() throws Exception {
         CLUSTER.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting Elasticsearch scheduler");
@@ -59,20 +58,30 @@ public class ZookeeperFrameworkSystemTest {
         CLUSTER.addAndStartContainer(zookeeper);
 
         scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-        scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
-
-        CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
     }
 
-    public static ElasticsearchSchedulerContainer getScheduler() {
-        return scheduler;
+    @Test
+    public void testZookeeperFramework() throws UnirestException {
+        scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
+        CLUSTER.addAndStartContainer(scheduler);
+
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), NODE_COUNT);
+
+        List<JSONObject> tasks = tasksResponse.getTasks();
+
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, NODE_COUNT);
+        assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
+
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
+        assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 
     @Test
-    public void testZookeeperFramework() throws UnirestException {
-        ElasticsearchSchedulerContainer scheduler = getScheduler();
+    public void testZookeeperFramework_differentPath() throws UnirestException {
+        scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
+        CLUSTER.addAndStartContainer(scheduler);
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), NODE_COUNT);
 
