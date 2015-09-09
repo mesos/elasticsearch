@@ -58,8 +58,7 @@ public class ElasticsearchNodesResponse {
             HttpResponse<String> response = null;
             try {
                 response = request.asString();
-            }
-            catch (UnirestException e) {
+            } catch (UnirestException e) {
                 DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
                 return false;
             }
@@ -79,13 +78,11 @@ public class ElasticsearchNodesResponse {
                 if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
                     DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
                     return false;
-                }
-                else {
+                } else {
                     DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' succeeded");
                     return true;
                 }
-            }
-            else {
+            } else {
                 DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
                 return false;
             }

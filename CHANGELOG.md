@@ -7,6 +7,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 
 - [Configurable data directory](https://github.com/mesos/elasticsearch/issues/275)
+- [Support framework roles](https://github.com/mesos/elasticsearch/pull/281)
 
 ###
 
