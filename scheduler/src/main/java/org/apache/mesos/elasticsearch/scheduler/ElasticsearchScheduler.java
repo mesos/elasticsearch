@@ -65,6 +65,8 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
+        clusterState.getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo)));
+
         clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
 
@@ -120,15 +122,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                Task task = new Task(
-                        offer.getHostname(),
-                        taskInfo.getTaskId().getValue(),
-                        Protos.TaskState.TASK_STAGING,
-                        clock.zonedNow(),
-                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                        new InetSocketAddress(offer.getHostname(), taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
-                );
-                tasks.put(taskInfo.getTaskId().getValue(), task);
+                tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo));
                 clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
