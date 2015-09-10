@@ -42,9 +42,9 @@ public class ElasticsearchScheduler implements Scheduler {
 
     public void run() {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() +
-                    ", zk mesos: " + configuration.getMesosZKURL() +
-                    ", zk framework: " + configuration.getFrameworkZKURL() +
-                    ", ram:" + configuration.getMem() + "]");
+                ", zk mesos: " + configuration.getMesosZKURL() +
+                ", zk framework: " + configuration.getFrameworkZKURL() +
+                ", ram:" + configuration.getMem() + "]");
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
@@ -98,6 +98,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
             } else if (taskList.size() > configuration.getElasticsearchNodes()) {
                 killLastStartedExecutor(driver);
+                driver.declineOffer(offer.getId()); // DCOS certification 05
             } else if (isHostAlreadyRunningTask(offer)) {
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
                 driver.declineOffer(offer.getId()); // DCOS certification 05
