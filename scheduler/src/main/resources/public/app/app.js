@@ -20,6 +20,10 @@ app.config(['$routeProvider', function ($routeProvider) {
         templateUrl: 'partials/tasks.html',
         controller: 'TasksController',
         activeTab: 'tasks'
+    }).when('/scaling', {
+        templateUrl: 'partials/scaling.html',
+        controller: 'ScalingController',
+        activeTab: 'scaling'
     }).when('/configuration', {
         templateUrl: 'partials/configuration.html',
         controller: 'ConfigurationController',

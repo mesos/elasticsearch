@@ -22,6 +22,9 @@ controllers.controller('MainController', function($scope, $interval, $route, con
         $scope.$apply();
     };
 
+    // @todo move to config too
+    var fetchInterval = 3000; // ms
+
     /** Cluster info **/
     var fetchClusterConfiguration = function() {
         Cluster.get(function (data) {
@@ -31,12 +34,12 @@ controllers.controller('MainController', function($scope, $interval, $route, con
         });
     };
     fetchClusterConfiguration();
+    $interval(fetchClusterConfiguration, fetchInterval);
 
     /** Tasks monitoring **/
     $scope.tasks = [];
     $scope.nodes = [];
     $scope.statesPercentage = [];
-    var fetchInterval = 5000; // ms
 
     $scope.taskStatesMapping = {
         TASK_STAGING: {
@@ -101,6 +104,28 @@ controllers.controller('MainController', function($scope, $interval, $route, con
 
 controllers.controller('ClusterController', function($scope) {
 
+});
+
+controllers.controller('ScalingController', function($scope, config, Scaling) {
+    $scope.scaling = {
+        nodes: $scope.$parent.configuration.ElasticsearchNodes,
+        result: null
+    };
+    $scope.scalingSubmit = function() {
+        if ($scope.scaling.nodes) {
+            var success = function(data) {
+                $scope.scaling.result = data;
+            }
+            var error = function(data) {
+                if (data.hasOwnProperty('error')) {
+                    $scope.scaling.error = data.error;
+                } else {
+                    $scope.scaling.error = "Unknown error"
+                }
+            }
+            Scaling.save({to: $scope.scaling.nodes}, {}, success, error);
+        }
+    };
 });
 
 controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
@@ -199,18 +224,10 @@ controllers.controller('StatsController', function ($scope, $interval, config, S
 
     var fetchStats = function() {
         Stats.get({}, function(data) {
-//            if (true) {
-//                data.indices.count = 4
-//                data.indices.docs.count = 42005;
-//                data.indices.shards.total = 7;
-//                data.indices.store.size_in_bytes = 78726352635;
-//            }
             updateChart('docs', data.timestamp, data.indices.docs.count);
-//            updateChart('docs', data.timestamp, data.indices.docs.deleted);
             updateChart('indices', data.timestamp, data.indices.count);
             if (data.indices.shards) {
                 updateChart('shards', data.timestamp, data.indices.shards.total);
-//                updateChart('shards', data.timestamp, data.indices.shards.primaries);
             }
             updateChart('store', data.timestamp, data.indices.store.size_in_bytes);
         });
