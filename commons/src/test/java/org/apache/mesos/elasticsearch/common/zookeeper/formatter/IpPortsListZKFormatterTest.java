@@ -14,7 +14,7 @@ import static org.mockito.Matchers.anyString;
 /**
  * Tests for Mesos state zookeeper address parsing
  */
-public class MesosStateZKFormatterTest {
+public class IpPortsListZKFormatterTest {
     @Test
     public void shouldReturnSameAddressIfValidated() {
         ZKAddressParser mock = Mockito.mock(ZKAddressParser.class);
@@ -22,7 +22,7 @@ public class MesosStateZKFormatterTest {
         List<ZKAddress> dummyReturn = new ArrayList<>(1);
         dummyReturn.add(new ZKAddress(add));
         Mockito.when(mock.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        ZKFormatter formatter = new MesosStateZKFormatter(mock);
+        ZKFormatter formatter = new IpPortsListZKFormatter(mock);
         String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
         assertEquals(add, address);
     }
@@ -37,7 +37,7 @@ public class MesosStateZKFormatterTest {
         dummyReturn.add(new ZKAddress(add1));
         dummyReturn.add(new ZKAddress(add2));
         Mockito.when(mock.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        ZKFormatter formatter = new MesosStateZKFormatter(mock);
+        ZKFormatter formatter = new IpPortsListZKFormatter(mock);
         String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
         assertEquals(concat, address);
     }
@@ -52,7 +52,7 @@ public class MesosStateZKFormatterTest {
         dummyReturn.add(new ZKAddress(add1 + "/mesos"));
         dummyReturn.add(new ZKAddress("bob:pass@" + add2));
         Mockito.when(mock.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        ZKFormatter formatter = new MesosStateZKFormatter(mock);
+        ZKFormatter formatter = new IpPortsListZKFormatter(mock);
         String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
         assertEquals(concat, address);
     }

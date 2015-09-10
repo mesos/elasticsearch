@@ -9,8 +9,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
@@ -91,7 +90,7 @@ public class Configuration {
 
 
     // **** FRAMEWORK
-    private String version = "0.3.RC0";
+    private String version = "0.4.0";
     public String getVersion() {
         return version;
     }
@@ -110,12 +109,28 @@ public class Configuration {
         return executorName;
     }
 
+    public static final String DATA_DIR = "--dataDir";
+    public static final String DEFAULT_HOST_DATA_DIR = "/var/lib/mesos/slave/elasticsearch";
+    @Parameter(names = {DATA_DIR}, description = "The data directory used by Docker volumes in the executors.")
+    private String dataDir = DEFAULT_HOST_DATA_DIR;
+    public String getDataDir() {
+        return dataDir;
+    }
+
     // DCOS Certification requirement 01
     public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
     @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     public double getFailoverTimeout() {
         return frameworkFailoverTimeout;
+    }
+
+    // DCOS Certification requirement 13
+    public static final String FRAMEWORK_ROLE = "--frameworkRole";
+    @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
+    private String frameworkRole = "*"; // This is the default if none is passed to Mesos
+    public String getFrameworkRole() {
+        return frameworkRole;
     }
 
     public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
@@ -184,7 +199,7 @@ public class Configuration {
     }
 
     public String getMesosStateZKURL() {
-        ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
+        ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
@@ -200,7 +215,7 @@ public class Configuration {
     }
 
     public String getFrameworkZKURL() {
-        ZKFormatter mesosZKFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
+        ZKFormatter mesosZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());

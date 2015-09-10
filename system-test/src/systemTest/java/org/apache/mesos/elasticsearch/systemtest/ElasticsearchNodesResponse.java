@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
-import static org.hamcrest.CoreMatchers.is;
 
 /**
  * Response for Elasticsearch nodes
@@ -26,7 +25,7 @@ public class ElasticsearchNodesResponse {
     public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
         this.tasks = tasks;
         this.nodesCount = nodesCount;
-        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall(), is(true));
+        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
     }
 
     private boolean discoverySuccessful = false;
@@ -59,8 +58,7 @@ public class ElasticsearchNodesResponse {
             HttpResponse<String> response = null;
             try {
                 response = request.asString();
-            }
-            catch (UnirestException e) {
+            } catch (UnirestException e) {
                 DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
                 return false;
             }
@@ -80,13 +78,11 @@ public class ElasticsearchNodesResponse {
                 if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
                     DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
                     return false;
-                }
-                else {
+                } else {
                     DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' succeeded");
                     return true;
                 }
-            }
-            else {
+            } else {
                 DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
                 return false;
             }

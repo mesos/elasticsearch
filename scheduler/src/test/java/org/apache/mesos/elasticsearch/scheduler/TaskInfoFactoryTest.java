@@ -40,6 +40,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var");
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
+        when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
 
         Protos.Offer offer = Protos.Offer.newBuilder()
                                             .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
@@ -90,7 +91,7 @@ public class TaskInfoFactoryTest {
         assertEquals(TaskInfoFactory.SETTINGS_PATH_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
         assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_CONTAINER, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
-        assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_HOST, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
+        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
     }
 }

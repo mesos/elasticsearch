@@ -1,16 +1,11 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.container.AbstractContainer;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.After;
 import org.junit.BeforeClass;
@@ -18,8 +13,6 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -148,27 +141,6 @@ public class ReconciliationSystemTest {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CONTAINER_MANGER.addAndStart(scheduler);
         return scheduler;
-    }
-
-    /**
-     * Simple class to monitor lifecycle of scheduler container.
-     */
-    private static class ContainerLifecycleManagement {
-        private List<AbstractContainer> containers = new ArrayList<>();
-        public void addAndStart(AbstractContainer container) {
-            container.start();
-            containers.add(container);
-        }
-
-        public void stopContainer(AbstractContainer container) {
-            container.remove();
-            containers.remove(container);
-        }
-
-        public void stopAll() {
-            containers.forEach(AbstractContainer::remove);
-            containers.clear();
-        }
     }
 
 }

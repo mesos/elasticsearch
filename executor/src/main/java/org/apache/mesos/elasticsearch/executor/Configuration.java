@@ -4,7 +4,7 @@ import com.beust.jcommander.JCommander;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ElasticsearchZKFormatter;
+import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.elasticsearch.common.lang3.StringUtils;
@@ -61,7 +61,7 @@ public class Configuration {
     }
 
     public String getElasticsearchZKURL() {
-        ZKFormatter mesosZKFormatter = new ElasticsearchZKFormatter(new ZKAddressParser());
+        ZKFormatter mesosZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
             LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
             return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
