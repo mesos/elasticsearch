@@ -33,7 +33,7 @@ public class ElasticsearchScheduler implements Scheduler {
         this.taskInfoFactory = taskInfoFactory;
     }
 
-    public Map<String,Task> getTasks() {
+    public Map<String, Task> getTasks() {
         ClusterState clusterState = new ClusterState(configuration.getState(), configuration.getFrameworkState()); // Must use new framework state. This is when we are allocated our FrameworkID.
         Map<String, Task> tasks = new HashMap<>();
         clusterState.getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, clusterState.getStatus(taskInfo.getTaskId()).getStatus())));
