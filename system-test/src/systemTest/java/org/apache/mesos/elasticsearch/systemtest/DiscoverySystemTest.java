@@ -19,11 +19,11 @@ public class DiscoverySystemTest extends TestBase {
     public void testNodeDiscoveryRest() {
         ElasticsearchSchedulerContainer scheduler = getScheduler();
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), NODE_COUNT);
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, NODE_COUNT);
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
    }
 
