@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.net.InetSocketAddress;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.Map;
 
 import static java.util.stream.Collectors.toList;
 
@@ -21,28 +20,29 @@ import static java.util.stream.Collectors.toList;
 @RequestMapping("/v1/tasks")
 public class TasksController {
 
+    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     ElasticsearchScheduler scheduler;
 
+    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Autowired
     Configuration configuration;
 
     @RequestMapping
     public List<GetTasksResponse> getTasks() {
-        return scheduler.getTasks().entrySet().stream().map(this::from).collect(toList());
-
+        return scheduler.getTasks().stream().map(this::from).collect(toList());
     }
 
-    private GetTasksResponse from(Map.Entry<String, Task> task) {
+    private GetTasksResponse from(Task task) {
         return new GetTasksResponse(
-            task.getValue().getTaskId(),
-            task.getValue().getState().toString(),
+            task.getTaskId(),
+            task.getState().toString(),
             configuration.getTaskName(),
             configuration.getVersion(),
-            task.getValue().getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            toFormattedAddress(task.getValue().getClientAddress()),
-            toFormattedAddress(task.getValue().getTransportAddress()),
-            task.getValue().getHostname()
+            task.getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
+            toFormattedAddress(task.getClientAddress()),
+            toFormattedAddress(task.getTransportAddress()),
+            task.getHostname()
         );
     }
 

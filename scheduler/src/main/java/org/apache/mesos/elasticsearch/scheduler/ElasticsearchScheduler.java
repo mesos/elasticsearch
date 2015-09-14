@@ -10,12 +10,12 @@ import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Observable;
+import java.time.ZonedDateTime;
+import java.util.*;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * Scheduler for Elasticsearch.
@@ -31,9 +31,6 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private ClusterMonitor clusterMonitor = null;
 
-    Clock clock = new Clock();
-
-    Map<String, Task> tasks = new HashMap<>();
     private Observable statusUpdateWatchers = new StatusUpdateObservable();
     private Boolean registered = false;
 
@@ -42,15 +39,38 @@ public class ElasticsearchScheduler implements Scheduler {
         this.taskInfoFactory = taskInfoFactory;
     }
 
-    public Map<String, Task> getTasks() {
-        return tasks;
+    public List<Task> getTasks() {
+        FrameworkState frameworkState = new FrameworkState(configuration.getState());
+        frameworkState.setFrameworkId(configuration.getFrameworkId());
+        configuration.setFrameworkState(frameworkState);
+
+        ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState);
+        return clusterState.getTaskList().stream().map(taskInfo -> {
+            Properties data = new Properties();
+            try {
+                data.load(taskInfo.getData().newInput());
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to parse properties", e);
+            }
+            String hostName = data.getProperty("hostname", "UNKNOWN");
+            String ipAddress = data.getProperty("ipAddress", hostName);
+            ZonedDateTime startedAt = ZonedDateTime.parse(data.getProperty("startedAt", ZonedDateTime.now().toString()));
+
+            return new Task(
+                    hostName,
+                    taskInfo.getTaskId().getValue(),
+                    Protos.TaskState.TASK_STARTING, //TODO: fetch correct state
+                    startedAt,
+                    new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                    new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber()));
+        }).collect(toList());
     }
 
     public void run() {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() +
-                    ", zk mesos: " + configuration.getMesosZKURL() +
-                    ", zk framework: " + configuration.getFrameworkZKURL() +
-                    ", ram:" + configuration.getMem() + "]");
+                ", zk mesos: " + configuration.getMesosZKURL() +
+                ", zk framework: " + configuration.getFrameworkZKURL() +
+                ", ram:" + configuration.getMem() + "]");
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
@@ -69,7 +89,6 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         ClusterState clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
-        clusterState.getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo)));
 
         clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
@@ -121,7 +140,6 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo));
                 clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
             }
         }
