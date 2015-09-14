@@ -35,11 +35,13 @@ public class ReconciliationSystemTest {
     private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
 
     @ClassRule
-    public static final MesosCluster CLUSTER = MesosCluster.builder()
+    public static final MesosCluster CLUSTER = new MesosCluster(
+        MesosClusterConfig.builder()
             .numberOfSlaves(CLUSTER_SIZE)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build();
+            .build()
+    );
 
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;

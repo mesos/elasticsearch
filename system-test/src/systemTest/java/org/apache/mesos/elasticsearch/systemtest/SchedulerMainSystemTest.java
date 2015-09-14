@@ -10,6 +10,7 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.MesosCluster;
+import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.Test;
 
 import java.io.InputStream;
@@ -23,11 +24,13 @@ import static org.junit.Assert.assertTrue;
  */
 public class SchedulerMainSystemTest {
     
-    protected static final MesosCluster CLUSTER = MesosCluster.builder()
+    protected static final MesosCluster CLUSTER = new MesosCluster(
+        MesosClusterConfig.builder()
             .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build();
+            .build()
+    );
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {

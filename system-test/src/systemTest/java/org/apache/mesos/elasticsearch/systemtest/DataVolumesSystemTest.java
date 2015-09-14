@@ -5,6 +5,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.MesosCluster;
+import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -26,11 +27,13 @@ public class DataVolumesSystemTest {
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
 
     @Rule
-    public final MesosCluster cluster = MesosCluster.builder()
+    public final MesosCluster cluster = new MesosCluster(
+        MesosClusterConfig.builder()
             .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build();
+            .build()
+    );
 
     @Before
     public void beforeScheduler() throws Exception {
