@@ -112,7 +112,7 @@ Other command line options include:
 Usage: (Options preceded by an asterisk are required) [options]
   Options:
     --dataDir
-       The data directory used by Docker volumes in the executors
+       The data directory used by Docker volumes in the executors.
        Default: /var/lib/mesos/slave/elasticsearch
     --elasticsearchClusterName
        Name of the elasticsearch cluster
@@ -159,6 +159,10 @@ Usage: (Options preceded by an asterisk are required) [options]
     --frameworkName
        The name given to the framework.
        Default: elasticsearch
+    --frameworkRole
+       Used to group frameworks for allocation decisions, depending on the
+       allocation policy being used.
+       Default: *
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
