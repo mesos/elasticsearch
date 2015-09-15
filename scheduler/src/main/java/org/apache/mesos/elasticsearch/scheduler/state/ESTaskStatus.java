@@ -83,7 +83,8 @@ public class ESTaskStatus {
 
     public boolean taskInError() {
         TaskState state = getStatus().getState();
-        return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED) || state.equals(TaskState.TASK_LOST);
+        return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED)
+                || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED);
     }
 
     public void destroy() {
