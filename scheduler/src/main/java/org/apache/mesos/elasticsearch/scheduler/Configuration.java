@@ -90,7 +90,7 @@ public class Configuration {
 
 
     // **** FRAMEWORK
-    private String version = "0.4.0";
+    private String version = "0.4.1";
     public String getVersion() {
         return version;
     }

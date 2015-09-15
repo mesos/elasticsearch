@@ -2,6 +2,16 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.1] - [15 September 2015]
+
+### Fixed
+- [GUI correctly represents state of cluster](https://github.com/mesos/elasticsearch/issues/206)
+- [Request resources as role](https://github.com/mesos/elasticsearch/issues/284)
+- [Zookeeper unable to create /es node - Incorrect zk formatter](https://github.com/mesos/elasticsearch/issues/286)
+
+### Added
+- [GUI updates - Charting, placeholder for scaling](https://github.com/mesos/elasticsearch/pull/263)
+
 ## [0.4.0] - [7 September 2015]
 
 ### Added
