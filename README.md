@@ -233,7 +233,7 @@ $ ./gradlew build system-test:main
 ```
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
-$ sudo route -n add 172.17.0.0/16 $(docker-machine ip mesos-es)
+$ sudo route delete 172.17.0.0/16; sudo route -n add 172.17.0.0/16 $(docker-machine ip mesos-es)
 $ ./gradlew build system-test:main
 ```
 
