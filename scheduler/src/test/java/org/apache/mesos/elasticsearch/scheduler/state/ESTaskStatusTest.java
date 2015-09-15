@@ -75,4 +75,15 @@ public class ESTaskStatusTest {
     public void shouldHandleNoMessageError() {
         status.toString();
     }
+
+    @Test
+    public void shouldErrorWhenTaskFinishedToUpdateState() throws IOException {
+        when(state.get(anyString())).thenReturn(Protos.TaskStatus.newBuilder()
+                .setState(Protos.TaskState.TASK_FINISHED)
+                .setTaskId(taskInfo.getTaskId())
+                .setExecutorId(taskInfo.getExecutor().getExecutorId())
+                .setMessage("FINISHED")
+                .build());
+        Assert.assertTrue(status.taskInError());
+    }
 }
