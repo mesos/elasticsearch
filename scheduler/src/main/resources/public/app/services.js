@@ -8,7 +8,7 @@ services.factory('Cluster', function($resource, config) {
 });
 
 services.factory('Scaling', function($resource, config) {
-    var URL = baseURL + 'v1/cluster/scaling';
+    var URL = baseURL + 'v1/cluster/scale';
     return $resource(URL);
 });
 
