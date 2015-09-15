@@ -28,7 +28,6 @@ public class ClusterStateTest {
     public void before() throws IOException {
         Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue("FrameworkID").build();
         when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
-        when(state.get(anyString())).thenReturn(new ArrayList<Protos.TaskInfo>());
     }
 
     @Test
@@ -115,5 +114,18 @@ public class ClusterStateTest {
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         assertFalse(clusterState.exists(defaultTaskInfo.getTaskId()));
         verify(state, times(1)).get(anyString());
+    }
+
+    @Test
+    public void shouldReturnCorrectNumberOfExecutors() throws IOException {
+        ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
+        mock.add(ProtoTestUtil.getDefaultTaskInfo());
+        Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
+        mock.add(defaultTaskInfo);
+        when(state.get(contains(ESTaskStatus.STATE_KEY))).thenReturn(Protos.TaskStatus.newBuilder().setTaskId(defaultTaskInfo.getTaskId()).setState(Protos.TaskState.TASK_RUNNING).build());
+        when(state.get(contains(ClusterState.STATE_LIST))).thenReturn(mock); // Be careful, the state list and state key both have the word state in them. Order is important.
+        assertEquals(2, clusterState.getGuiTaskList().size());
+        clusterState.removeTask(defaultTaskInfo);
+        assertEquals(1, clusterState.getGuiTaskList().size());
     }
 }
