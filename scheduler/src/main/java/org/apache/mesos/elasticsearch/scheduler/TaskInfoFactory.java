@@ -46,17 +46,14 @@ public class TaskInfoFactory {
     public Protos.TaskInfo createTask(Configuration configuration, Protos.Offer offer) {
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
-        List<Protos.Resource> acceptedResources = new ArrayList<>();
-        acceptedResources.add(Resources.cpus(configuration.getCpus()));
-        acceptedResources.add(Resources.mem(configuration.getMem()));
-        acceptedResources.add(Resources.disk(configuration.getDisk()));
+        List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
 
         LOGGER.info("Creating Elasticsearch task [client port: " + ports.get(0) + ", transport port: " + ports.get(1) + "]");
 
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        acceptedResources.add(Resources.singlePortRange(ports.get(0)));
-        acceptedResources.add(Resources.singlePortRange(ports.get(1)));
+        acceptedResources.add(Resources.singlePortRange(ports.get(0), configuration.getFrameworkRole()));
+        acceptedResources.add(Resources.singlePortRange(ports.get(1), configuration.getFrameworkRole()));
         discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
         discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
         discovery.setPorts(discoveryPorts);

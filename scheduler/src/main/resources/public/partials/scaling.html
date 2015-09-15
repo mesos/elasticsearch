@@ -1,0 +1,16 @@
+<div class="row">
+    <div class="col-md-12">
+        <div class="cell">
+            <h3>Horizontal Scaling</h3>
+            <form class="scaling form-inline" ng-submit="scalingSubmit()">
+                <div class="form-group">
+                    <input type="text" class="form-control scaling-input" ng-model="scaling.nodes">
+                </div>
+                <button type="submit" class="btn btn-primary">Scale</button>
+            </form>
+            <div class="alert alert-danger" role="alert" ng-show="scaling.result.error">
+                {{scaling.result.error}}
+            </div>
+        </div>
+    </div>
+</div>

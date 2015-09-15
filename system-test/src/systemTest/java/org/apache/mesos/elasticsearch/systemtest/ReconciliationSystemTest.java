@@ -33,13 +33,15 @@ public class ReconciliationSystemTest {
     public static final int DOCKER_PORT = 2376;
 
     private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
-    private static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
+
+    @ClassRule
+    public static final MesosCluster CLUSTER = new MesosCluster(
+        MesosClusterConfig.builder()
             .numberOfSlaves(CLUSTER_SIZE)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build();
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+            .build()
+    );
 
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
@@ -57,8 +59,8 @@ public class ReconciliationSystemTest {
 
         LOGGER.debug("Injecting executor");
         CLUSTER.injectImage("mesos/elasticsearch-executor");
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CONFIG.dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
-        List<Container> containers = CONFIG.dockerClient.listContainersCmd().exec();
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CLUSTER.getConfig().dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
+        List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
 
         // Find the mesos-local container so we can do docker in docker commands.
         mesosClusterId = "";
@@ -138,7 +140,7 @@ public class ReconciliationSystemTest {
     }
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CONTAINER_MANGER.addAndStart(scheduler);
         return scheduler;
     }

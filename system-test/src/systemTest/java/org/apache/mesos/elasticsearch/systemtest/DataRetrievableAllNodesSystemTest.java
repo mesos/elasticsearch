@@ -31,7 +31,6 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
 
     private static List<String> slavesElasticAddresses = new ArrayList<>();
 
-
     @Rule
     public TestWatcher pusherWatch = new TestWatcher() {
         @Override
@@ -44,7 +43,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
     public static void startDataPusher() {
 
         try {
-            List<JSONObject> tasks = new TasksResponse(getScheduler().getIpAddress(), NODE_COUNT).getTasks();
+            List<JSONObject> tasks = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
             for (JSONObject task : tasks) {
                 LOGGER.info(task);
                 slavesElasticAddresses.add(task.getString("http_address"));
@@ -60,7 +59,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
                 if (!(Unirest.get("http://" + getSlavesElasticAddresses().get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
                 }
-                pusher = new DataPusherContainer(CONFIG.dockerClient, getSlavesElasticAddresses().get(0));
+                pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, getSlavesElasticAddresses().get(0));
                 CLUSTER.addAndStartContainer(pusher);
                 return true;
             } catch (UnirestException e) {

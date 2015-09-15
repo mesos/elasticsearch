@@ -121,17 +121,17 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.disk(0).getName());
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_DISK);
         return resourceCheck.isEnough(resourcesList, configuration.getDisk());
     }
 
     private boolean isEnoughCPU(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.cpus(0).getName());
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_CPUS);
         return resourceCheck.isEnough(resourcesList, configuration.getCpus());
     }
 
     private boolean isEnoughRAM(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.mem(0).getName());
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_MEM);
         return resourceCheck.isEnough(resourcesList, configuration.getMem());
     }
 

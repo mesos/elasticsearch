@@ -15,18 +15,16 @@ import org.junit.runner.Description;
 @SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
 
-    protected static final int NODE_COUNT = 3;
-
-    protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
-            .numberOfSlaves(NODE_COUNT)
+    @ClassRule
+    public static final MesosCluster CLUSTER = new MesosCluster(
+        MesosClusterConfig.builder()
+            .numberOfSlaves(3)
             .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build();
+            .build()
+    );
 
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
-
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
     private static ElasticsearchSchedulerContainer scheduler;
 
@@ -45,7 +43,7 @@ public abstract class TestBase {
 
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(CONFIG.dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");

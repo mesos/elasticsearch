@@ -18,6 +18,8 @@
     <script src="webjars/momentjs/2.10.3/min/moment.min.js"></script>
     <script src="webjars/angular-moment/0.10.1/angular-moment.min.js"></script>
     <script src="webjars/json-formatter/0.2.7/dist/json-formatter.min.js"></script>
+    <script src="webjars/hightcharts/4.1.5/highcharts.js"></script>
+    <script src="webjars/highcharts-ng/0.0.8/dist/highcharts-ng.min.js"></script>
     <script src="app/app.js" type="application/javascript"></script>
     <script src="app/config.js" type="application/javascript"></script>
     <script src="app/controllers.js" type="application/javascript"></script>
@@ -36,7 +38,16 @@
                 <a href="#/" ng-class="{active: $route.current.activeTab == 'cluster'}">Cluster<span class="menu-icon fa fa-tachometer"></span></a>
             </li>
             <li class="sidebar-list">
+                <a href="#/scaling" ng-class="{active: $route.current.activeTab == 'scaling'}">Scaling<span class="menu-icon fa fa-rocket"></span></a>
+            </li>
+            <li class="sidebar-list">
                 <a href="#/tasks" ng-class="{active: $route.current.activeTab == 'tasks'}">Tasks<span class="menu-icon fa fa-table"></span></a>
+            </li>
+            <li class="sidebar-list">
+                <a href="#/configuration" ng-class="{active: $route.current.activeTab == 'configuration'}">Configuration<span class="menu-icon fa fa-cog"></span></a>
+            </li>
+            <li class="sidebar-list">
+                <a href="#/query-browser" ng-class="{active: $route.current.activeTab == 'query-browser'}">Query Browser<span class="menu-icon fa fa-search"></span></a>
             </li>
         </ul>
         <div class="sidebar-footer">
@@ -56,7 +67,7 @@
             <div class="row header">
                 <div class="col-xs-12">
                     <div class="pull-right mesos-logo"><img src="images/mesos.jpg"></div>
-                    <h1>{{name}} <span>Elasticsearch Cluster</span></h1>
+                    <h1>{{configuration.ElasticsearchClusterName}} <span>Elasticsearch Cluster</span></h1>
                     <div class="content-wrapper">
                         <div ng-view></div>
                     </div>

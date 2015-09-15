@@ -80,6 +80,7 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getState()).thenReturn(new TestSerializableStateImpl());
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(10L);
+        when(configuration.getFrameworkRole()).thenReturn("*");
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
@@ -93,7 +94,16 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testRegistered() {
-        Mockito.verify(driver).requestResources(Mockito.argThat(new RequestMatcher().cpus(configuration.getCpus()).mem(configuration.getMem()).disk(configuration.getDisk())));
+        Mockito.verify(driver).requestResources(
+                Mockito.argThat(
+                        new RequestMatcher(
+                                configuration.getCpus(),
+                                configuration.getMem(),
+                                configuration.getDisk(),
+                                configuration.getFrameworkRole()
+                        )
+                )
+        );
     }
 
     // TODO (pnw): This requires scheduler refactoring to work. Refactor instantiation of objects out of registered method. And use setters.
@@ -178,9 +188,9 @@ public class ElasticsearchSchedulerTest {
 
     private Protos.Offer.Builder newOffer(String hostname) {
         Protos.Offer.Builder builder = newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
-        builder.addResources(cpus(configuration.getCpus()));
-        builder.addResources(mem(configuration.getMem()));
-        builder.addResources(disk(configuration.getDisk()));
+        builder.addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()));
+        builder.addResources(mem(configuration.getMem(), configuration.getFrameworkRole()));
+        builder.addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()));
         return builder;
     }
 
