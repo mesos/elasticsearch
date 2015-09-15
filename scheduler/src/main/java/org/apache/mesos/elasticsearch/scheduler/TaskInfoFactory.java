@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
@@ -7,9 +8,14 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
@@ -20,9 +26,9 @@ import static java.util.Arrays.asList;
 public class TaskInfoFactory {
 
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
-    
+
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    
+
     public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
 
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
@@ -58,11 +64,23 @@ public class TaskInfoFactory {
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
+                .setData(toData(offer.getHostname(), new InetSocketAddress(offer.getHostname(), 1).getAddress().getHostAddress(), clock.zonedNow()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
                 .setExecutor(newExecutorInfo(configuration)).build();
+    }
+
+    private ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
+        Properties data = new Properties();
+        data.put("hostname", hostname);
+        data.put("ipAddress", ipAddress);
+        data.put("startedAt", zonedDateTime.toString());
+
+        StringWriter writer = new StringWriter();
+        data.list(new PrintWriter(writer));
+        return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
     private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {

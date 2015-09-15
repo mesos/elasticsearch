@@ -2,13 +2,12 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos.TaskInfo;
+import org.apache.mesos.elasticsearch.scheduler.Task;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import static org.apache.mesos.Protos.TaskID;
 
@@ -40,6 +39,16 @@ public class ClusterState {
             LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.", e);
         }
         return taskInfoList == null ? new ArrayList<>(0) : taskInfoList;
+    }
+
+    /**
+     * Get a list of all tasks in a format specific to the web GUI.
+     * @return
+     */
+    public Map<String, Task> getGuiTaskList() {
+        Map<String, Task> tasks = new HashMap<>();
+        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
+        return tasks;
     }
 
     /**
