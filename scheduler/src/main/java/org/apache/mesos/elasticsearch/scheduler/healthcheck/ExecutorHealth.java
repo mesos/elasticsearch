@@ -48,4 +48,8 @@ public class ExecutorHealth implements Runnable {
             LOGGER.error("Unable to read executor health", e);
         }
     }
+
+    public Double getLastUpdate() {
+        return lastUpdate;
+    }
 }
