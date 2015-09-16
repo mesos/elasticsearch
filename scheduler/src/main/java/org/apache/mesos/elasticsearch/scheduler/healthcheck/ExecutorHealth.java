@@ -17,7 +17,7 @@ public class ExecutorHealth implements Runnable {
     private final SchedulerDriver driver;
     private final ESTaskStatus taskStatus;
     private final Long maxTimeout;
-    private Double lastUpdate = Double.MAX_VALUE;
+    private Long lastUpdate = Long.MAX_VALUE;
 
     public ExecutorHealth(Scheduler scheduler, SchedulerDriver driver, ESTaskStatus taskStatus, Long maxTimeout) {
         if (scheduler == null) {
@@ -38,20 +38,21 @@ public class ExecutorHealth implements Runnable {
     @Override
     public void run() {
         try {
-            Double thisUpdate = taskStatus.getStatus().getTimestamp();
-            Double timeSinceUpdate = thisUpdate - lastUpdate;
+            Double thisUpdate = taskStatus.getStatus().getTimestamp(); // Mesos timestamps in seconds, a double.
+            Long thisUpdateMs = new Double(thisUpdate*1000.0).longValue();
+            Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
                 LOGGER.warn("Executor not responding to healthchecks in required timeout (" + maxTimeout + "s). It has been " + timeSinceUpdate + " s since the last update.");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
             } else {
-                lastUpdate = thisUpdate;
+                lastUpdate = thisUpdateMs;
             }
         } catch (Exception e) {
             LOGGER.error("Unable to read executor health", e);
         }
     }
 
-    public Double getLastUpdate() {
+    public Long getLastUpdate() {
         return lastUpdate;
     }
 }

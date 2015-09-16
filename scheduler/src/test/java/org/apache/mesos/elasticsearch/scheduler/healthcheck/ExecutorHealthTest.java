@@ -9,7 +9,8 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.eq;
@@ -32,19 +33,15 @@ public class ExecutorHealthTest {
         MockitoAnnotations.initMocks(this);
         Protos.TaskStatus defaultStatus = Protos.TaskStatus.getDefaultInstance().getDefaultInstanceForType();
         when(taskStatus.getStatus()).thenReturn(defaultStatus);
-        executorHealth = new ExecutorHealth(scheduler, schedulerDriver, taskStatus, 1L);
+        executorHealth = new ExecutorHealth(scheduler, schedulerDriver, taskStatus, 5000L);
     }
 
     @Test
     public void timeoutShouldNotResetWhenChecking() {
-        Double lastUpdate = runAndGetLastUpdate(executorHealth);
+        Long lastUpdate = runAndGetLastUpdate(executorHealth);
         when(taskStatus.getStatus()).thenReturn(overdueTaskStatus());
-        Double thisUpdate = runAndGetLastUpdate(executorHealth);
+        Long thisUpdate = runAndGetLastUpdate(executorHealth);
         assertEquals(lastUpdate, thisUpdate);
-    }
-
-    private Protos.TaskStatus overdueTaskStatus() {
-        return Protos.TaskStatus.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue("")).setState(Protos.TaskState.TASK_RUNNING).setTimestamp(10L).build();
     }
 
     @Test
@@ -55,7 +52,28 @@ public class ExecutorHealthTest {
         verify(scheduler, times(1)).executorLost(eq(schedulerDriver), any(), any(), anyInt());
     }
 
-    private Double runAndGetLastUpdate(ExecutorHealth executorHealth) {
+    @Test
+    public void shouldNotCallExecutorLostWhenNotTimedOut() {
+        Long lastUpdate = runAndGetLastUpdate(executorHealth);
+        when(taskStatus.getStatus()).thenReturn(underDueTaskStatus());
+        Long thisUpdate = runAndGetLastUpdate(executorHealth);
+        assertTrue("" + thisUpdate + " should be greater than " + lastUpdate, thisUpdate > lastUpdate);
+        verify(scheduler, times(0)).executorLost(eq(schedulerDriver), any(), any(), anyInt());
+    }
+
+    private Protos.TaskStatus overdueTaskStatus() {
+        return taskStatus(10.0);
+    }
+
+    private Protos.TaskStatus underDueTaskStatus() {
+        return taskStatus(2.0);
+    }
+
+    private Protos.TaskStatus taskStatus(Double value) {
+        return Protos.TaskStatus.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue("")).setState(Protos.TaskState.TASK_RUNNING).setTimestamp(value).build();
+    }
+
+    private Long runAndGetLastUpdate(ExecutorHealth executorHealth) {
         executorHealth.run();
         return executorHealth.getLastUpdate();
     }
