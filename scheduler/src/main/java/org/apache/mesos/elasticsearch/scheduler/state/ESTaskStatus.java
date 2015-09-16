@@ -23,16 +23,23 @@ public class ESTaskStatus {
     private final TaskInfo taskInfo;
 
     private final StatePath statePath;
-    public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo) {
-        if (state == null) {
-            throw new InvalidParameterException("State cannot be null");
+    public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo, StatePath statePath) {
+        if (state == null || taskInfo == null) {
+            throw new InvalidParameterException("Cannot be null");
         } else if (frameworkID == null || frameworkID.getValue().isEmpty()) {
             throw new InvalidParameterException("FrameworkID cannot be null or empty");
         }
         this.state = state;
         this.frameworkID = frameworkID;
         this.taskInfo = taskInfo;
-        statePath = new StatePath(state);
+        this.statePath = statePath;
+        // Write default status if it doesn't exist
+        try {
+            LOGGER.debug("Task status for " + taskInfo.getTaskId().getValue() + " exists, using old state: " + getStatus().getState());
+        } catch (IllegalStateException | NullPointerException e) {
+            LOGGER.debug("Task status for " + taskInfo.getTaskId().getValue() + " does not exist, or is not yet initialized, this must be a new task. Writing status.");
+            setStatus(getDefaultStatus());
+        }
     }
 
     public void setStatus(TaskStatus status) throws IllegalStateException {
@@ -55,7 +62,7 @@ public class ESTaskStatus {
 
     public TaskStatus getDefaultStatus() {
         return TaskStatus.newBuilder()
-                    .setState(TaskState.TASK_STARTING)
+                    .setState(TaskState.TASK_STAGING)
                     .setTaskId(taskInfo.getTaskId())
                     .setExecutorId(taskInfo.getExecutor().getExecutorId())
                     .setMessage(DEFAULT_STATUS_NO_MESSAGE_SET)

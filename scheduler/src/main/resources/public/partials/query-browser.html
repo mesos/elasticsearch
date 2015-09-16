@@ -11,13 +11,44 @@
                 </div>
                 <button type="submit" class="btn btn-primary">Search</button>
                 <button type="button" class="btn btn-default" ng-click="resetQuery()">Reset</button>
+                <button type="button" class="btn btn-default" ng-click="displayRawResults = !displayRawResults" ng-show="query.results.total > 0 && !displayRawResults">Show raw results</button>
+                <button type="button" class="btn btn-default" ng-click="displayRawResults = !displayRawResults" ng-show="query.results.total > 0 && displayRawResults">Hide raw results</button>
             </form>
+
+            <hr ng-show="query.results.total > 0">
+
             <div class="alert alert-danger" role="alert" ng-show="query.error">
                 {{query.error}}
             </div>
-            <div class="search-results" ng-show="query.results">
-                <json-formatter json="query.results" open="3"></json-formatter>
+
+            <div ng-show="query.results.total > 0">
+                <div class="search-results" ng-show="displayRawResults">
+                    <json-formatter json="query.results" open="3"></json-formatter>
+                </div>
+                <div class="table-responsive" ng-show="!displayRawResults">
+                    <table class="table table-striped">
+                        <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>_index</th>
+                            <th ng-repeat="(key, value) in query.results.hits[0]._source">{{key}}</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        <tr ng-repeat="result in query.results.hits track by $index">
+                            <td>{{result._id}}</td>
+                            <td>{{result._index}}</td>
+                            <td ng-repeat="value in result._source">{{value}}</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <p ng-show="query.results.total == 0">
+                No results found
+            </p>
+
         </div>
     </div>
 </div>

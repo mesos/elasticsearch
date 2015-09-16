@@ -7,7 +7,6 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -53,7 +52,7 @@ public class ClusterStateTest {
         assertEquals(0, taskList.size());
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void shouldThrowExceptionWhenGetStatusTaskIDDesntExist() throws IOException {
         clusterState.getStatus(Protos.TaskID.newBuilder().setValue("").build());
     }
@@ -64,7 +63,7 @@ public class ClusterStateTest {
         taskInfos.add(ProtoTestUtil.getDefaultTaskInfo());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         taskInfos.add(defaultTaskInfo);
-        when(state.get(anyString())).thenReturn(taskInfos);
+        when(state.get(anyString())).thenReturn(taskInfos).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_FINISHED));
         ESTaskStatus status = clusterState.getStatus(defaultTaskInfo.getTaskId());
         assertNotNull(status);
     }
@@ -93,7 +92,7 @@ public class ClusterStateTest {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
         mock.add(defaultTaskInfo);
-        when(state.get(anyString())).thenReturn(mock);
+        when(state.get(anyString())).thenReturn(mock).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_FINISHED));
         clusterState.removeTask(defaultTaskInfo);
         verify(state, times(1)).set(anyString(), any());
         verify(mock, times(1)).remove(eq(defaultTaskInfo));
@@ -106,7 +105,7 @@ public class ClusterStateTest {
         mock.add(defaultTaskInfo);
         when(state.get(anyString())).thenReturn(mock);
         assertTrue(clusterState.exists(defaultTaskInfo.getTaskId()));
-        verify(state, times(1)).get(anyString());
+        verify(state, atLeastOnce()).get(anyString());
     }
 
     @Test
@@ -116,11 +115,12 @@ public class ClusterStateTest {
         verify(state, times(1)).get(anyString());
     }
 
+    // TODO (pnw) Why does this test take so long?
     @Test
     public void shouldReturnCorrectNumberOfExecutors() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());
         mock.add(ProtoTestUtil.getDefaultTaskInfo());
-        Protos.TaskInfo defaultTaskInfo = ProtoTestUtil.getDefaultTaskInfo();
+        Protos.TaskInfo defaultTaskInfo = Protos.TaskInfo.newBuilder().mergeFrom(ProtoTestUtil.getDefaultTaskInfo()).setTaskId(Protos.TaskID.newBuilder().setValue("Task2")).build();
         mock.add(defaultTaskInfo);
         when(state.get(contains(ESTaskStatus.STATE_KEY))).thenReturn(Protos.TaskStatus.newBuilder().setTaskId(defaultTaskInfo.getTaskId()).setState(Protos.TaskState.TASK_RUNNING).build());
         when(state.get(contains(ClusterState.STATE_LIST))).thenReturn(mock); // Be careful, the state list and state key both have the word state in them. Order is important.

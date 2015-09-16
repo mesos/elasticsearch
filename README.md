@@ -209,21 +209,39 @@ Usage: (Options preceded by an asterisk are required) [options]
 
 The web based user interface is available on port 31100 of the scheduler by default. It displays real time information about the tasks running in the cluster and a basic configuration overview of the cluster. 
 
-The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesosui.apiary.io](http://docs.elasticsearchmesosui.apiary.io/).
+The user interface uses REST API of the Elasticsearch Mesos Framework. You can find the API documentation here: [docs.elasticsearchmesos.apiary.io](http://docs.elasticsearchmesos.apiary.io/).
 
 #### Cluster Overview
 
-![Tasks List](docs/screenshot-cluster.png)
+![Cluster Overview](docs/screenshot-cluster.png)
 
-Cluster overview page shows on the top the number of Elasticsearch nodes in the cluster, the overall amount of RAM and disk space allocated by the cluster. State of individual nodes is displayed in a bar, one color representing each state and the percentage of nodes being in this state.
+Cluster page shows on the top the number of Elasticsearch nodes in the cluster, the overall amount of RAM and disk space allocated by the cluster. State of individual nodes is displayed in a bar, one color representing each state and the percentage of nodes being in this state.
 
-Below you can find Configuration Overview section and Query Browser, that allows you to examine data stored on individual Elasticsearch nodes.
+Below you can see Performance Overview with the following metrics over time: number of indices, number of shards, number of documents in the cluster and the cluster data size.
+
+#### Scaling 
+
+![Scaling](docs/screenshot-scaling.png)
+
+This simple interface allows you to specify a number of nodes to scale to.
 
 #### Tasks List
 
 ![Tasks List](docs/screenshot-tasks.png)
 
 Tasks list displays detailed information about all tasks in the cluster, not only those currently running, but also tasks being staged, finished or failed. Click through individual tasks to get access to Elasticsearch REST API.
+
+#### Configuration
+
+![Configuration](docs/screenshot-configuration.png)
+
+This is a read-only interface displaying an overview of the framework configuration.
+
+#### Query Browser
+
+![Query Browser](docs/screenshot-query-browser.png)
+
+Query Browser allows you to examine data stored on individual Elasticsearch nodes. In this example we searched for the word "Love" on `slave1` node. You can toggle between tabular view and raw results view mode, which displays the raw data returned from Elasticsearch `/_search` API endpoint.
 
 ### Known issues
 
@@ -288,32 +306,15 @@ $ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 
 1 First update the CHANGELOG.md by listing fixed issues and bugs
 
-2 Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
-user/pass.
+2 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
 
-```
-systemProp.org.ajoberstar.grgit.auth.interactive.allow=false
-systemProp.org.ajoberstar.grgit.auth.ssh.private=~/.ssh/id_rsa
-systemProp.org.ajoberstar.grgit.auth.username=user
-systemProp.org.ajoberstar.grgit.auth.password=password
-dockerHubUsername=user
-dockerHubPassword=******
-dockerHubEmail=email
-```
+3 Push changes
 
-3 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
+4 Verify that the [Continuous Build Pipeline](https://ci.infra.container-solutions.com/) completes successfully.
 
-4 Build and make sure the system tests pass (skip if you have tested on jenkins)
+5 Run the [Release Build](https://ci.infra.container-solutions.com/view/Mesos%20Elasticsearch/job/Elasticsearch%20Release/) and pick a release type: patch, minor or major.
 
-```
-$ ./gradlew build system-test:systemTest
-```
-
-5 Now perform a release and specify the release type: major, minor or patch (only one!) and your username.
-
-```
-$ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
-```
+6 Done!
 
 ## Support
 
