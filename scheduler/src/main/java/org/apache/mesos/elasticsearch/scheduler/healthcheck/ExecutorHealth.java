@@ -19,20 +19,20 @@ public class ExecutorHealth implements Runnable {
     private final Long maxTimeout;
     private Long lastUpdate = Long.MAX_VALUE;
 
-    public ExecutorHealth(Scheduler scheduler, SchedulerDriver driver, ESTaskStatus taskStatus, Long maxTimeout) {
+    public ExecutorHealth(Scheduler scheduler, SchedulerDriver driver, ESTaskStatus taskStatus, Long maxTimeoutMS) {
         if (scheduler == null) {
             throw new InvalidParameterException("Scheduler cannot be null.");
         } else if (driver == null) {
             throw new InvalidParameterException("Scheduler driver cannot be null.");
         } else if (taskStatus == null || taskStatus.getStatus() == null) {
             throw new InvalidParameterException("Task status cannot be null.");
-        } else if (maxTimeout <= 0) {
+        } else if (maxTimeoutMS <= 0) {
             throw new InvalidParameterException("Max timeout cannot be less than or equal to zero.");
         }
         this.scheduler = scheduler;
         this.driver = driver;
         this.taskStatus = taskStatus;
-        this.maxTimeout = maxTimeout;
+        this.maxTimeout = maxTimeoutMS;
     }
 
     @Override
@@ -42,7 +42,7 @@ public class ExecutorHealth implements Runnable {
             Long thisUpdateMs = new Double(thisUpdate*1000.0).longValue();
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
-                LOGGER.warn("Executor not responding to healthchecks in required timeout (" + maxTimeout + "s). It has been " + timeSinceUpdate + " s since the last update.");
+                LOGGER.warn("Executor not responding to healthchecks in required timeout (" + maxTimeout + "ms). It has been " + timeSinceUpdate + " ms since the last update.");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
             } else {
                 lastUpdate = thisUpdateMs;
