@@ -40,6 +40,20 @@
 - [x] Fault tolerance
 - [x] Customised ES configuration
 - [X] Configurable data directory
+[0.4.2](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.4.2)
+- [ ] [Test coverage for healthcheck mechanism bug](#303)
+- [ ] [Executor does not call driver.stop() when killed bug](#293)
+- [ ] [Executor processes are not allocated any resources bug](#227)
+[0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
+- [ ] [Add auth to mini mesos enhancement](#304)
+- [ ] [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
+[0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
+- [ ] Refactoring
+[0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
+- [ ] [Mesos persistent volumes enhancement](#306)
+- [ ] [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
+- [ ] [Faster task recovery with Mesos dynamic reservations blocked](#98)
+[Future]
 - [ ] High availability (master, indexer, replica)
 - [ ] Upgrading configuration
 - [ ] Scale cluster horizontally
@@ -47,6 +61,12 @@
 - [ ] Upgrade
 - [ ] Rollback
 - [ ] Snapshot and restore 
+
+Rough timescales:
+- [0.4.2] 22/09/15
+- [0.5.0] 25/09/15
+- [0.5.1] 02/10/15
+- [0.6.0] 09/10/15
 
 ### Blocked features
 
