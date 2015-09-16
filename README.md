@@ -288,32 +288,15 @@ $ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 
 1 First update the CHANGELOG.md by listing fixed issues and bugs
 
-2 Create the following Gradle property file in ~/.gradle/gradle.properties and refer to your Github and Docker Hub
-user/pass.
+2 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
 
-```
-systemProp.org.ajoberstar.grgit.auth.interactive.allow=false
-systemProp.org.ajoberstar.grgit.auth.ssh.private=~/.ssh/id_rsa
-systemProp.org.ajoberstar.grgit.auth.username=user
-systemProp.org.ajoberstar.grgit.auth.password=password
-dockerHubUsername=user
-dockerHubPassword=******
-dockerHubEmail=email
-```
+3 Push changes
 
-3 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
+4 Verify that the [Continuous Build Pipeline](https://ci.infra.container-solutions.com/) completes successfully.
 
-4 Build and make sure the system tests pass (skip if you have tested on jenkins)
+5 Run the [Release Build](https://ci.infra.container-solutions.com/view/Mesos%20Elasticsearch/job/Elasticsearch%20Release/) and pick a release type: patch, minor or major.
 
-```
-$ ./gradlew build system-test:systemTest
-```
-
-5 Now perform a release and specify the release type: major, minor or patch (only one!) and your username.
-
-```
-$ ./gradlew release -PreleaseType={major OR minor OR patch} -PuserName={user}
-```
+6 Done!
 
 ## Support
 
