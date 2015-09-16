@@ -42,7 +42,7 @@ public class ExecutorHealth implements Runnable {
             Long thisUpdateMs = new Double(thisUpdate*1000.0).longValue();
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
-                LOGGER.warn("Executor not responding to healthchecks in required timeout (" + maxTimeout + "ms). It has been " + timeSinceUpdate + " ms since the last update.");
+                LOGGER.warn("Executor " + taskStatus.getTaskInfo().getExecutor().getExecutorId().getValue() + "not responding to healthchecks in required timeout (" + maxTimeout + " ms). It has been " + timeSinceUpdate + " ms since the last update.");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
             } else {
                 lastUpdate = thisUpdateMs;
