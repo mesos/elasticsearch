@@ -41,9 +41,11 @@ public class ExecutorHealth implements Runnable {
             Double thisUpdate = taskStatus.getStatus().getTimestamp();
             Double timeSinceUpdate = thisUpdate - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
+                LOGGER.warn("Executor not responding to healthchecks in required timeout (" + maxTimeout + "s). It has been " + timeSinceUpdate + " s since the last update.");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
+            } else {
+                lastUpdate = thisUpdate;
             }
-            lastUpdate = thisUpdate;
         } catch (Exception e) {
             LOGGER.error("Unable to read executor health", e);
         }
