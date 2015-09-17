@@ -19,7 +19,7 @@ import static com.jayway.awaitility.Awaitility.await;
  */
 public class TasksResponse {
 
-    public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
+    public static final Logger LOGGER = Logger.getLogger(TasksResponse.class);
 
     private HttpResponse<JsonNode> response;
     private String schedulerIpAddress;

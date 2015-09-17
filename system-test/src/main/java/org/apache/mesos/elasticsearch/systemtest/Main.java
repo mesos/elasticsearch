@@ -3,7 +3,9 @@ package org.apache.mesos.elasticsearch.systemtest;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.json.JSONObject;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -41,15 +43,29 @@ public class Main {
 
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
         schedulerReference.set(scheduler);
-
         scheduler.start();
 
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
+        seedData(cluster, scheduler);
 
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
             Thread.sleep(1000);
         }
+    }
+
+    private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
+        String taskHttpAddress;
+        try {
+            List<JSONObject> tasks = new TasksResponse(schedulerContainer.getIpAddress(), cluster.getConfig().getNumberOfSlaves()).getTasks();
+            taskHttpAddress = tasks.get(0).getString("http_address");
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
+        }
+
+        SeedDataContainer seedData = new SeedDataContainer(cluster.getConfig().dockerClient, "http://" + taskHttpAddress);
+        cluster.addAndStartContainer(seedData);
+        LOGGER.info("Elasticsearch node " + taskHttpAddress + " seeded with data");
     }
 
 }
