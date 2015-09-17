@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 
@@ -57,8 +58,11 @@ public class ClusterState {
      * @return a POJO representing TaskInfo, TaskStatus and FrameworkID packets
      * @throws InvalidParameterException when the taskId does not exist in the Task list.
      */
-    public ESTaskStatus getStatus(TaskID taskID) throws InvalidParameterException {
-        TaskInfo taskInfo = getTask(taskID);
+    public ESTaskStatus getStatus(TaskID taskID) throws IllegalArgumentException {
+        return getStatus(getTask(taskID));
+    }
+
+    private ESTaskStatus getStatus(TaskInfo taskInfo) {
         return new ESTaskStatus(state, frameworkState.getFrameworkID(), taskInfo);
     }
 
@@ -74,28 +78,18 @@ public class ClusterState {
 
     public void removeTask(TaskInfo taskInfo) throws InvalidParameterException {
         List<TaskInfo> taskList = getTaskList();
-        Boolean found = false;
-        for (TaskInfo info : taskList) {
-            if (isEqual(info, taskInfo)) {
-                LOGGER.debug("Removing TaskInfo from cluster for task: " + taskInfo.getTaskId().getValue());
-                taskList.remove(info);
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
+        LOGGER.debug("Removing TaskInfo from cluster for task: " + taskInfo.getTaskId().getValue());
+        if (!taskList.remove(taskInfo)) {
             throw new InvalidParameterException("TaskInfo does not exist in list: " + taskInfo.getTaskId().getValue());
         }
-        setTaskInfoList(taskList);
-    }
-
-    private boolean isEqual(TaskInfo taskInfo1, TaskInfo taskInfo2) {
-        return taskInfo1.getTaskId().getValue().equals(taskInfo2.getTaskId().getValue());
+        getStatus(taskInfo).destroy(); // Destroy task status in ZK.
+        setTaskInfoList(taskList); // Remove from cluster state list
     }
 
     public Boolean exists(TaskID taskId) {
         try {
             getStatus(taskId);
+            getTask(taskId);
         } catch (InvalidParameterException e) {
             return false;
         }
@@ -106,9 +100,9 @@ public class ClusterState {
      * Get the TaskInfo packet for a specific task.
      * @param taskID the taskID to retreive the TaskInfo for
      * @return a TaskInfo packet
-     * @throws InvalidParameterException when the taskId does not exist in the Task list.
+     * @throws IllegalArgumentException when the taskId does not exist in the Task list.
      */
-    private TaskInfo getTask(TaskID taskID) throws InvalidParameterException {
+    public TaskInfo getTask(TaskID taskID) throws IllegalArgumentException {
         LOGGER.debug("Getting taskInfo from cluster for task: " + taskID.getValue());
         List<TaskInfo> taskInfoList = getTaskList();
         TaskInfo taskInfo = null;
@@ -122,6 +116,17 @@ public class ClusterState {
             throw new InvalidParameterException("Could not find executor with that task ID: " + taskID.getValue());
         }
         return taskInfo;
+    }
+
+    public void update(Protos.TaskStatus status)  throws IllegalArgumentException {
+        if (!exists(status.getTaskId())) {
+            throw new IllegalArgumentException("Task does not exist in zk.");
+        }
+        getStatus(status.getTaskId()).setStatus(status);
+    }
+
+    public boolean taskInError(Protos.TaskStatus status) {
+        return getStatus(status.getTaskId()).taskInError();
     }
 
     private String logTaskList(List<TaskInfo> taskInfoList) {

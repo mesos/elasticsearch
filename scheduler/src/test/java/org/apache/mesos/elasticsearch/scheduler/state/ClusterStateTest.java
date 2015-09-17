@@ -106,7 +106,7 @@ public class ClusterStateTest {
         mock.add(defaultTaskInfo);
         when(state.get(anyString())).thenReturn(mock);
         assertTrue(clusterState.exists(defaultTaskInfo.getTaskId()));
-        verify(state, times(1)).get(anyString());
+        verify(state, atLeastOnce()).get(anyString());
     }
 
     @Test

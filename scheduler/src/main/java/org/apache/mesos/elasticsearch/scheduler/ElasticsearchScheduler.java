@@ -95,7 +95,7 @@ public class ElasticsearchScheduler implements Scheduler {
             if (isHostAlreadyRunningTask(offer)) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterMonitor.getClusterState().getTaskList().size() == configuration.getElasticsearchNodes()) {
+            } else if (clusterState.getTaskList().size() == configuration.getElasticsearchNodes()) {
                 driver.declineOffer(offer.getId()); // DCOS certification 05
                 LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
             } else if (!containsTwoPorts(offer.getResourcesList())) {
@@ -115,7 +115,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                clusterMonitor.monitorTask(taskInfo); // Add task to cluster monitor
+                clusterMonitor.startMonitoringTask(taskInfo); // Add task to cluster monitor
             }
         }
     }
@@ -182,7 +182,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
         Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterMonitor.getClusterState().getTaskList();
+        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
         for (Protos.TaskInfo t : stateList) {
             if (t.getSlaveId().equals(offer.getSlaveId())) {
                 result = true;

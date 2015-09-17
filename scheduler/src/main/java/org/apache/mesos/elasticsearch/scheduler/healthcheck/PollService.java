@@ -31,6 +31,7 @@ public class PollService {
      * Starts the polling service. Note: It is *your* responsibility to stop the process by calling stop() before shutdown.
      */
     public void start() {
+        LOGGER.debug("Starting poll service");
         executor = Executors.newSingleThreadScheduledExecutor();
         future = executor.scheduleWithFixedDelay(poller, 0, delay, TimeUnit.MILLISECONDS);
     }
