@@ -246,6 +246,8 @@ controllers.controller('ConfigurationController', function ($scope) {
 });
 
 controllers.controller('QueryBrowserController', function ($scope, $http, $location, config, Search) {
+    $scope.displayRawResults = false;
+
     $scope.query = {
         error: '',
         string: '',

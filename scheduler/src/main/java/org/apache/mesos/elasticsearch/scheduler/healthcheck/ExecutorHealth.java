@@ -17,35 +17,44 @@ public class ExecutorHealth implements Runnable {
     private final SchedulerDriver driver;
     private final ESTaskStatus taskStatus;
     private final Long maxTimeout;
-    private Double lastUpdate = Double.MAX_VALUE;
+    private Long lastUpdate = Long.MAX_VALUE;
 
-    public ExecutorHealth(Scheduler scheduler, SchedulerDriver driver, ESTaskStatus taskStatus, Long maxTimeout) {
+    public ExecutorHealth(Scheduler scheduler, SchedulerDriver driver, ESTaskStatus taskStatus, Long maxTimeoutMS) {
         if (scheduler == null) {
             throw new InvalidParameterException("Scheduler cannot be null.");
         } else if (driver == null) {
             throw new InvalidParameterException("Scheduler driver cannot be null.");
         } else if (taskStatus == null || taskStatus.getStatus() == null) {
             throw new InvalidParameterException("Task status cannot be null.");
-        } else if (maxTimeout <= 0) {
+        } else if (maxTimeoutMS <= 0) {
             throw new InvalidParameterException("Max timeout cannot be less than or equal to zero.");
         }
         this.scheduler = scheduler;
         this.driver = driver;
         this.taskStatus = taskStatus;
-        this.maxTimeout = maxTimeout;
+        this.maxTimeout = maxTimeoutMS;
     }
 
     @Override
     public void run() {
         try {
-            Double thisUpdate = taskStatus.getStatus().getTimestamp();
-            Double timeSinceUpdate = thisUpdate - lastUpdate;
+            Double thisUpdate = taskStatus.getStatus().getTimestamp(); // Mesos timestamps in seconds, a double.
+            Long thisUpdateMs = (long) (thisUpdate * 1000.0);
+            Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
+                LOGGER.warn("Executor " + taskStatus.getTaskInfo().getExecutor().getExecutorId().getValue() +
+                        "not responding to healthchecks in required timeout (" + maxTimeout + " ms). " +
+                        "It has been " + timeSinceUpdate + " ms since the last update.");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
+            } else {
+                lastUpdate = thisUpdateMs;
             }
-            lastUpdate = thisUpdate;
         } catch (Exception e) {
             LOGGER.error("Unable to read executor health", e);
         }
+    }
+
+    public Long getLastUpdate() {
+        return lastUpdate;
     }
 }
