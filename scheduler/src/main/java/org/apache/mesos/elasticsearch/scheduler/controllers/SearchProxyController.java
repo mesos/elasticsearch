@@ -68,7 +68,7 @@ public class SearchProxyController {
         return ResponseEntity.ok()
                 .contentLength(esSearchResponse.getEntity().getContentLength())
                 .contentType(MediaType.APPLICATION_JSON)
-                .header("X-elasticsearch-host", httpHost.toHostString())
+                .header("X-ElasticSearch-host", httpHost.toHostString())
                 .body(inputStreamResource);
     }
 
