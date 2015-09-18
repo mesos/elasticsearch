@@ -4,6 +4,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
+import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -48,6 +49,7 @@ public class ExecutorHealthTest {
     public void shouldCallExecutorLostWhenTimeout() {
         runAndGetLastUpdate(executorHealth);
         when(taskStatus.getStatus()).thenReturn(overdueTaskStatus());
+        when(taskStatus.getTaskInfo()).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
         runAndGetLastUpdate(executorHealth);
         verify(scheduler, times(1)).executorLost(eq(schedulerDriver), any(), any(), anyInt());
     }
