@@ -15,7 +15,7 @@ import static org.apache.mesos.Protos.TaskID;
 /**
  * Model of cluster state. User is able to add, remove and monitor task status.
  */
-public class ClusterState {
+public class ClusterState implements Observer {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
     public static final String STATE_LIST = "stateList";
     private final SerializableState state;
@@ -131,6 +131,40 @@ public class ClusterState {
 
     public boolean taskInError(Protos.TaskStatus status) {
         return getStatus(status.getTaskId()).taskInError();
+    }
+
+    /**
+     * Updates a task with the given status. Status is written to zookeeper.
+     * If the task is in error, then the healthchecks are stopped and state is removed from ZK
+     * @param status A received task status
+     */
+    private void updateTask(Protos.TaskStatus status) {
+        if (!exists(status.getTaskId())) {
+            LOGGER.warn("Could not find task in cluster state.");
+            return;
+        }
+
+        try {
+            Protos.TaskInfo taskInfo = getTask(status.getTaskId());
+            LOGGER.debug("Updating task status for executor: " + status.getExecutorId().getValue() + " [" + status.getTaskId().getValue() + ", " + status.getTimestamp() + ", " + status.getState() + "]");
+            update(status); // Update state of Executor
+
+            if (taskInError(status)) {
+                LOGGER.error("Task in error state. Removing state for executor: " + status.getExecutorId().getValue() + ", due to: " + status.getState());
+                removeTask(taskInfo); // Remove task from cluster state.
+            }
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            LOGGER.error("Unable to write executor state to zookeeper", e);
+        }
+    }
+
+    @Override
+    public void update(Observable o, Object arg) {
+        try {
+            this.updateTask((Protos.TaskStatus) arg);
+        } catch (ClassCastException e) {
+            LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
+        }
     }
 
     private String logTaskList(List<TaskInfo> taskInfoList) {

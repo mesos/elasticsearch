@@ -13,12 +13,12 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.when;
 
 /**
  * Cluster monitor tests
@@ -51,31 +51,7 @@ public class ClusterMonitorTest {
         when(configuration.getExecutorTimeout()).thenReturn(20L);
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
-        clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, clusterState, statePath);
-    }
-
-    @Test
-    public void shouldUpdateIfExists() {
-        when(clusterState.taskInError(any())).thenReturn(false);
-        Protos.TaskStatus taskStatus = taskStatus(Protos.TaskState.TASK_RUNNING);
-        when(clusterState.exists(eq(taskStatus.getTaskId()))).thenReturn(true);
-        clusterMonitor.update(null, taskStatus);
-        verify(clusterState, times(1)).update(eq(taskStatus));
-    }
-
-    @Test
-    public void shouldWriteStatusIfDoesntExist() throws IOException {
-        when(configuration.getState().get(anyString())).thenThrow(IllegalStateException.class).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
-        new ClusterMonitor(configuration, scheduler, schedulerDriver, clusterState, statePath).startMonitoringTask(taskInfo());
-        verify(configuration.getState(), atLeastOnce()).set(anyString(), any());
-    }
-
-    @Test
-    public void shouldNotWriteStatusIfAlreadyExists() throws IOException {
-        when(clusterState.getTaskList()).thenReturn(Arrays.asList(taskInfo()));
-        new ClusterMonitor(configuration, scheduler, schedulerDriver, clusterState, statePath);
-        verify(configuration.getState(), atLeastOnce()).get(anyString());
-        verify(configuration.getState(), never()).set(anyString(), any());
+        clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, statePath);
     }
 
     @Test
@@ -100,13 +76,6 @@ public class ClusterMonitorTest {
     public void shouldCatchIfTryingToRemoveTaskThatIsntMonitored() {
         when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(IllegalArgumentException.class);
         clusterMonitor.update(null, taskStatus(Protos.TaskState.TASK_FAILED));
-    }
-
-    @Test
-    public void whenStateExistsShouldOnlyAddMonitors() {
-        when(clusterState.getTaskList()).thenReturn(Arrays.asList(taskInfo()));
-        clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, clusterState, statePath);
-        assertEquals(1, clusterMonitor.getHealthChecks().size());
     }
 
     private Protos.TaskInfo taskInfo() {

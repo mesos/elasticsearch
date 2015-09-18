@@ -90,6 +90,10 @@ public class ESTaskStatus {
 
     public boolean taskInError() {
         TaskState state = getStatus().getState();
+        return ESTaskStatus.errorState(state);
+    }
+
+    public static boolean errorState(TaskState state) {
         return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED)
                 || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED);
     }

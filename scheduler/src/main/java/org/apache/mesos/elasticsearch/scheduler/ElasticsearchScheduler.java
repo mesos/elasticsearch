@@ -67,7 +67,9 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
-        clusterMonitor = new ClusterMonitor(configuration, this, driver, clusterState, new StatePath(configuration.getState()));
+        clusterMonitor = new ClusterMonitor(configuration, this, driver, new StatePath(configuration.getState()));
+        clusterState.getTaskList().forEach(clusterMonitor::startMonitoringTask); // Get all previous executors and start monitoring them.
+        statusUpdateWatchers.addObserver(clusterState);
         statusUpdateWatchers.addObserver(clusterMonitor);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);

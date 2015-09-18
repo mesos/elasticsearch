@@ -6,15 +6,12 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.healthcheck.AsyncPing;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 
 import java.security.InvalidParameterException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Contains all cluster information. Monitors state of cluster elements.
@@ -24,21 +21,17 @@ public class ClusterMonitor implements Observer {
     private final Configuration configuration;
     private final Scheduler callback;
     private final SchedulerDriver driver;
-    private final ClusterState clusterState;
     private final Map<Protos.TaskInfo, AsyncPing> healthChecks = new HashMap<>();
     private final StatePath statePath;
 
-    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, ClusterState clusterState, StatePath statePath) {
-        if (configuration == null || callback == null || driver == null || clusterState == null || statePath == null) {
+    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, StatePath statePath) {
+        if (configuration == null || callback == null || driver == null || statePath == null) {
             throw new InvalidParameterException("Constructor parameters cannot be null.");
         }
         this.configuration = configuration;
         this.callback = callback;
         this.driver = driver;
-        this.clusterState = clusterState;
         this.statePath = statePath;
-        // TODO (pnw) refactor cluster state out.
-        clusterState.getTaskList().forEach(this::startMonitoringTask); // Get all previous executors and start monitoring them.
     }
 
     public void startMonitoringTask(ESTaskStatus esTask) {
@@ -59,26 +52,29 @@ public class ClusterMonitor implements Observer {
         healthChecks.remove(taskInfo).stop(); // Remove task from list and stop its healthchecks.
     }
 
+    private List<Protos.TaskID> getTaskIDList() {
+        return healthChecks.keySet().stream().map(Protos.TaskInfo::getTaskId).collect(Collectors.toList());
+    }
+
+    private Protos.TaskInfo getTaskInfo(Protos.TaskID taskID) {
+        return healthChecks.keySet().stream().filter(taskInfo -> taskInfo.getTaskId().equals(taskID)).findFirst().get();
+    }
+
     /**
      * Updates a task with the given status. Status is written to zookeeper.
      * If the task is in error, then the healthchecks are stopped and state is removed from ZK
      * @param status A received task status
      */
     private void updateTask(Protos.TaskStatus status) {
-        if (!clusterState.exists(status.getTaskId())) {
-            LOGGER.warn("Could not find task in cluster state.");
+        if (!getTaskIDList().contains(status.getTaskId())) {
+            LOGGER.warn("Could not find task in monitor list.");
             return;
         }
 
         try {
-            Protos.TaskInfo taskInfo = clusterState.getTask(status.getTaskId());
-            LOGGER.debug("Updating task status for executor: " + status.getExecutorId().getValue() + " [" + status.getTaskId().getValue() + ", " + status.getTimestamp() + ", " + status.getState() + "]");
-            clusterState.update(status); // Update state of Executor
-
-            if (clusterState.taskInError(status)) {
-                LOGGER.error("Task in error state. Removing state for executor: " + status.getExecutorId().getValue() + ", due to: " + status.getState());
-                stopMonitoringTask(taskInfo);
-                clusterState.removeTask(taskInfo); // Remove task from cluster state.
+            if (ESTaskStatus.errorState(status.getState())) {
+                LOGGER.error("Task in error state. Removing executor from monitor list: " + status.getExecutorId().getValue() + ", due to: " + status.getState());
+                stopMonitoringTask(getTaskInfo(status.getTaskId()));
             }
         } catch (IllegalStateException | IllegalArgumentException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
