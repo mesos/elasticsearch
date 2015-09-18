@@ -1,21 +1,17 @@
 package org.apache.mesos.elasticsearch.scheduler.cluster;
 
-import org.apache.commons.collections4.map.MultiValueMap;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.BumpExecutor;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealth;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.ExecutorHealthCheck;
-import org.apache.mesos.elasticsearch.scheduler.healthcheck.PollService;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.healthcheck.AsyncPing;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
+import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 
 import java.security.InvalidParameterException;
-import java.util.Observable;
-import java.util.Observer;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Contains all cluster information. Monitors state of cluster elements.
@@ -25,79 +21,62 @@ public class ClusterMonitor implements Observer {
     private final Configuration configuration;
     private final Scheduler callback;
     private final SchedulerDriver driver;
-    private final ClusterState clusterState;
-    private MultiValueMap<Protos.TaskInfo, ExecutorHealthCheck> pollList = new MultiValueMap<>();
+    private final Map<Protos.TaskInfo, AsyncPing> healthChecks = new HashMap<>();
+    private final StatePath statePath;
 
-    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, ClusterState clusterState) {
-        if (configuration == null || callback == null || driver == null || clusterState == null) {
+    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, StatePath statePath) {
+        if (configuration == null || callback == null || driver == null || statePath == null) {
             throw new InvalidParameterException("Constructor parameters cannot be null.");
         }
         this.configuration = configuration;
         this.callback = callback;
         this.driver = driver;
-        this.clusterState = clusterState;
-        clusterState.getTaskList().forEach(this::monitorTask); // Get all previous executors and start monitoring them.
+        this.statePath = statePath;
+    }
+
+    public void startMonitoringTask(ESTaskStatus esTask) {
+        startMonitoringTask(esTask.getTaskInfo());
     }
 
     /**
-     * Monitor a new, or existing task.
-     * @param task The task to monitor
+     * Start monitoring a task
+     * @param taskInfo The task to monitor
      */
-    public void monitorTask(Protos.TaskInfo task) {
-        ESTaskStatus taskStatus = addNewTaskToCluster(task);
-        createNewExecutorBump(taskStatus);
-        createNewExecutorHealthMonitor(callback, taskStatus);
+    public void startMonitoringTask(Protos.TaskInfo taskInfo) {
+        LOGGER.debug("Start monitoring: " + taskInfo.getTaskId().getValue());
+        healthChecks.put(taskInfo, new AsyncPing(callback, driver, configuration, new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo, statePath)));
     }
 
-    // TODO (pnw): Cluster state is not responsibility of cluster monitor.
-    public ClusterState getClusterState() {
-        return clusterState;
+    private void stopMonitoringTask(Protos.TaskInfo taskInfo) {
+        LOGGER.debug("Stop monitoring: " + taskInfo.getTaskId().getValue());
+        healthChecks.remove(taskInfo).stop(); // Remove task from list and stop its healthchecks.
     }
 
-    private void createNewExecutorHealthMonitor(Scheduler scheduler, ESTaskStatus taskStatus) {
-        ExecutorHealth health = new ExecutorHealth(scheduler, driver, taskStatus, configuration.getExecutorTimeout());
-        Long updateRate = configuration.getExecutorHealthDelay() / 2; // Make sure we check more often than the ping.
-        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(health, updateRate));
-        pollList.put(taskStatus.getTaskInfo(), healthCheck);
+    private List<Protos.TaskID> getTaskIDList() {
+        return healthChecks.keySet().stream().map(Protos.TaskInfo::getTaskId).collect(Collectors.toList());
     }
 
-    private void createNewExecutorBump(ESTaskStatus taskStatus) {
-        Protos.TaskInfo taskInfo = taskStatus.getTaskInfo();
-        BumpExecutor bumpExecutor = new BumpExecutor(driver, taskInfo);
-        ExecutorHealthCheck healthCheck = new ExecutorHealthCheck(new PollService(bumpExecutor, configuration.getExecutorHealthDelay()));
-        pollList.put(taskInfo, healthCheck);
+    private Protos.TaskInfo getTaskInfo(Protos.TaskID taskID) {
+        return healthChecks.keySet().stream().filter(taskInfo -> taskInfo.getTaskId().equals(taskID)).findFirst().get();
     }
 
-    private ESTaskStatus addNewTaskToCluster(Protos.TaskInfo taskInfo) {
-        ESTaskStatus taskStatus = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo);
-        taskStatus.setStatus(taskStatus.getDefaultStatus()); // This is a new task, so set default state until we get an update
-        clusterState.addTask(taskInfo);
-        return taskStatus;
-    }
+    /**
+     * Updates a task with the given status. Status is written to zookeeper.
+     * If the task is in error, then the healthchecks are stopped and state is removed from ZK
+     * @param status A received task status
+     */
+    private void updateTask(Protos.TaskStatus status) {
+        if (!getTaskIDList().contains(status.getTaskId())) {
+            LOGGER.warn("Could not find task in monitor list.");
+            return;
+        }
 
-    private void stopPollTask(Protos.TaskInfo taskInfo) {
-        pollList.getCollection(taskInfo).forEach(ExecutorHealthCheck::stopHealthcheck);
-    }
-
-    public void updateTask(Protos.TaskStatus status) {
         try {
-            // Update cluster state, if necessary
-            if (getClusterState().exists(status.getTaskId())) {
-                LOGGER.debug("Updating task status for: " + status.getTaskId());
-                ESTaskStatus executorState = getClusterState().getStatus(status.getTaskId());
-                // Update state of Executor
-                executorState.setStatus(status);
-                // If task in error
-                if (executorState.taskInError()) {
-                    LOGGER.error("Task in error state. Performing reconciliation: " + executorState.toString());
-                    this.stopPollTask(executorState.getTaskInfo()); // Stop polling
-                    clusterState.removeTask(executorState.getTaskInfo()); // Remove task from cluster state.
-                    executorState.destroy(); // Destroy task in ZK.
-                }
-            } else {
-                LOGGER.warn("Could not find task in cluster state.");
+            if (ESTaskStatus.errorState(status.getState())) {
+                LOGGER.error("Task in error state. Removing executor from monitor list: " + status.getExecutorId().getValue() + ", due to: " + status.getState());
+                stopMonitoringTask(getTaskInfo(status.getTaskId()));
             }
-        } catch (IllegalStateException e) {
+        } catch (IllegalStateException | IllegalArgumentException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
         }
     }
@@ -109,13 +88,9 @@ public class ClusterMonitor implements Observer {
         } catch (ClassCastException e) {
             LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
         }
-        checkForTooManyExecutors(); // Todo (pnw): We check for too many executors here, for now. In the future, the configuration will be dynamically alterable, so we will have to do this somewhere else.
     }
 
-    private void checkForTooManyExecutors() {
-        if (getClusterState().getTaskList().size() > configuration.getElasticsearchNodes()) {
-            LOGGER.info("Killing executor as " + getClusterState().getTaskList().size() + " is greater than requested by the configuration: " + configuration.getElasticsearchNodes());
-            driver.killTask(getClusterState().getTaskList().get(getClusterState().getTaskList().size() - 1).getTaskId());
-        }
+    public Map<Protos.TaskInfo, AsyncPing> getHealthChecks() {
+        return healthChecks;
     }
 }

@@ -24,7 +24,7 @@ public class ExecutorHealth implements Runnable {
             throw new InvalidParameterException("Scheduler cannot be null.");
         } else if (driver == null) {
             throw new InvalidParameterException("Scheduler driver cannot be null.");
-        } else if (taskStatus == null || taskStatus.getStatus() == null) {
+        } else if (taskStatus == null) {
             throw new InvalidParameterException("Task status cannot be null.");
         } else if (maxTimeoutMS <= 0) {
             throw new InvalidParameterException("Max timeout cannot be less than or equal to zero.");
