@@ -57,12 +57,11 @@ public class Main {
     private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
         String taskHttpAddress;
         try {
-            List<JSONObject> tasks = new TasksResponse(schedulerContainer.getIpAddress(), cluster.getConfig().getNumberOfSlaves()).getTasks();
+            List<JSONObject> tasks = new TasksResponse(schedulerContainer.getIpAddress(), cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING").getTasks();
             taskHttpAddress = tasks.get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-
         SeedDataContainer seedData = new SeedDataContainer(cluster.getConfig().dockerClient, "http://" + taskHttpAddress);
         cluster.addAndStartContainer(seedData);
         LOGGER.info("Elasticsearch node " + taskHttpAddress + " seeded with data");
