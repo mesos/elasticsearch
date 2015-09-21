@@ -32,9 +32,8 @@ public class ExecutorHealthTest {
     @Before
     public void initMocks() {
         MockitoAnnotations.initMocks(this);
-        Protos.TaskStatus defaultStatus = Protos.TaskStatus.getDefaultInstance().getDefaultInstanceForType();
-        when(taskStatus.getStatus()).thenReturn(defaultStatus);
         executorHealth = new ExecutorHealth(scheduler, schedulerDriver, taskStatus, 5000L);
+        when(taskStatus.getStatus()).thenReturn(initialTaskStatus());
     }
 
     @Test
@@ -80,8 +79,12 @@ public class ExecutorHealthTest {
         return taskStatus(2.0);
     }
 
-    private Protos.TaskStatus taskStatus(Double value) {
-        return Protos.TaskStatus.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue("")).setState(Protos.TaskState.TASK_RUNNING).setTimestamp(value).build();
+    private Protos.TaskStatus initialTaskStatus() {
+        return taskStatus(1.0);
+    }
+
+    private Protos.TaskStatus taskStatus(Double timestamp) {
+        return ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_RUNNING, timestamp);
     }
 
     private Long runAndGetLastUpdate(ExecutorHealth executorHealth) {

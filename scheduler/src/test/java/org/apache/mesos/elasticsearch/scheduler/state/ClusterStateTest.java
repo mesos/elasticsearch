@@ -122,7 +122,7 @@ public class ClusterStateTest {
         mock.add(ProtoTestUtil.getDefaultTaskInfo());
         Protos.TaskInfo defaultTaskInfo = Protos.TaskInfo.newBuilder().mergeFrom(ProtoTestUtil.getDefaultTaskInfo()).setTaskId(Protos.TaskID.newBuilder().setValue("Task2")).build();
         mock.add(defaultTaskInfo);
-        when(state.get(contains(ESTaskStatus.STATE_KEY))).thenReturn(Protos.TaskStatus.newBuilder().setTaskId(defaultTaskInfo.getTaskId()).setState(Protos.TaskState.TASK_RUNNING).build());
+        when(state.get(contains(ESTaskStatus.STATE_KEY))).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_RUNNING));
         when(state.get(contains(ClusterState.STATE_LIST))).thenReturn(mock); // Be careful, the state list and state key both have the word state in them. Order is important.
         assertEquals(2, clusterState.getGuiTaskList().size());
         clusterState.removeTask(defaultTaskInfo);

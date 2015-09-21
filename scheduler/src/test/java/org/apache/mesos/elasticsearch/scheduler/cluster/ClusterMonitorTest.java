@@ -102,7 +102,11 @@ public class ClusterMonitorTest {
         Protos.SlaveID slaveID = Protos.SlaveID.newBuilder().setValue(SLAVE_ID).build();
         Protos.ExecutorID executorID = Protos.ExecutorID.newBuilder().setValue(EXECUTOR_ID).build();
         Protos.TaskID taskID = Protos.TaskID.newBuilder().setValue(TASK_ID).build();
-        return Protos.TaskStatus.newBuilder().setSlaveId(slaveID).setTaskId(taskID).setExecutorId(executorID)
+        return Protos.TaskStatus.newBuilder()
+                .setSlaveId(slaveID)
+                .setTaskId(taskID)
+                .setExecutorId(executorID)
+                .setTimestamp(1.0)
                 .setState(state).build();
     }
 
