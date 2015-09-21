@@ -32,6 +32,8 @@ public class ElasticsearchScheduler implements Scheduler {
     private ClusterState clusterState;
     OfferStrategy offerStrategy;
 
+    private SchedulerDriver schedulerDriver;
+
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
         this.taskInfoFactory = taskInfoFactory;
@@ -61,6 +63,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
+        this.schedulerDriver = driver;
+
         FrameworkState frameworkState = new FrameworkState(configuration.getState());
         frameworkState.setFrameworkId(frameworkId);
         configuration.setFrameworkState(frameworkState); // DCOS certification 02
@@ -91,7 +95,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     @Override
-    public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
+    public synchronized void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         if (!registered) {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
@@ -110,6 +114,24 @@ public class ElasticsearchScheduler implements Scheduler {
                 clusterState.addTask(esTask); // Add tasks to cluster state and write to zk
                 clusterMonitor.startMonitoringTask(esTask); // Add task to cluster monitor
             }
+        }
+    }
+
+    public synchronized void removeExcessElasticsearchNodes() {
+        while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
+            killLastStartedExecutor();
+        }
+    }
+
+    private void killLastStartedExecutor() {
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        int size = taskList.size();
+        Protos.TaskInfo killTaskInfo = taskList.get(size - 1);
+        Protos.TaskID killTaskId = killTaskInfo.getTaskId();
+        LOGGER.debug("Killing task: " + killTaskId);
+        schedulerDriver.killTask(killTaskId);
+        while (clusterState.getTaskList().stream().filter(taskInfo -> taskInfo.getTaskId().equals(killTaskId)).count() > 0) {
+            LOGGER.debug("Waiting for task to be removed from list: " + killTaskId);
         }
     }
 

@@ -19,7 +19,7 @@ public class OfferStrategy {
 
     private List<OfferRule> acceptanceRules = asList(
             new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
-            new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() == configuration.getElasticsearchNodes()),
+            new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() >= configuration.getElasticsearchNodes()),
             new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
             new OfferRule("Offer did not have enough CPU resources", offer -> !isEnoughCPU(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough RAM resources", offer -> !isEnoughRAM(configuration, offer.getResourcesList())),

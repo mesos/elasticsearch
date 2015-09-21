@@ -94,13 +94,6 @@ public class ElasticsearchExecutor implements Executor {
             // Launch Node
             node = launcher.launch();
 
-            Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    shutdown(driver);
-                }
-            }));
-
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
         } catch (InvalidParameterException | MalformedURLException e) {
