@@ -6,6 +6,7 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Answers;
@@ -52,6 +53,11 @@ public class ClusterMonitorTest {
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
         clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, statePath);
+    }
+
+    @After
+    public void shutdownHealthChecks() {
+        clusterMonitor.getHealthChecks().forEach((taskInfo, asyncPing) -> asyncPing.stop());
     }
 
     @Test
