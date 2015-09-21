@@ -13,6 +13,7 @@ import java.security.InvalidParameterException;
 public class ExecutorHealth implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(ExecutorHealth.class);
     public static final int EXIT_STATUS = 1;
+    public static final double EPSILON = 1E-12;
     private final Scheduler scheduler;
     private final SchedulerDriver driver;
     private final ESTaskStatus taskStatus;
@@ -39,14 +40,19 @@ public class ExecutorHealth implements Runnable {
     public void run() {
         try {
             Double thisUpdate = taskStatus.getStatus().getTimestamp(); // Mesos timestamps in seconds, a double.
+            if (Math.abs(thisUpdate) < EPSILON) {
+                LOGGER.info("Ignoring status update timestamp. Was zero: " + thisUpdate);
+                return;
+            }
             Long thisUpdateMs = (long) (thisUpdate * 1000.0);
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
                 LOGGER.warn("Executor " + taskStatus.getTaskInfo().getExecutor().getExecutorId().getValue() +
-                        "not responding to healthchecks in required timeout (" + maxTimeout + " ms). " +
-                        "It has been " + timeSinceUpdate + " ms since the last update.");
+                        " is not responding to healthchecks in required timeout (" + maxTimeout + " ms). " +
+                        "It has been " + timeSinceUpdate + " ms since the last update. (" + thisUpdateMs + " - " + lastUpdate + ")");
                 scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
             } else {
+                LOGGER.debug("Task is alive. It has been " + timeSinceUpdate + " ms since the last update.");
                 lastUpdate = thisUpdateMs;
             }
         } catch (Exception e) {

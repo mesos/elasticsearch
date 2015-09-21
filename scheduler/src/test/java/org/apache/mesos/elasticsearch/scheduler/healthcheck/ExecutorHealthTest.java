@@ -63,6 +63,15 @@ public class ExecutorHealthTest {
         verify(scheduler, times(0)).executorLost(eq(schedulerDriver), any(), any(), anyInt());
     }
 
+    // If the time was zero, that means the value was not set.
+    @Test
+    public void shouldNotUpdateIfTimeWasZero() {
+        Long initialLastUpdate = executorHealth.getLastUpdate();
+        when(taskStatus.getStatus()).thenReturn(taskStatus(0.0));
+        Long lastUpdate = runAndGetLastUpdate(executorHealth);
+        assertEquals(initialLastUpdate, lastUpdate);
+    }
+
     private Protos.TaskStatus overdueTaskStatus() {
         return taskStatus(10.0);
     }
