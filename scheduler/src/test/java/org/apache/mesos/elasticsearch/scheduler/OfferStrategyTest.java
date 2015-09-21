@@ -65,6 +65,53 @@ public class OfferStrategyTest {
     }
 
     @Test
+    public void willDeclineIfOfferDoesNotEnoughCpu() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getCpus()).thenReturn(1.0);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
+                .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
+                .addResources(cpus(0.1, configuration.getFrameworkRole()))
+                .build());
+        assertFalse(offerResult.accepted);
+        assertEquals("Offer did not have enough CPU resources", offerResult.reason.get());
+    }
+    @Test
+    public void willDeclineIfOfferDoesNotEnoughMem() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getMem()).thenReturn(100.0);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
+                .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
+                .addResources(cpus(10.0, configuration.getFrameworkRole()))
+                .addResources(mem(10, configuration.getFrameworkRole()))
+                .build());
+        assertFalse(offerResult.accepted);
+        assertEquals("Offer did not have enough RAM resources", offerResult.reason.get());
+    }
+
+    @Test
+    public void willDeclineIfOfferDoesNotEnoughDisk() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getDisk()).thenReturn(100.0);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
+                .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
+                .addResources(cpus(10.0, configuration.getFrameworkRole()))
+                .addResources(mem(100, configuration.getFrameworkRole()))
+                .addResources(disk(10, configuration.getFrameworkRole()))
+                .build());
+        assertFalse(offerResult.accepted);
+        assertEquals("Offer did not have enough disk resources", offerResult.reason.get());
+    }
+
+    @Test
     public void willAcceptValidOffer() throws Exception {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
