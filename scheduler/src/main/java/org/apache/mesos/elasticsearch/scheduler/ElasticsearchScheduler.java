@@ -30,7 +30,7 @@ public class ElasticsearchScheduler implements Scheduler {
     private Observable statusUpdateWatchers = new StatusUpdateObservable();
     private Boolean registered = false;
     private ClusterState clusterState;
-    private OfferStrategy offerStrategy;
+    OfferStrategy offerStrategy;
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
