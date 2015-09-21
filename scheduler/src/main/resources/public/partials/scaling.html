@@ -12,5 +12,33 @@
                 {{scaling.result.error}}
             </div>
         </div>
+        <div class="cell">
+            <h3>Shards Distribution</h3>
+            <h4>Shards List</h4>
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>index_name</th>
+                            <th>shard_id</th>
+                            <th>is_primary</th>
+                            <th>node_id</th>
+                            <th>relocating_node</th>
+                            <th>state</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <tr ng-repeat="shard in shards">
+                        <td>{{shard.index}}</td>
+                        <td>{{shard.shard}}</td>
+                        <td>{{shard.primary}}</td>
+                        <td>{{shard.node}}</td>
+                        <td>{{shard.relocating_node}}</td>
+                        <td>{{shard.state}}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 </div>

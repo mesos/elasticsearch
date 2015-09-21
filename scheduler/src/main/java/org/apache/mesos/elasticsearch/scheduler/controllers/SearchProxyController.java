@@ -35,18 +35,26 @@ public class SearchProxyController {
 
     @RequestMapping("/_cluster/stats")
     public ResponseEntity<InputStreamResource> stats() throws IOException {
-        Collection<Task> tasks = scheduler.getTasks().values();
-        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> toHttpHost(task.getClientAddress()));
-        HttpHost httpHost = httpHostStream.skip(RandomUtils.nextInt(tasks.size())).findAny().get();
-
+        HttpHost httpHost = getHttpHost(scheduler);
         HttpResponse esSearchResponse = httpClient.execute(httpHost, new HttpGet("/_cluster/stats"));
         InputStreamResource inputStreamResource = new InputStreamResource(esSearchResponse.getEntity().getContent());
-
         return ResponseEntity.ok()
-            .contentLength(esSearchResponse.getEntity().getContentLength())
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-elasticsearch-host", httpHost.toHostString())
-            .body(inputStreamResource);
+                .contentLength(esSearchResponse.getEntity().getContentLength())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-ElasticSearch-host", httpHost.toHostString())
+                .body(inputStreamResource);
+    }
+
+    @RequestMapping("/_cluster/state")
+    public ResponseEntity<InputStreamResource> recovery() throws IOException {
+        HttpHost httpHost = getHttpHost(scheduler);
+        HttpResponse esResponse = httpClient.execute(httpHost, new HttpGet("/_cluster/state?filter_blocks=true&filter_nodes=true&filter_metadata=true"));
+        InputStreamResource inputStreamResource = new InputStreamResource(esResponse.getEntity().getContent());
+        return ResponseEntity.ok()
+                .contentLength(esResponse.getEntity().getContentLength())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-ElasticSearch-host", httpHost.toHostString())
+                .body(inputStreamResource);
     }
 
     @RequestMapping("/_search")
@@ -70,6 +78,12 @@ public class SearchProxyController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-ElasticSearch-host", httpHost.toHostString())
                 .body(inputStreamResource);
+    }
+
+    private static HttpHost getHttpHost(ElasticsearchScheduler scheduler) {
+        Collection<Task> tasks = scheduler.getTasks().values();
+        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> toHttpHost(task.getClientAddress()));
+        return httpHostStream.skip(RandomUtils.nextInt(tasks.size())).findAny().get();
     }
 
     private static HttpHost toHttpHost(InetSocketAddress address) {
