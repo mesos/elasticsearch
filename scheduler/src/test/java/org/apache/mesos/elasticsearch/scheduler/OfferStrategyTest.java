@@ -16,6 +16,9 @@ import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.when;
 
+/**
+ * Test offer strategy
+ */
 @RunWith(MockitoJUnitRunner.class)
 public class OfferStrategyTest {
 

@@ -7,6 +7,9 @@ import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Offer strategy
+ */
 public class OfferStrategy {
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
     private ClusterState clusterState;
@@ -41,6 +44,9 @@ public class OfferStrategy {
         return OfferResult.accept();
     }
 
+    /**
+     * Offer result
+     */
     public static class OfferResult {
         final boolean accepted;
         final Optional<String> reason;
