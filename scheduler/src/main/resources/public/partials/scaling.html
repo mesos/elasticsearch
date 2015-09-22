@@ -13,6 +13,12 @@
             </div>
             <br>
             <h3>Shards Distribution Across Nodes</h3>
+            <form class="form-inline">
+                <div class="form-group">
+                    <input type="text" class="form-control" ng-model="shardsFilter" placeholder="Filter shards by index">
+                </div>
+            </form>
+            <br>
             <div class="table-responsive">
                 <div class="shards-nodes">
                     <div class="panel panel-default" ng-repeat="(node_id, shards) in shardsByNodes track by $index">
@@ -21,7 +27,7 @@
                             <i>{{node_id}}</i>
                         </div>
                         <div class="panel-body">
-                            <div ng-repeat="shard in shards | orderBy:['index','-primary', 'shard']" ng-class="{ 'shard-primary': shard.primary, 'shard-replica': !shard.primary, 'shard-relocating': shard.relocating_node, 'panel': true, 'panel-default': true }" style="border-color: #{{shardsColors[shard.index+'-'+shard.shard]}};">
+                            <div ng-repeat="shard in shards | orderBy:['index','-primary', 'shard'] | filter:shardsFilter" ng-class="{ 'shard-primary': shard.primary, 'shard-replica': !shard.primary, 'shard-relocating': shard.relocating_node, 'panel': true, 'panel-default': true }" style="border-color: #{{shardsColors[shard.index+'-'+shard.shard]}};">
                                 <div class="panel-heading" style="background-color: #{{shardsColors[shard.index+'-'+shard.shard]}}; border-color: #{{shardsColors[shard.index+'-'+shard.shard]}};">
                                     <h5 class="panel-title" ng-show="shard.primary">{{shard.index}} {{shard.shard}}</h5>
                                     <h5 class="panel-title" ng-hide="shard.primary">{{shard.index}} {{shard.shard}}</h5>
