@@ -80,7 +80,7 @@ public class ClusterController {
     }
 
     @RequestMapping(value = "/elasticsearchNodes", method = RequestMethod.GET)
-    public @ResponseBody ElasticsearchNodesWrapper getElasticsearchNodes() {
+    @ResponseBody public ElasticsearchNodesWrapper getElasticsearchNodes() {
         return new ElasticsearchNodesWrapper(configuration.getElasticsearchNodes());
     }
 
@@ -90,6 +90,9 @@ public class ClusterController {
         scheduler.removeExcessElasticsearchNodes();
     }
 
+    /**
+     *
+     */
     public static class ElasticsearchNodesWrapper {
         private int value;
         public int getValue() {
