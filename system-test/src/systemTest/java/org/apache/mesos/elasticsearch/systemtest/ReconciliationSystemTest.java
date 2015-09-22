@@ -1,10 +1,14 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.After;
@@ -13,27 +17,25 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests cluster state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest {
+    public static final int DOCKER_PORT = 2376;
     private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
     private static final int CLUSTER_SIZE = 3;
-    private static final int TIMEOUT = 60;
-    private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
-    public static final int DOCKER_PORT = 2376;
-
-    private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
-
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
@@ -42,7 +44,9 @@ public class ReconciliationSystemTest {
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
-
+    private static final int TIMEOUT = 60;
+    private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
+    private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
 
@@ -73,9 +77,24 @@ public class ReconciliationSystemTest {
         LOGGER.debug("Mini-mesos container ID: " + mesosClusterId);
     }
 
+    private static ElasticsearchSchedulerContainer startSchedulerContainer() {
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        CONTAINER_MANGER.addAndStart(scheduler);
+        return scheduler;
+    }
+
     @After
     public void after() {
         CONTAINER_MANGER.stopAll();
+    }
+
+    @Test
+    public void forceCheckExecutorTimeout() throws IOException {
+        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        CONTAINER_MANGER.addAndStart(scheduler);
+        assertCorrectNumberOfExecutors(); // Start with 3
+        assertLessThan(CLUSTER_SIZE); // Then should be less than 3, because at some point we kill an executor
+        assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
     @Test
@@ -118,10 +137,25 @@ public class ReconciliationSystemTest {
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == CLUSTER_SIZE);
+        assertCorrectNumberOfExecutors(CLUSTER_SIZE);
+    }
+
+    private void assertLessThan(int expected) throws IOException {
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() < expected);
+        List<Container> result = getContainers();
+        assertTrue(result.size() < expected);
+    }
+
+    private List<Container> getContainers() throws IOException {
         List<Container> result = clusterPs();
         LOGGER.debug("Mini-mesos PS command = " + Arrays.toString(result.stream().map(Container::getId).collect(Collectors.toList()).toArray()));
-        assertEquals(CLUSTER_SIZE, result.size());
+        return result;
+    }
+
+    private void assertCorrectNumberOfExecutors(int expected) throws IOException {
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == expected);
+        List<Container> result = getContainers();
+        assertEquals(expected, result.size());
     }
 
     private void killOneExecutor() throws IOException {
@@ -139,10 +173,26 @@ public class ReconciliationSystemTest {
         return clusterPs().get(0).getId();
     }
 
-    private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-        CONTAINER_MANGER.addAndStart(scheduler);
-        return scheduler;
+    private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {
+        protected TimeoutSchedulerContainer(DockerClient dockerClient, String mesosIp) {
+            super(dockerClient, mesosIp);
+        }
+
+        @Override
+        protected CreateContainerCmd dockerCommand() {
+            return dockerClient
+                    .createContainerCmd(SCHEDULER_IMAGE)
+                    .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
+                    .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
+                    .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
+                    .withCmd(
+                            ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
+                            Configuration.EXECUTOR_HEALTH_DELAY, "99",
+                            Configuration.EXECUTOR_TIMEOUT, "100", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
+                            ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
+                            Configuration.ELASTICSEARCH_RAM, "256"
+                    );
+        }
     }
 
 }

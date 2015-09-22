@@ -177,8 +177,15 @@ public class ElasticsearchScheduler implements Scheduler {
         // This is never called by Mesos, so we have to call it ourselves via a healthcheck
         // https://issues.apache.org/jira/browse/MESOS-313
         LOGGER.info("Executor lost: " + executorId.getValue() +
-                "on slave " + slaveId.getValue() +
-                "with status " + status);
+                " on slave " + slaveId.getValue() +
+                " with status " + status);
+        try {
+            Protos.TaskInfo taskInfo = clusterState.getTask(executorId);
+            statusUpdate(driver, Protos.TaskStatus.newBuilder().setExecutorId(executorId).setSlaveId(slaveId).setTaskId(taskInfo.getTaskId()).setState(Protos.TaskState.TASK_LOST).build());
+            driver.killTask(taskInfo.getTaskId()); // It may not actually be lost, it may just have hanged. So Kill, just in case.
+        } catch (IllegalArgumentException e) {
+            LOGGER.warn("Unable to find TaskInfo with the given Executor ID", e);
+        }
     }
 
     @Override

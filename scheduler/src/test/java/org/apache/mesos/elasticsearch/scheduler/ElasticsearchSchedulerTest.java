@@ -5,8 +5,10 @@ import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
+import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -90,6 +92,17 @@ public class ElasticsearchSchedulerTest {
 
         masterInfo = newMasterInfo();
         scheduler.registered(driver, frameworkID, masterInfo);
+    }
+
+    @Ignore
+    @Test
+    public void shouldCallOberversWhenExecutorLost() {
+        // Todo (anyone): Once scheduler is refactored so that clusterState is injected, enable this test. See See https://github.com/mesos/elasticsearch/issues/327
+        Protos.ExecutorID executorID = ProtoTestUtil.getExecutorId();
+        Protos.SlaveID slaveID = ProtoTestUtil.getSlaveId();
+        //when(clusterState.getTaskList()).thenReturn(Arrays.asList(ProtoTestUtil.getDefaultTaskInfo()));
+        scheduler.executorLost(driver, executorID, slaveID, 1);
+        //verify(anObserver, atLeastOnce()).notifyObservers(any(Protos.TaskStatus.class));
     }
 
     @Test
