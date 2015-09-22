@@ -88,12 +88,7 @@ public class ESTaskStatusTest {
 
     @Test
     public void shouldErrorWhenTaskFinishedToUpdateState() throws IOException {
-        when(state.get(anyString())).thenReturn(Protos.TaskStatus.newBuilder()
-                .setState(Protos.TaskState.TASK_FINISHED)
-                .setTaskId(taskInfo.getTaskId())
-                .setExecutorId(taskInfo.getExecutor().getExecutorId())
-                .setMessage("FINISHED")
-                .build());
+        when(state.get(anyString())).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_FINISHED));
         Assert.assertTrue(status.taskInError());
     }
 }

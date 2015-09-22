@@ -32,9 +32,8 @@ public class ExecutorHealthTest {
     @Before
     public void initMocks() {
         MockitoAnnotations.initMocks(this);
-        Protos.TaskStatus defaultStatus = Protos.TaskStatus.getDefaultInstance().getDefaultInstanceForType();
-        when(taskStatus.getStatus()).thenReturn(defaultStatus);
         executorHealth = new ExecutorHealth(scheduler, schedulerDriver, taskStatus, 5000L);
+        when(taskStatus.getStatus()).thenReturn(initialTaskStatus());
     }
 
     @Test
@@ -63,6 +62,15 @@ public class ExecutorHealthTest {
         verify(scheduler, times(0)).executorLost(eq(schedulerDriver), any(), any(), anyInt());
     }
 
+    // If the time was zero, that means the value was not set.
+    @Test
+    public void shouldNotUpdateIfTimeWasZero() {
+        Long initialLastUpdate = executorHealth.getLastUpdate();
+        when(taskStatus.getStatus()).thenReturn(taskStatus(0.0));
+        Long lastUpdate = runAndGetLastUpdate(executorHealth);
+        assertEquals(initialLastUpdate, lastUpdate);
+    }
+
     private Protos.TaskStatus overdueTaskStatus() {
         return taskStatus(10.0);
     }
@@ -71,8 +79,12 @@ public class ExecutorHealthTest {
         return taskStatus(2.0);
     }
 
-    private Protos.TaskStatus taskStatus(Double value) {
-        return Protos.TaskStatus.newBuilder().setTaskId(Protos.TaskID.newBuilder().setValue("")).setState(Protos.TaskState.TASK_RUNNING).setTimestamp(value).build();
+    private Protos.TaskStatus initialTaskStatus() {
+        return taskStatus(1.0);
+    }
+
+    private Protos.TaskStatus taskStatus(Double timestamp) {
+        return ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_RUNNING, timestamp);
     }
 
     private Long runAndGetLastUpdate(ExecutorHealth executorHealth) {
