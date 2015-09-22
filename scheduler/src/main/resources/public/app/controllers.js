@@ -106,7 +106,7 @@ controllers.controller('ClusterController', function($scope) {
 
 });
 
-controllers.controller('ScalingController', function($scope, $interval, config, Scaling, State) {
+controllers.controller('ScalingController', function($scope, $interval, $window, config, Scaling, State) {
     $scope.scaling = {
         nodes: $scope.$parent.configuration.ElasticsearchNodes,
         result: null
@@ -126,19 +126,34 @@ controllers.controller('ScalingController', function($scope, $interval, config, 
             Scaling.save({to: $scope.scaling.nodes}, {}, success, error);
         }
     };
-
-    // @todo refactor
-    var fetchState = function() {
-        State.get(function (data) {
-            var shards = [];
-            angular.forEach(data.routing_table.indices, function(index_data) {
-                angular.forEach(index_data.shards, function(s) {
-                    angular.forEach(s, function(shard) {
-                        shards.push(shard);
-                    });
-                });
+    var updateShardsDistribution = function(data) {
+        $scope.nodes = data.nodes;
+        $scope.shardsByNodes = data.routing_nodes.nodes;
+        $scope.shardsColors = {};
+        var shardKeys = [];
+        angular.forEach($scope.shardsByNodes, function(shards) {
+            angular.forEach(shards, function(shard) {
+                var key = shard.index + "-" + shard.shard;
+                if (shardKeys.indexOf(key) == -1) {
+                    shardKeys.push(key);
+                }
             });
-            $scope.shards = shards;
+        });
+        var palette = $window.palette('rainbow', shardKeys.length);
+        $scope.shardsColors = (function(keys, vals) {
+            return keys.reduce (
+              function(prev, val, i) {
+                  prev[val] = vals[i];
+                  return prev;
+              },{}
+            );
+        })(shardKeys, palette);
+    };
+    var fetchState = function() {
+        State.get(function(data) {
+            if (!angular.equals($scope.shardsByNodes, data.routing_nodes.nodes)) {
+                updateShardsDistribution(data);
+            }
         });
     };
     fetchState();
