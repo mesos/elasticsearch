@@ -99,7 +99,8 @@ public class ElasticsearchScheduler implements Scheduler {
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
-            if (!result.accepted) {
+            if (!result.acceptable) {
+                LOGGER.debug("Declined offer: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);

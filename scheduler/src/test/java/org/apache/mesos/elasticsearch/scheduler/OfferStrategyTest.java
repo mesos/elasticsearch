@@ -41,7 +41,7 @@ public class OfferStrategyTest {
         when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
 
         final OfferStrategy.OfferResult result = offerStrategy.evaluate(validOffer("host1"));
-        assertFalse(result.accepted);
+        assertFalse(result.acceptable);
         assertEquals("Host already running task", result.reason.get());
     }
 
@@ -51,7 +51,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
         final OfferStrategy.OfferResult result = offerStrategy.evaluate(validOffer("host4"));
-        assertFalse(result.accepted);
+        assertFalse(result.acceptable);
         assertEquals("Cluster size already fulfilled", result.reason.get());
     }
 
@@ -63,7 +63,7 @@ public class OfferStrategyTest {
         final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .build());
-        assertFalse(offerResult.accepted);
+        assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have 2 ports", offerResult.reason.get());
     }
 
@@ -78,7 +78,7 @@ public class OfferStrategyTest {
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(0.1, configuration.getFrameworkRole()))
                 .build());
-        assertFalse(offerResult.accepted);
+        assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have enough CPU resources", offerResult.reason.get());
     }
     @Test
@@ -93,7 +93,7 @@ public class OfferStrategyTest {
                 .addResources(cpus(10.0, configuration.getFrameworkRole()))
                 .addResources(mem(10, configuration.getFrameworkRole()))
                 .build());
-        assertFalse(offerResult.accepted);
+        assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have enough RAM resources", offerResult.reason.get());
     }
 
@@ -110,7 +110,7 @@ public class OfferStrategyTest {
                 .addResources(mem(100, configuration.getFrameworkRole()))
                 .addResources(disk(10, configuration.getFrameworkRole()))
                 .build());
-        assertFalse(offerResult.accepted);
+        assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have enough disk resources", offerResult.reason.get());
     }
 
@@ -126,7 +126,7 @@ public class OfferStrategyTest {
                 .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
                 .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
                 .build());
-        assertTrue(offerResult.accepted);
+        assertTrue(offerResult.acceptable);
         assertFalse(offerResult.reason.isPresent());
     }
 

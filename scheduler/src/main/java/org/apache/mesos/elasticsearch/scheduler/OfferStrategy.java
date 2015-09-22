@@ -48,11 +48,11 @@ public class OfferStrategy {
      * Offer result
      */
     public static class OfferResult {
-        final boolean accepted;
+        final boolean acceptable;
         final Optional<String> reason;
 
-        private OfferResult(boolean accepted, Optional<String> reason) {
-            this.accepted = accepted;
+        private OfferResult(boolean acceptable, Optional<String> reason) {
+            this.acceptable = acceptable;
             this.reason = reason;
         }
 
