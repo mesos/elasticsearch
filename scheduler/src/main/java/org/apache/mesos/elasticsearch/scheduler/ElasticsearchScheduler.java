@@ -95,7 +95,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     @Override
-    public synchronized void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
+    public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         if (!registered) {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
@@ -117,7 +117,7 @@ public class ElasticsearchScheduler implements Scheduler {
         }
     }
 
-    public synchronized void removeExcessElasticsearchNodes() {
+    public void removeExcessElasticsearchNodes() {
         while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
             killLastStartedExecutor();
         }
@@ -180,17 +180,6 @@ public class ElasticsearchScheduler implements Scheduler {
     @Override
     public void error(SchedulerDriver driver, String message) {
         LOGGER.error("Error: " + message);
-    }
-
-    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
-        for (Protos.TaskInfo t : stateList) {
-            if (t.getSlaveId().equals(offer.getSlaveId())) {
-                result = true;
-            }
-        }
-        return result;
     }
 
     /**
