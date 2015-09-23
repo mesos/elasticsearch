@@ -116,6 +116,24 @@ public class CLITest {
     }
 
     @Test
+    public void shouldAcceptTimeoutGreaterThanHealthDelay() {
+        String[] args = {
+                Configuration.EXECUTOR_HEALTH_DELAY, "100",
+                Configuration.EXECUTOR_TIMEOUT, "5000",
+                ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
+
+    @Test(expected = com.beust.jcommander.ParameterException.class)
+    public void orderingOfParametersIsImportant() {
+        String[] args = {
+                Configuration.EXECUTOR_HEALTH_DELAY, "5000", // This won't work, because EXECUTOR_TIMEOUT is still the default 30000. I.e. (4999 !> 300000)
+                Configuration.EXECUTOR_TIMEOUT, "3000",
+                ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
+        new Configuration(args);
+    }
+
+    @Test
     public void shouldUseMesosZKURLIfFrameworkZKURLNotSupplied() {
         String frameworkFormattedZKURL = "dummyIPAddress:2181";
         String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};

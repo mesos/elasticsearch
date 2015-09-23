@@ -20,7 +20,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     public static final String SCHEDULER_NAME = "elasticsearch-scheduler";
 
-    private String mesosIp;
+    protected String mesosIp;
 
     private String frameworkRole;
 
@@ -73,12 +73,12 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         }
     }
 
-    public String getZookeeperMesosUrl() {
-        return "zk://" + mesosIp + ":2181/mesos";
+    public void setDataDirectory(String dataDirectory) {
+        this.dataDirectory = dataDirectory;
     }
 
-    public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
-        this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
+    public String getZookeeperMesosUrl() {
+        return "zk://" + mesosIp + ":2181/mesos";
     }
 
     public String getZookeeperFrameworkUrl() {
@@ -89,7 +89,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
       }
     }
 
-    public void setDataDirectory(String dataDirectory) {
-        this.dataDirectory = dataDirectory;
+    public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
+        this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
     }
 }

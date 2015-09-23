@@ -16,9 +16,9 @@ public class ProtoTestUtil {
         return Protos.TaskInfo.newBuilder()
                 .setName("dummyTaskName")
                 .setTaskId(Protos.TaskID.newBuilder().setValue(SLAVE_ID))
-                .setSlaveId(Protos.SlaveID.newBuilder().setValue(SLAVE_ID).build())
+                .setSlaveId(getSlaveId())
                 .setExecutor(Protos.ExecutorInfo.newBuilder()
-                        .setExecutorId(Protos.ExecutorID.newBuilder().setValue(EXECUTOR_ID).build())
+                        .setExecutorId(getExecutorId())
                         .setCommand(Protos.CommandInfo.newBuilder().setValue("").build())
                         .build())
                 .setDiscovery(
@@ -42,5 +42,13 @@ public class ProtoTestUtil {
         Protos.TaskID taskID = Protos.TaskID.newBuilder().setValue(TASK_ID).build();
         return Protos.TaskStatus.newBuilder().setSlaveId(slaveID).setTaskId(taskID).setExecutorId(executorID).setTimestamp(timestamp)
                 .setState(state).build();
+    }
+
+    public static Protos.SlaveID getSlaveId() {
+        return Protos.SlaveID.newBuilder().setValue(SLAVE_ID).build();
+    }
+
+    public static Protos.ExecutorID getExecutorId() {
+        return Protos.ExecutorID.newBuilder().setValue(EXECUTOR_ID).build();
     }
 }

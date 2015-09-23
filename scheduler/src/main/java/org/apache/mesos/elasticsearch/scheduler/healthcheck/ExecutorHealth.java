@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.healthcheck;
 
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
@@ -11,9 +12,9 @@ import java.security.InvalidParameterException;
  * Checks Zookeeper for the last udpate. If it is greater than a timeout, executor lost is called.
  */
 public class ExecutorHealth implements Runnable {
-    private static final Logger LOGGER = Logger.getLogger(ExecutorHealth.class);
     public static final int EXIT_STATUS = 1;
     public static final double EPSILON = 1E-12;
+    private static final Logger LOGGER = Logger.getLogger(ExecutorHealth.class);
     private final Scheduler scheduler;
     private final SchedulerDriver driver;
     private final ESTaskStatus taskStatus;
@@ -39,7 +40,8 @@ public class ExecutorHealth implements Runnable {
     @Override
     public void run() {
         try {
-            Double thisUpdate = taskStatus.getStatus().getTimestamp(); // Mesos timestamps in seconds, a double.
+            Protos.TaskStatus status = taskStatus.getStatus();
+            Double thisUpdate = status.getTimestamp(); // Mesos timestamps in seconds, a double.
             if (Math.abs(thisUpdate) < EPSILON) {
                 LOGGER.info("Ignoring status update timestamp. Was zero: " + thisUpdate);
                 return;
@@ -47,10 +49,11 @@ public class ExecutorHealth implements Runnable {
             Long thisUpdateMs = (long) (thisUpdate * 1000.0);
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
-                LOGGER.warn("Executor " + taskStatus.getTaskInfo().getExecutor().getExecutorId().getValue() +
+                Protos.ExecutorID executorId = taskStatus.getTaskInfo().getExecutor().getExecutorId();
+                LOGGER.warn("Executor " + executorId.getValue() +
                         " is not responding to healthchecks in required timeout (" + maxTimeout + " ms). " +
                         "It has been " + timeSinceUpdate + " ms since the last update. (" + thisUpdateMs + " - " + lastUpdate + ")");
-                scheduler.executorLost(driver, taskStatus.getStatus().getExecutorId(), taskStatus.getStatus().getSlaveId(), EXIT_STATUS);
+                scheduler.executorLost(driver, executorId, status.getSlaveId(), EXIT_STATUS);
             } else {
                 LOGGER.debug("Task is alive. It has been " + timeSinceUpdate + " ms since the last update.");
                 lastUpdate = thisUpdateMs;

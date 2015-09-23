@@ -122,6 +122,26 @@ public class ClusterState implements Observer {
         return taskInfo;
     }
 
+    public TaskInfo getTask(Protos.ExecutorID executorID) throws IllegalArgumentException {
+        if (executorID.getValue().isEmpty()) {
+            throw new IllegalArgumentException("ExecutorID.value() is blank. Cannot be blank.");
+        }
+        List<TaskInfo> taskInfoList = getTaskList();
+        LOGGER.debug("Getting task " + executorID.getValue());
+        TaskInfo taskInfo = null;
+        for (TaskInfo info : taskInfoList) {
+            LOGGER.debug("Testing: " + info.getExecutor().getExecutorId().getValue() + " .equals " + executorID.getValue() + " = " + info.getExecutor().getExecutorId().getValue().equals(executorID.getValue()));
+            if (info.getExecutor().getExecutorId().getValue().equals(executorID.getValue())) {
+                taskInfo = info;
+                break;
+            }
+        }
+        if (taskInfo == null) {
+            throw new IllegalArgumentException("Could not find executor with that executor ID: " + executorID.getValue());
+        }
+        return taskInfo;
+    }
+
     public void update(Protos.TaskStatus status)  throws IllegalArgumentException {
         if (!exists(status.getTaskId())) {
             throw new IllegalArgumentException("Task does not exist in zk.");
