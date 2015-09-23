@@ -7,6 +7,8 @@ import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.Arrays.asList;
+
 /**
  * Offer strategy
  */
@@ -15,31 +17,26 @@ public class OfferStrategy {
     private ClusterState clusterState;
     private Configuration configuration;
 
+    private List<OfferRule> acceptanceRules = asList(
+            new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
+            new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() == configuration.getElasticsearchNodes()),
+            new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
+            new OfferRule("Offer did not have enough CPU resources", offer -> !isEnoughCPU(configuration, offer.getResourcesList())),
+            new OfferRule("Offer did not have enough RAM resources", offer -> !isEnoughRAM(configuration, offer.getResourcesList())),
+            new OfferRule("Offer did not have enough disk resources", offer -> !isEnoughDisk(configuration, offer.getResourcesList()))
+    );
+
     public OfferStrategy(Configuration configuration, ClusterState clusterState) {
         this.clusterState = clusterState;
         this.configuration = configuration;
     }
 
     public OfferResult evaluate(Protos.Offer offer) {
-        if (isHostAlreadyRunningTask(clusterState, offer)) {
-            LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            return OfferResult.decline("Host already running task");
-        } else if (clusterState.getTaskList().size() == configuration.getElasticsearchNodes()) {
-            LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
-            return OfferResult.decline("Cluster size already fulfilled");
-        } else if (!containsTwoPorts(offer.getResourcesList())) {
-            LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
-            return OfferResult.decline("Offer did not have 2 ports");
-        } else if (!isEnoughCPU(configuration, offer.getResourcesList())) {
-            LOGGER.info("Declined offer: Not enough CPU resources");
-            return OfferResult.decline("Offer did not have enough CPU resources");
-        } else if (!isEnoughRAM(configuration, offer.getResourcesList())) {
-            LOGGER.info("Declined offer: Not enough RAM resources");
-            return OfferResult.decline("Offer did not have enough RAM resources");
-        } else if (!isEnoughDisk(configuration, offer.getResourcesList())) {
-            LOGGER.info("Not enough Disk resources");
-            return OfferResult.decline("Offer did not have enough disk resources");
+        final Optional<OfferRule> decline = acceptanceRules.stream().filter(offerRule -> offerRule.rule.accepts(offer)).limit(1).findFirst();
+        if (decline.isPresent()) {
+            return OfferResult.decline(decline.get().declineReason);
         }
+
         LOGGER.info("Accepted offer: " + offer.getHostname());
         return OfferResult.accept();
     }
@@ -65,7 +62,7 @@ public class OfferStrategy {
         }
     }
 
-    private boolean isHostAlreadyRunningTask(ClusterState clusterState, Protos.Offer offer) {
+    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
         Boolean result = false;
         List<Protos.TaskInfo> stateList = clusterState.getTaskList();
         for (Protos.TaskInfo t : stateList) {
@@ -91,4 +88,24 @@ public class OfferStrategy {
         return Resources.selectTwoPortsFromRange(resources).size() == 2;
     }
 
+    /**
+     * Rule and reason container object
+     */
+    private static class OfferRule {
+        String declineReason;
+        Rule rule;
+
+        public OfferRule(String declineReason, Rule rule) {
+            this.declineReason = declineReason;
+            this.rule = rule;
+        }
+    }
+
+    /**
+     * Interface for checking offers
+     */
+    @FunctionalInterface
+    private interface Rule {
+        boolean accepts(Protos.Offer offer);
+    }
 }
