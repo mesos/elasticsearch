@@ -12,12 +12,17 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
+import java.net.InetSocketAddress;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.UUID;
 
+import static java.util.Collections.singleton;
+import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -58,16 +63,9 @@ public class ElasticsearchSchedulerTest {
     private TaskInfoFactory taskInfoFactory;
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
-//    private ZonedDateTime now = ZonedDateTime.now();
-//    private InetSocketAddress transportAddress = new InetSocketAddress("localhost", 9300);
-//    private InetSocketAddress clientAddress = new InetSocketAddress("localhost", 9200);
-
 
     @Before
     public void before() {
-        Clock clock = mock(Clock.class);
-        when(clock.now()).thenReturn(TASK1_DATE).thenReturn(TASK2_DATE);
-
         frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
         FrameworkState frameworkState = mock(FrameworkState.class);
         when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
@@ -92,6 +90,7 @@ public class ElasticsearchSchedulerTest {
 
         masterInfo = newMasterInfo();
         scheduler.registered(driver, frameworkID, masterInfo);
+        scheduler.offerStrategy = mock(OfferStrategy.class);
     }
 
     @Ignore
@@ -107,7 +106,7 @@ public class ElasticsearchSchedulerTest {
 
     @Test
     public void testRegistered() {
-        Mockito.verify(driver).requestResources(
+        verify(driver).requestResources(
                 Mockito.argThat(
                         new RequestMatcher(
                                 configuration.getCpus(),
@@ -119,92 +118,33 @@ public class ElasticsearchSchedulerTest {
         );
     }
 
-    // TODO (pnw): This requires scheduler refactoring to work. Refactor instantiation of objects out of registered method. And use setters.
-//    @Test
-//    public void testResourceOffers_isSlaveAlreadyRunningTask() {
-//        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        scheduler.tasks = new HashMap<>();
-//        scheduler.tasks.put("host1", task1);
-//        scheduler.tasks.put("host2", task2);
-//
-//        Protos.Offer.Builder offer = newOffer("host1");
-//
-//        scheduler.resourceOffers(driver, singletonList(offer.build()));
-//
-//        verify(driver).declineOffer(offer.getId());
-//    }
-//
-//    @Test
-//    public void testResourceOffers_enoughNodes() {
-//        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        Task task3 = new Task("host3", "3", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        scheduler.tasks = new HashMap<>();
-//        scheduler.tasks.put("host1", task1);
-//        scheduler.tasks.put("host2", task2);
-//        scheduler.tasks.put("host3", task3);
-//
-//        Protos.Offer.Builder offer = newOffer("host4");
-//
-//        scheduler.resourceOffers(driver, singletonList(offer.build()));
-//
-//        verify(driver).declineOffer(offer.getId());
-//    }
-//
-//    @Test
-//    public void testResourceOffers_noPorts() {
-//        Task task1 = new Task("host1", "1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        Task task2 = new Task("host2", "2", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        scheduler.tasks = new HashMap<>();
-//        scheduler.tasks.put("host1", task1);
-//        scheduler.tasks.put("host2", task2);
-//
-//        Protos.Offer.Builder offer = newOffer("host3");
-//
-//        scheduler.resourceOffers(driver, singletonList(offer.build()));
-//
-//        verify(driver).declineOffer(offer.getId());
-//    }
-//
-//    @SuppressWarnings("unchecked")
-//    @Test
-//    public void testResourceOffers_singlePort() {
-//        Task task = new Task("host1", "task1", Protos.TaskState.TASK_RUNNING, now, clientAddress, transportAddress);
-//        scheduler.tasks = new HashMap<>();
-//        scheduler.tasks.put("host1", task);
-//
-//        Protos.Offer.Builder offerBuilder = newOffer("host3");
-//        offerBuilder.addResources(portRange(9200, 9200));
-//
-//        scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
-//
-//        Mockito.verify(driver).declineOffer(offerBuilder.build().getId());
-//    }
-//
-//    @Test
-//    public void testResourceOffers_launchTasks() {
-//        scheduler.tasks = new HashMap<>();
-//
-//        Protos.Offer.Builder offerBuilder = newOffer("host3");
-//        offerBuilder.addResources(portRange(9200, 9200));
-//        offerBuilder.addResources(portRange(9300, 9300));
-//
-//        Protos.TaskInfo taskInfo = ProtoTestUtil.getDefaultTaskInfo();
-//
-//        when(taskInfoFactory.createTask(configuration, offerBuilder.build())).thenReturn(taskInfo);
-//
-//        scheduler.resourceOffers(driver, singletonList(offerBuilder.build()));
-//
-//        verify(driver).launchTasks(Collections.singleton(offerBuilder.build().getId()), Collections.singleton(taskInfo));
-//    }
+    @Test
+    public void willDeclineOfferIfStrategyDeclinesOffer() {
+        Protos.Offer offer = newOffer("host1").build();
+
+        when(scheduler.offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.decline("Test"));
+
+        scheduler.resourceOffers(driver, singletonList(offer));
+
+        verify(driver).declineOffer(offer.getId());
+    }
+
+    @Test
+    public void testResourceOffers_launchTasks() {
+        final Protos.Offer offer = newOffer("host3").build();
+        when(scheduler.offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.accept());
+
+        Protos.TaskInfo taskInfo = ProtoTestUtil.getDefaultTaskInfo();
+
+        when(taskInfoFactory.createTask(configuration, offer)).thenReturn(taskInfo);
+
+        scheduler.resourceOffers(driver, singletonList(offer));
+
+        verify(driver).launchTasks(singleton(offer.getId()), singleton(taskInfo));
+    }
 
     private Protos.Offer.Builder newOffer(String hostname) {
-        Protos.Offer.Builder builder = newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
-        builder.addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()));
-        builder.addResources(mem(configuration.getMem(), configuration.getFrameworkRole()));
-        builder.addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()));
-        return builder;
+        return newOfferBuilder(UUID.randomUUID().toString(), hostname, UUID.randomUUID().toString(), frameworkID);
     }
 
     private Protos.MasterInfo newMasterInfo() {

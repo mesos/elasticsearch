@@ -30,6 +30,7 @@ public class ElasticsearchScheduler implements Scheduler {
     private Observable statusUpdateWatchers = new StatusUpdateObservable();
     private Boolean registered = false;
     private ClusterState clusterState;
+    OfferStrategy offerStrategy;
 
     public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
         this.configuration = configuration;
@@ -67,6 +68,7 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
+        offerStrategy = new OfferStrategy(configuration, clusterState);
         clusterMonitor = new ClusterMonitor(configuration, this, driver, new StatePath(configuration.getState()));
         clusterState.getTaskList().forEach(clusterMonitor::startMonitoringTask); // Get all previous executors and start monitoring them.
         statusUpdateWatchers.addObserver(clusterState);
@@ -88,7 +90,6 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Framework re-registered");
     }
 
-    // Todo, this massive if statement needs to be performed better.
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
         if (!registered) {
@@ -96,26 +97,12 @@ public class ElasticsearchScheduler implements Scheduler {
             return;
         }
         for (Protos.Offer offer : offers) {
-            if (isHostAlreadyRunningTask(offer)) {
-                driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Host " + offer.getHostname() + " is already running an Elastisearch task");
-            } else if (clusterState.getTaskList().size() == configuration.getElasticsearchNodes()) {
-                driver.declineOffer(offer.getId()); // DCOS certification 05
-                LOGGER.info("Declined offer: Mesos runs already runs " + configuration.getElasticsearchNodes() + " Elasticsearch tasks");
-            } else if (!containsTwoPorts(offer.getResourcesList())) {
-                LOGGER.info("Declined offer: Offer did not contain 2 ports for Elasticsearch client and transport connection");
-                driver.declineOffer(offer.getId());
-            } else if (!isEnoughCPU(offer.getResourcesList())) {
-                LOGGER.info("Declined offer: Not enough CPU resources");
-                driver.declineOffer(offer.getId());
-            } else if (!isEnoughRAM(offer.getResourcesList())) {
-                LOGGER.info("Declined offer: Not enough RAM resources");
-                driver.declineOffer(offer.getId());
-            } else if (!isEnoughDisk(offer.getResourcesList())) {
-                LOGGER.info("Not enough Disk resources");
+            final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
+
+            if (!result.acceptable) {
+                LOGGER.debug("Declined offer: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
-                LOGGER.info("Accepted offer: " + offer.getHostname());
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
@@ -124,26 +111,6 @@ public class ElasticsearchScheduler implements Scheduler {
                 clusterMonitor.startMonitoringTask(esTask); // Add task to cluster monitor
             }
         }
-    }
-
-    private boolean isEnoughDisk(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_DISK);
-        return resourceCheck.isEnough(resourcesList, configuration.getDisk());
-    }
-
-    private boolean isEnoughCPU(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_CPUS);
-        return resourceCheck.isEnough(resourcesList, configuration.getCpus());
-    }
-
-    private boolean isEnoughRAM(List<Protos.Resource> resourcesList) {
-        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_MEM);
-        return resourceCheck.isEnough(resourcesList, configuration.getMem());
-    }
-
-    private boolean containsTwoPorts(List<Protos.Resource> resources) {
-        int count = Resources.selectTwoPortsFromRange(resources).size();
-        return count == 2;
     }
 
     @Override
