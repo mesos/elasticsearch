@@ -41,11 +41,6 @@
 - [x] Customised ES configuration
 - [X] Configurable data directory
 
-[0.4.2](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.4.2)
-- [ ] [Test coverage for healthcheck mechanism bug](#303)
-- [ ] [Executor does not call driver.stop() when killed bug](#293)
-- [ ] [Executor processes are not allocated any resources bug](#227)
-
 [0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
 - [ ] [Add auth to mini mesos enhancement](#304)
 - [ ] [Support Mesos Framework Authorisation blocked dcos enhancement](#218)

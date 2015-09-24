@@ -25,10 +25,62 @@ import java.util.concurrent.TimeUnit;
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class Configuration {
+    // **** ELASTICSEARCH
+    public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
+    public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
+    public static final String ELASTICSEARCH_DISK = "--elasticsearchDisk";
+    // **** WEB UI
+    public static final String WEB_UI_PORT = "--webUiPort";
+    public static final String FRAMEWORK_NAME = "--frameworkName";
+    public static final String EXECUTOR_NAME = "--executorName";
+    public static final String DATA_DIR = "--dataDir";
+    public static final String DEFAULT_HOST_DATA_DIR = "/var/lib/mesos/slave/elasticsearch";
+    // DCOS Certification requirement 01
+    public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
+    // DCOS Certification requirement 13
+    public static final String FRAMEWORK_ROLE = "--frameworkRole";
+    public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
+    public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
+    public static final String EXECUTOR_IMAGE = "--executorImage";
+    public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
+    public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
+    private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
     private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
+    @Parameter(names = {ELASTICSEARCH_CPU}, description = "The amount of CPU resource to allocate to the elasticsearch instance.", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double cpus = 1.0;
+    @Parameter(names = {ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double mem = 256;
+    @Parameter(names = {ELASTICSEARCH_DISK}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double disk = 1024;
+    @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
+    private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
+    // **** FRAMEWORK
+    private String version = "0.4.2";
+    @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
+    private String frameworkName = "elasticsearch";
+    @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
+    private String executorName = "elasticsearch-executor";
+    @Parameter(names = {DATA_DIR}, description = "The data directory used by Docker volumes in the executors.")
+    private String dataDir = DEFAULT_HOST_DATA_DIR;
+    @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
+    @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
+    private String frameworkRole = "*"; // This is the default if none is passed to Mesos
+    @Parameter(names = {EXECUTOR_TIMEOUT},
+            description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
+            validateValueWith = GreaterThanHealthDelay.class)
+    private Long executorTimeout = 60000L;
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = CLIValidators.NotEmptyString.class)
+    private String executorImage = DEFAULT_EXECUTOR_IMAGE;
+    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
+    private Boolean executorForcePullImage = false;
+    // ****************** Runtime configuration **********************
+    private SerializableState state;
+    private FrameworkState frameworkState;
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander();
@@ -45,25 +97,14 @@ public class Configuration {
         }
     }
 
-
-    // **** ELASTICSEARCH
-    public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
-    @Parameter(names = {ELASTICSEARCH_CPU}, description = "The amount of CPU resource to allocate to the elasticsearch instance.", validateValueWith = CLIValidators.PositiveDouble.class)
-    private double cpus = 1.0;
     public double getCpus() {
         return cpus;
     }
 
-    public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
-    @Parameter(names = {ELASTICSEARCH_RAM}, description = "The amount of ram resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
-    private double mem = 256;
     public double getMem() {
         return mem;
     }
 
-    public static final String ELASTICSEARCH_DISK = "--elasticsearchDisk";
-    @Parameter(names = {ELASTICSEARCH_DISK}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
-    private double disk = 1024;
     public double getDisk() {
         return disk;
     }
@@ -80,102 +121,53 @@ public class Configuration {
         return elasticsearchCLI.getElasticsearchClusterName();
     }
 
-    // **** WEB UI
-    public static final String WEB_UI_PORT = "--webUiPort";
-    @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
-    private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     public int getWebUiPort() {
         return webUiPort;
     }
 
-
-    // **** FRAMEWORK
-    private String version = "0.4.1";
     public String getVersion() {
         return version;
     }
 
-    public static final String FRAMEWORK_NAME = "--frameworkName";
-    @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
-    private String frameworkName = "elasticsearch";
     public String getFrameworkName() {
         return frameworkName;
     }
 
-    public static final String EXECUTOR_NAME = "--executorName";
-    @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
-    private String executorName = "elasticsearch-executor";
     public String getTaskName() {
         return executorName;
     }
 
-    public static final String DATA_DIR = "--dataDir";
-    public static final String DEFAULT_HOST_DATA_DIR = "/var/lib/mesos/slave/elasticsearch";
-    @Parameter(names = {DATA_DIR}, description = "The data directory used by Docker volumes in the executors.")
-    private String dataDir = DEFAULT_HOST_DATA_DIR;
     public String getDataDir() {
         return dataDir;
     }
 
-    // DCOS Certification requirement 01
-    public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
-    @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
-    private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     public double getFailoverTimeout() {
         return frameworkFailoverTimeout;
     }
 
-    // DCOS Certification requirement 13
-    public static final String FRAMEWORK_ROLE = "--frameworkRole";
-    @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
-    private String frameworkRole = "*"; // This is the default if none is passed to Mesos
     public String getFrameworkRole() {
         return frameworkRole;
     }
 
-    public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
-    @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
-    private static Long executorHealthDelay = 30000L;
     public Long getExecutorHealthDelay() {
         return executorHealthDelay;
     }
 
-    public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
-    @Parameter(names = {EXECUTOR_TIMEOUT},
-            description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
-            validateValueWith = GreaterThanHealthDelay.class)
-    private Long executorTimeout = 60000L;
     public Long getExecutorTimeout() {
         return executorTimeout;
     }
 
-    public static final String EXECUTOR_IMAGE = "--executorImage";
-    public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
-    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = CLIValidators.NotEmptyString.class)
-    private String executorImage = DEFAULT_EXECUTOR_IMAGE;
     public String getExecutorImage() {
         return executorImage;
     }
 
-    public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
-    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
-    private Boolean executorForcePullImage = false;
     public Boolean getExecutorForcePullImage() {
         return executorForcePullImage;
     }
 
-    // ****************** Runtime configuration **********************
-    private SerializableState state;
-
     public Protos.FrameworkID getFrameworkId() {
         return getFrameworkState().getFrameworkID();
     }
-
-    public void setFrameworkState(FrameworkState frameworkState) {
-        this.frameworkState = frameworkState;
-    }
-
-    private FrameworkState frameworkState;
 
     public FrameworkState getFrameworkState() {
         if (frameworkState == null) {
@@ -184,6 +176,9 @@ public class Configuration {
         return frameworkState;
     }
 
+    public void setFrameworkState(FrameworkState frameworkState) {
+        this.frameworkState = frameworkState;
+    }
 
     // ******* Helper methods
     public SerializableState getState() {
