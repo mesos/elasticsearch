@@ -46,7 +46,7 @@ public class ReconciliationSystemTest {
     );
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
-    private static final ContainerLifecycleManagement CONTAINER_MANGER = new ContainerLifecycleManagement();
+    private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private static String mesosClusterId;
     private static DockerClient innerDockerClient;
 
@@ -79,19 +79,19 @@ public class ReconciliationSystemTest {
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-        CONTAINER_MANGER.addAndStart(scheduler);
+        CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
 
     @After
     public void after() {
-        CONTAINER_MANGER.stopAll();
+        CONTAINER_MANAGER.stopAll();
     }
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {
         ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-        CONTAINER_MANGER.addAndStart(scheduler);
+        CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
         assertLessThan(CLUSTER_SIZE); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
@@ -103,7 +103,7 @@ public class ReconciliationSystemTest {
         assertCorrectNumberOfExecutors();
 
         // Stop and restart container
-        CONTAINER_MANGER.stopContainer(scheduler);
+        CONTAINER_MANAGER.stopContainer(scheduler);
         startSchedulerContainer();
         assertCorrectNumberOfExecutors();
     }
@@ -126,7 +126,7 @@ public class ReconciliationSystemTest {
         assertCorrectNumberOfExecutors();
 
         // Kill scheduler
-        CONTAINER_MANGER.stopContainer(scheduler);
+        CONTAINER_MANAGER.stopContainer(scheduler);
 
         // Kill executor
         killOneExecutor();
