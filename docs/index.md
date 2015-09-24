@@ -2,7 +2,7 @@
 
   * [Roadmap](#roadmap)
     * [Features](#features)
-    * [Depends on upcoming Mesos features](#depends-on-upcoming-mesos-features)
+    * [Blocked features](#blocked-features)
     * [Developer Tools](#developer-tools)
     * [User tools](#user-tools)
     * [Certification](#certification)
@@ -23,6 +23,7 @@
       * [How to run on Mac](#how-to-run-on-mac-1)
         * [Requirements](#requirements-3)
     * [How to release](#how-to-release)
+  * [Support](#support)
   * [Sponsors](#sponsors)
   * [License](#license)
 
@@ -31,34 +32,34 @@
 
 ### Features
 
-- [x] Deployment
-- [x] Durable cluster topology (via ZooKeeper)
-- [x] Web UI on scheduler port 31100
-- [x] Support deploying multiple Elasticsearch clusters to single Mesos cluster
-- [x] Fault tolerance
-- [x] Customised ES configuration
-- [X] Configurable data directory
+- Deployment ✓
+- Durable cluster topology (via ZooKeeper) ✓
+- Web UI on scheduler port 31100 ✓
+- Support deploying multiple Elasticsearch clusters to single Mesos cluster ✓
+- Fault tolerance ✓
+- Customised ES configuration ✓
+- Configurable data directory ✓
 
 [0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
-- [ ] [Add auth to mini mesos enhancement](#304)
-- [ ] [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
+- [Add auth to mini mesos enhancement](#304)
+- [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
 
 [0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
-- [ ] Refactoring
+- Refactoring
 
 [0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
-- [ ] [Mesos persistent volumes enhancement](#306)
-- [ ] [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
-- [ ] [Faster task recovery with Mesos dynamic reservations blocked](#98)
+- [Mesos persistent volumes enhancement](#306)
+- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
+- [Faster task recovery with Mesos dynamic reservations blocked](#98)
 
 [Future]
-- [ ] High availability (master, indexer, replica)
-- [ ] Upgrading configuration
-- [ ] Scale cluster horizontally
-- [ ] Scale cluster vertically
-- [ ] Upgrade
-- [ ] Rollback
-- [ ] Snapshot and restore 
+- High availability (master, indexer, replica)
+- Upgrading configuration
+- Scale cluster horizontally
+- Scale cluster vertically
+- Upgrade
+- Rollback
+- Snapshot and restore 
 
 Rough timescales:
 - [0.4.2] 22/09/15
@@ -68,24 +69,24 @@ Rough timescales:
 
 ### Blocked features
 
-- [ ] [Authorization](https://github.com/mesos/elasticsearch/issues/218)
-- [ ] [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
-- [ ] [Dynamic Reservations](https://github.com/mesos/elasticsearch/issues/98)
+- [Authorization](https://github.com/mesos/elasticsearch/issues/218)
+- [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
+- [Dynamic Reservations](https://github.com/mesos/elasticsearch/issues/98)
 
 ### Developer Tools
 
-- [x] Local environment (Docker-machine)
-- [x] Rapid code + test (Mini Mesos)
-- [x] Build automation (Gradle)
+- Local environment (Docker-machine) ✓
+- Rapid code + test (Mini Mesos) ✓
+- Build automation (Gradle) ✓
 
 ### User tools
 
-- [x] One click DCOS install
-- [x] One JSON post to marathon install
+- One click DCOS install ✓
+- One JSON post to marathon install ✓
 
 ### Certification
 
-- [ ] DCOS Certified
+- DCOS Certified
 
 ## Getting Started
 
