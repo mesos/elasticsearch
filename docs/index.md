@@ -41,18 +41,22 @@
 - Configurable data directory ✓
 
 [0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
+
 - [Add auth to mini mesos enhancement](#304)
 - [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
 
 [0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
+
 - Refactoring
 
 [0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
+
 - [Mesos persistent volumes enhancement](#306)
 - [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
 - [Faster task recovery with Mesos dynamic reservations blocked](#98)
 
 [Future]
+
 - High availability (master, indexer, replica)
 - Upgrading configuration
 - Scale cluster horizontally
@@ -62,7 +66,8 @@
 - Snapshot and restore 
 
 Rough timescales:
-- [0.4.2] 22/09/15
+
+- [0.4.2] 24/09/15
 - [0.5.0] 25/09/15
 - [0.5.1] 02/10/15
 - [0.6.0] 09/10/15
@@ -93,6 +98,7 @@ Rough timescales:
 We recommend that users install via marathon or via the DCOS command line (coming soon!).
 
 This framework requires:
+
 * A running [Mesos](http://mesos.apache.org) cluster
 * The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is strongly recommended to provide resiliency against scheduler failover.
 
@@ -298,17 +304,12 @@ $ ./gradlew -DsystemTest.single=DiscoverySystemTest system-test:systemTest
 
 ### How to release
 
-1 First update the CHANGELOG.md by listing fixed issues and bugs
-
-2 Update the version number in the Configuration.class so that the Web UI shows the correct version number.
-
-3 Push changes
-
-4 Verify that the [Continuous Build Pipeline](https://ci.infra.container-solutions.com/) completes successfully.
-
-5 Run the [Release Build](https://ci.infra.container-solutions.com/view/Mesos%20Elasticsearch/job/Elasticsearch%20Release/) and pick a release type: patch, minor or major.
-
-6 Done!
+1. First update the CHANGELOG.md by listing fixed issues and bugs
+2. Update the version number in the Configuration.class so that the Web UI shows the correct version number.
+3. Push changes
+4. Verify that the [Continuous Build Pipeline](https://ci.infra.container-solutions.com/) completes successfully.
+5. Run the [Release Build](https://ci.infra.container-solutions.com/view/Mesos%20Elasticsearch/job/Elasticsearch%20Release/) and pick a release type: patch, minor or major.
+6. Done!
 
 ## Support
 
