@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.3] - [28 September 2015]
+
+## Enhanced
+- [Include seed data in system-test:main](https://github.com/mesos/elasticsearch/issues/312)
+- [Documentation migration](https://github.com/mesos/elasticsearch/pull/337)
+
 ## [0.4.2] - [24 September 2015]
 
 ### Fixed

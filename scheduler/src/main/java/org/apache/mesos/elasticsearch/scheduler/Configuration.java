@@ -59,7 +59,7 @@ public class Configuration {
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     // **** FRAMEWORK
-    private String version = "0.4.2";
+    private String version = "0.4.3";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
