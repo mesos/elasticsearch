@@ -100,6 +100,9 @@ public class ClusterController {
         public int getValue() {
             return value;
         }
+        public ElasticsearchNodesWrapper() {
+            // Used by Jackson
+        }
         public ElasticsearchNodesWrapper(int value) {
             this.value = value;
         }
