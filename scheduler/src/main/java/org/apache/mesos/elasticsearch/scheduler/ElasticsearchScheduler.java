@@ -100,6 +100,13 @@ public class ElasticsearchScheduler implements Scheduler {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
+
+        // TODO (jhf@trifork.com): This should happen immediately after the target number of nodes has been changed.
+        // This current behavior is not correct, e.g. it can cause a system "deadlock" if we are using all Mesos
+        // resources but wish to scale down (Mesos will never give us any new offers, so we will never relinquish any
+        // resources).
+        removeExcessElasticsearchNodes();
+
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 

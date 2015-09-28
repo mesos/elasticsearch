@@ -87,7 +87,9 @@ public class ClusterController {
     @RequestMapping(value = "/elasticsearchNodes", method = RequestMethod.PUT)
     public void putElasticsearchNodes(@RequestBody ElasticsearchNodesWrapper elasticsearchNodes) {
         configuration.setElasticsearchNodes(elasticsearchNodes.getValue());
-        scheduler.removeExcessElasticsearchNodes();
+
+        // TODO (jhf@trifork.com): The below line should be called here, not in the `resourceOffers` method.
+        // scheduler.removeExcessElasticsearchNodes();
     }
 
     /**
