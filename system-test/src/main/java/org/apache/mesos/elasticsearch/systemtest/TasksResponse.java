@@ -48,7 +48,7 @@ public class TasksResponse {
                 String tasksEndPoint = "http://" + schedulerIpAddress + ":31100/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
-                if (nodesState.isEmpty()) {
+                if (nodesState == null || nodesState.isEmpty()) {
                     return response.getBody().getArray().length() == nodesCount;
                 } else {
                     if (response.getBody().getArray().length() == nodesCount) {
