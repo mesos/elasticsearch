@@ -2,6 +2,27 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.4.3] - [28 September 2015]
+
+## Enhanced
+- [Include seed data in system-test:main](https://github.com/mesos/elasticsearch/issues/312)
+- [Documentation migration](https://github.com/mesos/elasticsearch/pull/337)
+
+## [0.4.2] - [24 September 2015]
+
+### Fixed
+- [Executor does not call driver.stop() when killed bug](https://github.com/mesos/elasticsearch/issues/293)
+- [Healthcheck thread not stopped during Unit tests bug testing](https://github.com/mesos/elasticsearch/issues/323)
+
+- [Reimplement scheduler unit tests refactoring](https://github.com/mesos/elasticsearch/issues/321)
+- [Executor timeout large value bug](https://github.com/mesos/elasticsearch/issues/318)
+- [When executors are lost, the status is not propagated back to zookeeper bug](https://github.com/mesos/elasticsearch/issues/310)
+- [Executor Timeout reset and timeout units bug](https://github.com/mesos/elasticsearch/issues/308)
+
+## Enhanced
+- [Update DCOS to 0.4.1 enhancement](https://github.com/mesos/elasticsearch/issues/305)
+- [Test coverage for healthcheck mechanism bug](https://github.com/mesos/elasticsearch/issues/303)
+
 ## [0.4.1] - [15 September 2015]
 
 ### Fixed

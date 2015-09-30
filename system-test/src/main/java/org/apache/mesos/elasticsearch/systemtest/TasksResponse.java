@@ -5,6 +5,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
@@ -19,15 +20,23 @@ import static com.jayway.awaitility.Awaitility.await;
  */
 public class TasksResponse {
 
-    public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
+    public static final Logger LOGGER = Logger.getLogger(TasksResponse.class);
 
     private HttpResponse<JsonNode> response;
     private String schedulerIpAddress;
     private int nodesCount;
+    private String nodesState;
 
     public TasksResponse(String schedulerIpAddress, int nodesCount) {
         this.schedulerIpAddress = schedulerIpAddress;
         this.nodesCount = nodesCount;
+        await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
+    }
+
+    public TasksResponse(String schedulerIpAddress, int nodesCount, String nodesState) {
+        this.schedulerIpAddress = schedulerIpAddress;
+        this.nodesCount = nodesCount;
+        this.nodesState = nodesState;
         await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
     }
 
@@ -39,7 +48,22 @@ public class TasksResponse {
                 String tasksEndPoint = "http://" + schedulerIpAddress + ":31100/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
-                return response.getBody().getArray().length() == nodesCount;
+                if (nodesState == null || nodesState.isEmpty()) {
+                    return response.getBody().getArray().length() == nodesCount;
+                } else {
+                    if (response.getBody().getArray().length() == nodesCount) {
+                        JSONArray tasks = response.getBody().getArray();
+                        for (int i = 0; i < tasks.length(); i++) {
+                            JSONObject task = tasks.getJSONObject(i);
+                            if (!task.get("state").equals(nodesState)) {
+                                LOGGER.debug("Waiting until nodes are running...");
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                    return false;
+                }
             } catch (UnirestException e) {
                 LOGGER.debug("Waiting until " + nodesCount + " tasks are started...");
                 return false;
