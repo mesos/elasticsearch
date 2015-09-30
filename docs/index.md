@@ -42,8 +42,8 @@
 
 [0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
 
-- [Add auth to mini mesos enhancement](#304)
-- [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
+- [Add auth to mini mesos enhancement](https://github.com/mesos/elasticsearch/issues/304)
+- [Support Mesos Framework Authorisation blocked dcos enhancement](https://github.com/mesos/elasticsearch/issues/218)
 
 [0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
 
@@ -51,9 +51,9 @@
 
 [0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
 
-- [Mesos persistent volumes enhancement](#306)
-- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
-- [Faster task recovery with Mesos dynamic reservations blocked](#98)
+- [Mesos persistent volumes enhancement](https://github.com/mesos/elasticsearch/issues/306)
+- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](https://github.com/mesos/elasticsearch/issues/228)
+- [Faster task recovery with Mesos dynamic reservations blocked](https://github.com/mesos/elasticsearch/issues/98)
 
 [Future]
 
@@ -67,10 +67,9 @@
 
 Rough timescales:
 
-- [0.4.2] 24/09/15
-- [0.5.0] 25/09/15
-- [0.5.1] 02/10/15
-- [0.6.0] 09/10/15
+- [0.5.0] 02/10/15
+- [0.5.1] Early-October
+- [0.6.0] Mid-October
 
 ### Blocked features
 
