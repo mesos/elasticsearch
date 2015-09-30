@@ -58,9 +58,6 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        frameworkState.markRegistered(frameworkId, driver);
-//        configuration.setFrameworkState(frameworkState); // DCOS certification 02
-
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         offerStrategy = new OfferStrategy(configuration, clusterState);
@@ -73,6 +70,8 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
 
         List<Protos.Request> requests = Collections.singletonList(request);
         driver.requestResources(requests);
+
+        frameworkState.markRegistered(frameworkId, driver);
     }
 
     @Override

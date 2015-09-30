@@ -2,8 +2,6 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
-import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.junit.Test;
 
 import java.io.IOException;

@@ -1,11 +1,8 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
-import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -43,7 +40,7 @@ public class ClusterStateTest {
 
     @Test
     public void shouldHandleGetException() throws IOException {
-        when(state.get(anyString())).thenThrow(IOException.class);
+        when(state.<List<String>>get(anyString())).thenThrow(new IOException("Test exception"));
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         verify(state, times(1)).get(anyString());
         assertEquals(0, taskList.size());

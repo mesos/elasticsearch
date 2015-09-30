@@ -15,7 +15,6 @@ import org.mockito.Mockito;
 import java.util.Observer;
 import java.util.UUID;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
@@ -74,7 +73,7 @@ public class ElasticsearchSchedulerTest {
     }
 
     @Test
-    public void shouldCallObserversWhenExecutorLost() {
+    public void shouldCallObsOkerversWhenExecutorLost() {
         Protos.ExecutorID executorID = ProtoTestUtil.getExecutorId();
         Protos.SlaveID slaveID = ProtoTestUtil.getSlaveId();
 
