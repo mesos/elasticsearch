@@ -22,13 +22,14 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
     private FrameworkState frameworkState;
     private final TaskInfoFactory taskInfoFactory;
 
-    private ClusterState clusterState;
+    private final ClusterState clusterState;
     OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
 
-    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, TaskInfoFactory taskInfoFactory, SerializableState zookeeperStateDriver) {
+    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
         this.frameworkState = frameworkState;
+        this.clusterState = clusterState;
         this.taskInfoFactory = taskInfoFactory;
         this.zookeeperStateDriver = zookeeperStateDriver;
     }
@@ -62,7 +63,6 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        clusterState = new ClusterState(zookeeperStateDriver, frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
         offerStrategy = new OfferStrategy(configuration, clusterState);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);

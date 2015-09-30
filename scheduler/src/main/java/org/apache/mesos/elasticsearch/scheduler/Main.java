@@ -39,7 +39,7 @@ public class Main {
         final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
         final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
 
-        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, frameworkState, new TaskInfoFactory(), zookeeperStateDriver);
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, new TaskInfoFactory(), zookeeperStateDriver);
         final ClusterMonitor clusterMonitor = new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
 
         scheduler.addObserver(clusterState);
