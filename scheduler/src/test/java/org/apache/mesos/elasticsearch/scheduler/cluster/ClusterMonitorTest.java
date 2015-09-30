@@ -11,10 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Answers;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import java.io.IOException;
 import java.util.function.Consumer;
@@ -46,12 +43,15 @@ public class ClusterMonitorTest {
     @Mock
     private SerializableState serializableState;
 
+    @Captor
+    ArgumentCaptor<Consumer<Protos.TaskStatus>> onStatusUpdateCapture;
+    private Consumer<Protos.TaskStatus> onStatusUpdateConsumer;
+
     public static final String FRAMEWORK_ID = "frameworkId";
     public static final String EXECUTOR_ID = "executorId";
     public static final String TASK_ID = "task1";
     public static final String SLAVE_ID = "slaveID";
     private ClusterMonitor clusterMonitor;
-    private Consumer<Protos.TaskStatus> onStatusUpdateConsumer;
 
     @Before
     public void before() throws IOException {
@@ -67,7 +67,6 @@ public class ClusterMonitorTest {
 
         clusterMonitor = new ClusterMonitor(configuration, frameworkState, serializableState, scheduler);
 
-        final ArgumentCaptor<Consumer> onStatusUpdateCapture = ArgumentCaptor.forClass(Consumer.class);
         verify(frameworkState).onStatusUpdate(onStatusUpdateCapture.capture());
         onStatusUpdateConsumer = onStatusUpdateCapture.getValue();
     }
@@ -99,7 +98,7 @@ public class ClusterMonitorTest {
 
     @Test
     public void shouldCatchIfTryingToRemoveTaskThatIsntMonitored() {
-        when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(IllegalArgumentException.class);
+        when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(new IllegalArgumentException("Test"));
         onStatusUpdateConsumer.accept(taskStatus(Protos.TaskState.TASK_FAILED));
     }
 
