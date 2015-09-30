@@ -18,14 +18,12 @@ import static org.apache.mesos.Protos.TaskID;
 public class ClusterState implements Observer {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
     public static final String STATE_LIST = "stateList";
-    private final SerializableState state;
-    private final FrameworkState frameworkState;
-    private final StatePath statePath;
+    private SerializableState zooKeeperStateDriver;
+    private FrameworkState frameworkState;
 
-    public ClusterState(SerializableState state, FrameworkState frameworkState) {
-        this.state = state;
+    public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState) {
+        this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
-        statePath = new StatePath(state);
     }
 
     /**
@@ -35,7 +33,7 @@ public class ClusterState implements Observer {
     public List<TaskInfo> getTaskList() {
         List<TaskInfo> taskInfoList = null;
         try {
-            taskInfoList = state.get(getKey());
+            taskInfoList = zooKeeperStateDriver.get(getKey());
         } catch (IOException e) {
             LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.", e);
         }
@@ -63,7 +61,7 @@ public class ClusterState implements Observer {
     }
 
     private ESTaskStatus getStatus(TaskInfo taskInfo) {
-        return new ESTaskStatus(state, frameworkState.getFrameworkID(), taskInfo, new StatePath(state));
+        return new ESTaskStatus(zooKeeperStateDriver, frameworkState.getFrameworkID(), taskInfo, new StatePath(zooKeeperStateDriver));
     }
 
     public void addTask(ESTaskStatus esTask) {
@@ -198,8 +196,8 @@ public class ClusterState implements Observer {
     private void setTaskInfoList(List<TaskInfo> taskInfoList) {
         LOGGER.debug("Writing executor state list: " + logTaskList(taskInfoList));
         try {
-            statePath.mkdir(getKey());
-            state.set(getKey(), taskInfoList);
+            new StatePath(zooKeeperStateDriver).mkdir(getKey());
+            zooKeeperStateDriver.set(getKey(), taskInfoList);
         } catch (IOException ex) {
             LOGGER.error("Could not write list of executor states to zookeeper: ", ex);
         }

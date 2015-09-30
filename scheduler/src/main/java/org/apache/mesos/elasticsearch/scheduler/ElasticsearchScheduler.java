@@ -5,11 +5,7 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
-import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
+import org.apache.mesos.elasticsearch.scheduler.state.*;
 
 import java.util.*;
 
@@ -17,24 +13,25 @@ import java.util.*;
  * Scheduler for Elasticsearch.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ElasticsearchScheduler implements Scheduler {
+public class ElasticsearchScheduler extends Observable implements Scheduler {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
     private final Configuration configuration;
 
+    private FrameworkState frameworkState;
     private final TaskInfoFactory taskInfoFactory;
 
-    private ClusterMonitor clusterMonitor = null;
-
-    private Observable statusUpdateWatchers = new StatusUpdateObservable();
-    private Boolean registered = false;
-    private ClusterState clusterState;
+    private final ClusterState clusterState;
     OfferStrategy offerStrategy;
+    private SerializableState zookeeperStateDriver;
 
-    public ElasticsearchScheduler(Configuration configuration, TaskInfoFactory taskInfoFactory) {
+    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
+        this.frameworkState = frameworkState;
+        this.clusterState = clusterState;
         this.taskInfoFactory = taskInfoFactory;
+        this.zookeeperStateDriver = zookeeperStateDriver;
     }
 
     public Map<String, Task> getTasks() {
@@ -51,7 +48,7 @@ public class ElasticsearchScheduler implements Scheduler {
                 ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
-        FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration);
+        FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
 
         final MesosSchedulerDriver driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL());
@@ -61,18 +58,9 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        FrameworkState frameworkState = new FrameworkState(configuration.getState());
-        frameworkState.setFrameworkId(frameworkId);
-        configuration.setFrameworkState(frameworkState); // DCOS certification 02
-
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        clusterState = new ClusterState(configuration.getState(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
         offerStrategy = new OfferStrategy(configuration, clusterState);
-        clusterMonitor = new ClusterMonitor(configuration, this, driver, new StatePath(configuration.getState()));
-        clusterState.getTaskList().forEach(clusterMonitor::startMonitoringTask); // Get all previous executors and start monitoring them.
-        statusUpdateWatchers.addObserver(clusterState);
-        statusUpdateWatchers.addObserver(clusterMonitor);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -82,7 +70,8 @@ public class ElasticsearchScheduler implements Scheduler {
 
         List<Protos.Request> requests = Collections.singletonList(request);
         driver.requestResources(requests);
-        registered = true;
+
+        frameworkState.markRegistered(frameworkId, driver);
     }
 
     @Override
@@ -92,7 +81,7 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void resourceOffers(SchedulerDriver driver, List<Protos.Offer> offers) {
-        if (!registered) {
+        if (!frameworkState.isRegistered()) {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
@@ -103,12 +92,12 @@ public class ElasticsearchScheduler implements Scheduler {
                 LOGGER.debug("Declined offer: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
-                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, offer);
+                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                ESTaskStatus esTask = new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo, new StatePath(configuration.getState())); // Write staging state to zk
+                ESTaskStatus esTask = new ESTaskStatus(zookeeperStateDriver, frameworkState.getFrameworkID(), taskInfo, new StatePath(zookeeperStateDriver)); // Write staging state to zk
                 clusterState.addTask(esTask); // Add tasks to cluster state and write to zk
-                clusterMonitor.startMonitoringTask(esTask); // Add task to cluster monitor
+                frameworkState.announceNewTask(esTask);
             }
         }
     }
@@ -121,7 +110,8 @@ public class ElasticsearchScheduler implements Scheduler {
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task with ID '" + status.getTaskId().getValue() + "' is now in state '" + status.getState() + "'. Message: " + status.getMessage());
-        statusUpdateWatchers.notifyObservers(status);
+        setChanged();
+        notifyObservers(status);
     }
 
     @Override
@@ -158,27 +148,5 @@ public class ElasticsearchScheduler implements Scheduler {
     @Override
     public void error(SchedulerDriver driver, String message) {
         LOGGER.error("Error: " + message);
-    }
-
-    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
-        for (Protos.TaskInfo t : stateList) {
-            if (t.getSlaveId().equals(offer.getSlaveId())) {
-                result = true;
-            }
-        }
-        return result;
-    }
-
-    /**
-     * Implementation of Observable to fix the setChanged problem.
-     */
-    private static class StatusUpdateObservable extends Observable {
-        @Override
-        public void notifyObservers(Object arg) {
-            this.setChanged(); // This is ridiculous.
-            super.notifyObservers(arg);
-        }
     }
 }

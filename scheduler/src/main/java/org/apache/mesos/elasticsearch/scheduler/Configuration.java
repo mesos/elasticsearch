@@ -5,7 +5,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
@@ -13,18 +12,14 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
-import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
-import org.apache.mesos.state.ZooKeeperState;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Holder object for framework configuration.
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class Configuration {
+    private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    
     // **** ELASTICSEARCH
     public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
@@ -44,7 +39,6 @@ public class Configuration {
     public static final String EXECUTOR_IMAGE = "--executorImage";
     public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
-    private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
@@ -79,10 +73,8 @@ public class Configuration {
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
     private Boolean executorForcePullImage = false;
     // ****************** Runtime configuration **********************
-    private SerializableState state;
-    private FrameworkState frameworkState;
 
-    public Configuration(String[] args) {
+    public Configuration(String... args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
         jCommander.addObject(elasticsearchCLI);
@@ -165,34 +157,7 @@ public class Configuration {
         return executorForcePullImage;
     }
 
-    public Protos.FrameworkID getFrameworkId() {
-        return getFrameworkState().getFrameworkID();
-    }
-
-    public FrameworkState getFrameworkState() {
-        if (frameworkState == null) {
-            frameworkState = new FrameworkState(getState());
-        }
-        return frameworkState;
-    }
-
-    public void setFrameworkState(FrameworkState frameworkState) {
-        this.frameworkState = frameworkState;
-    }
-
     // ******* Helper methods
-    public SerializableState getState() {
-        if (state == null) {
-            org.apache.mesos.state.State zkState = new ZooKeeperState(
-                    getMesosStateZKURL(),
-                    zookeeperCLI.getZookeeperMesosTimeout(),
-                    TimeUnit.MILLISECONDS,
-                    "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
-            state = new SerializableZookeeperState(zkState);
-        }
-        return state;
-    }
-
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
@@ -234,5 +199,13 @@ public class Configuration {
                 throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
             }
         }
+    }
+
+    public ZookeeperCLIParameter getZookeeperCLI() {
+        return zookeeperCLI;
+    }
+
+    public ElasticsearchCLIParameter getElasticsearchCLI() {
+        return elasticsearchCLI;
     }
 }

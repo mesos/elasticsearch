@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.SchedulerDriver;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,10 +19,11 @@ public class FrameworkStateTest {
     public static final Protos.FrameworkID FRAMEWORK_ID = Protos.FrameworkID.newBuilder().setValue("FrameworkID").build();
     public final SerializableState state = mock(SerializableState.class);
     private final FrameworkState frameworkState = new FrameworkState(state);
+    private SchedulerDriver driver = mock(SchedulerDriver.class);
 
     @Test
     public void testSetFrameworkID() throws IOException {
-        frameworkState.setFrameworkId(FRAMEWORK_ID);
+        frameworkState.markRegistered(FRAMEWORK_ID, driver);
         verify(state, times(1)).set(anyString(), eq(FRAMEWORK_ID));
     }
 
@@ -43,7 +45,7 @@ public class FrameworkStateTest {
     @Test
     public void testHandleSetException() throws IOException {
         doThrow(IOException.class).when(state).set(anyString(), any());
-        frameworkState.setFrameworkId(FRAMEWORK_ID);
+        frameworkState.markRegistered(FRAMEWORK_ID, driver);
     }
 
     @Test
