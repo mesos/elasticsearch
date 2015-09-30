@@ -5,10 +5,7 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
-import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
+import org.apache.mesos.elasticsearch.scheduler.state.*;
 
 import java.util.*;
 
@@ -27,11 +24,13 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
 
     private ClusterState clusterState;
     OfferStrategy offerStrategy;
+    private SerializableState zookeeperStateDriver;
 
-    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, TaskInfoFactory taskInfoFactory) {
+    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, TaskInfoFactory taskInfoFactory, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
         this.frameworkState = frameworkState;
         this.taskInfoFactory = taskInfoFactory;
+        this.zookeeperStateDriver = zookeeperStateDriver;
     }
 
     public Map<String, Task> getTasks() {
@@ -63,7 +62,7 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
 
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
-        clusterState = new ClusterState(configuration.getZooKeeperStateDriver(), frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
+        clusterState = new ClusterState(zookeeperStateDriver, frameworkState); // Must use new framework state. This is when we are allocated our FrameworkID.
         offerStrategy = new OfferStrategy(configuration, clusterState);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
@@ -97,7 +96,7 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer);
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                ESTaskStatus esTask = new ESTaskStatus(configuration.getZooKeeperStateDriver(), frameworkState.getFrameworkID(), taskInfo, new StatePath(configuration.getZooKeeperStateDriver())); // Write staging state to zk
+                ESTaskStatus esTask = new ESTaskStatus(zookeeperStateDriver, frameworkState.getFrameworkID(), taskInfo, new StatePath(zookeeperStateDriver)); // Write staging state to zk
                 clusterState.addTask(esTask); // Add tasks to cluster state and write to zk
                 frameworkState.announceNewTask(esTask);
             }

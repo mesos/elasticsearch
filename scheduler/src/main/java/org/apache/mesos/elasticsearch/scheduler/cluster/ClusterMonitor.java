@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.healthcheck.AsyncPing;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 
 import java.security.InvalidParameterException;
@@ -22,9 +23,11 @@ public class ClusterMonitor implements Observer {
     private final Scheduler callback;
     private final Map<Protos.TaskInfo, AsyncPing> healthChecks = new HashMap<>();
     private FrameworkState frameworkState;
+    private SerializableState zookeeperStateDriver;
 
-    public ClusterMonitor(Configuration configuration, FrameworkState frameworkState, Scheduler callback) {
+    public ClusterMonitor(Configuration configuration, FrameworkState frameworkState, SerializableState zookeeperStateDriver, Scheduler callback) {
         this.frameworkState = frameworkState;
+        this.zookeeperStateDriver = zookeeperStateDriver;
         if (configuration == null || callback == null) {
             throw new InvalidParameterException("Constructor parameters cannot be null.");
         }
@@ -52,7 +55,7 @@ public class ClusterMonitor implements Observer {
                         callback,
                         frameworkState.getDriver(),
                         configuration,
-                        new ESTaskStatus(configuration.getZooKeeperStateDriver(), frameworkID, taskInfo, new StatePath(configuration.getZooKeeperStateDriver()))
+                        new ESTaskStatus(zookeeperStateDriver, frameworkID, taskInfo, new StatePath(zookeeperStateDriver))
                 )
         );
     }

@@ -21,13 +21,13 @@ public class FrameworkState {
     private List<Consumer<ESTaskStatus>> newTaskListeners = new Vector<>();
     private AtomicBoolean registered = new AtomicBoolean(false);
 
-    private final SerializableState state;
+    private final SerializableState zookeeperStateDriver;
     private final StatePath statePath;
     private SchedulerDriver driver;
 
-    public FrameworkState(SerializableState state) {
-        this.state = state;
-        statePath = new StatePath(state);
+    public FrameworkState(SerializableState zookeeperStateDriver) {
+        this.zookeeperStateDriver = zookeeperStateDriver;
+        statePath = new StatePath(zookeeperStateDriver);
     }
 
     /**
@@ -36,7 +36,7 @@ public class FrameworkState {
     public Protos.FrameworkID getFrameworkID() {
         Protos.FrameworkID id = null;
         try {
-            id = state.get(FRAMEWORKID_KEY);
+            id = zookeeperStateDriver.get(FRAMEWORKID_KEY);
         } catch (IOException e) {
             LOGGER.warn("Unable to get FrameworkID from zookeeper", e);
         }
@@ -49,12 +49,12 @@ public class FrameworkState {
         }
         try {
             statePath.mkdir(FRAMEWORKID_KEY);
-            state.set(FRAMEWORKID_KEY, frameworkId);
+            zookeeperStateDriver.set(FRAMEWORKID_KEY, frameworkId);
         } catch (IOException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }
         this.driver = driver;
-        final ClusterState clusterState = new ClusterState(state, this);
+        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, this);
         registeredListeners.forEach(listener -> listener.accept(clusterState));
     }
 

@@ -5,7 +5,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
@@ -13,12 +12,6 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
-import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
-import org.apache.mesos.state.ZooKeeperState;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Holder object for framework configuration.
@@ -164,23 +157,7 @@ public class Configuration {
         return executorForcePullImage;
     }
 
-    // ****************** Runtime configuration **********************
-    private SerializableState state;
-
     // ******* Helper methods
-    @Deprecated
-    public SerializableState getZooKeeperStateDriver() {
-        if (state == null) {
-            org.apache.mesos.state.State zkState = new ZooKeeperState(
-                    getMesosStateZKURL(),
-                    zookeeperCLI.getZookeeperMesosTimeout(),
-                    TimeUnit.MILLISECONDS,
-                    "/" + getFrameworkName() + "/" + elasticsearchCLI.getElasticsearchClusterName());
-            state = new SerializableZookeeperState(zkState);
-        }
-        return state;
-    }
-
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
         if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
@@ -222,5 +199,13 @@ public class Configuration {
                 throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
             }
         }
+    }
+
+    public ZookeeperCLIParameter getZookeeperCLI() {
+        return zookeeperCLI;
+    }
+
+    public ElasticsearchCLIParameter getElasticsearchCLI() {
+        return elasticsearchCLI;
     }
 }

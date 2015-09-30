@@ -4,7 +4,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.TestSerializableStateImpl;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -40,6 +40,7 @@ public class ElasticsearchSchedulerTest {
     private FrameworkState frameworkState = mock(FrameworkState.class);
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
+    private SerializableState serializableState = mock(SerializableState.class);
 
     @Before
     public void before() {
@@ -51,14 +52,13 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getZooKeeperStateDriver()).thenReturn(new TestSerializableStateImpl());
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(10L);
         when(configuration.getFrameworkRole()).thenReturn("*");
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
-        scheduler = new ElasticsearchScheduler(configuration, frameworkState, taskInfoFactory);
+        scheduler = new ElasticsearchScheduler(configuration, frameworkState, taskInfoFactory, serializableState);
 
         driver = mock(SchedulerDriver.class);
 

@@ -55,12 +55,13 @@ public class ClusterMonitorTest {
 
         when(frameworkState.getFrameworkID()).thenReturn(frameworkId());
         when(frameworkState.getDriver()).thenReturn(schedulerDriver);
-        when(configuration.getZooKeeperStateDriver().get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(20L);
+
+        when(serializableState.get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
-        clusterMonitor = new ClusterMonitor(configuration, frameworkState, scheduler);
+        clusterMonitor = new ClusterMonitor(configuration, frameworkState, serializableState, scheduler);
     }
 
     @After
