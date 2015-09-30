@@ -15,7 +15,7 @@ import static org.apache.mesos.Protos.TaskID;
 /**
  * Model of cluster state. User is able to add, remove and monitor task status.
  */
-public class ClusterState implements Observer {
+public class ClusterState {
     public static final Logger LOGGER = Logger.getLogger(ClusterState.class);
     public static final String STATE_LIST = "stateList";
     private SerializableState zooKeeperStateDriver;
@@ -24,6 +24,7 @@ public class ClusterState implements Observer {
     public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState) {
         this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
+        frameworkState.onStatusUpdate(this::updateTask);
     }
 
     /**
@@ -173,15 +174,6 @@ public class ClusterState implements Observer {
             }
         } catch (IllegalStateException | IllegalArgumentException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
-        }
-    }
-
-    @Override
-    public void update(Observable o, Object arg) {
-        try {
-            this.updateTask((Protos.TaskStatus) arg);
-        } catch (ClassCastException e) {
-            LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
         }
     }
 

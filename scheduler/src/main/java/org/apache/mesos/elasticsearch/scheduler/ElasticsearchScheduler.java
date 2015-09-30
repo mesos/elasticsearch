@@ -13,7 +13,7 @@ import java.util.*;
  * Scheduler for Elasticsearch.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ElasticsearchScheduler extends Observable implements Scheduler {
+public class ElasticsearchScheduler implements Scheduler {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
@@ -109,8 +109,7 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task with ID '" + status.getTaskId().getValue() + "' is now in state '" + status.getState() + "'. Message: " + status.getMessage());
-        setChanged();
-        notifyObservers(status);
+        frameworkState.announceStatusUpdate(status);
     }
 
     @Override

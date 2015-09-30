@@ -72,16 +72,14 @@ public class ElasticsearchSchedulerTest {
     }
 
     @Test
-    public void shouldCallObsOkerversWhenExecutorLost() {
+    public void shouldCallObserversWhenExecutorLost() {
         Protos.ExecutorID executorID = ProtoTestUtil.getExecutorId();
         Protos.SlaveID slaveID = ProtoTestUtil.getSlaveId();
 
         when(clusterState.getTask(executorID)).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
-        final Observer observer = mock(Observer.class);
-        scheduler.addObserver(observer);
         scheduler.executorLost(driver, executorID, slaveID, 1);
 
-        verify(observer).update(eq(scheduler), argThat(new ArgumentMatcher<Protos.TaskStatus>() {
+        verify(frameworkState).announceStatusUpdate(argThat(new ArgumentMatcher<Protos.TaskStatus>() {
             @Override
             public boolean matches(Object argument) {
                 return ((Protos.TaskStatus) argument).getState().equals(Protos.TaskState.TASK_LOST);

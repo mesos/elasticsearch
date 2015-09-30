@@ -12,15 +12,18 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Answers;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -48,6 +51,7 @@ public class ClusterMonitorTest {
     public static final String TASK_ID = "task1";
     public static final String SLAVE_ID = "slaveID";
     private ClusterMonitor clusterMonitor;
+    private Consumer<Protos.TaskStatus> onStatusUpdateConsumer;
 
     @Before
     public void before() throws IOException {
@@ -62,6 +66,10 @@ public class ClusterMonitorTest {
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
         clusterMonitor = new ClusterMonitor(configuration, frameworkState, serializableState, scheduler);
+
+        final ArgumentCaptor<Consumer> onStatusUpdateCapture = ArgumentCaptor.forClass(Consumer.class);
+        verify(frameworkState).onStatusUpdate(onStatusUpdateCapture.capture());
+        onStatusUpdateConsumer = onStatusUpdateCapture.getValue();
     }
 
     @After
@@ -81,16 +89,18 @@ public class ClusterMonitorTest {
         Protos.TaskInfo taskInfo = taskInfo();
         clusterMonitor.startMonitoringTask(taskInfo);
         assertEquals(1, clusterMonitor.getHealthChecks().size());
+
         when(clusterState.exists(eq(taskInfo.getTaskId()))).thenReturn(true);
         when(clusterState.taskInError(any())).thenReturn(true);
-        clusterMonitor.update(null, taskStatus(Protos.TaskState.TASK_FAILED));
+
+        onStatusUpdateConsumer.accept(taskStatus(Protos.TaskState.TASK_FAILED));
         assertEquals(0, clusterMonitor.getHealthChecks().size());
     }
 
     @Test
     public void shouldCatchIfTryingToRemoveTaskThatIsntMonitored() {
         when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(IllegalArgumentException.class);
-        clusterMonitor.update(null, taskStatus(Protos.TaskState.TASK_FAILED));
+        onStatusUpdateConsumer.accept(taskStatus(Protos.TaskState.TASK_FAILED));
     }
 
     private Protos.TaskInfo taskInfo() {

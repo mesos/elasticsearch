@@ -19,8 +19,9 @@ public class FrameworkState {
     public static final Protos.FrameworkID EMPTY_ID = Protos.FrameworkID.newBuilder().setValue("").build();
     private List<Consumer<ClusterState>> registeredListeners = new Vector<>();
     private List<Consumer<ESTaskStatus>> newTaskListeners = new Vector<>();
-    private AtomicBoolean registered = new AtomicBoolean(false);
+    private List<Consumer<Protos.TaskStatus>> statusUpdateListeners = new Vector<>();
 
+    private AtomicBoolean registered = new AtomicBoolean(false);
     private final SerializableState zookeeperStateDriver;
     private final StatePath statePath;
     private SchedulerDriver driver;
@@ -79,5 +80,13 @@ public class FrameworkState {
 
     public void announceNewTask(ESTaskStatus esTask) {
         newTaskListeners.forEach(newTaskStatusConsumer -> newTaskStatusConsumer.accept(esTask));
+    }
+
+    public void announceStatusUpdate(Protos.TaskStatus taskStatus) {
+        statusUpdateListeners.forEach(taskStatusConsumer -> taskStatusConsumer.accept(taskStatus));
+    }
+
+    public void onStatusUpdate(Consumer<Protos.TaskStatus> listener) {
+        statusUpdateListeners.add(listener);
     }
 }

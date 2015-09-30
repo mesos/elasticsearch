@@ -47,10 +47,7 @@ public class Main {
                 new OfferStrategy(configuration, clusterState),
                 zookeeperStateDriver
         );
-        final ClusterMonitor clusterMonitor = new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
-
-        scheduler.addObserver(clusterState);
-        scheduler.addObserver(clusterMonitor);
+        new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("server.port", String.valueOf(configuration.getWebUiPort()));

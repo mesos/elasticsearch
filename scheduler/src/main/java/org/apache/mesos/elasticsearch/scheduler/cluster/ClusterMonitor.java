@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Contains all cluster information. Monitors state of cluster elements.
  */
-public class ClusterMonitor implements Observer {
+public class ClusterMonitor {
     private static final Logger LOGGER = Logger.getLogger(ClusterMonitor.class);
     private final Configuration configuration;
     private final Scheduler callback;
@@ -36,6 +36,7 @@ public class ClusterMonitor implements Observer {
 
         frameworkState.onRegistered(clusterState -> clusterState.getTaskList().forEach(this::startMonitoringTask));
         frameworkState.onNewTask(this::startMonitoringTask);
+        frameworkState.onStatusUpdate(this::updateTask);
     }
 
     public void startMonitoringTask(ESTaskStatus esTask) {
@@ -91,15 +92,6 @@ public class ClusterMonitor implements Observer {
             }
         } catch (IllegalStateException | IllegalArgumentException e) {
             LOGGER.error("Unable to write executor state to zookeeper", e);
-        }
-    }
-
-    @Override
-    public void update(Observable o, Object arg) {
-        try {
-            this.updateTask((Protos.TaskStatus) arg);
-        } catch (ClassCastException e) {
-            LOGGER.warn("Received update message, but it was not of type TaskStatus", e);
         }
     }
 
