@@ -13,7 +13,7 @@ import java.util.*;
  * Scheduler for Elasticsearch.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ElasticsearchScheduler extends Observable implements Scheduler {
+public class ElasticsearchScheduler implements Scheduler {
 
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
 
@@ -23,14 +23,15 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
     private final TaskInfoFactory taskInfoFactory;
 
     private final ClusterState clusterState;
-    OfferStrategy offerStrategy;
+    private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
 
-    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, SerializableState zookeeperStateDriver) {
+    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
         this.frameworkState = frameworkState;
         this.clusterState = clusterState;
         this.taskInfoFactory = taskInfoFactory;
+        this.offerStrategy = offerStrategy;
         this.zookeeperStateDriver = zookeeperStateDriver;
     }
 
@@ -59,8 +60,6 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
         LOGGER.info("Framework registered as " + frameworkId.getValue());
-
-        offerStrategy = new OfferStrategy(configuration, clusterState);
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
 
@@ -110,8 +109,7 @@ public class ElasticsearchScheduler extends Observable implements Scheduler {
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
         LOGGER.info("Status update - Task with ID '" + status.getTaskId().getValue() + "' is now in state '" + status.getState() + "'. Message: " + status.getMessage());
-        setChanged();
-        notifyObservers(status);
+        frameworkState.announceStatusUpdate(status);
     }
 
     @Override

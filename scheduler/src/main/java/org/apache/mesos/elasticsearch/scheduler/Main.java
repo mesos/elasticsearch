@@ -39,11 +39,15 @@ public class Main {
         final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
         final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
 
-        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, new TaskInfoFactory(), zookeeperStateDriver);
-        final ClusterMonitor clusterMonitor = new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
-
-        scheduler.addObserver(clusterState);
-        scheduler.addObserver(clusterMonitor);
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(
+                configuration,
+                frameworkState,
+                clusterState,
+                new TaskInfoFactory(),
+                new OfferStrategy(configuration, clusterState),
+                zookeeperStateDriver
+        );
+        new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("server.port", String.valueOf(configuration.getWebUiPort()));
