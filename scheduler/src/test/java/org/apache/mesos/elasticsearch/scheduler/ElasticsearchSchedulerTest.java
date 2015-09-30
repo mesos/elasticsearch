@@ -35,7 +35,7 @@ public class ElasticsearchSchedulerTest {
 
     private SchedulerDriver driver;
 
-    private Protos.FrameworkID frameworkID;
+    private Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
 
     private Protos.MasterInfo masterInfo;
 
@@ -46,10 +46,10 @@ public class ElasticsearchSchedulerTest {
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
     private SerializableState serializableState = mock(SerializableState.class);
+    private OfferStrategy offerStrategy = mock(OfferStrategy.class);
 
     @Before
     public void before() {
-        frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
         when(frameworkState.getFrameworkID()).thenReturn(frameworkID);
 
         configuration = mock(org.apache.mesos.elasticsearch.scheduler.Configuration.class);
@@ -63,13 +63,12 @@ public class ElasticsearchSchedulerTest {
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
-        scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, taskInfoFactory, serializableState);
+        scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, taskInfoFactory, offerStrategy, serializableState);
 
         driver = mock(SchedulerDriver.class);
 
         masterInfo = newMasterInfo();
         scheduler.registered(driver, frameworkID, masterInfo);
-        scheduler.offerStrategy = mock(OfferStrategy.class);
     }
 
     @Test
@@ -108,7 +107,7 @@ public class ElasticsearchSchedulerTest {
     public void willDeclineOfferIfStrategyDeclinesOffer() {
         Protos.Offer offer = newOffer("host1").build();
 
-        when(scheduler.offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.decline("Test"));
+        when(offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.decline("Test"));
         when(frameworkState.isRegistered()).thenReturn(true);
 
         scheduler.resourceOffers(driver, singletonList(offer));
@@ -119,7 +118,7 @@ public class ElasticsearchSchedulerTest {
     @Test
     public void testResourceOffers_launchTasks() {
         final Protos.Offer offer = newOffer("host3").build();
-        when(scheduler.offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.accept());
+        when(offerStrategy.evaluate(offer)).thenReturn(OfferStrategy.OfferResult.accept());
         when(frameworkState.isRegistered()).thenReturn(true);
 
         Protos.TaskInfo taskInfo = ProtoTestUtil.getDefaultTaskInfo();
