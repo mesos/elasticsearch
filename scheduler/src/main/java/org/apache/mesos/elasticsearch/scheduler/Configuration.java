@@ -30,7 +30,7 @@ public class Configuration {
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
     private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
 
-    public Configuration(String[] args) {
+    public Configuration(String... args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
         jCommander.addObject(elasticsearchCLI);
@@ -167,26 +167,9 @@ public class Configuration {
     // ****************** Runtime configuration **********************
     private SerializableState state;
 
-    public Protos.FrameworkID getFrameworkId() {
-        return getFrameworkState().getFrameworkID();
-    }
-
-    public void setFrameworkState(FrameworkState frameworkState) {
-        this.frameworkState = frameworkState;
-    }
-
-    private FrameworkState frameworkState;
-
-    public FrameworkState getFrameworkState() {
-        if (frameworkState == null) {
-            frameworkState = new FrameworkState(getState());
-        }
-        return frameworkState;
-    }
-
-
     // ******* Helper methods
-    public SerializableState getState() {
+    @Deprecated
+    public SerializableState getZooKeeperStateDriver() {
         if (state == null) {
             org.apache.mesos.state.State zkState = new ZooKeeperState(
                     getMesosStateZKURL(),

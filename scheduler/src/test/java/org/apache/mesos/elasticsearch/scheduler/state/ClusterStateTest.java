@@ -1,8 +1,11 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 
@@ -20,7 +23,9 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ClusterStateTest {
     private SerializableState state = mock(SerializableState.class);
+
     private FrameworkState frameworkState = mock(FrameworkState.class);
+
     private ClusterState clusterState = new ClusterState(state, frameworkState);
 
     @Before

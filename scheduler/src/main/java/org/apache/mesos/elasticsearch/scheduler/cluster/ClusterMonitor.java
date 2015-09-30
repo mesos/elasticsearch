@@ -3,10 +3,10 @@ package org.apache.mesos.elasticsearch.scheduler.cluster;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
-import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.healthcheck.AsyncPing;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 
 import java.security.InvalidParameterException;
@@ -20,18 +20,19 @@ public class ClusterMonitor implements Observer {
     private static final Logger LOGGER = Logger.getLogger(ClusterMonitor.class);
     private final Configuration configuration;
     private final Scheduler callback;
-    private final SchedulerDriver driver;
     private final Map<Protos.TaskInfo, AsyncPing> healthChecks = new HashMap<>();
-    private final StatePath statePath;
+    private FrameworkState frameworkState;
 
-    public ClusterMonitor(Configuration configuration, Scheduler callback, SchedulerDriver driver, StatePath statePath) {
-        if (configuration == null || callback == null || driver == null || statePath == null) {
+    public ClusterMonitor(Configuration configuration, FrameworkState frameworkState, Scheduler callback) {
+        this.frameworkState = frameworkState;
+        if (configuration == null || callback == null) {
             throw new InvalidParameterException("Constructor parameters cannot be null.");
         }
         this.configuration = configuration;
         this.callback = callback;
-        this.driver = driver;
-        this.statePath = statePath;
+
+        frameworkState.onRegistered(clusterState -> clusterState.getTaskList().forEach(this::startMonitoringTask));
+        frameworkState.onNewTask(this::startMonitoringTask);
     }
 
     public void startMonitoringTask(ESTaskStatus esTask) {
@@ -43,8 +44,17 @@ public class ClusterMonitor implements Observer {
      * @param taskInfo The task to monitor
      */
     public void startMonitoringTask(Protos.TaskInfo taskInfo) {
-        LOGGER.debug("Start monitoring: " + taskInfo.getTaskId().getValue());
-        healthChecks.put(taskInfo, new AsyncPing(callback, driver, configuration, new ESTaskStatus(configuration.getState(), configuration.getFrameworkId(), taskInfo, statePath)));
+        final Protos.FrameworkID frameworkID = frameworkState.getFrameworkID();
+        LOGGER.debug("Start monitoring: " + taskInfo.getTaskId().getValue() + " for frameworkId: " + frameworkID.getValue());
+        healthChecks.put(
+                taskInfo,
+                new AsyncPing(
+                        callback,
+                        frameworkState.getDriver(),
+                        configuration,
+                        new ESTaskStatus(configuration.getZooKeeperStateDriver(), frameworkID, taskInfo, new StatePath(configuration.getZooKeeperStateDriver()))
+                )
+        );
     }
 
     private void stopMonitoringTask(Protos.TaskInfo taskInfo) {

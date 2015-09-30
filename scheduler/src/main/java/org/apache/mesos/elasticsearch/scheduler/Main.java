@@ -1,5 +1,8 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
@@ -25,7 +28,14 @@ public class Main {
 
         configuration = new Configuration(args);
 
-        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
+        final FrameworkState frameworkState = new FrameworkState(configuration.getZooKeeperStateDriver());
+        final ClusterState clusterState = new ClusterState(configuration.getZooKeeperStateDriver(), frameworkState);
+
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, frameworkState, new TaskInfoFactory());
+        final ClusterMonitor clusterMonitor = new ClusterMonitor(configuration, frameworkState, scheduler);
+
+        scheduler.addObserver(clusterState);
+        scheduler.addObserver(clusterMonitor);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("server.port", String.valueOf(configuration.getWebUiPort()));

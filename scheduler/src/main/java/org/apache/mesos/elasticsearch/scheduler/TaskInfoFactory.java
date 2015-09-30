@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -34,6 +35,7 @@ public class TaskInfoFactory {
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
 
     Clock clock = new Clock();
+    private FrameworkState frameworkState;
 
     /**
      * Creates TaskInfo for Elasticsearch execcutor running in a Docker container
@@ -43,7 +45,8 @@ public class TaskInfoFactory {
      *
      * @return TaskInfo
      */
-    public Protos.TaskInfo createTask(Configuration configuration, Protos.Offer offer) {
+    public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer) {
+        this.frameworkState = frameworkState;
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
@@ -83,7 +86,7 @@ public class TaskInfoFactory {
     private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
         return Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
-                .setFrameworkId(configuration.getFrameworkId())
+                .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
                 .setCommand(newCommandInfo(configuration))
                 .setContainer(Protos.ContainerInfo.newBuilder()

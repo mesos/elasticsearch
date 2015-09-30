@@ -5,6 +5,8 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 import org.junit.After;
 import org.junit.Before;
@@ -36,6 +38,10 @@ public class ClusterMonitorTest {
     private ClusterState clusterState;
     @Mock
     private StatePath statePath;
+    @Mock
+    private FrameworkState frameworkState;
+    @Mock
+    private SerializableState serializableState;
 
     public static final String FRAMEWORK_ID = "frameworkId";
     public static final String EXECUTOR_ID = "executorId";
@@ -46,13 +52,15 @@ public class ClusterMonitorTest {
     @Before
     public void before() throws IOException {
         MockitoAnnotations.initMocks(this);
-        when(configuration.getFrameworkId()).thenReturn(frameworkId());
-        when(configuration.getState().get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
+
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkId());
+        when(frameworkState.getDriver()).thenReturn(schedulerDriver);
+        when(configuration.getZooKeeperStateDriver().get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(20L);
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
-        clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, statePath);
+        clusterMonitor = new ClusterMonitor(configuration, frameworkState, scheduler);
     }
 
     @After

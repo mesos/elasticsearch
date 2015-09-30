@@ -1,6 +1,7 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.joda.time.DateTime;
 import org.junit.Test;
 
@@ -19,6 +20,7 @@ import static org.mockito.Mockito.when;
 public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
+    private FrameworkState frameworkState = mock(FrameworkState.class);
 
     @Test
     public void testCreateTaskInfo() {
@@ -33,8 +35,8 @@ public class TaskInfoFactoryTest {
 
         Protos.FrameworkID frameworkId = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
 
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkId);
         Configuration configuration = mock(Configuration.class);
-        when(configuration.getFrameworkId()).thenReturn(frameworkId);
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
@@ -58,7 +60,7 @@ public class TaskInfoFactoryTest {
                                                     Resources.mem(3.0, "some-framework-role")))
                                         .build();
 
-        Protos.TaskInfo taskInfo = factory.createTask(configuration, offer);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, offer);
 
         assertEquals(configuration.getTaskName(), taskInfo.getName());
         assertEquals(offer.getSlaveId(), taskInfo.getSlaveId());
@@ -86,7 +88,7 @@ public class TaskInfoFactoryTest {
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
-        assertEquals(configuration.getFrameworkId(), taskInfo.getExecutor().getFrameworkId());
+        assertEquals(frameworkId, taskInfo.getExecutor().getFrameworkId());
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
 
         assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
