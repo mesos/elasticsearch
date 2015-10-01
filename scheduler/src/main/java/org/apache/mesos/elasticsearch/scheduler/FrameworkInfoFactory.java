@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -13,9 +14,11 @@ public class FrameworkInfoFactory {
     private static final Logger LOGGER = Logger.getLogger(FrameworkInfoFactory.class);
 
     private final Configuration configuration;
+    private FrameworkState frameworkState;
 
-    public FrameworkInfoFactory(Configuration configuration) {
+    public FrameworkInfoFactory(Configuration configuration, FrameworkState frameworkState) {
         this.configuration = configuration;
+        this.frameworkState = frameworkState;
     }
 
     public Protos.FrameworkInfo.Builder getBuilder() {
@@ -24,19 +27,14 @@ public class FrameworkInfoFactory {
         frameworkBuilder.setName(configuration.getFrameworkName());
         frameworkBuilder.setFailoverTimeout(configuration.getFailoverTimeout());
         frameworkBuilder.setCheckpoint(true); // DCOS certification 04 - Checkpointing is enabled.
+        frameworkBuilder.setRole(configuration.getFrameworkRole()); // DCOS certification requirement 13
         setWebuiUrl(frameworkBuilder);
         setFrameworkId(frameworkBuilder);
-
-        if (!configuration.getMesosAuthenticationPrincipal().isEmpty()) {
-            LOGGER.debug("frameworkBuilder.setPrincipal = " + configuration.getMesosAuthenticationPrincipal());
-            LOGGER.debug("Be aware that you cannot alter the principal once set. See MESOS-703.");
-            frameworkBuilder.setPrincipal(configuration.getMesosAuthenticationPrincipal());
-        }
         return frameworkBuilder;
     }
 
     private void setFrameworkId(Protos.FrameworkInfo.Builder frameworkBuilder) {
-        Protos.FrameworkID frameworkID = configuration.getFrameworkId(); // DCOS certification 02
+        Protos.FrameworkID frameworkID = frameworkState.getFrameworkID(); // DCOS certification 02
         if (frameworkID != null && !frameworkID.getValue().isEmpty()) {
             LOGGER.info("Found previous frameworkID: " + frameworkID);
             frameworkBuilder.setId(frameworkID);
@@ -45,7 +43,7 @@ public class FrameworkInfoFactory {
 
     private void setWebuiUrl(Protos.FrameworkInfo.Builder frameworkBuilder) {
         try {
-            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getManagementApiPort();
+            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getWebUiPort();
             LOGGER.debug("Setting webuiUrl to " + hostName);
             frameworkBuilder.setWebuiUrl(hostName);
         } catch (UnknownHostException e) {

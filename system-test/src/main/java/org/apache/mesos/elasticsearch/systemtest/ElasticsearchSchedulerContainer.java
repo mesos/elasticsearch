@@ -2,6 +2,10 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import org.apache.commons.lang.StringUtils;
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
@@ -16,11 +20,24 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     public static final String SCHEDULER_NAME = "elasticsearch-scheduler";
 
-    private String mesosIp;
+    protected String mesosIp;
+
+    private String frameworkRole;
+
+    private String zookeeperFrameworkUrl;
+
+    private String dataDirectory;
 
     protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp) {
         super(dockerClient);
         this.mesosIp = mesosIp;
+        this.frameworkRole = "*"; // The default
+    }
+
+    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp, String frameworkRole) {
+        super(dockerClient);
+        this.mesosIp = mesosIp;
+        this.frameworkRole = frameworkRole;
     }
 
     @Override
@@ -35,6 +52,44 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
-                .withCmd("-zk", "zk://" + mesosIp + ":2181/mesos", "-n", "3", "-ram", "256");
+                .withCmd(
+                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
+                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
+                        ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
+                        Configuration.ELASTICSEARCH_RAM, "256",
+                        Configuration.WEB_UI_PORT, "31100",
+                        Configuration.EXECUTOR_NAME, "esdemo",
+                        Configuration.DATA_DIR, getDataDirectory(),
+                        Configuration.FRAMEWORK_ROLE, frameworkRole
+                );
+    }
+
+    private String getDataDirectory() {
+        if (dataDirectory == null) {
+            return Configuration.DEFAULT_HOST_DATA_DIR;
+        } else {
+            return dataDirectory;
+        }
+    }
+
+    public void setDataDirectory(String dataDirectory) {
+        this.dataDirectory = dataDirectory;
+    }
+
+    public String getZookeeperMesosUrl() {
+        return "zk://" + mesosIp + ":2181/mesos";
+    }
+
+    public String getZookeeperFrameworkUrl() {
+      if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
+        return getZookeeperMesosUrl();
+      } else {
+        return zookeeperFrameworkUrl;
+      }
+    }
+
+    public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
+        this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
     }
 }

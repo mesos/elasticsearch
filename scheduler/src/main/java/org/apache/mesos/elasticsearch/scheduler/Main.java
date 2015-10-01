@@ -1,75 +1,56 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import org.apache.commons.cli.*;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosStateZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
-import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
-import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Application which starts the Elasticsearch scheduler
  */
 public class Main {
-
-    public static final String NUMBER_OF_HARDWARE_NODES = "n";
-
-    public static final String ZK_URL = "zk";
-
-    public static final String MANAGEMENT_API_PORT = "m";
-    public static final String RAM = "ram";
-    public static final long ZK_TIMEOUT = 20000L;
-    public static final String CLUSTER_NAME = "/mesos-ha";
-    public static final String FRAMEWORK_NAME = "/elasticsearch-mesos";
-    public static final String PRINCIPAL = "principal";
-    public static final String SECRET = "secret";
-
-    private Options options;
-
+    private final Environment env;
     private Configuration configuration;
 
-    public Main() {
-        this.options = new Options();
-        this.options.addOption(NUMBER_OF_HARDWARE_NODES, "numHardwareNodes", true, "number of hardware nodes");
-        this.options.addOption(ZK_URL, "zookeeperUrl", true, "Zookeeper urls in the format zk://IP:PORT,IP:PORT,...)");
-        this.options.addOption(MANAGEMENT_API_PORT, "StatusPort", true, "TCP port for status interface. Default is 8080");
-        this.options.addOption(RAM, "ElasticsearchRam", true, "Amount of RAM to give the Elasticsearch instances");
-        this.options.addOption(PRINCIPAL, "mesosAuthenticationPrincipal", true, "(Optional): The Mesos principal used for authentication");
-        this.options.addOption(SECRET, "mesosAuthenticationSecretFile", true, "(Optional): The path to the Mesos secret file containing the authentication secret");
+    public Main(Environment env) {
+        this.env = env;
     }
 
     public static void main(String[] args) {
-        Main main = new Main();
-        try {
-            main.run(args);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        Main main = new Main(new Environment());
+        main.run(args);
     }
 
-    public void run(String[] args) throws IOException {
+    public void run(String[] args) {
         checkEnv();
 
-        try {
-            parseCommandlineOptions(args);
-        } catch (ParseException | IllegalArgumentException e) {
-            printUsageAndExit();
-            return;
-        }
+        configuration = new Configuration(args);
 
-        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
+        final SerializableZookeeperState zookeeperStateDriver = new SerializableZookeeperState(new ZooKeeperState(
+                configuration.getMesosStateZKURL(),
+                configuration.getZookeeperCLI().getZookeeperMesosTimeout(),
+                TimeUnit.MILLISECONDS,
+                "/" + configuration.getFrameworkName() + "/" + configuration.getElasticsearchCLI().getElasticsearchClusterName()));
+        final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
+        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
+
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(
+                configuration,
+                frameworkState,
+                clusterState,
+                new TaskInfoFactory(),
+                new OfferStrategy(configuration, clusterState),
+                zookeeperStateDriver
+        );
+        new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
 
         HashMap<String, Object> properties = new HashMap<>();
-        properties.put("server.port", String.valueOf(configuration.getManagementApiPort()));
+        properties.put("server.port", String.valueOf(configuration.getWebUiPort()));
         new SpringApplicationBuilder(WebApplication.class)
                 .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
@@ -81,8 +62,7 @@ public class Main {
     }
 
     private void checkEnv() {
-        Map<String, String> env = System.getenv();
-        checkHeap(env.get(ExecutorEnvironmentalVariables.JAVA_OPTS));
+        checkHeap(env.getJavaHeap());
     }
 
     private void checkHeap(String s) {
@@ -90,57 +70,4 @@ public class Main {
             throw new IllegalArgumentException("Scheduler heap space not set!");
         }
     }
-
-    private void parseCommandlineOptions(String[] args) throws ParseException, IllegalArgumentException {
-        configuration = new Configuration();
-
-        DefaultParser parser = new DefaultParser();
-        CommandLine cmd = parser.parse(options, args);
-
-        String numberOfHwNodesString = cmd.getOptionValue(NUMBER_OF_HARDWARE_NODES);
-        String zkUrl = cmd.getOptionValue(ZK_URL);
-        String ram = cmd.getOptionValue(RAM, Double.toString(configuration.getMem()));
-        String managementApiPort = cmd.getOptionValue(MANAGEMENT_API_PORT, "8080");
-
-
-        if (numberOfHwNodesString == null || zkUrl == null) {
-            printUsageAndExit();
-            return;
-        }
-
-        configuration.setZookeeperUrl(getMesosZKURL(zkUrl));
-        configuration.setVersion(getClass().getPackage().getImplementationVersion());
-        configuration.setNumberOfHwNodes(Integer.parseInt(numberOfHwNodesString));
-        configuration.setState(getState(zkUrl));
-        configuration.setMem(Double.parseDouble(ram));
-        configuration.setManagementApiPort(Integer.parseInt(managementApiPort));
-        configuration.setMesosAuthenticationPrincipal(cmd.getOptionValue(PRINCIPAL, ""));
-        configuration.setMesosAuthenticationSecretFile(cmd.getOptionValue(SECRET, ""));
-    }
-
-    private SerializableState getState(String zkUrl) {
-        org.apache.mesos.state.State state = new ZooKeeperState(
-                getMesosStateZKURL(zkUrl),
-                ZK_TIMEOUT,
-                TimeUnit.MILLISECONDS,
-                FRAMEWORK_NAME + CLUSTER_NAME);
-        return  new SerializableZookeeperState(state);
-    }
-
-    private String getMesosStateZKURL(String zkUrl) {
-        ZKFormatter mesosStateZKFormatter = new MesosStateZKFormatter(new ZKAddressParser());
-        return mesosStateZKFormatter.format(zkUrl);
-    }
-
-    private String getMesosZKURL(String zkUrl) {
-        ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
-        return mesosZKFormatter.format(zkUrl);
-    }
-
-    private void printUsageAndExit() {
-        HelpFormatter formatter = new HelpFormatter();
-        formatter.printHelp(configuration.getFrameworkName(), options);
-        System.exit(2);
-    }
-
 }

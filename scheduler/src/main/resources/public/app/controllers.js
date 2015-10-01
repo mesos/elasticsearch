@@ -22,22 +22,29 @@ controllers.controller('MainController', function($scope, $interval, $route, con
         $scope.$apply();
     };
 
+    // @todo move to config too
+    var fetchInterval = 3000; // ms
+
     /** Cluster info **/
     var fetchClusterConfiguration = function() {
         Cluster.get(function (data) {
             $scope.name = data.name;
+            data.configuration.Disk = Math.round(data.configuration.Disk / 1024); // MB to GB
             $scope.configuration = data.configuration;
         });
     };
     fetchClusterConfiguration();
+    $interval(fetchClusterConfiguration, fetchInterval);
 
     /** Tasks monitoring **/
     $scope.tasks = [];
     $scope.nodes = [];
     $scope.statesPercentage = [];
-    var fetchInterval = 5000; // ms
 
     $scope.taskStatesMapping = {
+        TASK_STAGING: {
+            progressBarType: "warning"
+        },
         TASK_RUNNING: {
             progressBarType: "success"
         },
@@ -95,7 +102,152 @@ controllers.controller('MainController', function($scope, $interval, $route, con
     $interval(fetchTasks, fetchInterval);
 });
 
-controllers.controller('ClusterController', function($scope, $http, $location, config, Cluster) {
+controllers.controller('ClusterController', function($scope) {
+
+});
+
+controllers.controller('ScalingController', function($scope, config, Scaling) {
+    $scope.scaling = {
+        nodes: $scope.$parent.configuration.ElasticsearchNodes,
+        result: null
+    };
+    $scope.scalingSubmit = function() {
+        if ($scope.scaling.nodes) {
+            var success = function(data) {
+                $scope.scaling.result = data;
+            }
+            var error = function(data) {
+                if (data.hasOwnProperty('error')) {
+                    $scope.scaling.error = data.error;
+                } else {
+                    $scope.scaling.error = "Unknown error"
+                }
+            }
+            Scaling.save({to: $scope.scaling.nodes}, {}, success, error);
+        }
+    };
+});
+
+controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
+
+    // chart config template object
+    var chartConfig = {
+        options: {
+            chart: {
+                type: 'line',
+                height: 250
+            },
+            plotOptions: {
+                area: {
+                    fillColor: {
+                        linearGradient: {
+                            x1: 0,
+                            y1: 0,
+                            x2: 0,
+                            y2: 1
+                        },
+                        stops: [
+                            [0, '#003399'],
+                            [1, '#3366AA']
+                        ]
+                    }
+               }
+            },
+            legend: {
+                enabled: false
+            },
+            exporting: {
+                enabled: false
+            }
+        },
+        series: [{
+            type: 'area',
+            data: []
+        }],
+        title: {
+            text: ''
+        },
+        loading: false,
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: ""
+            }
+        },
+        func: function(chart) {}
+    };
+
+    // generate chart config objects from template
+
+    $scope.charts = {
+        indices: {},
+        shards: {},
+        docs: {},
+        store: {}
+    };
+
+    angular.forEach($scope.charts, function(value, key) {
+        $scope.charts[key] = angular.copy(chartConfig);
+    });
+
+    // configure charts
+
+    $scope.charts.indices.title.text = "Number of indices";
+    $scope.charts.indices.options.plotOptions.area.fillColor.stops = [[0, '#74BD43'], [1, '#74BD43']];
+    $scope.charts.indices.series.data = (function() {
+        return [];
+    }());
+
+    $scope.charts.shards.title.text = "Number of shards";
+    $scope.charts.shards.options.plotOptions.area.fillColor.stops = [[0, '#3D9953'], [1, '#3D9953']];
+    $scope.charts.shards.series.data = [];
+
+    $scope.charts.docs.title.text = "Number of documents";
+    $scope.charts.docs.options.plotOptions.area.fillColor.stops = [[0, '#14CC40'], [1, '#14CC40']];
+    $scope.charts.docs.series.data = [];
+
+    $scope.charts.store.title.text = "Data size";
+    $scope.charts.store.options.plotOptions.area.fillColor.stops = [[0, '#C340FF'], [1, '#C340FF']];
+    $scope.charts.store.series.data = [];
+
+    // updating charts
+
+    var updateChart = function(chart, x, y) {
+        var series = $scope.charts[chart].series[0].data;
+        series.push({x: x,y: y});
+        if (series.length > config.charts.history) {
+            $scope.charts[chart].series[0].data = series.slice(series.length - config.charts.history);
+        }
+    };
+
+    var fetchStats = function() {
+        Stats.get({}, function(data) {
+            updateChart('docs', data.timestamp, data.indices.docs.count);
+            updateChart('indices', data.timestamp, data.indices.count);
+            if (data.indices.shards) {
+                updateChart('shards', data.timestamp, data.indices.shards.total);
+            }
+            updateChart('store', data.timestamp, data.indices.store.size_in_bytes);
+        });
+    };
+
+    fetchStats();
+    $interval(fetchStats, config.charts.interval);
+});
+
+controllers.controller('TasksController', function ($scope) {
+
+});
+
+controllers.controller('ConfigurationController', function ($scope) {
+
+});
+
+controllers.controller('QueryBrowserController', function ($scope, $http, $location, config, Search) {
+    $scope.displayRawResults = false;
+
     $scope.query = {
         error: '',
         string: '',
@@ -112,16 +264,17 @@ controllers.controller('ClusterController', function($scope, $http, $location, c
     $scope.querySubmit = function() {
         if ($scope.query.node && $scope.query.string) {
             $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
-            var URL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + "/es/_search?q=" + $scope.query.string;
-            $http.get(URL).success(function(data, status, headers) {
-                $scope.query.results = data;
-            }).error(function(data, status, headers) {
+            var success = function(data) {
+                $scope.query.results = data.hits;
+            }
+            var error = function(data) {
                 if (data.hasOwnProperty('error')) {
                     $scope.query.error = data.error;
                 } else {
                     $scope.query.error = "Unknown error"
                 }
-            });
+            }
+            Search.get({q: $scope.query.string}, success, error);
         }
     };
 
@@ -130,8 +283,4 @@ controllers.controller('ClusterController', function($scope, $http, $location, c
         $scope.query.string = '';
         $scope.query.results = null;
     };
-});
-
-controllers.controller('TasksController', function ($scope, $interval, config, Tasks) {
-
 });

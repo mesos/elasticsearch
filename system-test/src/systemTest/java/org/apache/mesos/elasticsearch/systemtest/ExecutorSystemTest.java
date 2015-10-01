@@ -41,43 +41,12 @@ public class ExecutorSystemTest extends TestBase {
 
     @BeforeClass
     public static void beforeClass() {
-        final DockerClient dockerClient = config.dockerClient;
-
-        final URI dockerUri = DockerClientConfig.createDefaultConfigBuilder().build().getUri();
         String innerDockerHost;
 
-        if (dockerUri.getScheme().startsWith("http")) {
-            LOGGER.debug("Non local docker environment");
-
-            final AbstractContainer dockerForwarder = new AbstractContainer(dockerClient) {
-                private static final String DOCKER_IMAGE = "mwldk/go-tcp-proxy";
-
-                @Override
-                protected void pullImage() {
-                    pullImage(DOCKER_IMAGE, "latest");
-                }
-
-                @Override
-                protected CreateContainerCmd dockerCommand() {
-                    return dockerClient
-                            .createContainerCmd(DOCKER_IMAGE)
-                            .withLinks(Link.parse(cluster.getMesosContainer().getContainerId() + ":docker"))
-                            .withExposedPorts(ExposedPort.tcp(DOCKER_PORT))
-                            .withPortBindings(PortBinding.parse("0.0.0.0:3376:" + DOCKER_PORT))
-                            .withCmd("-l=:" + DOCKER_PORT, "-r=docker:" + DOCKER_PORT);
-                }
-            };
-            LOGGER.info("Starting inner docker TCP forwarder forwarding connections to " + cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT);
-            dockerForwarder.start();
-
-            innerDockerHost = dockerUri.getHost() + ":" + 3376; //TODO: fetch port from docker inspect
-        } else {
-            LOGGER.debug("Local docker environment");
-            innerDockerHost = cluster.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-        }
+        LOGGER.debug("Local docker environment");
+        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
 
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-
         clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         await().atMost(60, TimeUnit.SECONDS).until(() -> {
             try {

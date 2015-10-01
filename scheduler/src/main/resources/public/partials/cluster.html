@@ -1,9 +1,9 @@
 <div class="row">
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.NumberOfHwNodes}}</h3>
+                    <h3 class="font-red-haze">{{configuration.ElasticsearchNodes}}</h3>
                     <small>NODES</small>
                 </div>
                 <div class="icon">
@@ -27,11 +27,11 @@
             <!--</div>-->
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.Mem}}{{configuration.MemUnits}}</h3>
+                    <h3 class="font-red-haze">{{configuration.Mem}}MB</h3>
                     <small>MEMORY</small>
                 </div>
                 <div class="icon">
@@ -40,11 +40,11 @@
             </div>
         </div>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-4">
         <div class="cell dashboard-stat">
             <div class="display">
                 <div class="number">
-                    <h3 class="font-red-haze">{{configuration.Disk}}{{configuration.DiskUnits}}</h3>
+                    <h3 class="font-red-haze">{{configuration.Disk}}GB</h3>
                     <small>DISK</small>
                 </div>
                 <div class="icon">
@@ -62,31 +62,25 @@
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-md-5">
+<div class="row" ng-controller="StatsController">
+    <div class="col-md-12">
         <div class="cell">
-            <h3>Configuration Overview</h3>
-            <json-formatter json="$parent.configuration" open="1"></json-formatter>
-        </div>
-    </div>
-    <div class="col-md-7">
-        <div class="cell">
-            <h3>Elasticsearch Query Browser</h3>
-            <form class="form-inline query-browser" ng-submit="querySubmit()">
-                <div class="form-group">
-                    <input type="text" class="form-control query-string-input" ng-model="query.string" placeholder="Enter your query...">
+            <h3>Performance Overview</h3>
+            <div class="row">
+                <div class="col-md-6">
+                    <highchart id="chart1" config="charts.indices"></highchart>
                 </div>
-                <div class="form-group">
-                    <select class="form-control" ng-model="query.node" ng-options="node for node in nodes"></select>
+                <div class="col-md-6">
+                    <highchart id="chart2" config="charts.shards"></highchart>
                 </div>
-                <button type="submit" class="btn btn-primary">Search</button>
-                <button type="button" class="btn btn-default" ng-click="resetQuery()">Reset</button>
-            </form>
-            <div class="alert alert-danger" role="alert" ng-show="query.error">
-                {{query.error}}
             </div>
-            <div class="search-results" ng-show="query.results">
-                <json-formatter json="query.results" open="3"></json-formatter>
+            <div class="row">
+                <div class="col-md-6">
+                    <highchart id="chart3" config="charts.docs"></highchart>
+                </div>
+                <div class="col-md-6">
+                    <highchart id="chart4" config="charts.store"></highchart>
+                </div>
             </div>
         </div>
     </div>

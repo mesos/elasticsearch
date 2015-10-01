@@ -5,6 +5,7 @@ import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.security.InvalidParameterException;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests
  */
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class ESTaskStatusTest {
     private SerializableState state = mock(SerializableState.class);
     private Protos.FrameworkID frameworkID;
@@ -27,8 +29,16 @@ public class ESTaskStatusTest {
     public void before() {
         frameworkID = Protos.FrameworkID.newBuilder().setValue("FrameworkId").build();
         taskInfo = ProtoTestUtil.getDefaultTaskInfo();
-        status = new ESTaskStatus(state, frameworkID, taskInfo);
+        status = new ESTaskStatus(state, frameworkID, taskInfo, new StatePath(state));
         taskStatus = status.getDefaultStatus();
+    }
+
+    @Test
+    public void shouldCheckIfStatusIsValid() throws IOException {
+        Mockito.reset(state);
+        when(state.get(anyString())).thenThrow(new IllegalStateException("Test")).thenReturn(taskStatus);
+        status = new ESTaskStatus(state, frameworkID, taskInfo, new StatePath(state));
+        verify(state, atLeastOnce()).set(anyString(), any());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -45,34 +55,40 @@ public class ESTaskStatusTest {
 
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptIfStateIsNull() {
-        new ESTaskStatus(null, frameworkID, taskInfo);
+        new ESTaskStatus(null, frameworkID, taskInfo, new StatePath(state));
     }
 
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptIfFrameworkIDIsNull() {
-        new ESTaskStatus(state, null, taskInfo);
+        new ESTaskStatus(state, null, taskInfo, new StatePath(state));
     }
 
     @Test(expected = InvalidParameterException.class)
     public void shouldExceptIfFrameworkIDIsEmpty() {
-        new ESTaskStatus(state, Protos.FrameworkID.newBuilder().setValue("").build(), taskInfo);
+        new ESTaskStatus(state, Protos.FrameworkID.newBuilder().setValue("").build(), taskInfo, new StatePath(state));
     }
 
-    @Test
-    public void shouldAllowNullTaskInfo() {
-        new ESTaskStatus(state, frameworkID, null);
+    @Test(expected = InvalidParameterException.class)
+    public void shouldExceptIfTaskInfoIsNull() {
+        new ESTaskStatus(state, frameworkID, null, new StatePath(state));
     }
 
     @Test
     public void shouldPrintOk() throws IOException {
         when(state.get(anyString())).thenReturn(status.getDefaultStatus());
         String s = status.toString();
-        Assert.assertTrue(s.contains(Protos.TaskState.TASK_STARTING.toString()));
+        Assert.assertTrue(s.contains(status.getDefaultStatus().getState().toString()));
         Assert.assertTrue(s.contains(ESTaskStatus.DEFAULT_STATUS_NO_MESSAGE_SET));
     }
 
     @Test
     public void shouldHandleNoMessageError() {
         status.toString();
+    }
+
+    @Test
+    public void shouldErrorWhenTaskFinishedToUpdateState() throws IOException {
+        when(state.get(anyString())).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_FINISHED));
+        Assert.assertTrue(status.taskInError());
     }
 }

@@ -1,28 +1,31 @@
 package org.apache.mesos.elasticsearch.executor.model;
 
-import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.executor.parser.ParseZooKeeper;
-import org.apache.mesos.elasticsearch.executor.parser.TaskParser;
+import org.apache.log4j.Logger;
 import org.elasticsearch.common.settings.ImmutableSettings;
 
 /**
  * Model representing ZooKeeper information
  */
 public class ZooKeeperModel implements RunTimeSettings {
+    private static final Logger LOGGER = Logger.getLogger(ZooKeeperModel.class);
     public static final String ZOOKEEPER_ADDRESS_KEY = "sonian.elasticsearch.zookeeper.client.host";
-    private final TaskParser<String> parser = new ParseZooKeeper();
     private final String address;
+    private long timeout;
 
-    public ZooKeeperModel(Protos.TaskInfo taskInfo) {
-        address = parser.parse(taskInfo);
+    public ZooKeeperModel(String address, long timeout) {
+        this.address = address;
+        this.timeout = timeout;
     }
 
     private ImmutableSettings.Builder getAddress() {
-        return ImmutableSettings.settingsBuilder().put(ZOOKEEPER_ADDRESS_KEY, address);
+        LOGGER.debug(ZOOKEEPER_ADDRESS_KEY + ": " + address);
+        return ImmutableSettings.settingsBuilder()
+                .put(ZOOKEEPER_ADDRESS_KEY, address)
+                .put("sonian.elasticsearch.zookeeper.client.session.timeout", timeout);
     }
 
     @Override
     public ImmutableSettings.Builder getRuntimeSettings() {
-        return ImmutableSettings.settingsBuilder().put(getAddress().build());
+        return getAddress();
     }
 }

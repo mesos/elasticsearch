@@ -16,15 +16,15 @@ public class DiscoverySystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
 
     @Test
-    public void testNodeDiscoveryRest() throws InterruptedException {
+    public void testNodeDiscoveryRest() {
         ElasticsearchSchedulerContainer scheduler = getScheduler();
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress());
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks);
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
-    }
+   }
 
 }

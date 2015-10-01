@@ -1,11 +1,28 @@
 var services = angular.module('mesos-es-ui.services', []);
 
-services.factory('Cluster', function($resource, $location, config) {
-    var URL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/v1/cluster';
+var baseURL = window.location.protocol + '//' + window.location.host + window.location.pathname;
+
+services.factory('Cluster', function($resource, config) {
+    var URL = baseURL + 'v1/cluster';
     return $resource(URL);
 });
 
-services.factory('Tasks', function($resource, $location, config) {
-    var URL = $location.protocol() + '://' + $location.host() + ':' + $location.port() + '/v1/tasks';
+services.factory('Scaling', function($resource, config) {
+    var URL = baseURL + 'v1/cluster/scale';
+    return $resource(URL);
+});
+
+services.factory('Tasks', function($resource, config) {
+    var URL = baseURL + 'v1/tasks';
+    return $resource(URL);
+});
+
+services.factory('Search', function($resource, config) {
+    var URL = baseURL + 'v1/es/_search';
+    return $resource(URL);
+});
+
+services.factory('Stats', function($resource, config) {
+    var URL = baseURL + 'v1/es/_cluster/stats';
     return $resource(URL);
 });

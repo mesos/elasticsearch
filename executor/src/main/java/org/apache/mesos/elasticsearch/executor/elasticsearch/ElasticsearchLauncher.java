@@ -28,4 +28,9 @@ public class ElasticsearchLauncher implements Launcher {
             this.settings.put(settingsToAdd.build());
         }
     }
+
+    @Override
+    public String toString() {
+        return "ES settings: " + settings.build().toDelimitedString(',');
+    }
 }

@@ -5,22 +5,30 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
 import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
+import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Executor for Elasticsearch.
  */
+@SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
+    private Configuration configuration;
+    private Node node;
 
     public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
         this.launcher = launcher;
@@ -54,29 +62,48 @@ public class ElasticsearchExecutor implements Executor {
         driver.sendStatusUpdate(taskStatus.starting());
 
         try {
+            // Parse CommandInfo arguments
+            List<String> list = task.getExecutor().getCommand().getArgumentsList();
+            String[] args = list.toArray(new String[list.size()]);
+            LOGGER.debug("Using arguments: " + Arrays.toString(args));
+            configuration = new Configuration(args);
+
+            // Add settings provided in es Settings file
+            URL elasticsearchSettingsPath = java.net.URI.create(configuration.getElasticsearchSettingsLocation()).toURL();
+            LOGGER.debug("Using elasticsearch settings file: " + elasticsearchSettingsPath);
+            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromUrl(elasticsearchSettingsPath);
+            launcher.addRuntimeSettings(esSettings);
+
             // Parse ports
             RunTimeSettings ports = new PortsModel(task);
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
 
             // Parse ZooKeeper address
-            RunTimeSettings zk = new ZooKeeperModel(task);
+            RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL(), configuration.getElasticsearchZKTimeout());
             launcher.addRuntimeSettings(zk.getRuntimeSettings());
 
+            // Parse cluster name
+            launcher.addRuntimeSettings(ImmutableSettings.builder().put("cluster.name", configuration.getElasticsearchClusterName()));
+
+            // Parse expected number of nodes
+            launcher.addRuntimeSettings(ImmutableSettings.builder().put("gateway.expected_nodes", configuration.getElasticsearchNodes()));
+
+            // Print final settings for logs.
+            LOGGER.debug(launcher.toString());
+
             // Launch Node
-            final Node node = launcher.launch();
+            node = launcher.launch();
 
             Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    // Send status update, finished
-                    driver.sendStatusUpdate(taskStatus.finished());
-                    node.close();
+                    shutdown(driver);
                 }
             }));
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidParameterException e) {
+        } catch (InvalidParameterException | MalformedURLException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }
@@ -86,6 +113,8 @@ public class ElasticsearchExecutor implements Executor {
     public void killTask(ExecutorDriver driver, Protos.TaskID taskId) {
         LOGGER.info("Kill task: " + taskId.getValue());
         driver.sendStatusUpdate(taskStatus.failed());
+        stopNode();
+        stopDriver(driver, taskStatus.killed());
     }
 
     @Override
@@ -102,10 +131,25 @@ public class ElasticsearchExecutor implements Executor {
     @Override
     public void shutdown(ExecutorDriver driver) {
         LOGGER.info("Shutting down framework...");
+        stopNode();
+        stopDriver(driver, taskStatus.finished());
     }
 
     @Override
     public void error(ExecutorDriver driver, String message) {
         LOGGER.info("Error in executor: " + message);
+        stopNode();
+        stopDriver(driver, taskStatus.error());
+    }
+
+    private void stopDriver(ExecutorDriver driver, Protos.TaskStatus reason) {
+        driver.sendStatusUpdate(reason);
+        driver.stop();
+    }
+
+    private void stopNode() {
+        if (node != null) {
+            node.close();
+        }
     }
 }
