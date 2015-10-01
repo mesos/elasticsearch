@@ -9,7 +9,8 @@ import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
-import org.springframework.http.*;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,6 +34,10 @@ public class SearchProxyController {
     @Autowired
     HttpClient httpClient;
 
+    private static HttpHost toHttpHost(InetSocketAddress address) {
+        return new HttpHost(address.getAddress(), address.getPort());
+    }
+
     @RequestMapping("/_cluster/stats")
     public ResponseEntity<InputStreamResource> stats() throws IOException {
         Collection<Task> tasks = scheduler.getTasks().values();
@@ -43,10 +48,10 @@ public class SearchProxyController {
         InputStreamResource inputStreamResource = new InputStreamResource(esSearchResponse.getEntity().getContent());
 
         return ResponseEntity.ok()
-            .contentLength(esSearchResponse.getEntity().getContentLength())
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("X-elasticsearch-host", httpHost.toHostString())
-            .body(inputStreamResource);
+                .contentLength(esSearchResponse.getEntity().getContentLength())
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("X-elasticsearch-host", httpHost.toHostString())
+                .body(inputStreamResource);
     }
 
     @RequestMapping("/_search")
@@ -70,9 +75,5 @@ public class SearchProxyController {
                 .contentType(MediaType.APPLICATION_JSON)
                 .header("X-ElasticSearch-host", httpHost.toHostString())
                 .body(inputStreamResource);
-    }
-
-    private static HttpHost toHttpHost(InetSocketAddress address) {
-        return new HttpHost(address.getAddress(), address.getPort());
     }
 }

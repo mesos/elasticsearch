@@ -62,26 +62,11 @@ public class ClusterController {
         }
     }
 
-    /**
-     * HTTP response entity class
-     */
-    public static class ClusterInfoResponse {
-        public String name;
-        public Map<String, Object> configuration;
-    }
-
     @RequestMapping(value = "/scheduler", method = RequestMethod.GET)
     public ClusterSchedulerInfoResponse schedulerInfo() {
         final ClusterSchedulerInfoResponse response = new ClusterSchedulerInfoResponse();
         response.docker = dockerMap("image", "tag", "id");
         return response;
-    }
-
-    /**
-     * HTTP response entity class
-     */
-    public static class ClusterSchedulerInfoResponse {
-        public Map<String, String> docker = new HashMap<>();
     }
 
     @RequestMapping(value = "/executors", method = RequestMethod.GET)
@@ -91,18 +76,33 @@ public class ClusterController {
         return response;
     }
 
-    /**
-     * HTTP response entity class
-     */
-    public static class ClusterExecutorsInfoResponse {
-        public Map<String, String> docker;
-    }
-
     private Map<String, String> dockerMap(String image, String tag, String id) {
         final HashMap<String, String> map = new HashMap<>();
         map.put("image", image);
         map.put("tag", tag);
         map.put("id", id);
         return map;
+    }
+
+    /**
+     * HTTP response entity class
+     */
+    public static class ClusterInfoResponse {
+        public String name;
+        public Map<String, Object> configuration;
+    }
+
+    /**
+     * HTTP response entity class
+     */
+    public static class ClusterSchedulerInfoResponse {
+        public Map<String, String> docker = new HashMap<>();
+    }
+
+    /**
+     * HTTP response entity class
+     */
+    public static class ClusterExecutorsInfoResponse {
+        public Map<String, String> docker;
     }
 }

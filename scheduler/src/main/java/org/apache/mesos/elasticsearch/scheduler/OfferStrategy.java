@@ -41,6 +41,41 @@ public class OfferStrategy {
         return OfferResult.accept();
     }
 
+    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
+        Boolean result = false;
+        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
+        for (Protos.TaskInfo t : stateList) {
+            if (t.getSlaveId().equals(offer.getSlaveId())) {
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    private boolean isEnoughDisk(Configuration configuration, List<Protos.Resource> resourcesList) {
+        return new ResourceCheck(Resources.RESOURCE_DISK).isEnough(resourcesList, configuration.getDisk());
+    }
+
+    private boolean isEnoughCPU(Configuration configuration, List<Protos.Resource> resourcesList) {
+        return new ResourceCheck(Resources.RESOURCE_CPUS).isEnough(resourcesList, configuration.getCpus());
+    }
+
+    private boolean isEnoughRAM(Configuration configuration, List<Protos.Resource> resourcesList) {
+        return new ResourceCheck(Resources.RESOURCE_MEM).isEnough(resourcesList, configuration.getMem());
+    }
+
+    private boolean containsTwoPorts(List<Protos.Resource> resources) {
+        return Resources.selectTwoPortsFromRange(resources).size() == 2;
+    }
+
+    /**
+     * Interface for checking offers
+     */
+    @FunctionalInterface
+    private interface Rule {
+        boolean accepts(Protos.Offer offer);
+    }
+
     /**
      * Offer result
      */
@@ -62,32 +97,6 @@ public class OfferStrategy {
         }
     }
 
-    private boolean isHostAlreadyRunningTask(Protos.Offer offer) {
-        Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
-        for (Protos.TaskInfo t : stateList) {
-            if (t.getSlaveId().equals(offer.getSlaveId())) {
-                result = true;
-            }
-        }
-        return result;
-    }
-    private boolean isEnoughDisk(Configuration configuration, List<Protos.Resource> resourcesList) {
-        return new ResourceCheck(Resources.RESOURCE_DISK).isEnough(resourcesList, configuration.getDisk());
-    }
-
-    private boolean isEnoughCPU(Configuration configuration, List<Protos.Resource> resourcesList) {
-        return new ResourceCheck(Resources.RESOURCE_CPUS).isEnough(resourcesList, configuration.getCpus());
-    }
-
-    private boolean isEnoughRAM(Configuration configuration, List<Protos.Resource> resourcesList) {
-        return new ResourceCheck(Resources.RESOURCE_MEM).isEnough(resourcesList, configuration.getMem());
-    }
-
-    private boolean containsTwoPorts(List<Protos.Resource> resources) {
-        return Resources.selectTwoPortsFromRange(resources).size() == 2;
-    }
-
     /**
      * Rule and reason container object
      */
@@ -99,13 +108,5 @@ public class OfferStrategy {
             this.declineReason = declineReason;
             this.rule = rule;
         }
-    }
-
-    /**
-     * Interface for checking offers
-     */
-    @FunctionalInterface
-    private interface Rule {
-        boolean accepts(Protos.Offer offer);
     }
 }

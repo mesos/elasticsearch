@@ -40,6 +40,18 @@ public class TasksResponse {
         await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
     }
 
+    public HttpResponse<JsonNode> getJson() {
+        return response;
+    }
+
+    public List<JSONObject> getTasks() {
+        List<JSONObject> tasks = new ArrayList<>();
+        for (int i = 0; i < response.getBody().getArray().length(); i++) {
+            tasks.add(response.getBody().getArray().getJSONObject(i));
+        }
+        return tasks;
+    }
+
     class TasksCall implements Callable<Boolean> {
 
         @Override
@@ -69,17 +81,5 @@ public class TasksResponse {
                 return false;
             }
         }
-    }
-
-    public HttpResponse<JsonNode> getJson() {
-        return response;
-    }
-
-    public List<JSONObject> getTasks() {
-        List<JSONObject> tasks = new ArrayList<>();
-        for (int i = 0; i < response.getBody().getArray().length(); i++) {
-            tasks.add(response.getBody().getArray().getJSONObject(i));
-        }
-        return tasks;
     }
 }

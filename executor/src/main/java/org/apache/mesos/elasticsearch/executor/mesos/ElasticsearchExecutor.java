@@ -24,8 +24,8 @@ import java.util.List;
  */
 @SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
-    private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
+    private final Launcher launcher;
     private final TaskStatus taskStatus;
     private Configuration configuration;
     private Node node;

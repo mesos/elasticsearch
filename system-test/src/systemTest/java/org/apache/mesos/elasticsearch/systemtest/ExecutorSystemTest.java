@@ -1,23 +1,17 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.container.AbstractContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;

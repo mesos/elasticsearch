@@ -18,11 +18,11 @@ public class Main {
 
     public static void main(String[] args) throws InterruptedException {
         MesosCluster cluster = new MesosCluster(
-            MesosClusterConfig.builder()
+                MesosClusterConfig.builder()
                 .numberOfSlaves(3)
                 .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
                 .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-                .build()
+                        .build()
         );
 
         final AtomicReference<ElasticsearchSchedulerContainer> schedulerReference = new AtomicReference<>(null);

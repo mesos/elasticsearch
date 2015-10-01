@@ -30,6 +30,32 @@ public class Task {
         this.transportAddress = transportAddress;
     }
 
+    public static Task from(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
+        Properties data = new Properties();
+        try {
+            data.load(taskInfo.getData().newInput());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse properties", e);
+        }
+        String hostName = data.getProperty("hostname", "UNKNOWN");
+        String ipAddress = data.getProperty("ipAddress", hostName);
+        ZonedDateTime startedAt = ZonedDateTime.parse(data.getProperty("startedAt", ZonedDateTime.now().toString()));
+        Protos.TaskState taskState = null;
+        if (taskStatus == null) {
+            taskState = Protos.TaskState.TASK_STAGING;
+        } else {
+            taskState = taskStatus.getState();
+        }
+        return new Task(
+                hostName,
+                taskInfo.getTaskId().getValue(),
+                taskState,
+                startedAt,
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+        );
+    }
+
     public String getHostname() {
         return hostname;
     }
@@ -56,31 +82,5 @@ public class Task {
 
     public InetSocketAddress getTransportAddress() {
         return transportAddress;
-    }
-
-    public static Task from(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
-        Properties data = new Properties();
-        try {
-            data.load(taskInfo.getData().newInput());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse properties", e);
-        }
-        String hostName = data.getProperty("hostname", "UNKNOWN");
-        String ipAddress = data.getProperty("ipAddress", hostName);
-        ZonedDateTime startedAt = ZonedDateTime.parse(data.getProperty("startedAt", ZonedDateTime.now().toString()));
-        Protos.TaskState taskState = null;
-        if (taskStatus == null) {
-            taskState = Protos.TaskState.TASK_STAGING;
-        } else {
-            taskState = taskStatus.getState();
-        }
-        return new Task(
-                hostName,
-                taskInfo.getTaskId().getValue(),
-                taskState,
-                startedAt,
-                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
-        );
     }
 }

@@ -18,8 +18,6 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class Configuration {
-    private static final Logger LOGGER = Logger.getLogger(Configuration.class);
-    
     // **** ELASTICSEARCH
     public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
@@ -39,6 +37,9 @@ public class Configuration {
     public static final String EXECUTOR_IMAGE = "--executorImage";
     public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
+    public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
+    public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
+    private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
@@ -72,6 +73,10 @@ public class Configuration {
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
     private Boolean executorForcePullImage = false;
+    @Parameter(names = {FRAMEWORK_PRINCIPAL}, description = "The principal to use when registering the framework (username).")
+    private String frameworkPrincipal = "";
+    @Parameter(names = {FRAMEWORK_SECRET_PATH}, description = "The path to the file which contains the secret for the principal (password). Password in file must not have a newline.")
+    private String frameworkSecretPath = "";
     // ****************** Runtime configuration **********************
 
     public Configuration(String... args) {
@@ -189,6 +194,22 @@ public class Configuration {
         return zookeeperCLI.getZookeeperFrameworkTimeout();
     }
 
+    public ZookeeperCLIParameter getZookeeperCLI() {
+        return zookeeperCLI;
+    }
+
+    public ElasticsearchCLIParameter getElasticsearchCLI() {
+        return elasticsearchCLI;
+    }
+
+    public String getFrameworkSecretPath() {
+        return frameworkSecretPath;
+    }
+
+    public String getFrameworkPrincipal() {
+        return frameworkPrincipal;
+    }
+
     /**
      * Ensures that the number is > than the EXECUTOR_HEALTH_DELAY
      */
@@ -199,13 +220,5 @@ public class Configuration {
                 throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
             }
         }
-    }
-
-    public ZookeeperCLIParameter getZookeeperCLI() {
-        return zookeeperCLI;
-    }
-
-    public ElasticsearchCLIParameter getElasticsearchCLI() {
-        return elasticsearchCLI;
     }
 }

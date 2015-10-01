@@ -11,6 +11,7 @@ public class CLIValidators {
 
     /**
      * Abstract class to validate a number.
+     *
      * @param <T> A numeric type
      */
     public abstract static class PositiveValue<T> implements IValueValidator<T> {

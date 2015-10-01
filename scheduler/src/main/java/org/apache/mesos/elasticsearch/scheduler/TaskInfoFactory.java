@@ -26,14 +26,10 @@ import static java.util.Arrays.asList;
  */
 public class TaskInfoFactory {
 
-    private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
-
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
     public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
-
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
-
+    private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
     Clock clock = new Clock();
     private FrameworkState frameworkState;
 
