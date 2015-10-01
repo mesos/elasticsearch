@@ -40,7 +40,6 @@ public class ReconciliationSystemTest {
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
             .numberOfSlaves(CLUSTER_SIZE)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
@@ -184,9 +183,9 @@ public class ReconciliationSystemTest {
                     .createContainerCmd(SCHEDULER_IMAGE)
                     .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + zookeeperIp).toArray(String[]::new))
+//                    .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + zookeeperIp).toArray(String[]::new))
                     .withCmd(
-                            ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
+                            ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperFrameworkUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",
                             Configuration.EXECUTOR_TIMEOUT, "100", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
                             ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
