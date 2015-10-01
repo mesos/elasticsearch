@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
@@ -30,7 +31,16 @@ public class FrameworkInfoFactory {
         frameworkBuilder.setRole(configuration.getFrameworkRole()); // DCOS certification requirement 13
         setWebuiUrl(frameworkBuilder);
         setFrameworkId(frameworkBuilder);
+        setFrameworkPrincipal(frameworkBuilder);
         return frameworkBuilder;
+    }
+
+    private void setFrameworkPrincipal(Protos.FrameworkInfo.Builder frameworkBuilder) {
+        String frameworkPrincipal = configuration.getFrameworkPrincipal();
+        if (!StringUtils.isEmpty(frameworkPrincipal)) {
+            LOGGER.debug("Using framework principal: " + frameworkPrincipal);
+            frameworkBuilder.setPrincipal(frameworkPrincipal);
+        }
     }
 
     private void setFrameworkId(Protos.FrameworkInfo.Builder frameworkBuilder) {
