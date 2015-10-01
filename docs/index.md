@@ -183,10 +183,17 @@ Usage: (Options preceded by an asterisk are required) [options]
     --frameworkName
        The name given to the framework.
        Default: elasticsearch
+    --frameworkPrincipal
+       The principal to use when registering the framework (username).
+       Default: <empty string>
     --frameworkRole
        Used to group frameworks for allocation decisions, depending on the
        allocation policy being used.
        Default: *
+    --frameworkSecretPath
+       The path to the file which contains the secret for the principal
+       (password). Password in file must not have a newline.
+       Default: <empty string>
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
@@ -203,6 +210,25 @@ Usage: (Options preceded by an asterisk are required) [options]
        Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
        Default: zk://mesos.master:2181
 ```
+### Framework Authorization
+To use framework Auth, and if you are using docker, you must mount a docker volume that contains your secret file. You can achieve this by passing volume options to marathon. For example, if you wanted to use the file located at `/etc/mesos/frameworkpasswd`, then could use the following:
+```
+...
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler",
+      "network": "HOST"
+    },
+    "volumes": [
+      {
+        "containerPath": "/etc/mesos/frameworkpasswd",
+        "hostPath": "/etc/mesos/frameworkpasswd",
+        "mode": "RO"
+      }
+    ]
+  },
+...
+```
+Please note that the framework password file must only contain the password (no username) and must not have a newline at the end of the file. (Marathon bugs)
 
 ### User Interface
 

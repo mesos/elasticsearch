@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
@@ -12,22 +13,19 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
-import java.util.Observer;
 import java.util.UUID;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests Scheduler API.
  */
 public class ElasticsearchSchedulerTest {
+    private static final Logger LOGGER = Logger.getLogger(ElasticsearchSchedulerTest.class);
 
     private static final int LOCALHOST_IP = 2130706433;
 
@@ -60,6 +58,7 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(10L);
         when(configuration.getFrameworkRole()).thenReturn("*");
+        when(configuration.getFrameworkName()).thenReturn("FrameworkName");
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
@@ -126,6 +125,19 @@ public class ElasticsearchSchedulerTest {
         scheduler.resourceOffers(driver, singletonList(offer));
 
         verify(driver).launchTasks(singleton(offer.getId()), singleton(taskInfo));
+    }
+
+    @Test
+    public void shouldRunWithCredentials() {
+        when(configuration.getFrameworkPrincipal()).thenReturn("user1");
+        when(configuration.getFrameworkSecretPath()).thenReturn("/etc/passwd");
+        try {
+            scheduler.run();
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            LOGGER.info("This error is normal. Don't worry.");
+        }
+        verify(configuration, atLeastOnce()).getFrameworkPrincipal();
+        verify(configuration, atLeastOnce()).getFrameworkSecretPath();
     }
 
     private Protos.Offer.Builder newOffer(String hostname) {
