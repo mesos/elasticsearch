@@ -1,11 +1,11 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
@@ -35,11 +35,6 @@ public class DataVolumesSystemTest {
             .build()
     );
 
-    @Before
-    public void beforeScheduler() throws Exception {
-        cluster.injectImage("mesos/elasticsearch-executor");
-    }
-
     @After
     public void after() {
         cluster.stop();
@@ -48,7 +43,7 @@ public class DataVolumesSystemTest {
     @Test
     public void testDataVolumes() {
         LOGGER.info("Starting Elasticsearch scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosMasterContainer().getIpAddress(), cluster.getMesosMasterContainer().getIpAddress());
         cluster.addAndStartContainer(scheduler);
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
 
@@ -59,13 +54,13 @@ public class DataVolumesSystemTest {
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, cluster.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ExecCreateCmdResponse execResponse = cluster.getConfig().dockerClient.execCreateCmd(cluster.getMesosContainer().getContainerId())
+        ExecCreateCmdResponse execResponse = cluster.getConfig().dockerClient.execCreateCmd(cluster.getMesosMasterContainer().getContainerId())
                 .withCmd("ls", "-R", Configuration.DEFAULT_HOST_DATA_DIR)
                 .withTty(true)
                 .withAttachStderr()
                 .withAttachStdout()
                 .exec();
-        try (InputStream inputstream = cluster.getConfig().dockerClient.execStartCmd(cluster.getMesosContainer().getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
+        try (InputStream inputstream = cluster.getConfig().dockerClient.execStartCmd(cluster.getMesosMasterContainer().getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
             String contents = IOUtils.toString(inputstream);
             LOGGER.info("Mesos-local contents of " + Configuration.DEFAULT_HOST_DATA_DIR + "/elasticsearch/nodes: " + contents);
             assertTrue(contents.contains("0"));
@@ -79,7 +74,7 @@ public class DataVolumesSystemTest {
     @Test
     public void testDataVolumes_differentDataDir() {
         LOGGER.info("Starting Elasticsearch scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosMasterContainer().getIpAddress(), cluster.getMesosMasterContainer().getIpAddress());
         String dataDirectory = "/var/lib/mesos/slave";
         scheduler.setDataDirectory(dataDirectory);
         cluster.addAndStartContainer(scheduler);
@@ -92,13 +87,13 @@ public class DataVolumesSystemTest {
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, cluster.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ExecCreateCmdResponse execResponse = cluster.getConfig().dockerClient.execCreateCmd(cluster.getMesosContainer().getContainerId())
+        ExecCreateCmdResponse execResponse = cluster.getConfig().dockerClient.execCreateCmd(cluster.getMesosMasterContainer().getContainerId())
                 .withCmd("ls", "-R", dataDirectory)
                 .withTty(true)
                 .withAttachStderr()
                 .withAttachStdout()
                 .exec();
-        try (InputStream inputstream = cluster.getConfig().dockerClient.execStartCmd(cluster.getMesosContainer().getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
+        try (InputStream inputstream = cluster.getConfig().dockerClient.execStartCmd(cluster.getMesosMasterContainer().getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
             String contents = IOUtils.toString(inputstream);
             LOGGER.info("Mesos-local contents of " + dataDirectory);
             assertTrue(contents.contains("0"));

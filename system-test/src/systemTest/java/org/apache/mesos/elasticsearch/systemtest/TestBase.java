@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -39,11 +39,9 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void startScheduler() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
-
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosMasterContainer().getIpAddress(), CLUSTER.getMesosMasterContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");

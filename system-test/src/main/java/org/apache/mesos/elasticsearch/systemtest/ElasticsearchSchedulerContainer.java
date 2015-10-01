@@ -1,12 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
@@ -20,7 +21,9 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     public static final String SCHEDULER_NAME = "elasticsearch-scheduler";
 
-    protected String mesosIp;
+    private MesosCluster mesosCluster;
+
+    protected String zookeeperIp;
 
     private String frameworkRole;
 
@@ -28,15 +31,16 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private String dataDirectory;
 
-    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp) {
+    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, MesosCluster mesosCluster) {
         super(dockerClient);
-        this.mesosIp = mesosIp;
+        this.zookeeperIp = mesosCluster.getZkContainer().getIpAddress();
+        this.mesosCluster = mesosCluster;
         this.frameworkRole = "*"; // The default
     }
 
-    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp, String frameworkRole) {
+    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String zookeeperId, String frameworkRole) {
         super(dockerClient);
-        this.mesosIp = mesosIp;
+        this.zookeeperIp = zookeeperId;
         this.frameworkRole = frameworkRole;
     }
 
@@ -47,11 +51,10 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected CreateContainerCmd dockerCommand() {
-        return dockerClient
+        CreateContainerCmd dockerCommand = dockerClient
                 .createContainerCmd(SCHEDULER_IMAGE)
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
@@ -63,6 +66,12 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.DATA_DIR, getDataDirectory(),
                         Configuration.FRAMEWORK_ROLE, frameworkRole
                 );
+
+        for (AbstractContainer slave : mesosCluster.getSlaves()) {
+            dockerCommand.withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + slave.getIpAddress()).toArray(String[]::new));
+        }
+
+        return dockerCommand;
     }
 
     private String getDataDirectory() {
@@ -78,7 +87,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     }
 
     public String getZookeeperMesosUrl() {
-        return "zk://" + mesosIp + ":2181/mesos";
+        return "zk://" + zookeeperIp + ":2181/mesos";
     }
 
     public String getZookeeperFrameworkUrl() {

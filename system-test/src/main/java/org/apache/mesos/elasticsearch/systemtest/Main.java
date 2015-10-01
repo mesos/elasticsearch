@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -37,15 +37,14 @@ public class Main {
             }
         });
         cluster.start();
-        cluster.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting scheduler");
 
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster);
         schedulerReference.set(scheduler);
         scheduler.start();
 
-        seedData(cluster, scheduler);
+//        seedData(cluster, scheduler);
 
         LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
         LOGGER.info("Type CTRL-C to quit");

@@ -1,9 +1,9 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
 import org.junit.Before;
 import org.junit.Rule;
@@ -48,14 +48,12 @@ public class ZookeeperFrameworkSystemTest {
 
     @Before
     public void startScheduler() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
-
         LOGGER.info("Starting Elasticsearch scheduler");
 
         zookeeper = new ZookeeperContainer(CLUSTER.getConfig().dockerClient);
         CLUSTER.addAndStartContainer(zookeeper);
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosMasterContainer().getIpAddress(), CLUSTER.getMesosMasterContainer().getIpAddress());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
     }

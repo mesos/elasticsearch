@@ -1,12 +1,12 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -36,11 +36,6 @@ public class FrameworkRoleSystemTest {
     @Rule
     public final MesosCluster CLUSTER = new MesosCluster(CONFIG);
 
-    @Before
-    public void before() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
-    }
-
     @After
     public void after() {
         CLUSTER.stop();
@@ -60,7 +55,7 @@ public class FrameworkRoleSystemTest {
         LOGGER.info("Starting Elasticsearch scheduler with framework role: " + role);
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
                 CLUSTER.getConfig().dockerClient,
-                CLUSTER.getMesosContainer().getIpAddress(),
+                CLUSTER.getMesosMasterContainer().getIpAddress(),
                 role
         );
         CLUSTER.addAndStartContainer(scheduler);
