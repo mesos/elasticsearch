@@ -12,13 +12,17 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
+import java.util.Observer;
 import java.util.UUID;
 
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
 import static org.mockito.Matchers.argThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * Tests Scheduler API.

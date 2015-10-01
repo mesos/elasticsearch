@@ -14,15 +14,16 @@ import java.util.function.Consumer;
  * Model of framework state
  */
 public class FrameworkState {
-    public static final Protos.FrameworkID EMPTY_ID = Protos.FrameworkID.newBuilder().setValue("").build();
     private static final Logger LOGGER = Logger.getLogger(FrameworkState.class);
     private static final String FRAMEWORKID_KEY = "frameworkId";
-    private final SerializableState zookeeperStateDriver;
-    private final StatePath statePath;
+    public static final Protos.FrameworkID EMPTY_ID = Protos.FrameworkID.newBuilder().setValue("").build();
     private List<Consumer<ClusterState>> registeredListeners = new Vector<>();
     private List<Consumer<ESTaskStatus>> newTaskListeners = new Vector<>();
     private List<Consumer<Protos.TaskStatus>> statusUpdateListeners = new Vector<>();
+
     private AtomicBoolean registered = new AtomicBoolean(false);
+    private final SerializableState zookeeperStateDriver;
+    private final StatePath statePath;
     private SchedulerDriver driver;
 
     public FrameworkState(SerializableState zookeeperStateDriver) {

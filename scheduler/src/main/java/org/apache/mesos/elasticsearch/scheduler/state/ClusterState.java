@@ -141,7 +141,7 @@ public class ClusterState {
         return taskInfo;
     }
 
-    public void update(Protos.TaskStatus status) throws IllegalArgumentException {
+    public void update(Protos.TaskStatus status)  throws IllegalArgumentException {
         if (!exists(status.getTaskId())) {
             throw new IllegalArgumentException("Task does not exist in zk.");
         }
@@ -153,9 +153,8 @@ public class ClusterState {
     }
 
     /**
-     * Updates a task with the given status. Status is written to zookeeper. If the task is in error, then the
-     * healthchecks are stopped and state is removed from ZK
-     *
+     * Updates a task with the given status. Status is written to zookeeper.
+     * If the task is in error, then the healthchecks are stopped and state is removed from ZK
      * @param status A received task status
      */
     private void updateTask(Protos.TaskStatus status) {

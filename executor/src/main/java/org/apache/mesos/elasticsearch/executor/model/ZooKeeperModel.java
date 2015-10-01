@@ -7,8 +7,8 @@ import org.elasticsearch.common.settings.ImmutableSettings;
  * Model representing ZooKeeper information
  */
 public class ZooKeeperModel implements RunTimeSettings {
-    public static final String ZOOKEEPER_ADDRESS_KEY = "sonian.elasticsearch.zookeeper.client.host";
     private static final Logger LOGGER = Logger.getLogger(ZooKeeperModel.class);
+    public static final String ZOOKEEPER_ADDRESS_KEY = "sonian.elasticsearch.zookeeper.client.host";
     private final String address;
     private long timeout;
 

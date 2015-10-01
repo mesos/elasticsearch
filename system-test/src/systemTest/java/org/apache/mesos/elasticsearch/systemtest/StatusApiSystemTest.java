@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidAddress;
 import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidDateTime;
-import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 

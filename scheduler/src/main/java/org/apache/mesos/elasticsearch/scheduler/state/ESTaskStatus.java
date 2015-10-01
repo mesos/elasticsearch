@@ -14,16 +14,15 @@ import java.security.InvalidParameterException;
  * the respective TaskStatus packet.
  */
 public class ESTaskStatus {
+    private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);
     public static final String STATE_KEY = "state";
     public static final String DEFAULT_STATUS_NO_MESSAGE_SET = "Default status. No message set.";
-    private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);
     private final SerializableState state;
     private final FrameworkID frameworkID;
 
     private final TaskInfo taskInfo;
 
     private final StatePath statePath;
-
     public ESTaskStatus(SerializableState state, FrameworkID frameworkID, TaskInfo taskInfo, StatePath statePath) {
         if (state == null || taskInfo == null) {
             throw new InvalidParameterException("Cannot be null");
@@ -43,19 +42,6 @@ public class ESTaskStatus {
         }
     }
 
-    public static boolean errorState(TaskState state) {
-        return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED)
-                || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED);
-    }
-
-    public TaskStatus getStatus() throws IllegalStateException {
-        try {
-            return state.get(getKey());
-        } catch (IOException e) {
-            throw new IllegalStateException("Unable to get task status from zookeeper", e);
-        }
-    }
-
     public void setStatus(TaskStatus status) throws IllegalStateException {
         try {
             LOGGER.debug("Writing task status to zk: [" + status.getState() + "] " + status.getTaskId().getValue());
@@ -66,9 +52,17 @@ public class ESTaskStatus {
         }
     }
 
+    public TaskStatus getStatus() throws IllegalStateException {
+        try {
+            return state.get(getKey());
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to get task status from zookeeper", e);
+        }
+    }
+
     public TaskStatus getDefaultStatus() {
         return TaskStatus.newBuilder()
-                .setState(TaskState.TASK_STAGING)
+                    .setState(TaskState.TASK_STAGING)
                     .setTaskId(taskInfo.getTaskId())
                     .setExecutorId(taskInfo.getExecutor().getExecutorId())
                     .setMessage(DEFAULT_STATUS_NO_MESSAGE_SET)
@@ -97,6 +91,11 @@ public class ESTaskStatus {
     public boolean taskInError() {
         TaskState state = getStatus().getState();
         return ESTaskStatus.errorState(state);
+    }
+
+    public static boolean errorState(TaskState state) {
+        return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED)
+                || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED);
     }
 
     public void destroy() {

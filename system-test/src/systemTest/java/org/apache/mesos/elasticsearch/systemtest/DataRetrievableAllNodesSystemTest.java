@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.jayway.awaitility.Awaitility;
-import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -10,6 +9,7 @@ import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import com.mashape.unirest.http.Unirest;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -79,21 +79,13 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
         });
     }
 
-    public static DataPusherContainer getPusher() {
-        return pusher;
-    }
-
-    public static List<String> getSlavesElasticAddresses() {
-        return slavesElasticAddresses;
-    }
-
     @Test
     public void testDataConsistency() throws Exception {
         LOGGER.info("Addresses:");
         LOGGER.info(getSlavesElasticAddresses());
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
-            for (String httpAddress : DataRetrievableAllNodesSystemTest.getSlavesElasticAddresses()) {
+            for (String httpAddress: DataRetrievableAllNodesSystemTest.getSlavesElasticAddresses()) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
                 } catch (Exception e) {
@@ -107,6 +99,14 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
             }
             return true;
         });
+    }
+
+    public static DataPusherContainer getPusher() {
+        return pusher;
+    }
+
+    public static List<String> getSlavesElasticAddresses() {
+        return slavesElasticAddresses;
     }
 
 }

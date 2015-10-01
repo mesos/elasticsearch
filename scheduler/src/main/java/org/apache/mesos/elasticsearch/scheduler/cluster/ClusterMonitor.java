@@ -11,9 +11,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 
 import java.security.InvalidParameterException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +45,6 @@ public class ClusterMonitor {
 
     /**
      * Start monitoring a task
-     *
      * @param taskInfo The task to monitor
      */
     public void startMonitoringTask(Protos.TaskInfo taskInfo) {
@@ -78,9 +75,8 @@ public class ClusterMonitor {
     }
 
     /**
-     * Updates a task with the given status. Status is written to zookeeper. If the task is in error, then the
-     * healthchecks are stopped and state is removed from ZK
-     *
+     * Updates a task with the given status. Status is written to zookeeper.
+     * If the task is in error, then the healthchecks are stopped and state is removed from ZK
      * @param status A received task status
      */
     private void updateTask(Protos.TaskStatus status) {

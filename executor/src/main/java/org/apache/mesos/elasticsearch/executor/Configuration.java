@@ -15,8 +15,8 @@ import java.net.URISyntaxException;
  * Executor configuration
  */
 public class Configuration {
-    public static final String ELASTICSEARCH_YML = "elasticsearch.yml";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    public static final String ELASTICSEARCH_YML = "elasticsearch.yml";
     private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
 
     // **** ZOOKEEPER

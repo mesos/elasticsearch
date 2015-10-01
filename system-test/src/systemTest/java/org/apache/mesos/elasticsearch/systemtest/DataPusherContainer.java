@@ -4,8 +4,8 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import org.apache.mesos.mini.container.AbstractContainer;
 
-import java.io.InputStream;
 import java.security.SecureRandom;
+import java.io.InputStream;
 
 /**
  * Data Pusher container implementation

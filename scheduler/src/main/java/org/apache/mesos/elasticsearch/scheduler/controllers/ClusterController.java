@@ -62,34 +62,19 @@ public class ClusterController {
         }
     }
 
-    @RequestMapping(value = "/scheduler", method = RequestMethod.GET)
-    public ClusterSchedulerInfoResponse schedulerInfo() {
-        final ClusterSchedulerInfoResponse response = new ClusterSchedulerInfoResponse();
-        response.docker = dockerMap("image", "tag", "id");
-        return response;
-    }
-
-    @RequestMapping(value = "/executors", method = RequestMethod.GET)
-    public ClusterExecutorsInfoResponse executorsInfo() {
-        final ClusterExecutorsInfoResponse response = new ClusterExecutorsInfoResponse();
-        response.docker = dockerMap("image", "tag", "id");
-        return response;
-    }
-
-    private Map<String, String> dockerMap(String image, String tag, String id) {
-        final HashMap<String, String> map = new HashMap<>();
-        map.put("image", image);
-        map.put("tag", tag);
-        map.put("id", id);
-        return map;
-    }
-
     /**
      * HTTP response entity class
      */
     public static class ClusterInfoResponse {
         public String name;
         public Map<String, Object> configuration;
+    }
+
+    @RequestMapping(value = "/scheduler", method = RequestMethod.GET)
+    public ClusterSchedulerInfoResponse schedulerInfo() {
+        final ClusterSchedulerInfoResponse response = new ClusterSchedulerInfoResponse();
+        response.docker = dockerMap("image", "tag", "id");
+        return response;
     }
 
     /**
@@ -99,10 +84,25 @@ public class ClusterController {
         public Map<String, String> docker = new HashMap<>();
     }
 
+    @RequestMapping(value = "/executors", method = RequestMethod.GET)
+    public ClusterExecutorsInfoResponse executorsInfo() {
+        final ClusterExecutorsInfoResponse response = new ClusterExecutorsInfoResponse();
+        response.docker = dockerMap("image", "tag", "id");
+        return response;
+    }
+
     /**
      * HTTP response entity class
      */
     public static class ClusterExecutorsInfoResponse {
         public Map<String, String> docker;
+    }
+
+    private Map<String, String> dockerMap(String image, String tag, String id) {
+        final HashMap<String, String> map = new HashMap<>();
+        map.put("image", image);
+        map.put("tag", tag);
+        map.put("id", id);
+        return map;
     }
 }

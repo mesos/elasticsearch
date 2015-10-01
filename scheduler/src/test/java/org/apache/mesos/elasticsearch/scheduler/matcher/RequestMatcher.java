@@ -17,13 +17,6 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
     private double disk;
     private String frameworkRole;
 
-    public RequestMatcher(double cpus, double mem, double disk, String frameworkRole) {
-        this.cpus = cpus;
-        this.mem = mem;
-        this.disk = disk;
-        this.frameworkRole = frameworkRole;
-    }
-
     @SuppressWarnings("unchecked")
     @Override
     public boolean matches(Object o) {
@@ -62,5 +55,12 @@ public class RequestMatcher extends BaseMatcher<Collection<Protos.Request>> {
     @Override
     public void describeTo(Description description) {
         description.appendText(cpus + " cpu(s)");
+    }
+
+    public RequestMatcher(double cpus, double mem, double disk, String frameworkRole) {
+        this.cpus = cpus;
+        this.mem = mem;
+        this.disk = disk;
+        this.frameworkRole = frameworkRole;
     }
 }

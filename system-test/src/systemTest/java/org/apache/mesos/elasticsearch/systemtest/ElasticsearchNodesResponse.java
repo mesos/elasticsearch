@@ -21,7 +21,6 @@ public class ElasticsearchNodesResponse {
     private List<JSONObject> tasks;
 
     private int nodesCount;
-    private boolean discoverySuccessful = false;
 
     public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
         this.tasks = tasks;
@@ -29,9 +28,7 @@ public class ElasticsearchNodesResponse {
         await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
     }
 
-    public boolean isDiscoverySuccessful() {
-        return discoverySuccessful;
-    }
+    private boolean discoverySuccessful = false;
 
     class ElasticsearchNodesCall implements Callable<Boolean> {
 
@@ -46,7 +43,7 @@ public class ElasticsearchNodesResponse {
                         return false;
                     }
                 }
-            DiscoverySystemTest.LOGGER.info("All Elasticsearch endpoints succeeded");
+                DiscoverySystemTest.LOGGER.info("All Elasticsearch endpoints succeeded");
                 discoverySuccessful = true;
                 return true;
         }
@@ -90,5 +87,9 @@ public class ElasticsearchNodesResponse {
                 return false;
             }
         }
+    }
+
+    public boolean isDiscoverySuccessful() {
+        return discoverySuccessful;
     }
 }
