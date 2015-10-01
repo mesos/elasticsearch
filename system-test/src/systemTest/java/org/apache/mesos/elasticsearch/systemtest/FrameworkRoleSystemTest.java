@@ -24,7 +24,6 @@ public class FrameworkRoleSystemTest {
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .numberOfSlaves(NODE_COUNT)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .extraEnvironmentVariables(new TreeMap<String, String>(){{
                 this.put("MESOS_ROLES", "*,foobar");

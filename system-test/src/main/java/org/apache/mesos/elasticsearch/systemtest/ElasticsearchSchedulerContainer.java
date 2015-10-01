@@ -4,12 +4,15 @@ import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.Link;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 
 import java.security.SecureRandom;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 /**
@@ -51,12 +54,15 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected CreateContainerCmd dockerCommand() {
+        Link[] links = mesosCluster.getContainers().stream().map(container -> new Link(container.getContainerId(), container.getContainerId())).toArray(size -> new Link[mesosCluster.getContainers().size()]);
         CreateContainerCmd dockerCommand = dockerClient
                 .createContainerCmd(SCHEDULER_IMAGE)
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
+                .withLinks(links)
+                .withExposedPorts(new ExposedPort(31100))
                 .withCmd(
-                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
+                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperFrameworkUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
@@ -86,16 +92,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         this.dataDirectory = dataDirectory;
     }
 
-    public String getZookeeperMesosUrl() {
-        return "zk://" + zookeeperIp + ":2181/mesos";
-    }
-
     public String getZookeeperFrameworkUrl() {
-      if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
-        return getZookeeperMesosUrl();
-      } else {
         return zookeeperFrameworkUrl;
-      }
     }
 
     public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
