@@ -127,10 +127,8 @@ public class TaskInfoFactory {
             }
             String httpPath =  address + "/get/" + SimpleFileServer.ES_EXECUTOR_JAR;
             LOGGER.debug("Using file server: " + httpPath);
-            args.add(0, "-jar");
-            args.add(1, "./" + SimpleFileServer.ES_EXECUTOR_JAR);
             commandInfoBuilder
-                    .setValue("java")
+                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + SimpleFileServer.ES_EXECUTOR_JAR)
                     .addAllArguments(args)
                     .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
         }
