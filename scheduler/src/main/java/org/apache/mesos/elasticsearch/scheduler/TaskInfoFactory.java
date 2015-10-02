@@ -84,17 +84,20 @@ public class TaskInfoFactory {
     }
 
     private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
-        return Protos.ExecutorInfo.newBuilder()
+        Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
-                .setCommand(newCommandInfo(configuration))
-                .setContainer(Protos.ContainerInfo.newBuilder()
-                        .setType(Protos.ContainerInfo.Type.DOCKER)
-                        .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
-                        .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                        .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
-                        .build());
+                .setCommand(newCommandInfo(configuration));
+        if (configuration.frameworkUseDocker()) {
+            executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
+                    .setType(Protos.ContainerInfo.Type.DOCKER)
+                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                    .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
+                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
+                    .build());
+        }
+        return executorInfoBuilder;
     }
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
@@ -108,11 +111,31 @@ public class TaskInfoFactory {
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
         args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
-        return Protos.CommandInfo.newBuilder()
-                .setShell(false)
-                .addAllArguments(args)
-                .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()))
-                .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getExecutorImage()).build());
+
+        Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder()
+                .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()));
+
+        if (configuration.frameworkUseDocker()) {
+            commandInfoBuilder
+                    .setShell(false)
+                    .addAllArguments(args)
+                    .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getExecutorImage()).build());
+        } else {
+            String address = configuration.getFrameworkFileServerAddress();
+            if (address == null) {
+                throw new NullPointerException("Webserver address is null");
+            }
+            String httpPath =  address + "/get/" + SimpleFileServer.ES_EXECUTOR_JAR;
+            LOGGER.debug("Using file server: " + httpPath);
+            args.add(0, "-jar");
+            args.add(1, "./" + SimpleFileServer.ES_EXECUTOR_JAR);
+            commandInfoBuilder
+                    .setValue("java")
+                    .addAllArguments(args)
+                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
+        }
+
+        return commandInfoBuilder;
     }
 
     private void addIfNotEmpty(List<String> args, String key, String value) {

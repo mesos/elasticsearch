@@ -13,6 +13,8 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatte
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 
+import java.net.InetSocketAddress;
+
 /**
  * Holder object for framework configuration.
  */
@@ -40,6 +42,8 @@ public class Configuration {
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
+    public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
+    public static final String JAVA_HOME = "--javaHome";
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
@@ -77,6 +81,11 @@ public class Configuration {
     private String frameworkPrincipal = "";
     @Parameter(names = {FRAMEWORK_SECRET_PATH}, description = "The path to the file which contains the secret for the principal (password). Password in file must not have a newline.")
     private String frameworkSecretPath = "";
+    @Parameter(names = {FRAMEWORK_USE_DOCKER}, arity = 1, description = "The framework will use docker if true, or jar files if false. If false, the user must ensure that the scheduler jar is on all slaves.")
+    private Boolean frameworkUseDocker = true;
+    private InetSocketAddress frameworkFileServerAddress;
+    @Parameter(names = {JAVA_HOME}, description = "When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
+    private String javaHome = "";
     // ****************** Runtime configuration **********************
 
     public Configuration(String... args) {
@@ -208,6 +217,26 @@ public class Configuration {
 
     public String getFrameworkPrincipal() {
         return frameworkPrincipal;
+    }
+
+    public Boolean frameworkUseDocker() {
+        return frameworkUseDocker;
+    }
+
+    public String getFrameworkFileServerAddress() {
+        return "http://" + frameworkFileServerAddress.getHostName() + ":" + frameworkFileServerAddress.getPort();
+    }
+
+    public void setFrameworkFileServerAddress(InetSocketAddress addr) {
+        if (addr != null) {
+            frameworkFileServerAddress = addr;
+        } else {
+            LOGGER.error("Could not set webserver address. Was null.");
+        }
+    }
+
+    public String getJavaHome() {
+        return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
     }
 
     /**
