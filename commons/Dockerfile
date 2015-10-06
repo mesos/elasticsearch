@@ -1,31 +1,13 @@
-FROM mesosphere/mesos:0.22.1-1.0.ubuntu1404
+FROM ubuntu:14.04
 
-RUN apt-get update && apt-get install -y software-properties-common
-
-RUN echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
-  add-apt-repository -y ppa:webupd8team/java && \
+RUN echo "deb http://ppa.launchpad.net/openjdk-r/ppa/ubuntu trusty main" > /etc/apt/sources.list.d/openjdk.list && \
+  apt-key adv --keyserver keyserver.ubuntu.com --recv 86F44E2A && \
   apt-get update && \
-  apt-get install -y oracle-java8-installer && \
-  rm -rf /var/lib/apt/lists/* && \
-  rm -rf /var/cache/oracle-jdk8-installer && \
-  rm -rf \
-    /usr/lib/jvm/java-8-oracle/*src.zip \
-    /usr/lib/jvm/java-8-oracle/lib/missioncontrol \
-    /usr/lib/jvm/java-8-oracle/lib/visualvm \
-    /usr/lib/jvm/java-8-oracle/lib/*javafx* \
-    /usr/lib/jvm/java-8-oracle/jre/lib/plugin.jar \
-    /usr/lib/jvm/java-8-oracle/jre/lib/ext/jfxrt.jar \
-    /usr/lib/jvm/java-8-oracle/jre/bin/javaws \
-    /usr/lib/jvm/java-8-oracle/jre/lib/javaws.jar \
-    /usr/lib/jvm/java-8-oracle/jre/lib/desktop \
-    /usr/lib/jvm/java-8-oracle/jre/plugin \
-    /usr/lib/jvm/java-8-oracle/jre/lib/deploy* \
-    /usr/lib/jvm/java-8-oracle/jre/lib/*javafx* \
-    /usr/lib/jvm/java-8-oracle/jre/lib/*jfx* \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libdecora_sse.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libprism_*.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libfxplugins.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libglass.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libgstreamer-lite.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libjavafx*.so \
-    /usr/lib/jvm/java-8-oracle/jre/lib/amd64/libjfx*.so
+  apt-get -y install openjdk-8-jre-headless && \
+  rm -rf /var/lib/apt/lists/*
+
+RUN echo "deb http://repos.mesosphere.io/ubuntu/ trusty main" > /etc/apt/sources.list.d/mesosphere.list && \
+  apt-key adv --keyserver keyserver.ubuntu.com --recv E56151BF && \
+  apt-get -y update && \
+  apt-get -y install mesos=0.22.1-1.0.ubuntu1404 && \
+  rm -rf /var/lib/apt/lists/*
