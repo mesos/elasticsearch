@@ -1,5 +1,14 @@
 apply plugin: 'java'
 
+ext {
+    imageName = imagePrefix + '/elasticsearch-base'
+}
+
+task taskCopyFilesForDocker(type: Copy) {
+//    Nothing to copy, but required by docker build
+}
+
+
 dependencies {
     compile "com.beust:jcommander:1.48"
 }
