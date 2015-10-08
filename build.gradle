@@ -3,7 +3,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 
 ext {
-    mesosVer = "0.22.1"
+    mesosVer = "0.24.1"
     elasticsearchVersion="1.7.1"
     imagePrefix = 'mesos'
     springBootVersion = "1.2.5.RELEASE"
