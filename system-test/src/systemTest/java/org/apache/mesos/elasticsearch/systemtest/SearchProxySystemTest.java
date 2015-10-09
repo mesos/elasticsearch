@@ -76,7 +76,7 @@ public class SearchProxySystemTest extends TestBase {
         AtomicInteger evaluatedHosts = new AtomicInteger(0);
         tasks.stream().forEach(task -> {
             try {
-                final HttpResponse<JsonNode> response = Unirest.get(searchEndpoint).queryString("q", "love").header("X-ElasticSearch-TaskId", task.getString("id")).asJson();
+                final HttpResponse<JsonNode> response = Unirest.get(searchEndpoint).queryString("q", "love").queryString("node", task.getString("id")).asJson();
                 assertEquals(200, response.getStatus());
                 assertFalse(response.getBody().getObject().getBoolean("timed_out"));
                 assertEquals(10, response.getBody().getObject().getJSONObject("hits").getJSONArray("hits").length());

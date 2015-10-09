@@ -7,7 +7,9 @@
                     <input type="text" class="form-control query-string-input" ng-model="query.string" placeholder="Enter your query...">
                 </div>
                 <div class="form-group">
-                    <select class="form-control" ng-model="query.node" ng-options="node for node in nodes"></select>
+                    <select class="form-control" ng-model="query.node" ng-options="task.id as task.id for task in tasks">
+                        <option value="">Any</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-primary">Search</button>
                 <button type="button" class="btn btn-default" ng-click="resetQuery()">Reset</button>
