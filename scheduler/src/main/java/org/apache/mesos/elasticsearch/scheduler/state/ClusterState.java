@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.apache.mesos.Protos.TaskID;
 
@@ -46,9 +47,11 @@ public class ClusterState {
      * @return
      */
     public Map<String, Task> getGuiTaskList() {
-        Map<String, Task> tasks = new HashMap<>();
-        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
-        return tasks;
+        return getTaskList().stream().collect(Collectors.toMap(
+                        taskInfo -> taskInfo.getTaskId().getValue(),
+                        taskInfo -> Task.from(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())
+                )
+        );
     }
 
     /**

@@ -2,6 +2,8 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -50,7 +52,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         return dockerClient
                 .createContainerCmd(SCHEDULER_IMAGE)
                 .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
-                .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
+                .withExposedPorts(ExposedPort.tcp(5005)).withPortBindings(PortBinding.parse("5005:5005"))
+                .withEnv("JAVA_OPTS=-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=5005 -Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),

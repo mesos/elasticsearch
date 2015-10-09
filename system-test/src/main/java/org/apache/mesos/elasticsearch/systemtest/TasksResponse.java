@@ -30,7 +30,7 @@ public class TasksResponse {
     public TasksResponse(String schedulerIpAddress, int nodesCount) {
         this.schedulerIpAddress = schedulerIpAddress;
         this.nodesCount = nodesCount;
-        await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
+        await().atMost(60, TimeUnit.SECONDS).pollDelay(1, TimeUnit.SECONDS).until(new TasksCall());
     }
 
     public TasksResponse(String schedulerIpAddress, int nodesCount, String nodesState) {

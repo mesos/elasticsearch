@@ -7,13 +7,13 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.mesos.mini.container.AbstractContainer;
+import org.json.JSONObject;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestWatcher;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -28,20 +28,18 @@ public class SearchProxySystemTest extends TestBase {
 
     private static String searchEndpoint;
     private static List<String> slavesElasticAddresses;
-
-    @Rule
-    public TestWatcher pusherWatch = new TestWatcher() { };
+    private static List<JSONObject> tasks;
 
     @BeforeClass
     public static void importData() throws Exception {
-        slavesElasticAddresses = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks().stream().map(jsonObject -> jsonObject.getString("http_address")).collect(toList());
+        tasks = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
+        slavesElasticAddresses = tasks.stream().map(task -> task.getString("http_address")).collect(toList());
 
         dataImporter = new AbstractContainer(CLUSTER.getConfig().dockerClient) {
-            private String imageName;
+            private String imageName = "mwldk/shakespeare-import";
 
             @Override
             protected void pullImage() {
-                imageName = "mwldk/shakespeare-import";
                 pullImage(imageName, "latest");
             }
 
@@ -75,9 +73,18 @@ public class SearchProxySystemTest extends TestBase {
 
     @Test
     public void canRetrieveSearchResultFromParticularNode() throws Exception {
-        final HttpResponse<JsonNode> response = Unirest.get(searchEndpoint).queryString("q", "love").header("X-ElasticSearch-Host", slavesElasticAddresses.get(1)).asJson();
-        assertEquals(200, response.getStatus());
-        assertFalse(response.getBody().getObject().getBoolean("timed_out"));
-        assertEquals(10, response.getBody().getObject().getJSONObject("hits").getJSONArray("hits").length());
+        AtomicInteger evaluatedHosts = new AtomicInteger(0);
+        tasks.stream().forEach(task -> {
+            try {
+                final HttpResponse<JsonNode> response = Unirest.get(searchEndpoint).queryString("q", "love").header("X-ElasticSearch-TaskId", task.getString("id")).asJson();
+                assertEquals(200, response.getStatus());
+                assertFalse(response.getBody().getObject().getBoolean("timed_out"));
+                assertEquals(10, response.getBody().getObject().getJSONObject("hits").getJSONArray("hits").length());
+                evaluatedHosts.getAndIncrement();
+            } catch (UnirestException e) {
+                throw new RuntimeException("Failed to contact search proxy: " + task, e);
+            }
+        });
+        assertEquals(tasks.size(), evaluatedHosts.get());
     }
 }
