@@ -47,7 +47,7 @@ public abstract class TestBase {
         }
     };
 
-    protected String getLogs(String containerId) {
+    protected static String getLogs(String containerId) {
         InputStream stream = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().exec();
         try {
             StringWriter output = new StringWriter();

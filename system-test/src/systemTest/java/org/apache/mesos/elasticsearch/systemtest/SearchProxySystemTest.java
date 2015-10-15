@@ -6,6 +6,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.log4j.Logger;
 import org.apache.mesos.mini.container.AbstractContainer;
 import org.json.JSONObject;
 import org.junit.BeforeClass;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertFalse;
  * Test Search Proxy controller
  */
 public class SearchProxySystemTest extends TestBase {
+    private static final Logger LOGGER = Logger.getLogger(SearchProxySystemTest.class);
 
     private static AbstractContainer dataImporter;
 
@@ -59,6 +61,7 @@ public class SearchProxySystemTest extends TestBase {
         });
         final String importerId = CLUSTER.addAndStartContainer(dataImporter);
         Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(1, TimeUnit.SECONDS).until(() -> !CLUSTER.getConfig().dockerClient.inspectContainerCmd(importerId).exec().getState().isRunning());
+        LOGGER.info("Importer logs: " + getLogs(importerId));
 
         searchEndpoint = "http://" + getScheduler().getIpAddress() + ":31100/v1/es/_search";
     }
