@@ -6,6 +6,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.container.AbstractContainer;
 import org.json.JSONObject;
@@ -36,6 +37,8 @@ public class SearchProxySystemTest extends TestBase {
     public static void importData() throws Exception {
         tasks = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
         slavesElasticAddresses = tasks.stream().map(task -> task.getString("http_address")).collect(toList());
+
+        LOGGER.info("Using ES cluster: " + StringUtils.join(slavesElasticAddresses, ", "));
 
         dataImporter = new AbstractContainer(CLUSTER.getConfig().dockerClient) {
             private String imageName = "mwldk/shakespeare-import";
