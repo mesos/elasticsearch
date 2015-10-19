@@ -84,7 +84,7 @@ public class Configuration {
     @Parameter(names = {FRAMEWORK_USE_DOCKER}, arity = 1, description = "The framework will use docker if true, or jar files if false. If false, the user must ensure that the scheduler jar is on all slaves.")
     private Boolean frameworkUseDocker = true;
     private InetSocketAddress frameworkFileServerAddress;
-    @Parameter(names = {JAVA_HOME}, description = "When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {JAVA_HOME}, description = "(Only when frameworkUseDocker is false) When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
     private String javaHome = "";
     // ****************** Runtime configuration **********************
 
