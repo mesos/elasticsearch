@@ -1,5 +1,7 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
@@ -8,6 +10,10 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
 
 /**
  * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
@@ -32,10 +38,26 @@ public abstract class TestBase {
     public TestWatcher watchman = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
+            LOGGER.error("Scheduler logs: " + getLogs(scheduler.getContainerId()) + "\n ##########");
+            CLUSTER.getContainers().forEach(container -> {
+                LOGGER.warn(container.getContainerId() + " logs: " + getLogs(container.getContainerId()) + "\n ##########");
+            });
             CLUSTER.stop();
             scheduler.remove();
         }
     };
+
+    protected static String getLogs(String containerId) {
+        InputStream stream = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().exec();
+        try {
+            StringWriter output = new StringWriter();
+            IOUtils.copy(stream, output);
+            return StringUtils.replace(output.toString(), System.lineSeparator(), System.lineSeparator() + "[" + containerId + "]: ");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "";
+        }
+    }
 
     @BeforeClass
     public static void startScheduler() throws Exception {

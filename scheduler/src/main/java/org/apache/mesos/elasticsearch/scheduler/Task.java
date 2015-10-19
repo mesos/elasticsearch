@@ -68,12 +68,7 @@ public class Task {
         String hostName = data.getProperty("hostname", "UNKNOWN");
         String ipAddress = data.getProperty("ipAddress", hostName);
         ZonedDateTime startedAt = ZonedDateTime.parse(data.getProperty("startedAt", ZonedDateTime.now().toString()));
-        Protos.TaskState taskState = null;
-        if (taskStatus == null) {
-            taskState = Protos.TaskState.TASK_STAGING;
-        } else {
-            taskState = taskStatus.getState();
-        }
+        final Protos.TaskState taskState = taskStatus == null ? Protos.TaskState.TASK_STAGING : taskStatus.getState();
         return new Task(
                 hostName,
                 taskInfo.getTaskId().getValue(),

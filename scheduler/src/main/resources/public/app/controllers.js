@@ -255,26 +255,24 @@ controllers.controller('QueryBrowserController', function ($scope, $http, $locat
         results: null,
     };
 
-    $scope.$parent.$watch('nodes', function(value) {
-        if (value.length && $scope.query.node == '') {
-            $scope.query.node = value[0];
-        }
-    });
-
     $scope.querySubmit = function() {
-        if ($scope.query.node && $scope.query.string) {
-            $http.defaults.headers.common['X-ElasticSearch-Host'] = $scope.query.node;
-            var success = function(data) {
-                $scope.query.results = data.hits;
-            }
-            var error = function(data) {
-                if (data.hasOwnProperty('error')) {
-                    $scope.query.error = data.error;
-                } else {
-                    $scope.query.error = "Unknown error"
+        if ($scope.query.string) {
+            Search.get(
+                {
+                    q: $scope.query.string,
+                    node: $scope.query.node
+                },
+                function(data) {
+                    $scope.query.results = data.hits;
+                },
+                function(data) {
+                    if (data.hasOwnProperty('error')) {
+                        $scope.query.error = data.error;
+                    } else {
+                        $scope.query.error = "Unknown error"
+                    }
                 }
-            }
-            Search.get({q: $scope.query.string}, success, error);
+            );
         }
     };
 
