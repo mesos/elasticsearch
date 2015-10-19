@@ -27,7 +27,8 @@ public class ClusterControllerTest {
     @Test
     public void shouldNotHaveErrorInText() {
         clusterController.clusterInfo().configuration.values().forEach(v -> {
-            assertFalse(v.toString().contains("ERROR"));});
+            assertFalse(v.toString().contains("ERROR"));
+        });
     }
 
 
