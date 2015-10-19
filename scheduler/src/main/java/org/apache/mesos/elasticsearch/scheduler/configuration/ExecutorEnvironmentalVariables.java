@@ -36,7 +36,9 @@ public class ExecutorEnvironmentalVariables {
      * @param configuration
      */
     private void populateEnvMap(Configuration configuration) {
-        addToList(native_mesos_library_key, native_mesos_library_path);
+        if (configuration.frameworkUseDocker()) {
+            addToList(native_mesos_library_key, native_mesos_library_path);
+        }
         addToList(JAVA_OPTS, getHeapSpaceString(configuration));
     }
 
