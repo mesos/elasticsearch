@@ -194,6 +194,14 @@ Usage: (Options preceded by an asterisk are required) [options]
        The path to the file which contains the secret for the principal
        (password). Password in file must not have a newline.
        Default: <empty string>
+    --frameworkUseDocker
+       The framework will use docker if true, or jar files if false. If false,
+       the user must ensure that the scheduler jar is on all slaves.
+       Default: true
+    --javaHome
+       (Only when frameworkUseDocker is false) When starting in jar mode, if java
+       is not on the path, you can specify the path here.
+       Default: <empty string>
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
@@ -229,6 +237,28 @@ To use framework Auth, and if you are using docker, you must mount a docker volu
 ...
 ```
 Please note that the framework password file must only contain the password (no username) and must not have a newline at the end of the file. (Marathon bugs)
+
+### Using JAR files instead of docker images
+It is strongly recommended that you use the containerized version of Mesos Elasticsearch. This ensures that all dependencies are met. Limited support is available for the jar version, since many issues are due to OS configuration. However, if you can't or don't want to use containers, use the raw JAR files in the following way:
+0. Requirements: Java 8, Apache Mesos.
+1. Read through the developer documentation and build the jars.
+2. Copy the `./scheduler/build/libs/elasticsearch-mesos-scheduler-$VERSION.jar to all slaves in cluster. (The executor jar is inside and hosted by the scheduler jar)
+3. Set the CLI parameter frameworkUseDocker to false. Set the javaHome CLI parameter if necessary.
+4. Run the jar file manually, or use marathon. Normal command line parameters apply. For example:
+```
+{
+  "id": "elasticsearch-jar",
+  "cpus": 0.5,
+  "mem": 512,
+  "instances": 1,
+  "cmd": "/opt/mesosphere/bin/java -jar /home/core/elasticsearch-mesos-scheduler-0.4.3.jar --javaHome /opt/mesosphere/bin/java --frameworkName esjar --frameworkUseDocker false --zookeeperMesosUrl zk://1.2.3.4:2181",
+  "env": {
+    "JAVA_OPTS": "-Xms128m -Xmx256m"
+  },
+  "ports": [31100],
+  "requirePorts": true
+}
+```
 
 ### User Interface
 

@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.joda.time.DateTime;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.ZonedDateTime;
@@ -10,7 +11,7 @@ import java.util.Date;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -21,6 +22,23 @@ public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
     private FrameworkState frameworkState = mock(FrameworkState.class);
+    private Configuration configuration = mock(Configuration.class);
+
+    @Before
+    public void before() {
+        Protos.FrameworkID frameworkId = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkId);
+        when(configuration.getTaskName()).thenReturn("esdemo");
+        when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
+        when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
+        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var");
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
+        when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
+        when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
+        when(configuration.frameworkUseDocker()).thenReturn(true);
+    }
 
     @Test
     public void testCreateTaskInfo() {
@@ -33,32 +51,8 @@ public class TaskInfoFactoryTest {
         when(clock.now()).thenReturn(now);
         when(clock.zonedNow()).thenReturn(ZonedDateTime.now());
 
-        Protos.FrameworkID frameworkId = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
 
-        when(frameworkState.getFrameworkID()).thenReturn(frameworkId);
-        Configuration configuration = mock(Configuration.class);
-        when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
-        when(configuration.getFrameworkZKURL()).thenReturn("zk://zookeeper:2181/mesos");
-        when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
-        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var");
-        when(configuration.getElasticsearchNodes()).thenReturn(3);
-        when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
-        when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
-        when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
-
-        Protos.Offer offer = Protos.Offer.newBuilder()
-                                            .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
-                                            .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()))
-                                            .setFrameworkId(frameworkId)
-                                            .setHostname("localhost")
-                                            .addAllResources(asList(
-                                                    Resources.singlePortRange(9200, "some-framework-role"),
-                                                    Resources.singlePortRange(9300, "some-framework-role"),
-                                                    Resources.cpus(1.0, "some-framework-role"),
-                                                    Resources.disk(2.0, "some-framework-role"),
-                                                    Resources.mem(3.0, "some-framework-role")))
-                                        .build();
+        Protos.Offer offer = getOffer(frameworkState.getFrameworkID());
 
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, offer);
 
@@ -88,7 +82,7 @@ public class TaskInfoFactoryTest {
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
-        assertEquals(frameworkId, taskInfo.getExecutor().getFrameworkId());
+        assertEquals(frameworkState.getFrameworkID(), taskInfo.getExecutor().getFrameworkId());
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
 
         assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
@@ -98,5 +92,33 @@ public class TaskInfoFactoryTest {
         assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_CONTAINER, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
         assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
+    }
+
+    private Protos.Offer getOffer(Protos.FrameworkID frameworkId) {
+        return Protos.Offer.newBuilder()
+                                                .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
+                                                .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()))
+                                                .setFrameworkId(frameworkId)
+                                                .setHostname("localhost")
+                                                .addAllResources(asList(
+                                                        Resources.singlePortRange(9200, "some-framework-role"),
+                                                        Resources.singlePortRange(9300, "some-framework-role"),
+                                                        Resources.cpus(1.0, "some-framework-role"),
+                                                        Resources.disk(2.0, "some-framework-role"),
+                                                        Resources.mem(3.0, "some-framework-role")))
+                                            .build();
+    }
+
+    @Test
+    public void shouldAddJarInfoAndRemoveContainerInfo() {
+        when(configuration.frameworkUseDocker()).thenReturn(false);
+        String address = "http://localhost:1234";
+        when(configuration.getFrameworkFileServerAddress()).thenReturn(address);
+        TaskInfoFactory factory = new TaskInfoFactory();
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()));
+        assertFalse(taskInfo.getContainer().isInitialized());
+        assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
+        assertEquals(1, taskInfo.getExecutor().getCommand().getUrisCount());
+        assertTrue(taskInfo.getExecutor().getCommand().getUris(0).getValue().contains(address));
     }
 }
