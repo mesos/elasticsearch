@@ -2,9 +2,22 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.0] - [19 October 2015]
+
+### Enhanced
+- [Implement Mesos Authorisation](https://github.com/mesos/elasticsearch/issues/218)
+- [Allow users to run without docker](https://github.com/mesos/elasticsearch/issues/334)
+- [Shrink docker images](https://github.com/mesos/elasticsearch/issues/348)
+- [Replace JVM with OpenJDK runtime](https://github.com/mesos/elasticsearch/issues/347)
+
+### Fixed
+- [Fix readthedocs documentation links to github bug documentation](https://github.com/mesos/elasticsearch/issues/341)
+- [Refactor scheduler to further testing refactoring](https://github.com/mesos/elasticsearch/issues/327)
+- [Scheduler Search API endpoint returns "java.util.NoSuchElementException" API bug](https://github.com/mesos/elasticsearch/issues/311)
+
 ## [0.4.3] - [28 September 2015]
 
-## Enhanced
+### Enhanced
 - [Include seed data in system-test:main](https://github.com/mesos/elasticsearch/issues/312)
 - [Documentation migration](https://github.com/mesos/elasticsearch/pull/337)
 
