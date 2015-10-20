@@ -42,8 +42,8 @@
 
 [0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
 
-- [Add auth to mini mesos enhancement](#304)
-- [Support Mesos Framework Authorisation blocked dcos enhancement](#218)
+- [Add auth to mini mesos enhancement](https://github.com/mesos/elasticsearch/issues/304)
+- [Support Mesos Framework Authorisation blocked dcos enhancement](https://github.com/mesos/elasticsearch/issues/218)
 
 [0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
 
@@ -51,9 +51,9 @@
 
 [0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
 
-- [Mesos persistent volumes enhancement](#306)
-- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](#228)
-- [Faster task recovery with Mesos dynamic reservations blocked](#98)
+- [Mesos persistent volumes enhancement](https://github.com/mesos/elasticsearch/issues/306)
+- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](https://github.com/mesos/elasticsearch/issues/228)
+- [Faster task recovery with Mesos dynamic reservations blocked](https://github.com/mesos/elasticsearch/issues/98)
 
 [Future]
 
@@ -67,10 +67,9 @@
 
 Rough timescales:
 
-- [0.4.2] 24/09/15
-- [0.5.0] 25/09/15
-- [0.5.1] 02/10/15
-- [0.6.0] 09/10/15
+- [0.5.0] 02/10/15
+- [0.5.1] Early-October
+- [0.6.0] Mid-October
 
 ### Blocked features
 
@@ -184,10 +183,25 @@ Usage: (Options preceded by an asterisk are required) [options]
     --frameworkName
        The name given to the framework.
        Default: elasticsearch
+    --frameworkPrincipal
+       The principal to use when registering the framework (username).
+       Default: <empty string>
     --frameworkRole
        Used to group frameworks for allocation decisions, depending on the
        allocation policy being used.
        Default: *
+    --frameworkSecretPath
+       The path to the file which contains the secret for the principal
+       (password). Password in file must not have a newline.
+       Default: <empty string>
+    --frameworkUseDocker
+       The framework will use docker if true, or jar files if false. If false,
+       the user must ensure that the scheduler jar is on all slaves.
+       Default: true
+    --javaHome
+       (Only when frameworkUseDocker is false) When starting in jar mode, if java
+       is not on the path, you can specify the path here.
+       Default: <empty string>
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
@@ -203,6 +217,47 @@ Usage: (Options preceded by an asterisk are required) [options]
   * --zookeeperMesosUrl
        Zookeeper urls for Mesos in the format zk://IP:PORT,IP:PORT,...)
        Default: zk://mesos.master:2181
+```
+### Framework Authorization
+To use framework Auth, and if you are using docker, you must mount a docker volume that contains your secret file. You can achieve this by passing volume options to marathon. For example, if you wanted to use the file located at `/etc/mesos/frameworkpasswd`, then could use the following:
+```
+...
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler",
+      "network": "HOST"
+    },
+    "volumes": [
+      {
+        "containerPath": "/etc/mesos/frameworkpasswd",
+        "hostPath": "/etc/mesos/frameworkpasswd",
+        "mode": "RO"
+      }
+    ]
+  },
+...
+```
+Please note that the framework password file must only contain the password (no username) and must not have a newline at the end of the file. (Marathon bugs)
+
+### Using JAR files instead of docker images
+It is strongly recommended that you use the containerized version of Mesos Elasticsearch. This ensures that all dependencies are met. Limited support is available for the jar version, since many issues are due to OS configuration. However, if you can't or don't want to use containers, use the raw JAR files in the following way:
+0. Requirements: Java 8, Apache Mesos.
+1. Read through the developer documentation and build the jars.
+2. Copy the `./scheduler/build/libs/elasticsearch-mesos-scheduler-$VERSION.jar to all slaves in cluster. (The executor jar is inside and hosted by the scheduler jar)
+3. Set the CLI parameter frameworkUseDocker to false. Set the javaHome CLI parameter if necessary.
+4. Run the jar file manually, or use marathon. Normal command line parameters apply. For example:
+```
+{
+  "id": "elasticsearch-jar",
+  "cpus": 0.5,
+  "mem": 512,
+  "instances": 1,
+  "cmd": "/opt/mesosphere/bin/java -jar /home/core/elasticsearch-mesos-scheduler-0.4.3.jar --javaHome /opt/mesosphere/bin/java --frameworkName esjar --frameworkUseDocker false --zookeeperMesosUrl zk://1.2.3.4:2181",
+  "env": {
+    "JAVA_OPTS": "-Xms128m -Xmx256m"
+  },
+  "ports": [31100],
+  "requirePorts": true
+}
 ```
 
 ### User Interface

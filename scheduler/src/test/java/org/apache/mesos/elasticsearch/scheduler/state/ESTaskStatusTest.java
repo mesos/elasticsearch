@@ -36,7 +36,7 @@ public class ESTaskStatusTest {
     @Test
     public void shouldCheckIfStatusIsValid() throws IOException {
         Mockito.reset(state);
-        when(state.get(anyString())).thenThrow(IllegalStateException.class).thenReturn(taskStatus);
+        when(state.get(anyString())).thenThrow(new IllegalStateException("Test")).thenReturn(taskStatus);
         status = new ESTaskStatus(state, frameworkID, taskInfo, new StatePath(state));
         verify(state, atLeastOnce()).set(anyString(), any());
     }

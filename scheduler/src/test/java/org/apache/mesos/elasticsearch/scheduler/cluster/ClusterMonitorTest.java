@@ -5,20 +5,22 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
 import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Answers;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+import org.mockito.*;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -36,6 +38,14 @@ public class ClusterMonitorTest {
     private ClusterState clusterState;
     @Mock
     private StatePath statePath;
+    @Mock
+    private FrameworkState frameworkState;
+    @Mock
+    private SerializableState serializableState;
+
+    @Captor
+    ArgumentCaptor<Consumer<Protos.TaskStatus>> onStatusUpdateCapture;
+    private Consumer<Protos.TaskStatus> onStatusUpdateConsumer;
 
     public static final String FRAMEWORK_ID = "frameworkId";
     public static final String EXECUTOR_ID = "executorId";
@@ -46,13 +56,19 @@ public class ClusterMonitorTest {
     @Before
     public void before() throws IOException {
         MockitoAnnotations.initMocks(this);
-        when(configuration.getFrameworkId()).thenReturn(frameworkId());
-        when(configuration.getState().get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
+
+        when(frameworkState.getFrameworkID()).thenReturn(frameworkId());
+        when(frameworkState.getDriver()).thenReturn(schedulerDriver);
         when(configuration.getExecutorHealthDelay()).thenReturn(10L);
         when(configuration.getExecutorTimeout()).thenReturn(20L);
+
+        when(serializableState.get(anyString())).thenReturn(taskStatus(Protos.TaskState.TASK_RUNNING));
         when(clusterState.getTask(taskInfo().getTaskId())).thenReturn(taskInfo());
 
-        clusterMonitor = new ClusterMonitor(configuration, scheduler, schedulerDriver, statePath);
+        clusterMonitor = new ClusterMonitor(configuration, frameworkState, serializableState, scheduler);
+
+        verify(frameworkState).onStatusUpdate(onStatusUpdateCapture.capture());
+        onStatusUpdateConsumer = onStatusUpdateCapture.getValue();
     }
 
     @After
@@ -72,16 +88,18 @@ public class ClusterMonitorTest {
         Protos.TaskInfo taskInfo = taskInfo();
         clusterMonitor.startMonitoringTask(taskInfo);
         assertEquals(1, clusterMonitor.getHealthChecks().size());
+
         when(clusterState.exists(eq(taskInfo.getTaskId()))).thenReturn(true);
         when(clusterState.taskInError(any())).thenReturn(true);
-        clusterMonitor.update(null, taskStatus(Protos.TaskState.TASK_FAILED));
+
+        onStatusUpdateConsumer.accept(taskStatus(Protos.TaskState.TASK_FAILED));
         assertEquals(0, clusterMonitor.getHealthChecks().size());
     }
 
     @Test
     public void shouldCatchIfTryingToRemoveTaskThatIsntMonitored() {
-        when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(IllegalArgumentException.class);
-        clusterMonitor.update(null, taskStatus(Protos.TaskState.TASK_FAILED));
+        when(clusterState.getTask(taskInfo().getTaskId())).thenThrow(new IllegalArgumentException("Test"));
+        onStatusUpdateConsumer.accept(taskStatus(Protos.TaskState.TASK_FAILED));
     }
 
     private Protos.TaskInfo taskInfo() {

@@ -1,8 +1,15 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
+import java.net.UnknownHostException;
 import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Application which starts the Elasticsearch scheduler
@@ -25,7 +32,33 @@ public class Main {
 
         configuration = new Configuration(args);
 
-        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(configuration, new TaskInfoFactory());
+        if (!configuration.frameworkUseDocker()) {
+            try {
+                final SimpleFileServer simpleFileServer = new SimpleFileServer();
+                simpleFileServer.run();
+                configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
+            } catch (UnknownHostException e) {
+                throw new IllegalStateException("Unable to start file server. See stack trace.", e);
+            }
+        }
+
+        final SerializableZookeeperState zookeeperStateDriver = new SerializableZookeeperState(new ZooKeeperState(
+                configuration.getMesosStateZKURL(),
+                configuration.getZookeeperCLI().getZookeeperMesosTimeout(),
+                TimeUnit.MILLISECONDS,
+                "/" + configuration.getFrameworkName() + "/" + configuration.getElasticsearchCLI().getElasticsearchClusterName()));
+        final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
+        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
+
+        final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(
+                configuration,
+                frameworkState,
+                clusterState,
+                new TaskInfoFactory(),
+                new OfferStrategy(configuration, clusterState),
+                zookeeperStateDriver
+        );
+        new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
 
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("server.port", String.valueOf(configuration.getWebUiPort()));

@@ -20,7 +20,9 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ClusterStateTest {
     private SerializableState state = mock(SerializableState.class);
+
     private FrameworkState frameworkState = mock(FrameworkState.class);
+
     private ClusterState clusterState = new ClusterState(state, frameworkState);
 
     @Before
@@ -38,7 +40,7 @@ public class ClusterStateTest {
 
     @Test
     public void shouldHandleGetException() throws IOException {
-        when(state.get(anyString())).thenThrow(IOException.class);
+        when(state.<List<String>>get(anyString())).thenThrow(new IOException("Test exception"));
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         verify(state, times(1)).get(anyString());
         assertEquals(0, taskList.size());
