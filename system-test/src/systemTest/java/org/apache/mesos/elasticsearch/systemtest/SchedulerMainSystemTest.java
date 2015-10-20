@@ -23,21 +23,30 @@ import static org.junit.Assert.assertTrue;
  * Tests the main method.
  */
 public class SchedulerMainSystemTest {
+
+    protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
     
     protected static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
+            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
+            .slaveResources(TEST_CONFIG.getPortRanges())
             .build()
     );
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
+        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(
+                    ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL,
+                    "zk://" + "noIP" + ":2181/mesos",
+                    ElasticsearchCLIParameter.ELASTICSEARCH_NODES,
+                    Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
+                    Configuration.ELASTICSEARCH_RAM,
+                    Integer.toString(TEST_CONFIG.getElasticsearchMemorySize())
+                );
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -55,11 +64,18 @@ public class SchedulerMainSystemTest {
 
     @Test
     public void ensureMainFailsIfInvalidHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
+        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(
+                    ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL,
+                    "zk://" + "noIP" + ":2181/mesos",
+                    ElasticsearchCLIParameter.ELASTICSEARCH_NODES,
+                    Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
+                    Configuration.ELASTICSEARCH_RAM,
+                    Integer.toString(TEST_CONFIG.getElasticsearchMemorySize())
+                );
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
@@ -78,11 +94,18 @@ public class SchedulerMainSystemTest {
 
     @Test
     public void ensureMainWorksIfValidHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
+        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+                .withCmd(
+                    ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL,
+                    "zk://" + "noIP" + ":2181/mesos",
+                    ElasticsearchCLIParameter.ELASTICSEARCH_NODES,
+                    Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
+                    Configuration.ELASTICSEARCH_RAM,
+                    Integer.toString(TEST_CONFIG.getElasticsearchMemorySize())
+                );
 
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();

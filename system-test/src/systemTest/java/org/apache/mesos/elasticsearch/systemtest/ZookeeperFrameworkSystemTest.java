@@ -23,18 +23,18 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperFrameworkSystemTest {
 
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     @Rule
     public final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
+            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
+            .slaveResources(TEST_CONFIG.getPortRanges())
             .build()
     );
 
     private ElasticsearchSchedulerContainer scheduler;
-
     private ZookeeperContainer zookeeper;
 
     @Rule
@@ -48,7 +48,7 @@ public class ZookeeperFrameworkSystemTest {
 
     @Before
     public void startScheduler() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
+        CLUSTER.injectImage(TEST_CONFIG.getExecutorImageName());
 
         LOGGER.info("Starting Elasticsearch scheduler");
 
@@ -57,7 +57,7 @@ public class ZookeeperFrameworkSystemTest {
 
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
     }
 
     @Test

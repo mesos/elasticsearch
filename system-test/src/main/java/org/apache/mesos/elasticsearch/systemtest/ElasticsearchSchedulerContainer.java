@@ -16,16 +16,13 @@ import java.util.stream.IntStream;
  */
 public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
-    public static final String SCHEDULER_IMAGE = "mesos/elasticsearch-scheduler";
-
-    public static final String SCHEDULER_NAME = "elasticsearch-scheduler";
+    private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
     protected String mesosIp;
 
     private String frameworkRole;
 
     private String zookeeperFrameworkUrl;
-
     private String dataDirectory;
 
     protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String mesosIp) {
@@ -42,27 +39,26 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected void pullImage() {
-        dockerClient.pullImageCmd(SCHEDULER_IMAGE);
+        dockerClient.pullImageCmd(TEST_CONFIG.getSchedulerImageName());
     }
 
     @Override
     protected CreateContainerCmd dockerCommand() {
         return dockerClient
-                .createContainerCmd(SCHEDULER_IMAGE)
-                .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
+                .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
+                .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
-                        ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
-                        Configuration.ELASTICSEARCH_RAM, "256",
-                        Configuration.WEB_UI_PORT, "31100",
-                        Configuration.EXECUTOR_NAME, "esdemo",
+                        ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
+                        Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
+                        Configuration.WEB_UI_PORT, Integer.toString(TEST_CONFIG.getSchedulerGuiPort()),
+                        Configuration.EXECUTOR_NAME, TEST_CONFIG.getElasticsearchJobName(),
                         Configuration.DATA_DIR, getDataDirectory(),
-                        Configuration.FRAMEWORK_ROLE, frameworkRole
-                );
+                        Configuration.FRAMEWORK_ROLE, frameworkRole);
     }
 
     private String getDataDirectory() {

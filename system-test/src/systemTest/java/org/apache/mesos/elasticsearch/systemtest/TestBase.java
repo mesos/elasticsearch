@@ -3,29 +3,27 @@ package org.apache.mesos.elasticsearch.systemtest;
 import org.apache.log4j.Logger;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 /**
  * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
  */
-@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
+
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
+            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
+            .slaveResources(TEST_CONFIG.getPortRanges())
             .build()
     );
 
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
-
     private static ElasticsearchSchedulerContainer scheduler;
 
     @Rule
@@ -39,14 +37,14 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void startScheduler() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
+        CLUSTER.injectImage(TEST_CONFIG.getExecutorImageName());
 
         LOGGER.info("Starting Elasticsearch scheduler");
 
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {

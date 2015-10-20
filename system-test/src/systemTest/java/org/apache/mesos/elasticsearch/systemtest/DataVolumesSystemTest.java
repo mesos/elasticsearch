@@ -7,10 +7,7 @@ import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.mini.MesosCluster;
 import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -21,23 +18,23 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests data volumes
  */
-@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class DataVolumesSystemTest {
 
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
+    protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
     @Rule
     public final MesosCluster cluster = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
+            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
+            .slaveResources(TEST_CONFIG.getPortRanges())
             .build()
     );
 
     @Before
     public void beforeScheduler() throws Exception {
-        cluster.injectImage("mesos/elasticsearch-executor");
+        cluster.injectImage(TEST_CONFIG.getExecutorImageName());
     }
 
     @After
@@ -50,7 +47,7 @@ public class DataVolumesSystemTest {
         LOGGER.info("Starting Elasticsearch scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
         cluster.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), cluster.getConfig().getNumberOfSlaves());
 
@@ -83,7 +80,7 @@ public class DataVolumesSystemTest {
         String dataDirectory = "/var/lib/mesos/slave";
         scheduler.setDataDirectory(dataDirectory);
         cluster.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), cluster.getConfig().getNumberOfSlaves());
 
