@@ -62,9 +62,14 @@ public class TaskInfoFactory {
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
+        String hostname = offer.getHostname();
+        LOGGER.debug("Attempting to resolve hostname: " + hostname);
+        InetSocketAddress address = new InetSocketAddress(hostname, 1);
+        LOGGER.debug(hostname + " resolved at: " + address.getAddress().getHostAddress());
+
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
-                .setData(toData(offer.getHostname(), new InetSocketAddress(offer.getHostname(), 1).getAddress().getHostAddress(), clock.zonedNow()))
+                .setData(toData(hostname, address.getAddress().getHostAddress(), clock.zonedNow()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
@@ -92,7 +97,10 @@ public class TaskInfoFactory {
         if (configuration.frameworkUseDocker()) {
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
-                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
+                            .setImage(configuration.getExecutorImage())
+                            .setForcePullImage(configuration.getExecutorForcePullImage())
+                            .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE))
                     .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                     .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
                     .build());

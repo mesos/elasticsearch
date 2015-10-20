@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.model.Container;
@@ -9,8 +10,8 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -39,8 +40,6 @@ public class ReconciliationSystemTest {
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(CLUSTER_SIZE)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
@@ -55,14 +54,12 @@ public class ReconciliationSystemTest {
         String innerDockerHost;
 
         LOGGER.debug("Local docker environment");
-        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
+        innerDockerHost = CLUSTER.getMesosMasterContainer().getIpAddress() + ":" + DOCKER_PORT;
 
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
 
         innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
 
-        LOGGER.debug("Injecting executor");
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
         await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CLUSTER.getConfig().dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
         List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
 
@@ -78,7 +75,7 @@ public class ReconciliationSystemTest {
     }
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
@@ -90,7 +87,7 @@ public class ReconciliationSystemTest {
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {
-        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
         assertLessThan(CLUSTER_SIZE); // Then should be less than 3, because at some point we kill an executor
@@ -174,8 +171,8 @@ public class ReconciliationSystemTest {
     }
 
     private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {
-        protected TimeoutSchedulerContainer(DockerClient dockerClient, String mesosIp) {
-            super(dockerClient, mesosIp);
+        protected TimeoutSchedulerContainer(DockerClient dockerClient, String zkIp) {
+            super(dockerClient, zkIp);
         }
 
         @Override

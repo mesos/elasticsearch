@@ -1,19 +1,17 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.jayway.awaitility.Awaitility;
+import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
-import com.mashape.unirest.http.Unirest;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -68,8 +66,7 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
         });
 
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = getPusher().getLogStreamStdOut();
-            String log = IOUtils.toString(exec);
+            String log = getPusher().getLogStreamStdOut();
 
             if (log.contains("riemann.elastic - elasticized")) {
                 return true;

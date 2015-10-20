@@ -5,11 +5,10 @@ import com.fasterxml.jackson.databind.JsonMappingException;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -23,8 +22,6 @@ public class FrameworkRoleSystemTest {
     protected static final int NODE_COUNT = 3;
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
-            .numberOfSlaves(NODE_COUNT)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .extraEnvironmentVariables(new TreeMap<String, String>(){{
                 this.put("MESOS_ROLES", "*,foobar");
@@ -35,11 +32,6 @@ public class FrameworkRoleSystemTest {
 
     @Rule
     public final MesosCluster CLUSTER = new MesosCluster(CONFIG);
-
-    @Before
-    public void before() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
-    }
 
     @After
     public void after() {
@@ -60,7 +52,7 @@ public class FrameworkRoleSystemTest {
         LOGGER.info("Starting Elasticsearch scheduler with framework role: " + role);
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
                 CLUSTER.getConfig().dockerClient,
-                CLUSTER.getMesosContainer().getIpAddress(),
+                CLUSTER.getMesosMasterContainer().getIpAddress(),
                 role
         );
         CLUSTER.addAndStartContainer(scheduler);

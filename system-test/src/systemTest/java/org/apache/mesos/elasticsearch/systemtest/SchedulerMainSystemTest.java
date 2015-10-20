@@ -1,19 +1,17 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
-import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -26,8 +24,6 @@ public class SchedulerMainSystemTest {
     
     protected static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
@@ -43,14 +39,11 @@ public class SchedulerMainSystemTest {
         String containerId = r.getId();
         StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
         startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-            return !IOUtils.toString(exec).isEmpty();
-        });
-        InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-        String log = IOUtils.toString(exec);
-        assertTrue(log.contains("Exception"));
-        assertTrue(log.contains("heap"));
+        LogContainerTestCallback callback = new LogContainerTestCallback();
+        CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec(callback);
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> !callback.toString().isEmpty());
+        assertTrue(callback.toString().contains("Exception"));
+        assertTrue(callback.toString().contains("heap"));
     }
 
     @Test
@@ -65,13 +58,9 @@ public class SchedulerMainSystemTest {
         String containerId = r.getId();
         StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
         startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-            return !IOUtils.toString(exec).isEmpty();
-        });
-        InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-        String log = IOUtils.toString(exec);
-        assertTrue(log.contains("Invalid initial heap size"));
+        LogContainerTestCallback callback = new LogContainerTestCallback();
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> !callback.toString().isEmpty());
+        assertTrue(callback.toString().contains("Invalid initial heap size"));
     }
 
 

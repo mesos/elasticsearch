@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -19,8 +19,6 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         MesosCluster cluster = new MesosCluster(
             MesosClusterConfig.builder()
-                .numberOfSlaves(3)
-                .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
                 .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
                 .build()
         );
@@ -37,11 +35,10 @@ public class Main {
             }
         });
         cluster.start();
-        cluster.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting scheduler");
 
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getZkContainer().getIpAddress());
         schedulerReference.set(scheduler);
         scheduler.start();
 
