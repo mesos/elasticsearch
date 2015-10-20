@@ -17,17 +17,17 @@ sourceSets {
 dependencies {
 
     compile project(':scheduler')
-    compile 'com.github.docker-java:docker-java:1.3.0'
+    compile 'com.github.docker-java:docker-java:4f094c112'
     compile 'com.mashape.unirest:unirest-java:1.4.5'
     compile 'com.jayway.awaitility:awaitility:1.6.3'
-    compile 'com.github.ContainerSolutions:mini-mesos:0.2.10'
+    compile 'com.containersol.minimesos:minimesos:0b4b25b9ef403d16c15e60db495079a123cddbcd'
 
     systemTestCompile project(':scheduler')
     systemTestCompile 'junit:junit:4.12'
     systemTestCompile 'com.github.docker-java:docker-java:1.3.0'
     systemTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
     systemTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    systemTestCompile 'com.github.ContainerSolutions:mini-mesos:0.2.10'
+    systemTestCompile 'com.containersol.minimesos:minimesos:0b4b25b9ef403d16c15e60db495079a123cddbcd'
 }
 
 task main(type:JavaExec, dependsOn: 'compileJava') {

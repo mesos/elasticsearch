@@ -1,17 +1,12 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
 import com.github.dockerjava.core.DockerClientBuilder;
 import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.container.AbstractContainer;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,7 +39,7 @@ public class ExecutorSystemTest extends TestBase {
         String innerDockerHost;
 
         LOGGER.debug("Local docker environment");
-        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
+        innerDockerHost = CLUSTER.getMesosMasterContainer().getIpAddress() + ":" + DOCKER_PORT;
 
         DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
         clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();

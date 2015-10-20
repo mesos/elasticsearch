@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;
@@ -19,7 +19,6 @@ public abstract class TestBase {
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
             .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
@@ -39,11 +38,9 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void startScheduler() throws Exception {
-        CLUSTER.injectImage("mesos/elasticsearch-executor");
-
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosMasterContainer().getIpAddress(), CLUSTER.getMesosMasterContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
