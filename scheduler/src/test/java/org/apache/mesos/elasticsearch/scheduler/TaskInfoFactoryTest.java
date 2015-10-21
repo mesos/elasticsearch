@@ -37,7 +37,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
         when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
         when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
-        when(configuration.frameworkUseDocker()).thenReturn(true);
+        when(configuration.isFrameworkUseDocker()).thenReturn(true);
     }
 
     @Test
@@ -111,7 +111,7 @@ public class TaskInfoFactoryTest {
 
     @Test
     public void shouldAddJarInfoAndRemoveContainerInfo() {
-        when(configuration.frameworkUseDocker()).thenReturn(false);
+        when(configuration.isFrameworkUseDocker()).thenReturn(false);
         String address = "http://localhost:1234";
         when(configuration.getFrameworkFileServerAddress()).thenReturn(address);
         TaskInfoFactory factory = new TaskInfoFactory();

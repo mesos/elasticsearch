@@ -32,7 +32,7 @@ public class Main {
 
         configuration = new Configuration(args);
 
-        if (!configuration.frameworkUseDocker()) {
+        if (!configuration.isFrameworkUseDocker()) {
             try {
                 final SimpleFileServer simpleFileServer = new SimpleFileServer();
                 simpleFileServer.run();

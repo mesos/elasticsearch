@@ -4,7 +4,6 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -36,7 +35,7 @@ public class ExecutorEnvironmentalVariables {
      * @param configuration
      */
     private void populateEnvMap(Configuration configuration) {
-        if (configuration.frameworkUseDocker()) {
+        if (configuration.isFrameworkUseDocker()) {
             addToList(native_mesos_library_key, native_mesos_library_path);
         }
         addToList(JAVA_OPTS, getHeapSpaceString(configuration));

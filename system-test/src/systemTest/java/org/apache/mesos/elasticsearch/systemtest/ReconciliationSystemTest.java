@@ -43,6 +43,8 @@ public class ReconciliationSystemTest {
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
             .build()
     );
+    private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
+
     private static final int TIMEOUT = 60;
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
@@ -90,7 +92,7 @@ public class ReconciliationSystemTest {
         ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
-        assertLessThan(CLUSTER_SIZE); // Then should be less than 3, because at some point we kill an executor
+        assertLessThan(TEST_CONFIG.getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
@@ -134,7 +136,7 @@ public class ReconciliationSystemTest {
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
-        assertCorrectNumberOfExecutors(CLUSTER_SIZE);
+        assertCorrectNumberOfExecutors(TEST_CONFIG.getElasticsearchNodesCount());
     }
 
     private void assertLessThan(int expected) throws IOException {
@@ -178,8 +180,8 @@ public class ReconciliationSystemTest {
         @Override
         protected CreateContainerCmd dockerCommand() {
             return dockerClient
-                    .createContainerCmd(SCHEDULER_IMAGE)
-                    .withName(SCHEDULER_NAME + "_" + new SecureRandom().nextInt())
+                    .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
+                    .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                     .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                     .withCmd(

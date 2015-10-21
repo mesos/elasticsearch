@@ -20,10 +20,10 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests data volumes
  */
-@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class DataVolumesSystemTest {
 
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
+    protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
     @Rule
     public final MesosCluster cluster = new MesosCluster(
@@ -42,7 +42,7 @@ public class DataVolumesSystemTest {
         LOGGER.info("Starting Elasticsearch scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getZkContainer().getIpAddress());
         cluster.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), cluster.getConfig().getNumberOfSlaves());
 
@@ -75,7 +75,7 @@ public class DataVolumesSystemTest {
         String dataDirectory = "/var/lib/mesos/slave";
         scheduler.setDataDirectory(dataDirectory);
         cluster.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), cluster.getConfig().getNumberOfSlaves());
 

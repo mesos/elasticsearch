@@ -12,8 +12,9 @@ import org.junit.runner.Description;
 /**
  * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
  */
-@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public abstract class TestBase {
+
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
@@ -24,7 +25,6 @@ public abstract class TestBase {
     );
 
     private static final Logger LOGGER = Logger.getLogger(TestBase.class);
-
     private static ElasticsearchSchedulerContainer scheduler;
 
     @Rule
@@ -43,7 +43,7 @@ public abstract class TestBase {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {

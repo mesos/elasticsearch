@@ -94,7 +94,7 @@ public class TaskInfoFactory {
                 .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
                 .setCommand(newCommandInfo(configuration));
-        if (configuration.frameworkUseDocker()) {
+        if (configuration.isFrameworkUseDocker()) {
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
@@ -123,7 +123,7 @@ public class TaskInfoFactory {
         Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder()
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()));
 
-        if (configuration.frameworkUseDocker()) {
+        if (configuration.isFrameworkUseDocker()) {
             commandInfoBuilder
                     .setShell(false)
                     .addAllArguments(args)

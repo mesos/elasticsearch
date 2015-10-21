@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Tests configuration of framework roles
  */
 public class FrameworkRoleSystemTest {
-    protected static final int NODE_COUNT = 3;
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     protected static final MesosClusterConfig CONFIG = MesosClusterConfig.builder()
             .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
@@ -56,7 +56,7 @@ public class FrameworkRoleSystemTest {
                 role
         );
         CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":31100");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(role, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());

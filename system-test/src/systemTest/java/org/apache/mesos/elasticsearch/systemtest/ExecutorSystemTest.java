@@ -101,6 +101,5 @@ public class ExecutorSystemTest extends TestBase {
         execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
         result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
-
     }
 }

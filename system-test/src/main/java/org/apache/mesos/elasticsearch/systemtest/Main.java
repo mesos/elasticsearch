@@ -11,10 +11,10 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
  */
-@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Main {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
+    public static final Configuration TEST_CONFIG = new Configuration();
 
     public static void main(String[] args) throws InterruptedException {
         MesosCluster cluster = new MesosCluster(
@@ -44,7 +44,7 @@ public class Main {
 
         seedData(cluster, scheduler);
 
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
             Thread.sleep(1000);

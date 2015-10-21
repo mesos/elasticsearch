@@ -22,6 +22,7 @@ public class TasksResponse {
 
     public static final Logger LOGGER = Logger.getLogger(TasksResponse.class);
 
+    private static final Configuration TEST_CONFIG = new Configuration();
     private HttpResponse<JsonNode> response;
     private String schedulerIpAddress;
     private int nodesCount;
@@ -41,11 +42,10 @@ public class TasksResponse {
     }
 
     class TasksCall implements Callable<Boolean> {
-
         @Override
         public Boolean call() throws Exception {
             try {
-                String tasksEndPoint = "http://" + schedulerIpAddress + ":31100/v1/tasks";
+                String tasksEndPoint = "http://" + schedulerIpAddress + ":" + TEST_CONFIG.getSchedulerGuiPort() + "/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
                 if (nodesState == null || nodesState.isEmpty()) {

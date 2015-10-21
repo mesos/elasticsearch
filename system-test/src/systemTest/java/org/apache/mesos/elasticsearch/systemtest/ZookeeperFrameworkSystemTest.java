@@ -23,6 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class ZookeeperFrameworkSystemTest {
 
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     @Rule
     public final MesosCluster CLUSTER = new MesosCluster(
@@ -32,7 +33,6 @@ public class ZookeeperFrameworkSystemTest {
     );
 
     private ElasticsearchSchedulerContainer scheduler;
-
     private ZookeeperContainer zookeeper;
 
     @Rule
@@ -53,7 +53,7 @@ public class ZookeeperFrameworkSystemTest {
 
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":8080");
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
     }
 
     @Test
