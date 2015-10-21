@@ -64,7 +64,7 @@ public class TaskInfoFactory {
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
-                .setData(toData(offer.getHostname(), new InetSocketAddress(offer.getHostname(), 1).getAddress().getHostAddress(), clock.zonedNow()))
+                .setData(toData(offer.getHostname(), "UNKNOWN", clock.zonedNow()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
@@ -72,7 +72,7 @@ public class TaskInfoFactory {
                 .setExecutor(newExecutorInfo(configuration)).build();
     }
 
-    private ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
+    public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
         Properties data = new Properties();
         data.put("hostname", hostname);
         data.put("ipAddress", ipAddress);
