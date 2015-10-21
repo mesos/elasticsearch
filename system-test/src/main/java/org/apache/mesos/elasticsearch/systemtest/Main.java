@@ -15,10 +15,12 @@ public class Main {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
     public static final Configuration TEST_CONFIG = new Configuration();
+    public static final String MESOS_IMAGE_TAG = "0.22.1-1.0.ubuntu1404";
 
     public static void main(String[] args) throws InterruptedException {
         MesosCluster cluster = new MesosCluster(
             MesosClusterConfig.builder()
+                .mesosImageTag(MESOS_IMAGE_TAG)
                 .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
                 .build()
         );

@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.github.dockerjava.api.command.StartContainerCmd;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
@@ -62,16 +63,6 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
             } catch (UnirestException e) {
                 return false;
             }
-        });
-
-        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
-            String log = getPusher().getLogStreamStdOut();
-
-            if (log.contains("riemann.elastic - elasticized")) {
-                return true;
-            }
-
-            return false;
         });
     }
 

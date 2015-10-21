@@ -19,7 +19,6 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
-    protected String mesosIp;
     private final String zkIp;
 
     private String frameworkRole;

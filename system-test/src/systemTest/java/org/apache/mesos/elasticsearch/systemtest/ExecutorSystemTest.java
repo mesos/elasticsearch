@@ -35,8 +35,6 @@ public class ExecutorSystemTest extends TestBase {
 
     public static final int DOCKER_PORT = 2376;
 
-    private static DockerClient clusterClient;
-
     private static String executorId;
 
     @BeforeClass
@@ -46,16 +44,14 @@ public class ExecutorSystemTest extends TestBase {
         LOGGER.debug("Local docker environment");
         innerDockerHost = CLUSTER.getMesosMasterContainer().getIpAddress() + ":" + DOCKER_PORT;
 
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-        clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
         await().atMost(60, TimeUnit.SECONDS).until(() -> {
             try {
-                return clusterClient.listContainersCmd().exec().size() > 0;
+                return getExecutors().size() > 0;
             } catch (javax.ws.rs.ProcessingException ignored) {
                 return false;
             }
         });
-        List<Container> containers = clusterClient.listContainersCmd().exec();
+        List<Container> containers = getExecutors();
 
         // Find a single executor container
         executorId = "";
@@ -67,6 +63,10 @@ public class ExecutorSystemTest extends TestBase {
         }
     }
 
+    private static List<Container> getExecutors() {
+        return CLUSTER.getConfig().dockerClient.listContainersCmd().exec().stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
+    }
+
     /**
      * Make sure that lib mesos exists in /usr/lib/libmesos.so
      * @throws IOException
@@ -74,8 +74,8 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureLibMesosExists() throws IOException {
         // Remote execute an ls command to make sure the file exists
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
+        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
     }
@@ -87,8 +87,8 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
+        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
@@ -97,8 +97,8 @@ public class ExecutorSystemTest extends TestBase {
 
         // Remote execute the ENV var to make sure it points to a real file
         String path = env.get(0).split("=")[1];
-        exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
-        execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
+        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
+        execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
     }

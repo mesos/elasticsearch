@@ -34,14 +34,13 @@ import static org.junit.Assert.assertTrue;
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest {
-    public static final int DOCKER_PORT = 2376;
     private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
-    private static final int CLUSTER_SIZE = 3;
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build()
+                .mesosImageTag(Main.MESOS_IMAGE_TAG)
+                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+                .build()
     );
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
@@ -49,32 +48,6 @@ public class ReconciliationSystemTest {
     private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private static String mesosClusterId;
-    private static DockerClient innerDockerClient;
-
-    @BeforeClass
-    public static void beforeScheduler() throws Exception {
-        String innerDockerHost;
-
-        LOGGER.debug("Local docker environment");
-        innerDockerHost = CLUSTER.getMesosMasterContainer().getIpAddress() + ":" + DOCKER_PORT;
-
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-
-        innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
-
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CLUSTER.getConfig().dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
-        List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-
-        // Find the mesos-local container so we can do docker in docker commands.
-        mesosClusterId = "";
-        for (Container container : containers) {
-            if (container.getImage().contains(MESOS_LOCAL_IMAGE_NAME)) {
-                mesosClusterId = container.getId();
-                break;
-            }
-        }
-        LOGGER.debug("Mini-mesos container ID: " + mesosClusterId);
-    }
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
@@ -83,8 +56,9 @@ public class ReconciliationSystemTest {
     }
 
     @After
-    public void after() {
+    public void after() throws IOException {
         CONTAINER_MANAGER.stopAll();
+        getContainers().forEach(container -> CLUSTER.getConfig().dockerClient.killContainerCmd(container.getId()).exec());
     }
 
     @Test
@@ -160,12 +134,12 @@ public class ReconciliationSystemTest {
     private void killOneExecutor() throws IOException {
         String executorId = getLastExecutor();
         LOGGER.debug("Killing container: " + executorId);
-        innerDockerClient.killContainerCmd(executorId).exec();
+        CLUSTER.getConfig().dockerClient.killContainerCmd(executorId).exec();
     }
 
     // Note: we cant use the task response again because the tasks are only added when created.
     private List<Container> clusterPs() throws IOException {
-        return innerDockerClient.listContainersCmd().exec();
+        return CLUSTER.getConfig().dockerClient.listContainersCmd().exec().stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
     }
 
     private String getLastExecutor() throws IOException {
@@ -183,7 +157,6 @@ public class ReconciliationSystemTest {
                     .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
                     .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",

@@ -7,7 +7,8 @@ import com.github.dockerjava.core.command.LogContainerResultCallback;
 /**
  * Callback for logging of docker commands that require textual output
  */
-public class LogContainerTestCallback extends ResultCallbackTemplate<LogContainerResultCallback, Frame> {
+@SuppressWarnings({"PMD.DM_DEFAULT_ENCODING"})
+public class LogContainerTestCallback extends LogContainerResultCallback {
     protected final StringBuffer log = new StringBuffer();
 
     @Override
