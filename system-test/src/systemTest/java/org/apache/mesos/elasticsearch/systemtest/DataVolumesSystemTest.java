@@ -123,7 +123,7 @@ public class DataVolumesSystemTest {
      */
     public static class AlpineContainer extends AbstractContainer {
 
-        public static final String ALPINE_IMAGE_NAME = "gliderlabs/alpine";
+        public static final String ALPINE_IMAGE_NAME = "alpine";
         private final String hostVolume;
         private final String containerVolume;
 
@@ -135,7 +135,7 @@ public class DataVolumesSystemTest {
 
         @Override
         protected void pullImage() {
-            dockerClient.pullImageCmd(ALPINE_IMAGE_NAME);
+            pullImage(ALPINE_IMAGE_NAME, "latest");
         }
 
         @Override
