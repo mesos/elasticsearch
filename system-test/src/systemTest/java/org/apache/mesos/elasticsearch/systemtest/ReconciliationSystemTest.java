@@ -10,6 +10,7 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
@@ -22,11 +23,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests cluster state monitoring and reconciliation.
+ * Tests CLUSTER state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest {
-    private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
@@ -46,10 +46,11 @@ public class ReconciliationSystemTest {
         return scheduler;
     }
 
-    @After
-    public void after() throws IOException {
+    @AfterClass
+    public static void killAllContainers() throws IOException {
+        CLUSTER.stop();
         CONTAINER_MANAGER.stopAll();
-        dockerUtil.getExecutorContainers().forEach(container -> CLUSTER.getConfig().dockerClient.killContainerCmd(container.getId()).exec());
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
     }
 
     @Test

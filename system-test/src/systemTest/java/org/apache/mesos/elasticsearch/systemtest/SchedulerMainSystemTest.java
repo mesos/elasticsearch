@@ -10,8 +10,11 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.AfterClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
@@ -22,13 +25,20 @@ import static org.junit.Assert.assertTrue;
 public class SchedulerMainSystemTest {
 
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    protected static final MesosCluster CLUSTER = new MesosCluster(
+    @ClassRule
+    public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
                 .mesosImageTag(Main.MESOS_IMAGE_TAG)
                 .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
                 .build()
     );
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
+
+    @AfterClass
+    public static void killAllContainers() throws IOException {
+        CLUSTER.stop();
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+    }
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {

@@ -7,8 +7,10 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.*;
 
+import java.io.IOException;
 import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
@@ -28,8 +30,14 @@ public class FrameworkRoleSystemTest {
 
     public static final Logger LOGGER = Logger.getLogger(FrameworkRoleSystemTest.class);
 
-    @Rule
-    public final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+    @ClassRule
+    public static final MesosCluster CLUSTER = new MesosCluster(CONFIG);
+
+    @AfterClass
+    public static void killContainers() throws IOException {
+        CLUSTER.stop();
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+    }
 
     @Test
     public void miniMesosReportsFrameworkRoleStar() throws UnirestException, JsonParseException, JsonMappingException {

@@ -3,9 +3,8 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Rule;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -32,7 +31,6 @@ public abstract class TestBase {
         @Override
         protected void failed(Throwable e, Description description) {
             CLUSTER.stop();
-            scheduler.remove();
         }
     };
 
@@ -50,4 +48,9 @@ public abstract class TestBase {
         return scheduler;
     }
 
+    @AfterClass
+    public static void killAllContainers() {
+        CLUSTER.stop();
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+    }
 }

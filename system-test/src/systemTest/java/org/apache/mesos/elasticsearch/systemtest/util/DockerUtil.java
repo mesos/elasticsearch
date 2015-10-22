@@ -33,4 +33,8 @@ public class DockerUtil {
         String executorId = getLastExecutorId();
         dockerClient.killContainerCmd(executorId).exec();
     }
+
+    public void killAllExecutors() {
+        getExecutorContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+    }
 }

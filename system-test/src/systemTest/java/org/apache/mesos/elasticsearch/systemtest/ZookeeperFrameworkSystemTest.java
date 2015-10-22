@@ -4,20 +4,23 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * System tests which verifies configuring a separate Zookeeper cluster for the framework.
+ * System tests which verifies configuring a separate Zookeeper CLUSTER for the framework.
  */
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest {
@@ -44,6 +47,7 @@ public class ZookeeperFrameworkSystemTest {
             scheduler.remove();
         }
     };
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     @Before
     public void startScheduler() throws Exception {
@@ -55,6 +59,12 @@ public class ZookeeperFrameworkSystemTest {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
+    }
+
+    @After
+    public void after() throws IOException {
+        CLUSTER.stop();
+        dockerUtil.killAllExecutors();
     }
 
     @Test
