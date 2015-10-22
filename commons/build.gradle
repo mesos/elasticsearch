@@ -11,4 +11,6 @@ task taskCopyFilesForDocker(type: Copy) {
 
 dependencies {
     compile "com.beust:jcommander:1.48"
+    compile 'commons-lang:commons-lang:2.6'
+    compile "log4j:log4j:1.2.16"
 }

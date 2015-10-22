@@ -3,6 +3,8 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.common.AdaptorIPAddress;
+import org.apache.mesos.elasticsearch.common.SerializableIPAddress;
 import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
@@ -13,6 +15,7 @@ import org.junit.Test;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
+import java.net.SocketException;
 import java.util.UUID;
 
 import static java.util.Collections.singleton;
@@ -138,6 +141,15 @@ public class ElasticsearchSchedulerTest {
         }
         verify(configuration, atLeastOnce()).getFrameworkPrincipal();
         verify(configuration, atLeastOnce()).getFrameworkSecretPath();
+    }
+
+    @Test
+    public void shouldUpdateTaskInfoWhenIPAddressReceived() throws SocketException {
+        when(clusterState.getTask(ProtoTestUtil.getExecutorId())).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
+        when(taskInfoFactory.toData(anyString(), anyString(), any())).thenCallRealMethod();
+        scheduler.frameworkMessage(driver, ProtoTestUtil.getExecutorId(), ProtoTestUtil.getSlaveId(), new SerializableIPAddress(AdaptorIPAddress.eth0()).toBytes());
+        verify(clusterState, times(1)).removeTask(ProtoTestUtil.getDefaultTaskInfo());
+        verify(clusterState, times(1)).addTask(any(Protos.TaskInfo.class));
     }
 
     private Protos.Offer.Builder newOffer(String hostname) {
