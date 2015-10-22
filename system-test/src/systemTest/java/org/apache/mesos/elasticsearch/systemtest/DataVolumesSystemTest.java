@@ -9,38 +9,23 @@ import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
-import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
-import org.json.JSONObject;
-import org.junit.*;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
-import java.util.List;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests data volumes
  */
-public class DataVolumesSystemTest extends TestBase {
+public class DataVolumesSystemTest extends SchedulerTestBase {
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
 
     @Test
     public void testDataVolumes() throws IOException {
-        LOGGER.info("Starting Elasticsearch scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
-        CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
-
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
-
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
-        assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
-
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
         AlpineContainer dataContainer = new AlpineContainer(CLUSTER.getConfig().dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
@@ -65,19 +50,7 @@ public class DataVolumesSystemTest extends TestBase {
 
     @Test
     public void testDataVolumes_differentDataDir() throws IOException {
-        LOGGER.info("Starting Elasticsearch scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         String dataDirectory = "/var/lib/mesos/slave";
-        scheduler.setDataDirectory(dataDirectory);
-        CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
-
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
-
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
-        assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.

@@ -23,7 +23,7 @@ public abstract class TestBase {
     public static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
                 .mesosImageTag(Main.MESOS_IMAGE_TAG)
-                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+                .slaveResources(TEST_CONFIG.getPortRanges())
                 .build()
     );
 

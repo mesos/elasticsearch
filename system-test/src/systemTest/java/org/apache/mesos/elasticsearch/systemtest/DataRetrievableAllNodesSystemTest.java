@@ -30,14 +30,6 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static List<String> slavesElasticAddresses = new ArrayList<>();
 
-    @Rule
-    public TestWatcher pusherWatch = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            pusher.remove();
-        }
-    };
-
     @BeforeClass
     public static void startDataPusher() {
 

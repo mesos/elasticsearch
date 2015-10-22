@@ -4,18 +4,12 @@ package org.apache.mesos.elasticsearch.systemtest;
  * SystemTest configuration object
  */
 public class Configuration {
-    private String executorImageName = "mesos/elasticsearch-executor";
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
-    private int privateRegistryPort = 15000;
     private int elasticsearchNodesCount = 3;
     private int elasticsearchMemorySize = 256;
     private String elasticsearchJobName = "esdemo";
-
-    public String getExecutorImageName() {
-        return executorImageName;
-    }
 
     public String getSchedulerImageName() {
         return schedulerImageName;
@@ -27,10 +21,6 @@ public class Configuration {
 
     public int getSchedulerGuiPort() {
         return schedulerGuiPort;
-    }
-
-    public int getPrivateRegistryPort() {
-        return privateRegistryPort;
     }
 
     public int getElasticsearchNodesCount() {

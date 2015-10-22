@@ -2,7 +2,6 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
-import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeeperResponse;
