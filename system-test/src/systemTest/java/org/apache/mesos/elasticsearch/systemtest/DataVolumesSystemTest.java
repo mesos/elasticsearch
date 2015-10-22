@@ -32,7 +32,7 @@ public class DataVolumesSystemTest extends TestBase {
         LOGGER.info("Starting Elasticsearch scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 
@@ -70,7 +70,7 @@ public class DataVolumesSystemTest extends TestBase {
         String dataDirectory = "/var/lib/mesos/slave";
         scheduler.setDataDirectory(dataDirectory);
         CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 

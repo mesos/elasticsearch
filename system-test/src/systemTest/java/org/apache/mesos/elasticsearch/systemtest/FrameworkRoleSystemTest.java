@@ -36,7 +36,7 @@ public class FrameworkRoleSystemTest extends TestBase {
                 role
         );
         CLUSTER.addAndStartContainer(scheduler);
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(5, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(role, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());

@@ -24,7 +24,7 @@ public class StatusApiSystemTest extends SchedulerTestBase {
         for (int i = 0; i < tasksResponse.getJson().getBody().getArray().length(); i++) {
             JSONObject taskObject = tasksResponse.getJson().getBody().getArray().getJSONObject(i);
             assertThat(taskObject.getString("id"), startsWith("elasticsearch_"));
-            assertEquals(TEST_CONFIG.getElasticsearchJobName(), taskObject.getString("name"));
+            assertEquals(getTestConfig().getElasticsearchJobName(), taskObject.getString("name"));
             assertThat(taskObject.getString("started_at"), isValidDateTime());
             assertThat(taskObject.getString("http_address"), isValidAddress());
             assertThat(taskObject.getString("transport_address"), isValidAddress());

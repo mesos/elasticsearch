@@ -37,7 +37,7 @@ public class ReconciliationSystemTest extends TestBase {
     }
 
     @Rule
-    public TestWatcher watchman = new TestWatcher() {
+    public TestWatcher containerWatcher = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
             CONTAINER_MANAGER.stopAll();
@@ -49,7 +49,7 @@ public class ReconciliationSystemTest extends TestBase {
         ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
-        assertLessThan(TEST_CONFIG.getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
+        assertLessThan(getTestConfig().getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
@@ -93,7 +93,7 @@ public class ReconciliationSystemTest extends TestBase {
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
-        assertCorrectNumberOfExecutors(TEST_CONFIG.getElasticsearchNodesCount());
+        assertCorrectNumberOfExecutors(getTestConfig().getElasticsearchNodesCount());
     }
 
     private void assertLessThan(int expected) throws IOException {
@@ -114,8 +114,8 @@ public class ReconciliationSystemTest extends TestBase {
         @Override
         protected CreateContainerCmd dockerCommand() {
             return dockerClient
-                    .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
-                    .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
+                    .createContainerCmd(getTestConfig().getSchedulerImageName())
+                    .withName(getTestConfig().getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),

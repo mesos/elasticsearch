@@ -23,15 +23,10 @@ import static org.junit.Assert.assertTrue;
  * System tests which verifies configuring a separate Zookeeper CLUSTER for the framework.
  */
 public class ZookeeperFrameworkSystemTest extends TestBase {
-
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
     private static ZookeeperContainer zookeeper;
-    private static ElasticsearchSchedulerContainer scheduler;
+    private ElasticsearchSchedulerContainer scheduler;
     private final ContainerLifecycleManagement containerManagement = new ContainerLifecycleManagement();
-
-    public static ElasticsearchSchedulerContainer getScheduler() {
-        return scheduler;
-    }
 
     @BeforeClass
     public static void startZookeeper() throws Exception {
@@ -52,7 +47,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
 
     @Test
     public void testZookeeperFramework() throws UnirestException {
-        getScheduler().setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
+        scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
         containerManagement.addAndStart(scheduler);
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
@@ -68,10 +63,10 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
 
     @Test
     public void testZookeeperFramework_differentPath() throws UnirestException {
-        getScheduler().setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
+        scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
         containerManagement.addAndStart(scheduler);
 
-        TasksResponse tasksResponse = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
+        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 

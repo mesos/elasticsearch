@@ -9,7 +9,6 @@ import org.junit.BeforeClass;
  */
 public abstract class SchedulerTestBase extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(SchedulerTestBase.class);
-
     private static ElasticsearchSchedulerContainer scheduler;
 
     @BeforeClass
@@ -19,7 +18,7 @@ public abstract class SchedulerTestBase extends TestBase {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CLUSTER.addAndStartContainer(scheduler);
 
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
+        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
     }
 
     public static ElasticsearchSchedulerContainer getScheduler() {

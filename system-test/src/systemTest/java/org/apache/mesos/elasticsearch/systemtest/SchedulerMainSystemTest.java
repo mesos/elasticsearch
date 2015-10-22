@@ -23,7 +23,7 @@ public class SchedulerMainSystemTest extends TestBase {
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
-        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
+        final String schedulerImage = getTestConfig().getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
                 .withCmd(
@@ -42,7 +42,7 @@ public class SchedulerMainSystemTest extends TestBase {
 
     @Test
     public void ensureMainFailsIfInvalidHeap() throws Exception {
-        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
+        final String schedulerImage = getTestConfig().getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
@@ -61,7 +61,7 @@ public class SchedulerMainSystemTest extends TestBase {
 
     @Test
     public void ensureMainWorksIfValidHeap() throws Exception {
-        final String schedulerImage = TEST_CONFIG.getSchedulerImageName();
+        final String schedulerImage = getTestConfig().getSchedulerImageName();
         CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
                 .createContainerCmd(schedulerImage)
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
@@ -69,9 +69,9 @@ public class SchedulerMainSystemTest extends TestBase {
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL,
                         "zk://" + "noIP" + ":2181/mesos",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES,
-                        Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
+                        Integer.toString(getTestConfig().getElasticsearchNodesCount()),
                         Configuration.ELASTICSEARCH_RAM,
-                        Integer.toString(TEST_CONFIG.getElasticsearchMemorySize())
+                        Integer.toString(getTestConfig().getElasticsearchMemorySize())
                 );
 
         CreateContainerResponse r = createCommand.exec();
