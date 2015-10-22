@@ -1,15 +1,18 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.base;
 
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
-import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.Main;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 /**
- * Base test class which launches Mesos CLUSTER and Elasticsearch scheduler
+ * Base test class which launches Mesos CLUSTER
  */
 public abstract class TestBase {
 
@@ -23,9 +26,6 @@ public abstract class TestBase {
                 .build()
     );
 
-    private static final Logger LOGGER = Logger.getLogger(TestBase.class);
-    private static ElasticsearchSchedulerContainer scheduler;
-
     @Rule
     public TestWatcher watchman = new TestWatcher() {
         @Override
@@ -33,20 +33,6 @@ public abstract class TestBase {
             CLUSTER.stop();
         }
     };
-
-    @BeforeClass
-    public static void startScheduler() throws Exception {
-        LOGGER.info("Starting Elasticsearch scheduler");
-
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
-        CLUSTER.addAndStartContainer(scheduler);
-
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
-    }
-
-    public static ElasticsearchSchedulerContainer getScheduler() {
-        return scheduler;
-    }
 
     @AfterClass
     public static void killAllContainers() {

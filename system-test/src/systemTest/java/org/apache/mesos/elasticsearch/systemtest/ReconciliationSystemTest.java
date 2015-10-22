@@ -1,18 +1,17 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.ClassRule;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -26,16 +25,7 @@ import static org.junit.Assert.assertTrue;
  * Tests CLUSTER state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ReconciliationSystemTest {
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-                .mesosImageTag(Main.MESOS_IMAGE_TAG)
-                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-                .build()
-    );
-    private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-
+public class ReconciliationSystemTest extends TestBase {
     private static final int TIMEOUT = 60;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
@@ -46,12 +36,13 @@ public class ReconciliationSystemTest {
         return scheduler;
     }
 
-    @AfterClass
-    public static void killAllContainers() throws IOException {
-        CLUSTER.stop();
-        CONTAINER_MANAGER.stopAll();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
-    }
+    @Rule
+    public TestWatcher watchman = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            CONTAINER_MANAGER.stopAll();
+        }
+    };
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {

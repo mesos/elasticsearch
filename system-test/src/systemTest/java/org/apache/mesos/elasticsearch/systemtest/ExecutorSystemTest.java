@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,7 +21,7 @@ import static org.junit.Assert.assertFalse;
 /**
  * System test for the executor
  */
-public class ExecutorSystemTest extends TestBase {
+public class ExecutorSystemTest extends SchedulerTestBase {
 
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 

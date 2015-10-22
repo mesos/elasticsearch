@@ -1,9 +1,10 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.containers;
 
 import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.LogContainerTestCallback;
 
 import java.security.SecureRandom;
 

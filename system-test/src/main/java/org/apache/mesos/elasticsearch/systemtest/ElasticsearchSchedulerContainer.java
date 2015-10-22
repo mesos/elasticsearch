@@ -26,20 +26,20 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     private String zookeeperFrameworkUrl;
     private String dataDirectory;
 
-    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp) {
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp) {
         super(dockerClient);
         this.zkIp = zkIp;
         this.frameworkRole = "*"; // The default
     }
 
-    protected ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole) {
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole) {
         super(dockerClient);
         this.zkIp = zkIp;
         this.frameworkRole = frameworkRole;
     }
 
     @Override
-    protected void pullImage() {
+    public void pullImage() {
         dockerClient.pullImageCmd(TEST_CONFIG.getSchedulerImageName());
     }
 

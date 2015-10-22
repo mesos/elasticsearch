@@ -1,6 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.json.JSONObject;
 import org.junit.Test;
 
@@ -11,7 +13,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests REST node discovery
  */
-public class DiscoverySystemTest extends TestBase {
+public class DiscoverySystemTest extends SchedulerTestBase {
 
     public static final Logger LOGGER = Logger.getLogger(DiscoverySystemTest.class);
 

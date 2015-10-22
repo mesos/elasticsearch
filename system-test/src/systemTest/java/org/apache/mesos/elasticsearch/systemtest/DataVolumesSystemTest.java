@@ -1,8 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.container.AbstractContainer;
-import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
@@ -11,11 +9,10 @@ import com.github.dockerjava.api.model.Volume;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.json.JSONObject;
 import org.junit.*;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,32 +24,8 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests data volumes
  */
-public class DataVolumesSystemTest {
-
+public class DataVolumesSystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
-    protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-                .mesosImageTag(Main.MESOS_IMAGE_TAG)
-                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-                .build()
-    );
-
-    @Rule
-    public TestWatcher watchman = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            CLUSTER.stop();
-        }
-    };
-
-    @AfterClass
-    public static void killContainers() throws IOException {
-        CLUSTER.stop();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
-    }
 
     @Test
     public void testDataVolumes() throws IOException {

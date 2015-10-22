@@ -1,10 +1,11 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.json.JSONObject;
 import org.junit.Test;
 
-import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidAddress;
-import static org.apache.mesos.elasticsearch.systemtest.SystemTestMatchers.isValidDateTime;
+import static org.apache.mesos.elasticsearch.systemtest.util.SystemTestMatchers.isValidAddress;
+import static org.apache.mesos.elasticsearch.systemtest.util.SystemTestMatchers.isValidDateTime;
 import static org.hamcrest.Matchers.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
@@ -12,7 +13,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Tests scheduler APIs
  */
-public class StatusApiSystemTest extends TestBase {
+public class StatusApiSystemTest extends SchedulerTestBase {
 
     @Test
     public void testThreeTasks() throws Exception {

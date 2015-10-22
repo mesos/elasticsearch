@@ -1,10 +1,11 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.github.dockerjava.api.command.StartContainerCmd;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.junit.BeforeClass;
@@ -21,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests scheduler APIs
  */
-public class DataRetrievableAllNodesSystemTest extends TestBase {
+public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
 

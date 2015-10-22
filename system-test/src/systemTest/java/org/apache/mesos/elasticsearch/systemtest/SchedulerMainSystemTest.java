@@ -1,7 +1,5 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.StartContainerCmd;
@@ -9,12 +7,11 @@ import com.jayway.awaitility.Awaitility;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.LogContainerTestCallback;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.junit.AfterClass;
-import org.junit.ClassRule;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
@@ -22,23 +19,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the main method.
  */
-public class SchedulerMainSystemTest {
-
-    protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-                .mesosImageTag(Main.MESOS_IMAGE_TAG)
-                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-                .build()
-    );
-    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
-
-    @AfterClass
-    public static void killAllContainers() throws IOException {
-        CLUSTER.stop();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
-    }
+public class SchedulerMainSystemTest extends TestBase {
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
@@ -97,6 +78,7 @@ public class SchedulerMainSystemTest {
         String containerId = r.getId();
         StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
         startMesosClusterContainerCmd.exec();
+        DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
         Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> !dockerUtil.getContainers().isEmpty());
         Boolean containerExists = dockerUtil.getContainers().stream().anyMatch(c -> c.getId().equals(containerId));
         assertTrue(containerExists);
