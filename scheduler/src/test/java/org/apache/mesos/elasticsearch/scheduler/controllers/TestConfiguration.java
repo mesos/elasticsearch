@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.controllers;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.http.client.HttpClient;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
@@ -30,6 +31,7 @@ public class TestConfiguration {
     @Bean
     public org.apache.mesos.elasticsearch.scheduler.Configuration getConfig() {
         return new org.apache.mesos.elasticsearch.scheduler.Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummy.mesos.master:2181") {
+            @SuppressFBWarnings("UMAC_UNCALLABLE_METHOD_OF_ANONYMOUS_CLASS")
             public String getFakePassword() {
                 return "Sh0uld n0t be v1s1bl3";
             }
