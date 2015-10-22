@@ -1,10 +1,10 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.github.dockerjava.api.model.Container;
+import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
-import org.apache.log4j.Logger;
-import org.junit.BeforeClass;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
@@ -22,35 +21,12 @@ import static org.junit.Assert.assertFalse;
  * System test for the executor
  */
 public class ExecutorSystemTest extends TestBase {
-    public static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
-    private static String executorId;
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
-    @BeforeClass
-    public static void beforeClass() {
-        LOGGER.debug("Local docker environment");
-
-        await().atMost(60, TimeUnit.SECONDS).until(() -> {
-            try {
-                return getExecutors().size() > 0;
-            } catch (javax.ws.rs.ProcessingException ignored) {
-                return false;
-            }
-        });
-        List<Container> containers = getExecutors();
-
-        // Find a single executor container
-        executorId = "";
-        for (Container container : containers) {
-            if (container.getImage().contains("executor")) {
-                executorId = container.getId();
-                break;
-            }
-        }
-    }
-
-    private static List<Container> getExecutors() {
-        return CLUSTER.getConfig().dockerClient.listContainersCmd().exec().stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
+    @Before
+    public void before() {
+        Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() > 0); // Make sure executors are alive before performing tests
     }
 
     /**
@@ -60,7 +36,7 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureLibMesosExists() throws IOException {
         // Remote execute an ls command to make sure the file exists
-        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
+        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
         InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
@@ -73,7 +49,7 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
+        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("env").exec();
         InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
 
@@ -83,9 +59,13 @@ public class ExecutorSystemTest extends TestBase {
 
         // Remote execute the ENV var to make sure it points to a real file
         String path = env.get(0).split("=")[1];
-        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
+        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
         execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         result = IOUtils.toString(execCmdStream, "UTF-8");
         assertFalse(result.contains("No such file"));
+    }
+
+    private String getRandomExecutorId() {
+        return dockerUtil.getExecutorContainers().get(0).getId();
     }
 }

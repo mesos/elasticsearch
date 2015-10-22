@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import org.apache.log4j.Logger;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
+import org.apache.log4j.Logger;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Rule;

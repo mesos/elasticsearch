@@ -5,14 +5,13 @@ import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.command.StartContainerCmd;
-import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
@@ -23,13 +22,13 @@ import static org.junit.Assert.assertTrue;
 public class SchedulerMainSystemTest {
 
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    
     protected static final MesosCluster CLUSTER = new MesosCluster(
         MesosClusterConfig.builder()
                 .mesosImageTag(Main.MESOS_IMAGE_TAG)
                 .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
                 .build()
     );
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
@@ -104,12 +103,8 @@ public class SchedulerMainSystemTest {
         String containerId = r.getId();
         StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
         startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-            return !containers.isEmpty();
-        });
-        List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-        Boolean containerExists = containers.stream().anyMatch(c -> c.getId().equals(containerId));
+        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> !dockerUtil.getContainers().isEmpty());
+        Boolean containerExists = dockerUtil.getContainers().stream().anyMatch(c -> c.getId().equals(containerId));
         assertTrue(containerExists);
     }
 }

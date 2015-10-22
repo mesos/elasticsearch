@@ -1,29 +1,21 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.mesos.MesosSlave;
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.MesosClusterConfig;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.After;
-import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
@@ -45,9 +37,8 @@ public class ReconciliationSystemTest {
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
 
     private static final int TIMEOUT = 60;
-    private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
-    private static String mesosClusterId;
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
@@ -58,7 +49,7 @@ public class ReconciliationSystemTest {
     @After
     public void after() throws IOException {
         CONTAINER_MANAGER.stopAll();
-        getContainers().forEach(container -> CLUSTER.getConfig().dockerClient.killContainerCmd(container.getId()).exec());
+        dockerUtil.getExecutorContainers().forEach(container -> CLUSTER.getConfig().dockerClient.killContainerCmd(container.getId()).exec());
     }
 
     @Test
@@ -86,7 +77,7 @@ public class ReconciliationSystemTest {
         startSchedulerContainer();
         assertCorrectNumberOfExecutors();
 
-        killOneExecutor();
+        dockerUtil.killOneExecutor();
 
         // Should restart an executor, so there should still be three
         assertCorrectNumberOfExecutors();
@@ -102,7 +93,7 @@ public class ReconciliationSystemTest {
         CONTAINER_MANAGER.stopContainer(scheduler);
 
         // Kill executor
-        killOneExecutor();
+        dockerUtil.killOneExecutor();
 
         startSchedulerContainer();
         // Should restart an executor, so there should still be three
@@ -114,36 +105,13 @@ public class ReconciliationSystemTest {
     }
 
     private void assertLessThan(int expected) throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() < expected);
-        List<Container> result = getContainers();
-        assertTrue(result.size() < expected);
-    }
-
-    private List<Container> getContainers() throws IOException {
-        List<Container> result = clusterPs();
-        LOGGER.debug("Mini-mesos PS command = " + Arrays.toString(result.stream().map(Container::getId).collect(Collectors.toList()).toArray()));
-        return result;
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() < expected);
+        assertTrue(dockerUtil.getExecutorContainers().size() < expected);
     }
 
     private void assertCorrectNumberOfExecutors(int expected) throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == expected);
-        List<Container> result = getContainers();
-        assertEquals(expected, result.size());
-    }
-
-    private void killOneExecutor() throws IOException {
-        String executorId = getLastExecutor();
-        LOGGER.debug("Killing container: " + executorId);
-        CLUSTER.getConfig().dockerClient.killContainerCmd(executorId).exec();
-    }
-
-    // Note: we cant use the task response again because the tasks are only added when created.
-    private List<Container> clusterPs() throws IOException {
-        return CLUSTER.getConfig().dockerClient.listContainersCmd().exec().stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
-    }
-
-    private String getLastExecutor() throws IOException {
-        return clusterPs().get(0).getId();
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() == expected);
+        assertEquals(expected, dockerUtil.getExecutorContainers().size());
     }
 
     private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {

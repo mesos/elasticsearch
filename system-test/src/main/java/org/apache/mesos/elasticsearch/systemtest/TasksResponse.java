@@ -38,7 +38,7 @@ public class TasksResponse {
         this.schedulerIpAddress = schedulerIpAddress;
         this.nodesCount = nodesCount;
         this.nodesState = nodesState;
-        await().atMost(60, TimeUnit.SECONDS).pollInterval(5L, TimeUnit.SECONDS).until(new TasksCall());
+        await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
     }
 
     class TasksCall implements Callable<Boolean> {
