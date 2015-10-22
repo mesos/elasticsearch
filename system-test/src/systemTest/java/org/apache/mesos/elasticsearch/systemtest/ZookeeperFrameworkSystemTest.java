@@ -22,6 +22,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * System tests which verifies configuring a separate Zookeeper CLUSTER for the framework.
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
     private static ZookeeperContainer zookeeper;
