@@ -130,6 +130,7 @@ subprojects {
 
         compile "org.apache.mesos:mesos:${mesosVer}"
         compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
+        compile 'com.google.code.findbugs:annotations:3.0.0'
 
         testCompile 'junit:junit:4.12'
         testCompile "org.mockito:mockito-all:1.9.5"
