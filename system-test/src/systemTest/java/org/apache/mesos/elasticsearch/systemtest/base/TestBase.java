@@ -8,7 +8,6 @@ import org.apache.mesos.elasticsearch.systemtest.Main;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.AfterClass;
 import org.junit.ClassRule;
-import org.junit.Rule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -27,8 +26,8 @@ public abstract class TestBase {
                 .build()
     );
 
-    @Rule
-    public TestWatcher watchman = new TestWatcher() {
+    @ClassRule
+    public static final TestWatcher WATCHER = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
             CLUSTER.stop();
