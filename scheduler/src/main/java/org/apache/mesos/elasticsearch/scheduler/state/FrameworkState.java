@@ -51,6 +51,7 @@ public class FrameworkState {
         try {
             statePath.mkdir(FRAMEWORKID_KEY);
             zookeeperStateDriver.set(FRAMEWORKID_KEY, frameworkId);
+            LOGGER.debug("FrameworkID stored in zookeeper: " + FRAMEWORKID_KEY + " = " + frameworkId);
         } catch (IOException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }

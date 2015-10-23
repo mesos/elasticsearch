@@ -1,90 +1,60 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.jayway.awaitility.Awaitility;
+import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
-import com.mashape.unirest.http.Unirest;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+import static org.junit.Assert.assertTrue;
 
 
 /**
  * Tests scheduler APIs
  */
-public class DataRetrievableAllNodesSystemTest extends TestBase {
+public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
 
     private static DataPusherContainer pusher;
+    private List<String> esAddresses;
 
-    private static List<String> slavesElasticAddresses = new ArrayList<>();
+    @Test
+    public void testDataConsistency() throws Exception {
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
 
-    @Rule
-    public TestWatcher pusherWatch = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            pusher.remove();
-        }
-    };
-
-    @BeforeClass
-    public static void startDataPusher() {
-
-        try {
-            List<JSONObject> tasks = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
-            for (JSONObject task : tasks) {
-                LOGGER.info(task);
-                slavesElasticAddresses.add(task.getString("http_address"));
-
-            }
-        } catch (Exception e) {
-            LOGGER.error("Exception thrown: " + e.getMessage());
-            throw new RuntimeException(e.getMessage());
-        }
+        esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
 
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
-                if (!(Unirest.get("http://" + getSlavesElasticAddresses().get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
+                // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
+                if (!(Unirest.get("http://" + esAddresses.get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
                 }
-                pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, getSlavesElasticAddresses().get(0));
+                pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, esAddresses.get(0));
                 CLUSTER.addAndStartContainer(pusher);
                 return true;
-            } catch (UnirestException e) {
+            } catch (Exception e) {
                 return false;
             }
         });
 
-        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = getPusher().getLogStreamStdOut();
-            String log = IOUtils.toString(exec);
-
-            if (log.contains("riemann.elastic - elasticized")) {
-                return true;
-            }
-
-            return false;
-        });
-    }
-
-    @Test
-    public void testDataConsistency() throws Exception {
         LOGGER.info("Addresses:");
-        LOGGER.info(getSlavesElasticAddresses());
+        LOGGER.info(esAddresses);
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
-            for (String httpAddress: DataRetrievableAllNodesSystemTest.getSlavesElasticAddresses()) {
+            for (String httpAddress: esAddresses) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
                 } catch (Exception e) {
@@ -99,13 +69,4 @@ public class DataRetrievableAllNodesSystemTest extends TestBase {
             return true;
         });
     }
-
-    public static DataPusherContainer getPusher() {
-        return pusher;
-    }
-
-    public static List<String> getSlavesElasticAddresses() {
-        return slavesElasticAddresses;
-    }
-
 }

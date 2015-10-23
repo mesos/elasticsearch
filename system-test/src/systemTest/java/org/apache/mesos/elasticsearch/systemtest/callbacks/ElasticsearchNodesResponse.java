@@ -1,10 +1,12 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.callbacks;
 
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
+import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -14,16 +16,15 @@ import java.util.concurrent.TimeUnit;
 import static com.jayway.awaitility.Awaitility.await;
 
 /**
- * Response for Elasticsearch nodes
+ * Response for Elasticsearch nodes. No need for discovery test.
  */
 public class ElasticsearchNodesResponse {
-
-    private List<JSONObject> tasks;
-
+    private static final Logger LOGGER = Logger.getLogger(ElasticsearchNodesResponse.class);
+    private final ESTasks esTasks;
     private int nodesCount;
 
-    public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
-        this.tasks = tasks;
+    public ElasticsearchNodesResponse(ESTasks esTasks, int nodesCount) {
+        this.esTasks = esTasks;
         this.nodesCount = nodesCount;
         await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
     }
@@ -37,15 +38,20 @@ public class ElasticsearchNodesResponse {
         // `discoverySuccessful` is set to `true` iff return value is `true`
         @Override
         public Boolean call() throws Exception {
-                for (JSONObject task : tasks) {
+            try {
+                for (JSONObject task : esTasks.getTasks()) {
                     if (!endpointIsOk(task)) {
-                        DiscoverySystemTest.LOGGER.info("At least one endpoint is not yet OK; will try again.");
+                        LOGGER.debug("At least one endpoint is not yet OK; will try again.");
                         return false;
                     }
                 }
-                DiscoverySystemTest.LOGGER.info("All Elasticsearch endpoints succeeded");
+                LOGGER.debug("All Elasticsearch endpoints succeeded");
                 discoverySuccessful = true;
                 return true;
+            } catch (UnirestException e) {
+                LOGGER.debug("Unable to get tasks list.", e);
+                return false;
+            }
         }
 
         // Returns `true` iff endpoint is OK.
@@ -59,7 +65,7 @@ public class ElasticsearchNodesResponse {
             try {
                 response = request.asString();
             } catch (UnirestException e) {
-                DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
+                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
                 return false;
             }
             // response != null
@@ -70,20 +76,20 @@ public class ElasticsearchNodesResponse {
                 try {
                     body = new JsonNode(response.getBody());
                 } catch (RuntimeException e) {
-                    DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad response body: " + e.getMessage());
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad response body: " + e.getMessage());
                     return false;
                 }
                 // body != null
 
                 if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
-                    DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
                     return false;
                 } else {
-                    DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' succeeded");
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' succeeded");
                     return true;
                 }
             } else {
-                DiscoverySystemTest.LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
+                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
                 return false;
             }
         }

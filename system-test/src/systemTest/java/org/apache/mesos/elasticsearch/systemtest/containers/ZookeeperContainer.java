@@ -1,8 +1,8 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.containers;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import org.apache.mesos.mini.container.AbstractContainer;
+import com.containersol.minimesos.container.AbstractContainer;
 
 import java.security.SecureRandom;
 
@@ -13,7 +13,7 @@ public class ZookeeperContainer extends AbstractContainer {
 
     private static final String ZOOKEEPER_IMAGE = "jplock/zookeeper";
 
-    protected ZookeeperContainer(DockerClient dockerClient) {
+    public ZookeeperContainer(DockerClient dockerClient) {
         super(dockerClient);
     }
 

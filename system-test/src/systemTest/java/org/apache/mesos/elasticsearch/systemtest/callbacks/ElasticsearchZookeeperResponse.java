@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.callbacks;
 
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;

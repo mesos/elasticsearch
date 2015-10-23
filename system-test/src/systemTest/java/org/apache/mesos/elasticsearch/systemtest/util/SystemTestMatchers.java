@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.util;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

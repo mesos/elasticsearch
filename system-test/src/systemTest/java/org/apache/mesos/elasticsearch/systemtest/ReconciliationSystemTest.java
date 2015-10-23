@@ -2,100 +2,54 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
-import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.jayway.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Tests cluster state monitoring and reconciliation.
+ * Tests CLUSTER state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
-public class ReconciliationSystemTest {
-    public static final int DOCKER_PORT = 2376;
-    private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
-    private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-
+public class ReconciliationSystemTest extends TestBase {
     private static final int TIMEOUT = 60;
-    private static final String MESOS_LOCAL_IMAGE_NAME = "mesos-local";
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
-    private static String mesosClusterId;
-    private static DockerClient innerDockerClient;
-
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
-            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
-            .slaveResources(TEST_CONFIG.getPortRanges())
-            .build()
-    );
-
-    @BeforeClass
-    public static void beforeScheduler() throws Exception {
-        String innerDockerHost;
-
-        LOGGER.debug("Local docker environment");
-        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-
-        innerDockerClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
-
-        LOGGER.debug("Injecting executor");
-        CLUSTER.injectImage(TEST_CONFIG.getExecutorImageName());
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> CLUSTER.getConfig().dockerClient.listContainersCmd().exec().size() > 0); // Wait until mesos-local has started.
-        List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-
-        // Find the mesos-local container so we can do docker in docker commands.
-        mesosClusterId = "";
-        for (Container container : containers) {
-            if (container.getImage().contains(MESOS_LOCAL_IMAGE_NAME)) {
-                mesosClusterId = container.getId();
-                break;
-            }
-        }
-        LOGGER.debug("Mini-mesos container ID: " + mesosClusterId);
-    }
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
 
-    @After
-    public void after() {
-        CONTAINER_MANAGER.stopAll();
-    }
+    @Rule
+    public TestWatcher containerWatcher = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            CONTAINER_MANAGER.stopAll();
+        }
+    };
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {
-        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
-        assertLessThan(TEST_CONFIG.getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
+        assertLessThan(getTestConfig().getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
@@ -115,7 +69,7 @@ public class ReconciliationSystemTest {
         startSchedulerContainer();
         assertCorrectNumberOfExecutors();
 
-        killOneExecutor();
+        dockerUtil.killOneExecutor();
 
         // Should restart an executor, so there should still be three
         assertCorrectNumberOfExecutors();
@@ -131,7 +85,7 @@ public class ReconciliationSystemTest {
         CONTAINER_MANAGER.stopContainer(scheduler);
 
         // Kill executor
-        killOneExecutor();
+        dockerUtil.killOneExecutor();
 
         startSchedulerContainer();
         // Should restart an executor, so there should still be three
@@ -139,54 +93,30 @@ public class ReconciliationSystemTest {
     }
 
     private void assertCorrectNumberOfExecutors() throws IOException {
-        assertCorrectNumberOfExecutors(TEST_CONFIG.getElasticsearchNodesCount());
+        assertCorrectNumberOfExecutors(getTestConfig().getElasticsearchNodesCount());
     }
 
     private void assertLessThan(int expected) throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() < expected);
-        List<Container> result = getContainers();
-        assertTrue(result.size() < expected);
-    }
-
-    private List<Container> getContainers() throws IOException {
-        List<Container> result = clusterPs();
-        LOGGER.debug("Mini-mesos PS command = " + Arrays.toString(result.stream().map(Container::getId).collect(Collectors.toList()).toArray()));
-        return result;
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() < expected);
+        assertTrue(dockerUtil.getExecutorContainers().size() < expected);
     }
 
     private void assertCorrectNumberOfExecutors(int expected) throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> clusterPs().size() == expected);
-        List<Container> result = getContainers();
-        assertEquals(expected, result.size());
-    }
-
-    private void killOneExecutor() throws IOException {
-        String executorId = getLastExecutor();
-        LOGGER.debug("Killing container: " + executorId);
-        innerDockerClient.killContainerCmd(executorId).exec();
-    }
-
-    // Note: we cant use the task response again because the tasks are only added when created.
-    private List<Container> clusterPs() throws IOException {
-        return innerDockerClient.listContainersCmd().exec();
-    }
-
-    private String getLastExecutor() throws IOException {
-        return clusterPs().get(0).getId();
+        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() == expected);
+        assertEquals(expected, dockerUtil.getExecutorContainers().size());
     }
 
     private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {
-        protected TimeoutSchedulerContainer(DockerClient dockerClient, String mesosIp) {
-            super(dockerClient, mesosIp);
+        protected TimeoutSchedulerContainer(DockerClient dockerClient, String zkIp) {
+            super(dockerClient, zkIp);
         }
 
         @Override
         protected CreateContainerCmd dockerCommand() {
             return dockerClient
-                    .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
-                    .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
+                    .createContainerCmd(getTestConfig().getSchedulerImageName())
+                    .withName(getTestConfig().getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts(IntStream.rangeClosed(1, 3).mapToObj(value -> "slave" + value + ":" + mesosIp).toArray(String[]::new))
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",

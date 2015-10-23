@@ -92,7 +92,10 @@ public class TaskInfoFactory {
         if (configuration.isFrameworkUseDocker()) {
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
-                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
+                            .setImage(configuration.getExecutorImage())
+                            .setForcePullImage(configuration.getExecutorForcePullImage())
+                            .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE))
                     .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                     .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
                     .build());
