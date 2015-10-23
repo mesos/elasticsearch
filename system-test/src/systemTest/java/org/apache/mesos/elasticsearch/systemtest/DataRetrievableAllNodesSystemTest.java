@@ -48,13 +48,14 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
+                // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
                 if (!(Unirest.get("http://" + getSlavesElasticAddresses().get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
                     return false;
                 }
                 pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, getSlavesElasticAddresses().get(0));
                 CLUSTER.addAndStartContainer(pusher);
                 return true;
-            } catch (UnirestException e) {
+            } catch (Exception e) {
                 return false;
             }
         });
