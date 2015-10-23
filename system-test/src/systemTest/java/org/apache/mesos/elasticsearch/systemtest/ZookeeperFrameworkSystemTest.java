@@ -8,10 +8,9 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeepe
 import org.apache.mesos.elasticsearch.systemtest.containers.ZookeeperContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.json.JSONObject;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.rules.TestWatcher;
+import org.junit.runner.Description;
 
 import java.util.List;
 
@@ -26,7 +25,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
     private static ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
-    private final ContainerLifecycleManagement containerManagement = new ContainerLifecycleManagement();
+    private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
 
     @BeforeClass
     public static void startZookeeper() throws Exception {
@@ -42,13 +41,21 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
 
     @After
     public void after() {
-        containerManagement.stopAll();
+        CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
     }
+
+    @ClassRule
+    public static final TestWatcher WATCHER = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
+        }
+    };
 
     @Test
     public void testZookeeperFramework() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
-        containerManagement.addAndStart(scheduler);
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 
@@ -64,7 +71,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     @Test
     public void testZookeeperFramework_differentPath() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
-        containerManagement.addAndStart(scheduler);
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
 
         TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
 

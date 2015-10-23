@@ -9,7 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -41,57 +41,25 @@ public class TasksResponse {
     }
 
     class TasksCall implements Callable<Boolean> {
+        List<CheckJSONResponse> validTaskChecks = Arrays.asList(
+                new CheckJSONSize(),
+                new InExpectedState(),
+                new CanPingESNode()
+        );
+
         @Override
         public Boolean call() throws Exception {
             try {
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
-                if (!isExpectedNumberOfNodes()) {
+                JSONArray tasks = response.getBody().getArray();
+                if (!validTaskChecks.stream().allMatch(check -> check.isValid(tasks))) {
                     return false;
                 }
-                JSONArray tasks = response.getBody().getArray();
-                for (int i = 0; i < tasks.length(); i++) {
-                    JSONObject task = tasks.getJSONObject(i);
-                    if (!isInState(task)) {
-                        return false;
-                    }
-                    if (!canPingESNode(task)) {
-                        return false;
-                    }
-                }
             } catch (UnirestException e) {
                 return false;
             }
             return true;
-        }
-
-        private boolean isInState(JSONObject task) {
-            if (nodesState != null && !nodesState.isEmpty()) {
-                Object state = task.get("state");
-                boolean res = state.equals(nodesState);
-                LOGGER.debug("Checking that node is in expected state: " + state + ".equals(" + nodesState + " = " + res);
-                return res;
-            } else {
-                return true;
-            }
-        }
-
-        private boolean canPingESNode(JSONObject task) {
-            String url = "http://" + task.getString("http_address");
-            LOGGER.debug("Querying ES endpoint: " + url);
-            try {
-                Unirest.get(url).asJson();
-            } catch (UnirestException e) {
-                return false;
-            }
-            return true;
-        }
-
-        private boolean isExpectedNumberOfNodes() {
-            int numNodes = response.getBody().getArray().length();
-            boolean res = numNodes == nodesCount;
-            LOGGER.debug("Checking expected number of nodes: " + numNodes + " == " + nodesCount + " = " + res);
-            return res;
         }
     }
 
@@ -105,5 +73,61 @@ public class TasksResponse {
             tasks.add(response.getBody().getArray().getJSONObject(i));
         }
         return tasks;
+    }
+
+
+    private class InExpectedState extends JSONArrayResult {
+        @Override
+        protected boolean getResult(JSONObject task) {
+            if (nodesState == null || nodesState.isEmpty()) {
+                return true;
+            }
+            Object state = task.get("state");
+            boolean res = state.equals(nodesState);
+            LOGGER.debug("Checking that node is in expected state: " + state + ".equals(" + nodesState + " = " + res);
+            return res;
+        }
+    }
+
+    private class CanPingESNode extends JSONArrayResult {
+        @Override
+        protected boolean getResult(JSONObject task) {
+            try {
+                String url = "http://" + task.getString("http_address");
+                LOGGER.debug("Querying ES endpoint: " + url);
+                Unirest.get(url).asJson();
+            } catch (UnirestException e) {
+                return false;
+            }
+            return true;
+        }
+    }
+
+    private class CheckJSONSize implements CheckJSONResponse {
+        @Override
+        public boolean isValid(JSONArray tasks) {
+            int numNodes = tasks.length();
+            boolean res = numNodes == nodesCount;
+            LOGGER.debug("Checking expected number of nodes: " + numNodes + " == " + nodesCount + " = " + res);
+            return res;
+        }
+    }
+
+    private abstract class JSONArrayResult implements CheckJSONResponse {
+        @Override
+        public boolean isValid(JSONArray tasks) {
+            for (int i = 0; i < tasks.length(); i++) {
+                JSONObject task = tasks.getJSONObject(i);
+                if (!getResult(task)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        protected abstract boolean getResult(JSONObject task);
+    }
+
+    private interface CheckJSONResponse {
+        boolean isValid(JSONArray tasks);
     }
 }
