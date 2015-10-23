@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
@@ -45,26 +46,52 @@ public class TasksResponse {
             try {
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
-                if (nodesState == null || nodesState.isEmpty()) {
-                    return response.getBody().getArray().length() == nodesCount;
-                } else {
-                    if (response.getBody().getArray().length() == nodesCount) {
-                        JSONArray tasks = response.getBody().getArray();
-                        for (int i = 0; i < tasks.length(); i++) {
-                            JSONObject task = tasks.getJSONObject(i);
-                            if (!task.get("state").equals(nodesState)) {
-                                LOGGER.debug("Waiting until nodes are running...");
-                                return false;
-                            }
-                        }
-                        return true;
-                    }
+                if (!isExpectedNumberOfNodes()) {
                     return false;
                 }
+                JSONArray tasks = response.getBody().getArray();
+                for (int i = 0; i < tasks.length(); i++) {
+                    JSONObject task = tasks.getJSONObject(i);
+                    if (!isInState(task)) {
+                        return false;
+                    }
+                    if (!canPingESNode(task)) {
+                        return false;
+                    }
+                }
             } catch (UnirestException e) {
-                LOGGER.debug("Waiting until " + nodesCount + " tasks are started...");
                 return false;
             }
+            return true;
+        }
+
+        private boolean isInState(JSONObject task) {
+            if (nodesState != null && !nodesState.isEmpty()) {
+                Object state = task.get("state");
+                boolean res = state.equals(nodesState);
+                LOGGER.debug("Checking that node is in expected state: " + state + ".equals(" + nodesState + " = " + res);
+                return res;
+            } else {
+                return true;
+            }
+        }
+
+        private boolean canPingESNode(JSONObject task) {
+            String url = "http://" + task.getString("http_address");
+            LOGGER.debug("Querying ES endpoint: " + url);
+            try {
+                Unirest.get(url).asJson();
+            } catch (UnirestException e) {
+                return false;
+            }
+            return true;
+        }
+
+        private boolean isExpectedNumberOfNodes() {
+            int numNodes = response.getBody().getArray().length();
+            boolean res = numNodes == nodesCount;
+            LOGGER.debug("Checking expected number of nodes: " + numNodes + " == " + nodesCount + " = " + res);
+            return res;
         }
     }
 
