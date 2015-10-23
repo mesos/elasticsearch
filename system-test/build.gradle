@@ -21,7 +21,6 @@ dependencies {
     compile 'com.mashape.unirest:unirest-java:1.4.5'
     compile 'com.jayway.awaitility:awaitility:1.6.3'
     compile 'com.github.ContainerSolutions:mini-mesos:bb53e37569'
-    compile 'com.google.code.findbugs:annotations:3.0.0'
 
     systemTestCompile project(':scheduler')
     systemTestCompile 'junit:junit:4.12'
@@ -29,7 +28,6 @@ dependencies {
     systemTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
     systemTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
     systemTestCompile 'com.github.ContainerSolutions:mini-mesos:bb53e37569'
-    systemTestCompile 'com.google.code.findbugs:annotations:3.0.0'
 }
 
 task main(type:JavaExec, dependsOn: 'compileJava') {
