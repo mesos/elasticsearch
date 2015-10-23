@@ -23,29 +23,26 @@ public class TasksResponse {
     public static final Logger LOGGER = Logger.getLogger(TasksResponse.class);
 
     private static final Configuration TEST_CONFIG = new Configuration();
+    private final String tasksEndPoint;
     private HttpResponse<JsonNode> response;
-    private String schedulerIpAddress;
     private int nodesCount;
     private String nodesState;
 
     public TasksResponse(String schedulerIpAddress, int nodesCount) {
-        this.schedulerIpAddress = schedulerIpAddress;
-        this.nodesCount = nodesCount;
-        await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
+        this(schedulerIpAddress, nodesCount, null);
     }
 
     public TasksResponse(String schedulerIpAddress, int nodesCount, String nodesState) {
-        this.schedulerIpAddress = schedulerIpAddress;
         this.nodesCount = nodesCount;
         this.nodesState = nodesState;
-        await().atMost(60, TimeUnit.SECONDS).until(new TasksCall());
+        tasksEndPoint = "http://" + schedulerIpAddress + ":" + TEST_CONFIG.getSchedulerGuiPort() + "/v1/tasks";
+        await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new TasksCall());
     }
 
     class TasksCall implements Callable<Boolean> {
         @Override
         public Boolean call() throws Exception {
             try {
-                String tasksEndPoint = "http://" + schedulerIpAddress + ":" + TEST_CONFIG.getSchedulerGuiPort() + "/v1/tasks";
                 LOGGER.debug("Fetching tasks on " + tasksEndPoint);
                 response = Unirest.get(tasksEndPoint).asJson();
                 if (nodesState == null || nodesState.isEmpty()) {
