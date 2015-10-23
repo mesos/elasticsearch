@@ -26,7 +26,6 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     private static ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
     private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
-    private ESTasks esTasks;
 
     @BeforeClass
     public static void startZookeeper() throws Exception {
@@ -38,7 +37,6 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     @Before
     public void before() {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
-        esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
     }
 
     @After
@@ -58,6 +56,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     public void testZookeeperFramework() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
         TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
@@ -74,6 +73,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     public void testZookeeperFramework_differentPath() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
         TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
