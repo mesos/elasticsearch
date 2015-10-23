@@ -5,6 +5,7 @@ import org.apache.mesos.elasticsearch.common.Discovery;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Properties;
 
@@ -67,7 +68,6 @@ public class Task {
         }
         String hostName = data.getProperty("hostname", "UNKNOWN");
         String ipAddress = data.getProperty("ipAddress", hostName);
-        ZonedDateTime startedAt = ZonedDateTime.parse(data.getProperty("startedAt", ZonedDateTime.now().toString()));
         Protos.TaskState taskState = null;
         if (taskStatus == null) {
             taskState = Protos.TaskState.TASK_STAGING;
@@ -78,7 +78,7 @@ public class Task {
                 hostName,
                 taskInfo.getTaskId().getValue(),
                 taskState,
-                startedAt,
+                ZonedDateTime.now(ZoneOffset.UTC),
                 new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
                 new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
         );
