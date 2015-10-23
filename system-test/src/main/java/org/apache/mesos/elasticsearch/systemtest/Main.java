@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -34,6 +35,7 @@ public class Main {
                     schedulerReference.get().remove();
                 }
                 cluster.stop();
+                new DockerUtil(cluster.getConfig().dockerClient).killAllExecutors();
             }
         });
         cluster.start();
