@@ -41,11 +41,11 @@ public class ElasticsearchNodesResponse {
             try {
                 for (JSONObject task : esTasks.getTasks()) {
                     if (!endpointIsOk(task)) {
-                        LOGGER.info("At least one endpoint is not yet OK; will try again.");
+                        LOGGER.debug("At least one endpoint is not yet OK; will try again.");
                         return false;
                     }
                 }
-                LOGGER.info("All Elasticsearch endpoints succeeded");
+                LOGGER.debug("All Elasticsearch endpoints succeeded");
                 discoverySuccessful = true;
                 return true;
             } catch (UnirestException e) {
@@ -65,7 +65,7 @@ public class ElasticsearchNodesResponse {
             try {
                 response = request.asString();
             } catch (UnirestException e) {
-                LOGGER.info("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
+                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
                 return false;
             }
             // response != null
@@ -76,20 +76,20 @@ public class ElasticsearchNodesResponse {
                 try {
                     body = new JsonNode(response.getBody());
                 } catch (RuntimeException e) {
-                    LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad response body: " + e.getMessage());
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad response body: " + e.getMessage());
                     return false;
                 }
                 // body != null
 
                 if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
-                    LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
                     return false;
                 } else {
-                    LOGGER.info("Polling Elasticsearch endpoint '" + url + "' succeeded");
+                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' succeeded");
                     return true;
                 }
             } else {
-                LOGGER.info("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
+                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
                 return false;
             }
         }
