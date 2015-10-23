@@ -5,14 +5,12 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.json.JSONArray;
 import org.json.JSONObject;
-import org.junit.BeforeClass;
-import org.junit.Rule;
+import org.junit.Before;
 import org.junit.Test;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,18 +28,21 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static List<String> slavesElasticAddresses = new ArrayList<>();
 
-    @BeforeClass
-    public static void startDataPusher() {
+    @Before
+    public void startDataPusher() {
 
         try {
-            List<JSONObject> tasks = new TasksResponse(new ESTasks(TEST_CONFIG, getScheduler().getIpAddress()), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
-            for (JSONObject task : tasks) {
+            ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
+            ElasticsearchNodesResponse elasticsearchNodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+            if (!elasticsearchNodesResponse.isDiscoverySuccessful()) {
+                throw new RuntimeException("Could not discover ES nodes");
+            }
+            for (JSONObject task : esTasks.getTasks()) {
                 LOGGER.info(task);
                 slavesElasticAddresses.add(task.getString("http_address"));
-
             }
         } catch (Exception e) {
-            LOGGER.error("Exception thrown: " + e.getMessage());
+            LOGGER.error("Exception thrown: ", e);
             throw new RuntimeException(e.getMessage());
         }
 
@@ -79,10 +80,6 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
             }
             return true;
         });
-    }
-
-    public static DataPusherContainer getPusher() {
-        return pusher;
     }
 
     public static List<String> getSlavesElasticAddresses() {
