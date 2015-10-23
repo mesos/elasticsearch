@@ -58,7 +58,8 @@ public class Main {
     private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
         String taskHttpAddress;
         try {
-            List<JSONObject> tasks = new TasksResponse(schedulerContainer.getIpAddress(), cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING").getTasks();
+            ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
+            List<JSONObject> tasks = new TasksResponse(esTasks, cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING").getTasks();
             taskHttpAddress = tasks.get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

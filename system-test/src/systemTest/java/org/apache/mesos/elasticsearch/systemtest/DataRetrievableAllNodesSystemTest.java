@@ -34,7 +34,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
     public static void startDataPusher() {
 
         try {
-            List<JSONObject> tasks = new TasksResponse(getScheduler().getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
+            List<JSONObject> tasks = new TasksResponse(new ESTasks(TEST_CONFIG, getScheduler().getIpAddress()), CLUSTER.getConfig().getNumberOfSlaves()).getTasks();
             for (JSONObject task : tasks) {
                 LOGGER.info(task);
                 slavesElasticAddresses.add(task.getString("http_address"));

@@ -26,6 +26,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     private static ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
     private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
+    private ESTasks esTasks;
 
     @BeforeClass
     public static void startZookeeper() throws Exception {
@@ -37,6 +38,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     @Before
     public void before() {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
+        esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
     }
 
     @After
@@ -57,11 +59,11 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
+        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
@@ -73,11 +75,11 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
+        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));

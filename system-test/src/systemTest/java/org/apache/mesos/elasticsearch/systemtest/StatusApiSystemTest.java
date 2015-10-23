@@ -17,7 +17,7 @@ public class StatusApiSystemTest extends SchedulerTestBase {
 
     @Test
     public void testThreeTasks() throws Exception {
-        TasksResponse tasksResponse = new TasksResponse(getScheduler().getIpAddress(), 3);
+        TasksResponse tasksResponse = new TasksResponse(new ESTasks(TEST_CONFIG, getScheduler().getIpAddress()), 3);
 
         assertEquals(3, tasksResponse.getJson().getBody().getArray().length());
 

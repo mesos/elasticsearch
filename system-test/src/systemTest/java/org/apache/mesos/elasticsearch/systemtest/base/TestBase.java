@@ -16,7 +16,7 @@ import org.junit.runner.Description;
  */
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class TestBase {
-    private static final Configuration TEST_CONFIG = new Configuration();
+    protected static final Configuration TEST_CONFIG = new Configuration();
 
     @ClassRule
     public static final MesosCluster CLUSTER = new MesosCluster(

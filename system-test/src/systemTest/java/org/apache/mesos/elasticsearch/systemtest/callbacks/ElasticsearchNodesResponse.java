@@ -6,6 +6,7 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import com.mashape.unirest.request.GetRequest;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -19,12 +20,11 @@ import static com.jayway.awaitility.Awaitility.await;
  */
 public class ElasticsearchNodesResponse {
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchNodesResponse.class);
-    private List<JSONObject> tasks;
-
+    private final ESTasks esTasks;
     private int nodesCount;
 
-    public ElasticsearchNodesResponse(List<JSONObject> tasks, int nodesCount) {
-        this.tasks = tasks;
+    public ElasticsearchNodesResponse(ESTasks esTasks, int nodesCount) {
+        this.esTasks = esTasks;
         this.nodesCount = nodesCount;
         await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(new ElasticsearchNodesCall());
     }
@@ -38,7 +38,8 @@ public class ElasticsearchNodesResponse {
         // `discoverySuccessful` is set to `true` iff return value is `true`
         @Override
         public Boolean call() throws Exception {
-                for (JSONObject task : tasks) {
+            try {
+                for (JSONObject task : esTasks.getTasks()) {
                     if (!endpointIsOk(task)) {
                         LOGGER.info("At least one endpoint is not yet OK; will try again.");
                         return false;
@@ -47,6 +48,10 @@ public class ElasticsearchNodesResponse {
                 LOGGER.info("All Elasticsearch endpoints succeeded");
                 discoverySuccessful = true;
                 return true;
+            } catch (UnirestException e) {
+                LOGGER.debug("Unable to get tasks list.", e);
+                return false;
+            }
         }
 
         // Returns `true` iff endpoint is OK.
