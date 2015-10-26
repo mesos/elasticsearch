@@ -27,7 +27,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
 
-    private static DataPusherContainer pusher;
+    private DataPusherContainer pusher;
     private List<String> esAddresses;
 
     @Test
