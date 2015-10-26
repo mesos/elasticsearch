@@ -2,12 +2,13 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeeperResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ZookeeperContainer;
+import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.json.JSONObject;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
@@ -17,59 +18,51 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
- * System tests which verifies configuring a separate Zookeeper cluster for the framework.
+ * System tests which verifies configuring a separate Zookeeper CLUSTER for the framework.
  */
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
-public class ZookeeperFrameworkSystemTest {
-
+public class ZookeeperFrameworkSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
-    protected static final Configuration TEST_CONFIG = new Configuration();
-
-    @Rule
-    public final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-            .numberOfSlaves(TEST_CONFIG.getElasticsearchNodesCount())
-            .privateRegistryPort(TEST_CONFIG.getPrivateRegistryPort()) // Currently you have to choose an available port by yourself
-            .slaveResources(TEST_CONFIG.getPortRanges())
-            .build()
-    );
-
+    private static ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
-    private ZookeeperContainer zookeeper;
+    private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
 
-    @Rule
-    public TestWatcher watchman = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            CLUSTER.stop();
-            scheduler.remove();
-        }
-    };
-
-    @Before
-    public void startScheduler() throws Exception {
-        CLUSTER.injectImage(TEST_CONFIG.getExecutorImageName());
-
-        LOGGER.info("Starting Elasticsearch scheduler");
-
+    @BeforeClass
+    public static void startZookeeper() throws Exception {
+        LOGGER.info("Starting Extra zookeeper container");
         zookeeper = new ZookeeperContainer(CLUSTER.getConfig().dockerClient);
         CLUSTER.addAndStartContainer(zookeeper);
-
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getMesosContainer().getIpAddress());
-
-        LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
     }
+
+    @Before
+    public void before() {
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
+    }
+
+    @After
+    public void after() {
+        CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
+    }
+
+    @ClassRule
+    public static final TestWatcher WATCHER = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
+        }
+    };
 
     @Test
     public void testZookeeperFramework() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
-        CLUSTER.addAndStartContainer(scheduler);
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
+        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
@@ -79,17 +72,17 @@ public class ZookeeperFrameworkSystemTest {
     @Test
     public void testZookeeperFramework_differentPath() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
-        CLUSTER.addAndStartContainer(scheduler);
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(scheduler.getIpAddress(), CLUSTER.getConfig().getNumberOfSlaves());
+        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         List<JSONObject> tasks = tasksResponse.getTasks();
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(tasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
-
 }
