@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesRes
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeeperResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.ZookeeperContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
 import org.junit.*;
 import org.junit.rules.TestWatcher;
@@ -23,25 +24,22 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
-    private static ZookeeperContainer zookeeper;
+    private ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
     private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
 
-    @BeforeClass
-    public static void startZookeeper() throws Exception {
+    @Before
+    public void before() {
         LOGGER.info("Starting Extra zookeeper container");
         zookeeper = new ZookeeperContainer(CLUSTER.getConfig().dockerClient);
         CLUSTER.addAndStartContainer(zookeeper);
-    }
-
-    @Before
-    public void before() {
         scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
     }
 
     @After
     public void after() {
         CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
     }
 
     @ClassRule

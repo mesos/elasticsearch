@@ -53,7 +53,7 @@ public class TasksResponse {
                 if (!validTaskChecks.stream().allMatch(check -> check.isValid(tasks))) {
                     return false;
                 }
-            } catch (UnirestException e) {
+            } catch (Exception e) { // Catch all to prevent system test failures due to momentary errors with JSON parsing.
                 return false;
             }
             return true;

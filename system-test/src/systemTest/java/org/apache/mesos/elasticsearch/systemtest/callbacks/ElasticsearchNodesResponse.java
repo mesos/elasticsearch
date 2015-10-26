@@ -3,13 +3,10 @@ package org.apache.mesos.elasticsearch.systemtest.callbacks;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
-import com.mashape.unirest.request.GetRequest;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.json.JSONObject;
 
-import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -48,50 +45,31 @@ public class ElasticsearchNodesResponse {
                 LOGGER.debug("All Elasticsearch endpoints succeeded");
                 discoverySuccessful = true;
                 return true;
-            } catch (UnirestException e) {
-                LOGGER.debug("Unable to get tasks list.", e);
+            } catch (Exception e) { // Catch all to prevent system test failures due to momentary errors with JSON parsing.
+                LOGGER.debug("Unable to get task list. Retrying.", e);
                 return false;
             }
         }
 
         // Returns `true` iff endpoint is OK.
         // Returns `false` iff endpoint is definitely not OK or it is not yet determined and we should continue polling.
-        private boolean endpointIsOk(JSONObject task) {
+        private boolean endpointIsOk(JSONObject task) throws Exception {
             String url = "http://" + task.getString("http_address") + "/_nodes";
+            HttpResponse<String> response = Unirest.get(url).asString();
 
-            GetRequest request = Unirest.get(url);
-
-            HttpResponse<String> response = null;
-            try {
-                response = request.asString();
-            } catch (UnirestException e) {
-                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' threw exception: " + e.getMessage());
-                return false;
-            }
-            // response != null
-
-            if (200 <= response.getStatus() && response.getStatus() < 400) {
-                JsonNode body = null;
-
-                try {
-                    body = new JsonNode(response.getBody());
-                } catch (RuntimeException e) {
-                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad response body: " + e.getMessage());
-                    return false;
-                }
-                // body != null
-
-                if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
-                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
-                    return false;
-                } else {
-                    LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' succeeded");
-                    return true;
-                }
-            } else {
+            if (response.getStatus() < 200 || response.getStatus() >= 400) {
                 LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned bad status: " + response.getStatus() + " " + response.getStatusText());
                 return false;
             }
+
+            JsonNode body = new JsonNode(response.getBody());
+            if (body.getObject().getJSONObject("nodes").length() != nodesCount) {
+                LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' returned wrong number of nodes (Expected " + nodesCount + " but got " + body.getObject().getJSONObject("nodes").length() + ")");
+                return false;
+            }
+
+            LOGGER.debug("Polling Elasticsearch endpoint '" + url + "' succeeded");
+            return true;
         }
     }
 
