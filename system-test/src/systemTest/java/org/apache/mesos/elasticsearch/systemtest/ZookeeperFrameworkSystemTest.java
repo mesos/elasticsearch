@@ -24,7 +24,7 @@ import static org.junit.Assert.assertTrue;
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class ZookeeperFrameworkSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(ZookeeperFrameworkSystemTest.class);
-    private static ZookeeperContainer zookeeper;
+    private ZookeeperContainer zookeeper;
     private ElasticsearchSchedulerContainer scheduler;
     private static final ContainerLifecycleManagement CONTAINER_LIFECYCLE_MANAGEMENT = new ContainerLifecycleManagement();
 
