@@ -106,10 +106,8 @@ public class ClusterState {
      */
     public TaskInfo getTask(TaskID taskID) throws IllegalArgumentException {
         List<TaskInfo> taskInfoList = getTaskList();
-        LOGGER.debug("Getting task " + taskID.getValue() + ", from " + logTaskList(taskInfoList));
         TaskInfo taskInfo = null;
         for (TaskInfo info : taskInfoList) {
-            LOGGER.debug("Testing: " + info.getTaskId().getValue() + " .equals " + taskID.getValue() + " = " + info.getTaskId().getValue().equals(taskID.getValue()));
             if (info.getTaskId().getValue().equals(taskID.getValue())) {
                 taskInfo = info;
                 break;
@@ -126,10 +124,8 @@ public class ClusterState {
             throw new IllegalArgumentException("ExecutorID.value() is blank. Cannot be blank.");
         }
         List<TaskInfo> taskInfoList = getTaskList();
-        LOGGER.debug("Getting task " + executorID.getValue());
         TaskInfo taskInfo = null;
         for (TaskInfo info : taskInfoList) {
-            LOGGER.debug("Testing: " + info.getExecutor().getExecutorId().getValue() + " .equals " + executorID.getValue() + " = " + info.getExecutor().getExecutorId().getValue().equals(executorID.getValue()));
             if (info.getExecutor().getExecutorId().getValue().equals(executorID.getValue())) {
                 taskInfo = info;
                 break;
