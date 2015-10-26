@@ -6,7 +6,10 @@ import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
-import org.junit.*;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.junit.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
 
 import java.util.concurrent.TimeUnit;
 
@@ -37,6 +40,10 @@ public class FrameworkRoleSystemTest extends TestBase {
         );
         CLUSTER.addAndStartContainer(scheduler);
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
+
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(5, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(role, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());

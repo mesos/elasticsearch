@@ -8,12 +8,12 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeepe
 import org.apache.mesos.elasticsearch.systemtest.containers.ZookeeperContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.json.JSONObject;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
