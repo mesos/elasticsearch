@@ -56,14 +56,12 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
+        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 
@@ -73,14 +71,12 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
+        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 }

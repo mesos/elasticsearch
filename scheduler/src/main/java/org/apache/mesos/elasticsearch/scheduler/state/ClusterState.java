@@ -195,7 +195,7 @@ public class ClusterState {
         }
     }
 
-    private String getKey() throws NotSerializableException {
+    private String getKey() {
         return frameworkState.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 }
