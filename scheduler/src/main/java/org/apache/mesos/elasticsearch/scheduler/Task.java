@@ -1,13 +1,9 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.Discovery;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Properties;
 
 /**
  * Task on a host.
@@ -22,6 +18,7 @@ public class Task {
     private ZonedDateTime startedAt;
     private InetSocketAddress clientAddress;
     private InetSocketAddress transportAddress;
+
     public Task(String hostname, String taskId, Protos.TaskState state, ZonedDateTime startedAt, InetSocketAddress clientInterface, InetSocketAddress transportAddress) {
         this.hostname = hostname;
         this.taskId = taskId;
@@ -57,30 +54,5 @@ public class Task {
 
     public InetSocketAddress getTransportAddress() {
         return transportAddress;
-    }
-
-    public static Task from(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
-        Properties data = new Properties();
-        try {
-            data.load(taskInfo.getData().newInput());
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to parse properties", e);
-        }
-        String hostName = data.getProperty("hostname", "UNKNOWN");
-        String ipAddress = data.getProperty("ipAddress", hostName);
-        Protos.TaskState taskState = null;
-        if (taskStatus == null) {
-            taskState = Protos.TaskState.TASK_STAGING;
-        } else {
-            taskState = taskStatus.getState();
-        }
-        return new Task(
-                hostName,
-                taskInfo.getTaskId().getValue(),
-                taskState,
-                ZonedDateTime.now(ZoneOffset.UTC),
-                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
-                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
-        );
     }
 }
