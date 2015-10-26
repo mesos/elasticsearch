@@ -6,6 +6,8 @@ import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
+import com.jayway.awaitility.Awaitility;
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -15,6 +17,8 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.SecureRandom;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
@@ -31,21 +35,7 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
         AlpineContainer dataContainer = new AlpineContainer(CLUSTER.getConfig().dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
         CLUSTER.addAndStartContainer(dataContainer);
 
-        ExecCreateCmdResponse execResponse = CLUSTER.getConfig().dockerClient.execCreateCmd(dataContainer.getContainerId())
-                .withCmd("ls", "-R", Configuration.DEFAULT_HOST_DATA_DIR)
-                .withTty(true)
-                .withAttachStderr()
-                .withAttachStdout()
-                .exec();
-        try (InputStream inputstream = CLUSTER.getConfig().dockerClient.execStartCmd(dataContainer.getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
-            String contents = IOUtils.toString(inputstream);
-            LOGGER.info("Mesos-local contents of " + Configuration.DEFAULT_HOST_DATA_DIR + "/elasticsearch/nodes: " + contents);
-            assertTrue(contents.contains("0"));
-            assertTrue(contents.contains("1"));
-            assertTrue(contents.contains("2"));
-        } catch (IOException e) {
-            LOGGER.error("Could not list contents of " + Configuration.DEFAULT_HOST_DATA_DIR + "/elasticsearch/nodes in Mesos-Local");
-        }
+        Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
     }
 
     @Test
@@ -57,20 +47,35 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
         AlpineContainer dataContainer = new AlpineContainer(CLUSTER.getConfig().dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
         CLUSTER.addAndStartContainer(dataContainer);
 
-        ExecCreateCmdResponse execResponse = CLUSTER.getConfig().dockerClient.execCreateCmd(dataContainer.getContainerId())
-                .withCmd("ls", "-R", dataDirectory)
-                .withTty(true)
-                .withAttachStderr()
-                .withAttachStdout()
-                .exec();
-        try (InputStream inputstream = CLUSTER.getConfig().dockerClient.execStartCmd(dataContainer.getContainerId()).withTty().withExecId(execResponse.getId()).exec()) {
-            String contents = IOUtils.toString(inputstream);
-            LOGGER.info("Mesos-local contents of " + dataDirectory);
-            assertTrue(contents.contains("0"));
-            assertTrue(contents.contains("1"));
-            assertTrue(contents.contains("2"));
-        } catch (IOException e) {
-            LOGGER.error("Could not list contents of " + dataDirectory + " in Mesos-Local");
+        Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
+    }
+
+    private static class DataInDirectory implements Callable<Boolean> {
+
+        private final String containerId;
+        private final String dataDirectory;
+
+        private DataInDirectory(String containerId, String dataDirectory) {
+            this.containerId = containerId;
+            this.dataDirectory = dataDirectory;
+        }
+
+        @Override
+        public Boolean call() throws Exception {
+            ExecCreateCmdResponse execResponse = CLUSTER.getConfig().dockerClient.execCreateCmd(containerId)
+                    .withCmd("ls", "-R", dataDirectory)
+                    .withTty(true)
+                    .withAttachStderr()
+                    .withAttachStdout()
+                    .exec();
+            try (InputStream inputstream = CLUSTER.getConfig().dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
+                String contents = IOUtils.toString(inputstream, "UTF-8");
+                LOGGER.info("Mesos-local contents of " + dataDirectory);
+                return contents.contains("0") && contents.contains("1") && contents.contains("2");
+            } catch (IOException e) {
+                LOGGER.error("Could not list contents of " + dataDirectory + " in Mesos-Local");
+                return false;
+            }
         }
     }
 
