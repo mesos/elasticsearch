@@ -91,4 +91,10 @@ public class ESTaskStatusTest {
         when(state.get(anyString())).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_FINISHED));
         Assert.assertTrue(status.taskInError());
     }
+
+    @Test
+    public void shouldErrorWhenTaskKilled() throws IOException {
+        when(state.get(anyString())).thenReturn(ProtoTestUtil.getDefaultTaskStatus(Protos.TaskState.TASK_KILLED));
+        Assert.assertTrue(status.taskInError());
+    }
 }
