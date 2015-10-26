@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Scheduler for Elasticsearch.
@@ -99,7 +100,8 @@ public class ElasticsearchScheduler implements Scheduler {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
             if (!result.acceptable) {
-                LOGGER.debug("Declined offer: " + result.reason.orElse("Unknown"));
+                LOGGER.debug("Declined offer: " + flattenProtobufString(offer.toString()) +
+                        "Reason: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer);
@@ -110,6 +112,10 @@ public class ElasticsearchScheduler implements Scheduler {
                 frameworkState.announceNewTask(esTask);
             }
         }
+    }
+
+    private String flattenProtobufString(String s) {
+        return s.replace("  ", " ").replace("{\n", "{").replace("\n}", " }").replace("\n", ", ");
     }
 
     @Override
