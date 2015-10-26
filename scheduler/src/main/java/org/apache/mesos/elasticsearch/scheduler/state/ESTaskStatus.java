@@ -95,7 +95,8 @@ public class ESTaskStatus {
 
     public static boolean errorState(TaskState state) {
         return state.equals(TaskState.TASK_ERROR) || state.equals(TaskState.TASK_FAILED)
-                || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED);
+                || state.equals(TaskState.TASK_LOST) || state.equals(TaskState.TASK_FINISHED)
+                || state.equals(TaskState.TASK_KILLED);
     }
 
     public void destroy() {
