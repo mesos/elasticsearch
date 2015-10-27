@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
+import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 
 import java.io.IOException;
 import java.io.NotSerializableException;
@@ -20,10 +21,12 @@ public class ClusterState {
     public static final String STATE_LIST = "stateList";
     private SerializableState zooKeeperStateDriver;
     private FrameworkState frameworkState;
+    private TaskInfoFactory taskInfoFactory;
 
-    public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState) {
+    public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState, TaskInfoFactory taskInfoFactory) {
         this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
+        this.taskInfoFactory = taskInfoFactory;
         frameworkState.onStatusUpdate(this::updateTask);
     }
 
@@ -47,7 +50,7 @@ public class ClusterState {
      */
     public Map<String, Task> getGuiTaskList() {
         Map<String, Task> tasks = new HashMap<>();
-        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
+        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), taskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
         return tasks;
     }
 
