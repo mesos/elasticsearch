@@ -37,7 +37,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
             try {
                 esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
                 // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
-                return Unirest.get("http://" + esAddresses.get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3;
+                return Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asString().getBody().contains("green");
             } catch (Exception e) {
                 return false;
             }
@@ -50,7 +50,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
         LOGGER.info(esAddresses);
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
-            for (String httpAddress: esAddresses) {
+            for (String httpAddress : esAddresses) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
                 } catch (Exception e) {

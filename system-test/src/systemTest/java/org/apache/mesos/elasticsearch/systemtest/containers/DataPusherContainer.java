@@ -22,7 +22,6 @@ public class DataPusherContainer extends AbstractContainer {
     public DataPusherContainer(DockerClient dockerClient, String firstSlaveHttpAddress) {
         super(dockerClient);
         slaveAddress = firstSlaveHttpAddress;
-        this.pullImage();
     }
 
     @Override
@@ -41,9 +40,5 @@ public class DataPusherContainer extends AbstractContainer {
     public void start() {
         super.start();
         dockerClient.logContainerCmd(getContainerId()).withStdOut().withStdErr().exec(callback);
-    }
-
-    public String getLogStreamStdOut() {
-        return callback.toString();
     }
 }
