@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class FrameworkStateTest {
 
     public static final Protos.FrameworkID FRAMEWORK_ID = Protos.FrameworkID.newBuilder().setValue("FrameworkID").build();
     public final SerializableState state = mock(SerializableState.class);
-    private final FrameworkState frameworkState = new FrameworkState(state);
+    private final FrameworkState frameworkState = new FrameworkState(state, mock(TaskInfoFactory.class));
     private SchedulerDriver driver = mock(SchedulerDriver.class);
 
     @Test

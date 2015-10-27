@@ -9,15 +9,14 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 
@@ -64,7 +63,7 @@ public class TaskInfoFactory {
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
-                .setData(toData(offer.getHostname(), "UNKNOWN", clock.zonedNow()))
+                .setData(toData(offer.getHostname(), "UNKNOWN", clock.nowUTC()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
@@ -79,7 +78,11 @@ public class TaskInfoFactory {
         data.put("startedAt", zonedDateTime.toString());
 
         StringWriter writer = new StringWriter();
-        data.list(new PrintWriter(writer));
+        try {
+            data.store(new PrintWriter(writer), "Task metadata");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write task metadata", e);
+        }
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
@@ -150,4 +153,29 @@ public class TaskInfoFactory {
         return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
     }
 
+    public Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
+        Properties data = new Properties();
+        try {
+            data.load(taskInfo.getData().newInput());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse properties", e);
+        }
+        String hostName = data.getProperty("hostname", "UNKNOWN");
+        String ipAddress = data.getProperty("ipAddress", hostName);
+
+        final ZonedDateTime startedAt = Optional.ofNullable(data.getProperty("startedAt"))
+                .map(s -> s.endsWith("...") ? s.substring(0, 29) : s) //We're convert dates that was capped with Properties.list() method, see https://github.com/mesos/elasticsearch/pull/367
+                .map(ZonedDateTime::parse)
+                .orElseGet(clock::nowUTC)
+                .withZoneSameInstant(ZoneOffset.UTC);
+
+        return new Task(
+                hostName,
+                taskInfo.getTaskId().getValue(),
+                taskStatus == null ? Protos.TaskState.TASK_STAGING : taskStatus.getState(),
+                startedAt,
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+        );
+    }
 }
