@@ -17,12 +17,16 @@ public class DockerUtil {
         this.dockerClient = dockerClient;
     }
 
-    public List<Container> getContainers() {
-        return dockerClient.listContainersCmd().exec();
+    public List<Container> getContainers(Boolean showAll) {
+        return dockerClient.listContainersCmd().withShowAll(showAll).exec();
     }
 
     public List<Container> getExecutorContainers() {
-        return getContainers().stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
+        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch-executor")).collect(Collectors.toList());
+    }
+
+    public List<Container> getSchedulerContainers() {
+        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch-scheduler")).collect(Collectors.toList());
     }
 
     public String getLastExecutorId() {
@@ -36,5 +40,9 @@ public class DockerUtil {
 
     public void killAllExecutors() {
         getExecutorContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+    }
+
+    public void killAllSchedulers() {
+        getSchedulerContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
     }
 }

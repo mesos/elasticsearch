@@ -5,6 +5,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
@@ -21,7 +22,10 @@ public class ClusterState {
     private SerializableState zooKeeperStateDriver;
     private FrameworkState frameworkState;
 
-    public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState) {
+    public ClusterState(@NotNull SerializableState zooKeeperStateDriver, @NotNull FrameworkState frameworkState) {
+        if (zooKeeperStateDriver == null || frameworkState == null) {
+            throw new NullPointerException();
+        }
         this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
         frameworkState.onStatusUpdate(this::updateTask);
@@ -191,7 +195,7 @@ public class ClusterState {
         }
     }
 
-    private String getKey() throws NotSerializableException {
+    private String getKey() {
         return frameworkState.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 }

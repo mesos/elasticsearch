@@ -8,6 +8,7 @@ import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
@@ -43,6 +44,11 @@ public class ReconciliationSystemTest extends TestBase {
             CONTAINER_MANAGER.stopAll();
         }
     };
+
+    @After
+    public void killContainers() {
+        CONTAINER_MANAGER.stopAll();
+    }
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {

@@ -50,20 +50,20 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("env").exec();
+        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("env").exec();
         InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
         List<String> env = Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
-        assertEquals(1, env.size());
+        assertEquals("env does not have MESOS_NATIVE_JAVA_LIBRARY: " + result, 1, env.size());
 
         // Remote execute the ENV var to make sure it points to a real file
-        String path = env.get(0).split("=")[1];
-        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
+        String path = env.get(0).split("=")[1].replace("\r", "").replace("\n", "");
+        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
         execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         result = IOUtils.toString(execCmdStream, "UTF-8");
-        assertFalse(result.contains("No such file"));
+        assertFalse(path + " does not exist: " + result, result.contains("No such file"));
     }
 
     private String getRandomExecutorId() {
