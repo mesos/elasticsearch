@@ -40,21 +40,6 @@
 - Customised ES configuration ✓
 - Configurable data directory ✓
 
-[0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
-
-- [Add auth to mini mesos enhancement](https://github.com/mesos/elasticsearch/issues/304)
-- [Support Mesos Framework Authorisation blocked dcos enhancement](https://github.com/mesos/elasticsearch/issues/218)
-
-[0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
-
-- Refactoring
-
-[0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
-
-- [Mesos persistent volumes enhancement](https://github.com/mesos/elasticsearch/issues/306)
-- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](https://github.com/mesos/elasticsearch/issues/228)
-- [Faster task recovery with Mesos dynamic reservations blocked](https://github.com/mesos/elasticsearch/issues/98)
-
 [Future]
 
 - High availability (master, indexer, replica)
@@ -67,13 +52,8 @@
 
 Rough timescales:
 
-- [0.5.0] 02/10/15
-- [0.5.1] Early-October
-- [0.6.0] Mid-October
-
 ### Blocked features
 
-- [Authorization](https://github.com/mesos/elasticsearch/issues/218)
 - [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
 - [Dynamic Reservations](https://github.com/mesos/elasticsearch/issues/98)
 
@@ -113,7 +93,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "HOST"
+      "network": "BRIDGE"
     }
   },
   "args": ["--zookeeperMesosUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
@@ -224,7 +204,7 @@ To use framework Auth, and if you are using docker, you must mount a docker volu
 ...
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "HOST"
+      "network": "BRIDGE"
     },
     "volumes": [
       {
