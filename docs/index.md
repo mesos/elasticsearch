@@ -280,6 +280,7 @@ Query Browser allows you to examine data stored on individual Elasticsearch node
 
 ### Known issues
 
+- Issue [#388](https://github.com/mesos/elasticsearch/issues/388): When in jars mode, the executor is unable to communicate with the cluster unless the adapter is named eth0.
 - Issue [#188](https://github.com/mesos/elasticsearch/issues/188): Database data IS NOT persisted to disk. Data storage is wholly reliant on cluster redundancy. This means that the framework is not yet recommended for production use.
 - Issue [#177](https://github.com/mesos/elasticsearch/issues/177#issuecomment-135367451): Executors keep running if the scheduler is killed unless the DCOS CLI is used.
 - Issue [#93](https://github.com/mesos/elasticsearch/issues/93): Despite the gui, horizontal scaling is not yet implemented.
