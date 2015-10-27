@@ -8,7 +8,7 @@ public class Configuration {
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
     private int elasticsearchNodesCount = 3;
-    private int elasticsearchMemorySize = 256;
+    private int elasticsearchMemorySize = 512;
     private String elasticsearchJobName = "esdemo";
 
     public String getSchedulerImageName() {
