@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.1] - [27 October 2015]
+
+### Enhanced
+- [Migrate ES system tests to new MiniMesos API](https://github.com/mesos/elasticsearch/issues/359)
+- System test hardening and refactoring (various)
+- Cleaned debug logging (various)
+- [Executor should report its own IP address to scheduler refactoring](https://github.com/mesos/elasticsearch/issues/362)
+
+### Fixed
+- [TASK_KILLED was not considered an error state, so executors would not be removed](https://github.com/mesos/elasticsearch/issues/369)
+- [GUI configuration NPE due to new jar options](https://github.com/mesos/elasticsearch/issues/357)
+- [Remove 'mesos/elasticsearch-base' from docker push on release](https://github.com/mesos/elasticsearch/issues/356)
+
 ## [0.5.0] - [19 October 2015]
 
 ### Enhanced

@@ -27,34 +27,30 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     private static final Logger LOGGER = Logger.getLogger(DataRetrievableAllNodesSystemTest.class);
 
-    private static DataPusherContainer pusher;
+    private DataPusherContainer pusher;
     private List<String> esAddresses;
 
     @Test
     public void testDataConsistency() throws Exception {
         ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
-
-        esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
-
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
+                esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
                 // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
-                if (!(Unirest.get("http://" + esAddresses.get(0) + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes").length() == 3)) {
-                    return false;
-                }
-                pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, esAddresses.get(0));
-                CLUSTER.addAndStartContainer(pusher);
-                return true;
+                return Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asString().getBody().contains("green");
             } catch (Exception e) {
                 return false;
             }
         });
 
+        pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, esAddresses.get(0));
+        CLUSTER.addAndStartContainer(pusher);
+
         LOGGER.info("Addresses:");
         LOGGER.info(esAddresses);
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             JSONArray responseElements;
-            for (String httpAddress: esAddresses) {
+            for (String httpAddress : esAddresses) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
                 } catch (Exception e) {

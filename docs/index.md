@@ -40,21 +40,6 @@
 - Customised ES configuration ✓
 - Configurable data directory ✓
 
-[0.5.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.5)
-
-- [Add auth to mini mesos enhancement](https://github.com/mesos/elasticsearch/issues/304)
-- [Support Mesos Framework Authorisation blocked dcos enhancement](https://github.com/mesos/elasticsearch/issues/218)
-
-[0.5.1](https://github.com/mesos/elasticsearch/issues?utf8=%E2%9C%93&q=is%3Aopen+is%3Aissue+milestone%3A0.5.1)
-
-- Refactoring
-
-[0.6.0](https://github.com/mesos/elasticsearch/issues?q=is%3Aopen+is%3Aissue+milestone%3A0.6)
-
-- [Mesos persistent volumes enhancement](https://github.com/mesos/elasticsearch/issues/306)
-- [Upgrade to Mesos 0.23 to support persistent volumes blocked enhancement](https://github.com/mesos/elasticsearch/issues/228)
-- [Faster task recovery with Mesos dynamic reservations blocked](https://github.com/mesos/elasticsearch/issues/98)
-
 [Future]
 
 - High availability (master, indexer, replica)
@@ -67,13 +52,8 @@
 
 Rough timescales:
 
-- [0.5.0] 02/10/15
-- [0.5.1] Early-October
-- [0.6.0] Mid-October
-
 ### Blocked features
 
-- [Authorization](https://github.com/mesos/elasticsearch/issues/218)
 - [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
 - [Dynamic Reservations](https://github.com/mesos/elasticsearch/issues/98)
 
@@ -113,7 +93,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "HOST"
+      "network": "BRIDGE"
     }
   },
   "args": ["--zookeeperMesosUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
@@ -224,7 +204,7 @@ To use framework Auth, and if you are using docker, you must mount a docker volu
 ...
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "HOST"
+      "network": "BRIDGE"
     },
     "volumes": [
       {
@@ -306,11 +286,11 @@ Query Browser allows you to examine data stored on individual Elasticsearch node
 
 ## Developers Guide
 
-For developers, we have provided a range of tools for testing and running the project. Check out the [mini-mesos](https://github.com/containersolutions/mini-mesos) project for an in-memory Mesos cluster for integration testing.
+For developers, we have provided a range of tools for testing and running the project. Check out the [minimesos](https://github.com/containersolutions/minimesos) project for an in-memory Mesos cluster for integration testing.
 
 ### Quickstart
 
-You can run Mesos-Elasticsearch using <a href="https://github.com/containersolutions/mini-mesos">Mini Mesos</a>, a containerized Mesos cluster for testing frameworks.
+You can run Mesos-Elasticsearch using <a href="https://github.com/containersolutions/minimesos">minimesos</a>, a containerized Mesos cluster for testing frameworks.
 
 ### How to run on Linux
 
@@ -337,7 +317,7 @@ $ ./gradlew build system-test:main
 
 ### System test
 
-The project contains a system-test module which tests if the framework interacts correctly with Mesos, using <a href="https://github.com/containersolutions/mini-mesos">Mini Mesos</a>. We currently test Zookeeper discovery and the Scheduler's API by calling endpoints and verifying the results. As the framework grows we will add more system tests.
+The project contains a system-test module which tests if the framework interacts correctly with Mesos, using <a href="https://github.com/containersolutions/minimesos">minimesos</a>. We currently test Zookeeper discovery and the Scheduler's API by calling endpoints and verifying the results. As the framework grows we will add more system tests.
 
 #### How to run system tests on Linux
 

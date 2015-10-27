@@ -64,11 +64,6 @@ public class TasksResponse {
         return response;
     }
 
-    public List<JSONObject> getTasks() {
-        return tasks;
-    }
-
-
     private class InExpectedState extends JSONArrayResult {
         @Override
         protected boolean getResult(JSONObject task) {

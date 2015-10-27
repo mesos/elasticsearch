@@ -59,8 +59,8 @@ public class Main {
         String taskHttpAddress;
         try {
             ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
-            List<JSONObject> tasks = new TasksResponse(esTasks, cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING").getTasks();
-            taskHttpAddress = tasks.get(0).getString("http_address");
+            new TasksResponse(esTasks, cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING");
+            taskHttpAddress = esTasks.getTasks().get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

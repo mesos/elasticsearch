@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.systemtest.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.Main;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.AfterClass;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -33,6 +34,12 @@ public abstract class TestBase {
             CLUSTER.stop();
         }
     };
+
+    @BeforeClass
+    public static void prepareCleanDockerEnvironment() {
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllSchedulers();
+        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+    }
 
     @AfterClass
     public static void killAllContainers() {

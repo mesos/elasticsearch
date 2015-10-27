@@ -8,12 +8,12 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchZookeepe
 import org.apache.mesos.elasticsearch.systemtest.containers.ZookeeperContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.json.JSONObject;
-import org.junit.*;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
-
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,14 +56,12 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
+        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 
@@ -73,14 +71,12 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        TasksResponse tasksResponse = new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
-
-        List<JSONObject> tasks = tasksResponse.getTasks();
+        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(tasks.get(0).getString("http_address"));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 }
