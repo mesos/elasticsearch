@@ -15,10 +15,7 @@ import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
-import java.net.InetAddress;
-import java.net.MalformedURLException;
-import java.net.SocketException;
-import java.net.URL;
+import java.net.*;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
@@ -107,13 +104,13 @@ public class ElasticsearchExecutor implements Executor {
             }));
 
             try {
-                InetAddress eth0 = AdaptorIPAddress.eth0();
+                InetAddress eth0 = InetAddress.getLocalHost();
                 LOGGER.debug("InetAddress: " + eth0);
                 SerializableIPAddress serializableIPAddress = new SerializableIPAddress(eth0);
                 driver.sendFrameworkMessage(serializableIPAddress.toBytes());
                 LOGGER.debug("Sent framework message: " + serializableIPAddress.toString());
-            } catch (NoSuchElementException | SocketException e) {
-                LOGGER.warn("Unable to obtain eth0 ip address", e);
+            } catch (UnknownHostException | NoSuchElementException e) {
+                LOGGER.error("Unable to obtain eth0 ip address", e);
             }
 
             // Send status update, running

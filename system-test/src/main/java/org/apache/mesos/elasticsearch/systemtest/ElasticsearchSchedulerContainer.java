@@ -50,6 +50,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withCmd(
+                        Configuration.SYSTEM_TEST_MODE, "true",
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
