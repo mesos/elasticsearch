@@ -2,6 +2,12 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.5.2] - [29 October 2015]
+
+### Fixed
+- [Executor ip addresses are not available](https://github.com/mesos/elasticsearch/issues/390)
+
+
 ## [0.5.1] - [27 October 2015]
 
 ### Enhanced
