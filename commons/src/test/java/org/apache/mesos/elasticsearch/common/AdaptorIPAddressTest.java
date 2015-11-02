@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.common;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
@@ -10,7 +11,7 @@ import static org.junit.Assert.*;
  */
 public class AdaptorIPAddressTest {
 
-    @Test
+    @Test @Ignore("Test is being taken care of at https://github.com/mesos/elasticsearch/issues/392")
     public void testEth0() throws Exception {
         assertNotNull(AdaptorIPAddress.eth0());
         assertTrue(AdaptorIPAddress.eth0().getHostAddress().contains("."));
