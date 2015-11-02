@@ -47,7 +47,11 @@ public class TasksController {
     }
 
     private String toFormattedAddress(InetSocketAddress clientAddress) {
-        return String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort());
+        if (clientAddress.isUnresolved()) { // Protect against unresolved IP addresses.
+            return "UNKNOWN";
+        } else {
+            return String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort());
+        }
     }
 
     /**

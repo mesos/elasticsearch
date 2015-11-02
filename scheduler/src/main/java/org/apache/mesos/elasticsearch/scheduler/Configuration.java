@@ -44,7 +44,6 @@ public class Configuration {
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";
-    public static final String SYSTEM_TEST_MODE = "--systemTestMode";
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
@@ -87,8 +86,6 @@ public class Configuration {
     private InetSocketAddress frameworkFileServerAddress;
     @Parameter(names = {JAVA_HOME}, description = "(Only when " + FRAMEWORK_USE_DOCKER + " is false) When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
     private String javaHome = "";
-    @Parameter(names = {SYSTEM_TEST_MODE}, arity = 1, description = "Internal use only. Enables docker bridge mode for system tests.")
-    private Boolean systemTestMode = false;
     // ****************** Runtime configuration **********************
 
     public Configuration(String... args) {
@@ -244,10 +241,6 @@ public class Configuration {
 
     public String getJavaHome() {
         return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
-    }
-
-    public Boolean isSystemTestMode() {
-        return systemTestMode;
     }
 
     /**
