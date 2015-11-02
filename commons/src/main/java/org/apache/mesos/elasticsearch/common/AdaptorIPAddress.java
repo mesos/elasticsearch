@@ -22,7 +22,7 @@ public class AdaptorIPAddress {
         Enumeration<NetworkInterface> nets = NetworkInterface.getNetworkInterfaces();
         ArrayList<NetworkInterface> netList = Collections.list(nets);
         LOGGER.debug(netList.stream().map(NetworkInterface::getName).collect(Collectors.joining(", ")));
-        NetworkInterface eth0 = netList.stream().filter(s -> s.getName().matches("eth0|en0")).findFirst().get();
+        NetworkInterface eth0 = netList.stream().filter(s -> s.getName().matches("eth0|en[0|1]")).findFirst().get();
         ArrayList<InetAddress> inetAddresses = Collections.list(eth0.getInetAddresses());
         Optional<InetAddress> address = inetAddresses.stream().filter(inetAddress -> inetAddress.getHostAddress().matches("^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$")).findFirst();
         LOGGER.debug(eth0.getDisplayName() + ": " + address.get().getHostAddress());
