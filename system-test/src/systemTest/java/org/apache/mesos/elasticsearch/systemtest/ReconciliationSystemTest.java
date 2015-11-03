@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
@@ -16,6 +17,8 @@ import org.junit.runner.Description;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.jayway.awaitility.Awaitility.await;
@@ -119,10 +122,13 @@ public class ReconciliationSystemTest extends TestBase {
 
         @Override
         protected CreateContainerCmd dockerCommand() {
+            List<MesosSlave> slaves = Arrays.asList(CLUSTER.getSlaves());
+
             return dockerClient
                     .createContainerCmd(getTestConfig().getSchedulerImageName())
                     .withName(getTestConfig().getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
+                    .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + DOCKER0_ADAPTOR_IP_ADDRESS).toArray(String[]::new))
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",
