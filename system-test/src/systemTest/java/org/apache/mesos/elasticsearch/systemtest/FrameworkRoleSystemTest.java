@@ -36,8 +36,8 @@ public class FrameworkRoleSystemTest extends TestBase {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
                 CLUSTER.getConfig().dockerClient,
                 CLUSTER.getZkContainer().getIpAddress(),
-                role,
-                CLUSTER);
+                role
+        );
         CLUSTER.addAndStartContainer(scheduler);
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
