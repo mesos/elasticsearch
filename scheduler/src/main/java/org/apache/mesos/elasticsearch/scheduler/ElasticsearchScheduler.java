@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -22,7 +21,6 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final Configuration configuration;
     private final TaskInfoFactory taskInfoFactory;
-    private final CredentialFactory credentialFactory;
     private final ClusterState clusterState;
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
@@ -35,7 +33,6 @@ public class ElasticsearchScheduler implements Scheduler {
         this.taskInfoFactory = taskInfoFactory;
         this.offerStrategy = offerStrategy;
         this.zookeeperStateDriver = zookeeperStateDriver;
-        this.credentialFactory = new CredentialFactory(configuration);
     }
 
     public Map<String, Task> getTasks() {
@@ -46,24 +43,13 @@ public class ElasticsearchScheduler implements Scheduler {
         }
     }
 
-    public void run() {
+    public void run(SchedulerDriver schedulerDriver) {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() +
                 ", zk mesos: " + configuration.getMesosZKURL() +
                 ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
-        FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
-        final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
-        final Protos.Credential.Builder credentialBuilder = credentialFactory.getBuilder();
-        final MesosSchedulerDriver driver;
-        if (credentialBuilder.isInitialized()) {
-            LOGGER.debug("Creating Scheduler driver with principal: " + credentialBuilder.toString());
-            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL(), credentialBuilder.build());
-        } else {
-            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL());
-        }
-
-        driver.run();
+        schedulerDriver.run();
     }
 
     @Override
