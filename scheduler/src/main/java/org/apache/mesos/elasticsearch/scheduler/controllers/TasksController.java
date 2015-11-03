@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static java.util.stream.Collectors.toList;
 
@@ -40,18 +41,18 @@ public class TasksController {
             configuration.getTaskName(),
             configuration.getVersion(),
             task.getValue().getStartedAt().format(DateTimeFormatter.ISO_OFFSET_DATE_TIME),
-            toFormattedAddress(task.getValue().getClientAddress()),
-            toFormattedAddress(task.getValue().getTransportAddress()),
+            toFormattedAddress(task.getValue().getClientAddress()).orElse("UNRESOLVED"),
+            toFormattedAddress(task.getValue().getTransportAddress()).orElse("UNRESOLVED"),
             task.getValue().getHostname()
         );
     }
 
-    private String toFormattedAddress(InetSocketAddress clientAddress) {
-        if (clientAddress.isUnresolved()) { // Protect against unresolved IP addresses.
-            return "UNKNOWN";
-        } else {
-            return String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort());
+    private Optional<String> toFormattedAddress(InetSocketAddress clientAddress) {
+        Optional<String> res = Optional.empty();
+        if (!clientAddress.isUnresolved()) { // Protect against unresolved IP addresses.
+            res = Optional.of(String.format("%s:%s", clientAddress.getAddress().getHostAddress(), clientAddress.getPort()));
         }
+        return res;
     }
 
     /**

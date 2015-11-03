@@ -62,16 +62,10 @@ public class TaskInfoFactory {
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
-        String hostAddress = "UNKNOWN";
         String hostname = offer.getHostname();
         LOGGER.debug("Attempting to resolve hostname: " + hostname);
         InetSocketAddress address = new InetSocketAddress(hostname, ports.get(0));
-        if (address.isUnresolved()) {
-            LOGGER.error(hostname + " is unresolved.");
-        } else {
-            hostAddress = address.getAddress().getHostAddress();
-            LOGGER.debug(hostname + " resolved at: " + hostAddress);
-        }
+        String hostAddress = address.getAddress().getHostAddress(); // Note this will always resolve because of the check in OfferStrategy
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -179,7 +173,10 @@ public class TaskInfoFactory {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse properties", e);
         }
-        String hostName = data.getProperty("hostname", "UNKNOWN");
+        String hostName = data.getProperty("hostname", "");
+        if (hostName.isEmpty()) {
+            LOGGER.error("Hostname is empty. Reported IP addresses will be incorrect.");
+        }
         String ipAddress = data.getProperty("ipAddress", hostName);
 
         final ZonedDateTime startedAt = Optional.ofNullable(data.getProperty("startedAt"))

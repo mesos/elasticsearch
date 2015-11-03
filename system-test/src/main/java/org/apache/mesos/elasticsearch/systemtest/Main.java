@@ -20,7 +20,7 @@ public class Main {
         MesosCluster cluster = new MesosCluster(
             MesosClusterConfig.builder()
                 .mesosImageTag(MESOS_IMAGE_TAG)
-                .slaveResources(new String[]{"ports(*):[4000-4000,5000-5000]", "ports(*):[4001-4001,5001-5001]", "ports(*):[4002-4002,5002-5002]"})
+                .slaveResources(TEST_CONFIG.getPortRanges())
                 .build()
         );
 
