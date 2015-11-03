@@ -20,7 +20,6 @@ import static org.mockito.Mockito.when;
  * Test offer strategy
  */
 @RunWith(MockitoJUnitRunner.class)
-@SuppressWarnings("PMD.TooManyMethods")
 public class OfferStrategyTest {
 
     @Mock
@@ -131,35 +130,6 @@ public class OfferStrategyTest {
         assertFalse(offerResult.reason.isPresent());
     }
 
-    @Test
-    public void shouldDeclineWhenHostIsUnresolveable() throws InvalidProtocolBufferException {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
-        when(configuration.getElasticsearchNodes()).thenReturn(3);
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
-                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
-                .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
-                .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
-                .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
-                .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
-                .setHostname("NonResolvableHostname")
-                .build());
-        assertFalse(offerResult.acceptable);
-    }
-
-    @Test
-    public void shouldAcceptWhenHostIsResolveable() throws InvalidProtocolBufferException {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
-        when(configuration.getElasticsearchNodes()).thenReturn(3);
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
-                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
-                .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
-                .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
-                .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
-                .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
-                .build());
-        assertTrue(offerResult.acceptable);
-    }
-
     private Protos.TaskInfo createTask(String hostname) throws InvalidProtocolBufferException {
         return Protos.TaskInfo.newBuilder()
                 .setName("Test")
@@ -177,7 +147,7 @@ public class OfferStrategyTest {
         return Protos.Offer.newBuilder()
                 .setId(Protos.OfferID.newBuilder().setValue("offerId").build())
                 .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("testframework").build())
-                .setHostname("localhost")
+                .setHostname("hostname")
                 .setSlaveId(Protos.SlaveID.newBuilder().setValue(slaveId).build());
     }
 }

@@ -4,7 +4,9 @@ import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.json.JSONObject;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -20,7 +22,7 @@ public class Main {
         MesosCluster cluster = new MesosCluster(
             MesosClusterConfig.builder()
                 .mesosImageTag(MESOS_IMAGE_TAG)
-                .slaveResources(TEST_CONFIG.getPortRanges())
+                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
                 .build()
         );
 
@@ -39,7 +41,8 @@ public class Main {
         cluster.start();
 
         LOGGER.info("Starting scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getZkContainer().getIpAddress(), cluster);
+
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getZkContainer().getIpAddress());
         schedulerReference.set(scheduler);
         scheduler.start();
 

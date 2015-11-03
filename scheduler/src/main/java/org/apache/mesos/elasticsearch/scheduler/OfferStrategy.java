@@ -4,7 +4,6 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
-import java.net.InetSocketAddress;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,25 +14,17 @@ import static java.util.Arrays.asList;
  */
 public class OfferStrategy {
     private static final Logger LOGGER = Logger.getLogger(ElasticsearchScheduler.class.toString());
-    public static final int DUMMY_PORT = 80;
     private ClusterState clusterState;
     private Configuration configuration;
 
     private List<OfferRule> acceptanceRules = asList(
             new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
-            new OfferRule("Hostname is unresolveable", offer -> !isHostnameResolveable(offer.getHostname())),
             new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() == configuration.getElasticsearchNodes()),
             new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
             new OfferRule("Offer did not have enough CPU resources", offer -> !isEnoughCPU(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough RAM resources", offer -> !isEnoughRAM(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough disk resources", offer -> !isEnoughDisk(configuration, offer.getResourcesList()))
     );
-
-    private boolean isHostnameResolveable(String hostname) {
-        LOGGER.debug("Attempting to resolve hostname: " + hostname);
-        InetSocketAddress address = new InetSocketAddress(hostname, DUMMY_PORT);
-        return !address.isUnresolved();
-    }
 
     public OfferStrategy(Configuration configuration, ClusterState clusterState) {
         this.clusterState = clusterState;
