@@ -159,14 +159,14 @@ subprojects {
                         + ' contains Dockerfile, but it does not define project.ext.imageName value')
             }
             docker.url = 'unix:///var/run/docker.sock'
-            if (!System.properties['os.name'].equals('Mac OS X')) {
+            if(!System.properties['os.name'].equals('Mac OS X')) {
                 docker.certPath = null
             }
             if (System.env.DOCKER_HOST) {
                 docker.url = "$System.env.DOCKER_HOST".replace("tcp","https")
-                    if (System.env.DOCKER_CERT_PATH) {
-                        docker.certPath = new File(System.env.DOCKER_CERT_PATH)
-                    }
+                if (System.env.DOCKER_CERT_PATH) {
+                    docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                }
             }
             task buildDockerImage(type: DockerBuildImage, dependsOn: [taskCopyFilesForDocker], description: 'build Docker image') {
                 inputDir = file(project.projectDir)
@@ -181,21 +181,19 @@ subprojects {
                     repository = project.imageName
                     force = true
                 }
-                if (project.imageName.equals('mesos/elasticsearch-scheduler') || project.imageName.equals('mesos/elasticsearch-executor')) {
-                    task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
-                            description: 'publish Docker image') {
-                        imageName = project.imageName
-                        tag = ( 'version'.equals(aTag) ) ? project.version : aTag
-                        doFirst {
-                            ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-                                assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-                            }
-                            docker {
-                                registryCredentials {
-                                    username = project.property('dockerHubUsername')
-                                    password = project.property('dockerHubPassword')
-                                    email = project.property('dockerHubEmail')
-                                }
+                task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
+                        description: 'publish Docker image') {
+                    imageName = project.imageName
+                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
+                    doFirst {
+                        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
+                        }
+                        docker {
+                            registryCredentials {
+                                username = project.property('dockerHubUsername')
+                                password = project.property('dockerHubPassword')
+                                email = project.property('dockerHubEmail')
                             }
                         }
                     }

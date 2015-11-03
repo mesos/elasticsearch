@@ -5,8 +5,6 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.common.AdaptorIPAddress;
-import org.apache.mesos.elasticsearch.common.SerializableIPAddress;
 import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
@@ -19,7 +17,6 @@ import java.net.*;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.NoSuchElementException;
 
 /**
  * Executor for Elasticsearch.
@@ -102,16 +99,6 @@ public class ElasticsearchExecutor implements Executor {
                     shutdown(driver);
                 }
             }));
-
-            try {
-                InetAddress eth0 = InetAddress.getLocalHost();
-                LOGGER.debug("InetAddress: " + eth0);
-                SerializableIPAddress serializableIPAddress = new SerializableIPAddress(eth0);
-                driver.sendFrameworkMessage(serializableIPAddress.toBytes());
-                LOGGER.debug("Sent framework message: " + serializableIPAddress.toString());
-            } catch (UnknownHostException | NoSuchElementException e) {
-                LOGGER.error("Unable to obtain eth0 ip address", e);
-            }
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());

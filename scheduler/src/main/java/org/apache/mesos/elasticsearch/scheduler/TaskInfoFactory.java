@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -61,14 +62,19 @@ public class TaskInfoFactory {
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
+        String hostname = offer.getHostname();
+        LOGGER.debug("Attempting to resolve hostname: " + hostname);
+        InetSocketAddress address = new InetSocketAddress(hostname, ports.get(0));
+        String hostAddress = address.getAddress().getHostAddress(); // Note this will always resolve because of the check in OfferStrategy
+
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
-                .setData(toData(offer.getHostname(), "UNKNOWN", clock.nowUTC()))
+                .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration)).build();
+                .setExecutor(newExecutorInfo(configuration, discoveryPorts.build())).build();
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -86,7 +92,7 @@ public class TaskInfoFactory {
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, Protos.Ports discoveryPorts) {
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
@@ -94,14 +100,15 @@ public class TaskInfoFactory {
                 .setCommand(newCommandInfo(configuration));
         if (configuration.isFrameworkUseDocker()) {
 
+            List<Protos.ContainerInfo.DockerInfo.PortMapping> portMappings = discoveryPorts.getPortsList().stream().map(
+                    port -> Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setHostPort(port.getNumber()).setContainerPort(port.getNumber()).build()
+            ).collect(Collectors.toList());
             Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setImage(configuration.getExecutorImage())
-                    .setForcePullImage(configuration.getExecutorForcePullImage());
-            if (configuration.isSystemTestMode()) {
-                containerBuilder.setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE);
-            } else {
-                containerBuilder.setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
-            }
+                    .setForcePullImage(configuration.getExecutorForcePullImage())
+                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
+                    .addAllPortMappings(portMappings);
+
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(containerBuilder)
@@ -166,7 +173,11 @@ public class TaskInfoFactory {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse properties", e);
         }
-        String hostName = data.getProperty("hostname", "UNKNOWN");
+
+        String hostName = Optional.ofNullable(data.getProperty("hostname")).orElseGet(() -> {
+            LOGGER.error("Hostname is empty. Reported IP addresses will be incorrect.");
+            return "";
+        });
         String ipAddress = data.getProperty("ipAddress", hostName);
 
         final ZonedDateTime startedAt = Optional.ofNullable(data.getProperty("startedAt"))

@@ -5,15 +5,12 @@ import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
-import org.apache.mesos.elasticsearch.common.SerializableIPAddress;
 import org.apache.mesos.elasticsearch.scheduler.state.*;
 
-import java.net.UnknownHostException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * Scheduler for Elasticsearch.
@@ -132,17 +129,6 @@ public class ElasticsearchScheduler implements Scheduler {
     @Override
     public void frameworkMessage(SchedulerDriver driver, Protos.ExecutorID executorId, Protos.SlaveID slaveId, byte[] data) {
         LOGGER.info("Framework Message - Executor: " + executorId.getValue() + ", SlaveID: " + slaveId.getValue());
-        try {
-            SerializableIPAddress serializableIPAddress = SerializableIPAddress.fromBytes(data);
-            Protos.TaskInfo oldTask = clusterState.getTask(executorId);
-            Protos.TaskInfo newTask = Protos.TaskInfo.newBuilder().mergeFrom(oldTask)
-                    .setData(taskInfoFactory.toData(serializableIPAddress.getAddress().getHostName(), serializableIPAddress.getAddress().getHostAddress(), new Clock().zonedNow()))
-                    .build();
-            clusterState.removeTask(oldTask);
-            clusterState.addTask(newTask);
-        } catch (UnknownHostException e) {
-            LOGGER.warn("Unable to parse ip address discovery information");
-        }
     }
 
     @Override

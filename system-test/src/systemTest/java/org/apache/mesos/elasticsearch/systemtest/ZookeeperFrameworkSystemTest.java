@@ -33,7 +33,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         LOGGER.info("Starting Extra zookeeper container");
         zookeeper = new ZookeeperContainer(CLUSTER.getConfig().dockerClient);
         CLUSTER.addAndStartContainer(zookeeper);
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
     }
 
     @After

@@ -32,7 +32,7 @@ public class ReconciliationSystemTest extends TestBase {
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
         CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
@@ -114,7 +114,7 @@ public class ReconciliationSystemTest extends TestBase {
 
     private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {
         protected TimeoutSchedulerContainer(DockerClient dockerClient, String zkIp) {
-            super(dockerClient, zkIp);
+            super(dockerClient, zkIp, CLUSTER);
         }
 
         @Override
