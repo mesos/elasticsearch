@@ -173,10 +173,11 @@ public class TaskInfoFactory {
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse properties", e);
         }
-        String hostName = data.getProperty("hostname", "");
-        if (hostName.isEmpty()) {
+
+        String hostName = Optional.ofNullable(data.getProperty("hostname")).orElseGet(() -> {
             LOGGER.error("Hostname is empty. Reported IP addresses will be incorrect.");
-        }
+            return "";
+        });
         String ipAddress = data.getProperty("ipAddress", hostName);
 
         final ZonedDateTime startedAt = Optional.ofNullable(data.getProperty("startedAt"))
