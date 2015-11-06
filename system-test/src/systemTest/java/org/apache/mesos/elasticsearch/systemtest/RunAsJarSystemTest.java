@@ -5,25 +5,20 @@ import com.containersol.minimesos.container.AbstractContainer;
 import com.containersol.minimesos.mesos.*;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.ExposedPort;
 import com.github.dockerjava.api.model.Link;
 import com.github.dockerjava.api.model.Ports;
-import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
-import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
-import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.TreeMap;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertTrue;
@@ -32,8 +27,6 @@ import static org.junit.Assert.assertTrue;
  * A system test to ensure that the framework can run as a JAR, not using docker.
  */
 public class RunAsJarSystemTest {
-    private static final Logger LOGGER = Logger.getLogger(RunAsJarSystemTest.class);
-    private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
     private static final int NUMBER_OF_TEST_TASKS = 1;
 
@@ -47,7 +40,7 @@ public class RunAsJarSystemTest {
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(zooKeeper -> new MesosMaster22(dockerClient, zooKeeper))
-                .withSlave(zooKeeper -> new MesosSlave22(dockerClient, zooKeeper)) // Have to have a slave before we build. This offer wont get accepted.
+                .withSlave(zooKeeper -> new MesosSlave22(dockerClient, zooKeeper)) // Have to have a slave before we build. Bit of a minimesos bug. This offer wont get accepted.
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.build().getClusterContainers().getOne(container -> container instanceof JarScheduler).get();
         IntStream.range(0,NUMBER_OF_TEST_TASKS).forEach(dummy ->
@@ -56,12 +49,10 @@ public class RunAsJarSystemTest {
         CLUSTER = new MesosCluster(builder.build());
 
         CLUSTER.start();
-
     }
 
     @After
     public void stopContainer() {
-        CONTAINER_MANAGER.stopAll();
         CLUSTER.stop();
     }
 
@@ -112,7 +103,7 @@ public class RunAsJarSystemTest {
                     .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
                     .withName(TEST_CONFIG.getSchedulerName() + "_" + MesosCluster.getClusterId() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts("hostnamehack:" + ElasticsearchSchedulerContainer.DOCKER0_ADAPTOR_IP_ADDRESS) // Hack to get past offer refusal
+                    .withExtraHosts("hostnamehack:" + ElasticsearchSchedulerContainer.DOCKER0_ADAPTOR_IP_ADDRESS) // Will redirect hostnamehack to host IP address (where ports are bound)
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.FRAMEWORK_USE_DOCKER, "false",
@@ -128,6 +119,32 @@ public class RunAsJarSystemTest {
         }
     }
 
+    private class MesosSlaveWithSchedulerLink extends MesosSlave22 {
+
+        private final JarScheduler scheduler;
+
+        protected MesosSlaveWithSchedulerLink(DockerClient dockerClient, ZooKeeper zooKeeperContainer, JarScheduler scheduler) {
+            super(dockerClient, zooKeeperContainer);
+            this.scheduler = scheduler;
+        }
+
+        @Override
+        protected CreateContainerCmd dockerCommand() {
+            CreateContainerCmd createContainerCmd = super.dockerCommand();
+
+            Ports ports = new Ports();
+            ports.bind(ExposedPort.tcp(31000), Ports.Binding(31000));
+            createContainerCmd
+                    .withHostName("hostnamehack") // Hack to get past offer refusal
+                    .withLinks(new Link(scheduler.getContainerId(), scheduler.getContainerId()))
+                    .withExposedPorts(new ExposedPort(31000), new ExposedPort(5051))
+                    .withPortBindings(ports)
+                    ;
+            return createContainerCmd;
+        }
+    }
+
+    // TODO (pnw): Remove when upgrading ES to 25
     private class MesosMaster22 extends MesosMaster {
 
         public MesosMaster22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
@@ -141,6 +158,7 @@ public class RunAsJarSystemTest {
         }
     }
 
+    // TODO (pnw): Remove when upgrading ES to 25
     private class MesosSlave22 extends MesosSlave {
 
         public MesosSlave22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
@@ -151,56 +169,6 @@ public class RunAsJarSystemTest {
         protected CreateContainerCmd dockerCommand() {
             CreateContainerCmd createContainerCmd = super.dockerCommand();
             return createContainerCmd.withImage("containersol/mesos-agent:" + Main.MESOS_IMAGE_TAG);
-        }
-    }
-
-    private class MesosSlaveWithSchedulerLink extends MesosSlave {
-
-        private final JarScheduler scheduler;
-
-        protected MesosSlaveWithSchedulerLink(DockerClient dockerClient, ZooKeeper zooKeeperContainer, JarScheduler scheduler) {
-            super(dockerClient, zooKeeperContainer);
-            this.scheduler = scheduler;
-        }
-
-        @Override
-        protected CreateContainerCmd dockerCommand() {
-            String dockerBin1 = "/usr/bin/docker";
-            File dockerBinFile1 = new File(dockerBin1);
-            if(!dockerBinFile1.exists() || !dockerBinFile1.canExecute()) {
-                dockerBin1 = "/usr/local/bin/docker";
-                dockerBinFile1 = new File(dockerBin1);
-                if(!dockerBinFile1.exists() || !dockerBinFile1.canExecute()) {
-                    LOGGER.error("Docker binary not found in /usr/local/bin or /usr/bin. Creating containers will most likely fail.");
-                }
-            }
-            Ports ports = new Ports();
-            ports.bind(ExposedPort.tcp(31000), Ports.Binding(31000));
-            CreateContainerCmd createContainerCmd = this.dockerClient
-                    .createContainerCmd("containersol/mesos-agent:" + Main.MESOS_IMAGE_TAG)
-                    .withName("minimesos-agent-" + MesosCluster.getClusterId() + "-" + this.getRandomId())
-                    .withPrivileged(true)
-                    .withEnv(this.createMesosLocalEnvironment())
-                    .withPid("host")
-                    .withBinds(new Bind[]{Bind.parse("/var/lib/docker:/var/lib/docker"), Bind.parse("/sys/fs/cgroup:/sys/fs/cgroup"), Bind.parse(String.format("%s:/usr/bin/docker", new Object[]{dockerBin1})), Bind.parse("/var/run/docker.sock:/var/run/docker.sock")})
-                    .withHostName("hostnamehack") // Hack to get past offer refusal
-                    .withNetworkMode("bridge")
-                    .withLinks(new Link(scheduler.getContainerId(), scheduler.getContainerId()))
-                    .withExposedPorts(new ExposedPort(31000), new ExposedPort(5051))
-                    .withPortBindings(ports)
-                    ;
-            return createContainerCmd;
-        }
-
-        @Override
-        protected String[] createMesosLocalEnvironment() {
-            TreeMap<String, String> map = this.getDefaultEnvVars();
-            map.putAll(this.getSharedEnvVars());
-            return (String[])map.entrySet().stream().map((e) -> {
-                return (String)e.getKey() + "=" + (String)e.getValue();
-            }).toArray((x$0) -> {
-                return new String[x$0];
-            });
         }
     }
 }
