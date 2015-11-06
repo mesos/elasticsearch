@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * System test for the executor
@@ -56,7 +56,7 @@ public class ExecutorSystemTest extends SchedulerTestBase {
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
         List<String> env = Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
-        assertEquals("env does not have MESOS_NATIVE_JAVA_LIBRARY: " + result, 1, env.size());
+        assertTrue("env does not have MESOS_NATIVE_JAVA_LIBRARY: " + result, env.size() > 0);
 
         // Remote execute the ENV var to make sure it points to a real file
         String path = env.get(0).split("=")[1].replace("\r", "").replace("\n", "");
