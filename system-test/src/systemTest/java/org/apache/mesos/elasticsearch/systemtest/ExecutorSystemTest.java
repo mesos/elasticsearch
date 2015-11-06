@@ -25,11 +25,6 @@ public class ExecutorSystemTest extends SchedulerTestBase {
 
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
-    @Before
-    public void before() {
-        Awaitility.await().atMost(60, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() > 0); // Make sure executors are alive before performing tests
-    }
-
     /**
      * Make sure that lib mesos exists in /usr/lib/libmesos.so
      * @throws IOException
@@ -37,9 +32,8 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     @Test
     public void ensureLibMesosExists() throws IOException {
         // Remote execute an ls command to make sure the file exists
-        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
-        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
-        String result = IOUtils.toString(execCmdStream, "UTF-8");
+        String path = "/usr/lib/libmesos.so";
+        String result = getResultOfLs(path);
         assertFalse(result.contains("No such file"));
     }
 
@@ -50,20 +44,34 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("env").exec();
+        final ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("env").exec();
+
+        Awaitility.await().atMost(1L, TimeUnit.MINUTES).until(() -> {
+                    List<String> env = getEnvVars(exec);
+                    return env.size() > 0;
+                });
+
+        List<String> env = getEnvVars(exec);
+        assertTrue("env does not have MESOS_NATIVE_JAVA_LIBRARY.", env.size() > 0);
+
+        // Remote execute the ENV var to make sure it points to a real file
+        String path = env.get(0).split("=")[1].replace("\r", "").replace("\n", "");
+        String result = getResultOfLs(path);
+        assertFalse(path + " does not exist: " + result, result.contains("No such file"));
+    }
+
+    public String getResultOfLs(String path) throws IOException {
+        ExecCreateCmdResponse exec2 = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
+        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec2.getId()).exec();
+        return IOUtils.toString(execCmdStream, "UTF-8");
+    }
+
+    public List<String> getEnvVars(ExecCreateCmdResponse exec) throws IOException {
         InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
         String result = IOUtils.toString(execCmdStream, "UTF-8");
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
-        List<String> env = Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
-        assertTrue("env does not have MESOS_NATIVE_JAVA_LIBRARY: " + result, env.size() > 0);
-
-        // Remote execute the ENV var to make sure it points to a real file
-        String path = env.get(0).split("=")[1].replace("\r", "").replace("\n", "");
-        exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
-        execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
-        result = IOUtils.toString(execCmdStream, "UTF-8");
-        assertFalse(path + " does not exist: " + result, result.contains("No such file"));
+        return Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
     }
 
     private String getRandomExecutorId() {
