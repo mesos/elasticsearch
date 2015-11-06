@@ -5,8 +5,6 @@ import com.containersol.minimesos.container.AbstractContainer;
 import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.PortBinding;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -16,14 +14,15 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0AdaptorIpAddress;
+
 /**
  * Container for the Elasticsearch scheduler
  */
-@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    protected final String DOCKER0_ADAPTOR_IP_ADDRESS;
+    protected final String docker0AdaptorIpAddress;
 
     private final String zkIp;
 
@@ -43,7 +42,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         this.frameworkRole = frameworkRole;
         this.cluster = cluster;
 
-        DOCKER0_ADAPTOR_IP_ADDRESS = dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
+        docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
     }
 
     @Override
@@ -55,14 +54,14 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     protected CreateContainerCmd dockerCommand() {
         List<MesosSlave> slaves = Arrays.asList(cluster.getSlaves());
 
-        // Note we are redirecting each slave host to the static docker0 adaptor address (DOCKER0_ADAPTOR_IP_ADDRESS).
+        // Note we are redirecting each slave host to the static docker0 adaptor address (docker0AdaptorIpAddress).
         // The executors expose ports and when running system tests these are exposed on the single docker daemon machine
         // (localhost for linux, virtual machine for mac users). However, the docker0 ip address *always* points to the host.
         return dockerClient
                 .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
                 .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + DOCKER0_ADAPTOR_IP_ADDRESS).toArray(String[]::new))
+                .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
