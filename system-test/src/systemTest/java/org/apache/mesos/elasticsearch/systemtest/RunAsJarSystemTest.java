@@ -26,12 +26,13 @@ import static org.junit.Assert.assertTrue;
 /**
  * A system test to ensure that the framework can run as a JAR, not using docker.
  */
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class RunAsJarSystemTest {
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
     private static final int NUMBER_OF_TEST_TASKS = 1;
 
     // Need full control over the cluster, so need to do all the lifecycle stuff.
-    private static MesosCluster CLUSTER;
+    private MesosCluster cluster;
     private static DockerClient dockerClient = DockerClientFactory.build();
     private JarScheduler scheduler;
 
@@ -43,24 +44,24 @@ public class RunAsJarSystemTest {
                 .withSlave(zooKeeper -> new MesosSlave22(dockerClient, zooKeeper)) // Have to have a slave before we build. Bit of a minimesos bug. This offer wont get accepted.
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.build().getClusterContainers().getOne(container -> container instanceof JarScheduler).get();
-        IntStream.range(0,NUMBER_OF_TEST_TASKS).forEach(dummy ->
+        IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(dummy ->
             builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(dockerClient, zooKeeper, scheduler))
         );
-        CLUSTER = new MesosCluster(builder.build());
+        cluster = new MesosCluster(builder.build());
 
-        CLUSTER.start();
+        cluster.start();
     }
 
     @After
     public void stopContainer() {
-        CLUSTER.stop();
+        cluster.stop();
     }
 
-    @ClassRule
-    public static final TestWatcher WATCHER = new TestWatcher() {
+    @Rule
+    public final TestWatcher WATCHER = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
-            CLUSTER.stop();
+            cluster.stop();
         }
     };
 
@@ -72,6 +73,7 @@ public class RunAsJarSystemTest {
 
     @AfterClass
     public static void killAllContainers() {
+        new DockerUtil(dockerClient).killAllSchedulers();
         new DockerUtil(dockerClient).killAllExecutors();
     }
 
@@ -84,7 +86,7 @@ public class RunAsJarSystemTest {
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
 
-    private class JarScheduler extends AbstractContainer {
+    private static class JarScheduler extends AbstractContainer {
         private final ZooKeeper zooKeeperContainer;
 
         protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
@@ -119,7 +121,7 @@ public class RunAsJarSystemTest {
         }
     }
 
-    private class MesosSlaveWithSchedulerLink extends MesosSlave22 {
+    private static  class MesosSlaveWithSchedulerLink extends MesosSlave22 {
 
         private final JarScheduler scheduler;
 
@@ -145,7 +147,7 @@ public class RunAsJarSystemTest {
     }
 
     // TODO (pnw): Remove when upgrading ES to 25
-    private class MesosMaster22 extends MesosMaster {
+    private static  class MesosMaster22 extends MesosMaster {
 
         public MesosMaster22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
             super(dockerClient, zooKeeperContainer);
@@ -159,7 +161,7 @@ public class RunAsJarSystemTest {
     }
 
     // TODO (pnw): Remove when upgrading ES to 25
-    private class MesosSlave22 extends MesosSlave {
+    private static  class MesosSlave22 extends MesosSlave {
 
         public MesosSlave22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
             super(dockerClient, zooKeeperContainer);
