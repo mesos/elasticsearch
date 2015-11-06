@@ -1,8 +1,11 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.github.dockerjava.api.DockerClient;
+
 /**
  * SystemTest configuration object
  */
+@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Configuration {
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
@@ -10,6 +13,10 @@ public class Configuration {
     private int elasticsearchNodesCount = 3;
     private int elasticsearchMemorySize = 512;
     private String elasticsearchJobName = "esdemo";
+
+    public static String getDocker0AdaptorIpAddress(DockerClient dockerClient) {
+        return dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
+    }
 
     public String getSchedulerImageName() {
         return schedulerImageName;

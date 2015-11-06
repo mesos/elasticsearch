@@ -21,12 +21,31 @@ import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.stream.IntStream;
 
+import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0AdaptorIpAddress;
 import static org.junit.Assert.assertTrue;
 
 /**
  * A system test to ensure that the framework can run as a JAR, not using docker.
+ * <p>
+ * <b>Test method</b>
+ * <p>
+ *     The goal is to start the framework in jar mode, and ensure that the system can still be discovered.
+ *     We still start the scheduler in the container (but with jar mode enabled) because the system running the system
+ *     test may not have Java 8 installed. But this is no issue; the test is exactly the same.
+ * </p><p>
+ *     Next, a custom MesosSlave is provided so that it can resolve the IP address of the scheduler (which is hosting
+ *     the executor jar). Its own hostname is set to "hostnamehack" so that it can be resolved on the scheduler side.
+ *     The ES port (31000 in this case) is bound to the host, where the host is the VM or linux OS. This will allow us
+ *     to curl the ES endpoint without knowing the IP address of the slave container.
+ * </p><p>
+ *     The scheduler has an extra host called "hostnamehack" that resolves to the docker0 adaptor address. This is
+ *     equivalent to the VM/linux localhost, is known ahead of time and is system independent. I.e. both Mac's and linux
+ *     boxes will be able to resolve this address. The port is the same.
+ * </p><p>
+ *     So finally, the ES system tests can cary on as normal and resolve the ES hosts. Nice!
+ * </p>
  */
-@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidUsingHardCodedIP"})
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class RunAsJarSystemTest {
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
     private static final int NUMBER_OF_TEST_TASKS = 1;
@@ -35,6 +54,20 @@ public class RunAsJarSystemTest {
     private MesosCluster cluster;
     private static DockerClient dockerClient = DockerClientFactory.build();
     private JarScheduler scheduler;
+
+    @BeforeClass
+    public static void prepareCleanDockerEnvironment() {
+        new DockerUtil(dockerClient).killAllSchedulers();
+        new DockerUtil(dockerClient).killAllExecutors();
+    }
+
+    @Rule
+    public final TestWatcher WATCHER = new TestWatcher() {
+        @Override
+        protected void failed(Throwable e, Description description) {
+            cluster.stop();
+        }
+    };
 
     @Before
     public void before() {
@@ -55,20 +88,6 @@ public class RunAsJarSystemTest {
     @After
     public void stopContainer() {
         cluster.stop();
-    }
-
-    @Rule
-    public final TestWatcher WATCHER = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            cluster.stop();
-        }
-    };
-
-    @BeforeClass
-    public static void prepareCleanDockerEnvironment() {
-        new DockerUtil(dockerClient).killAllSchedulers();
-        new DockerUtil(dockerClient).killAllExecutors();
     }
 
     @AfterClass
@@ -93,7 +112,7 @@ public class RunAsJarSystemTest {
         protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
             super(dockerClient);
             this.zooKeeperContainer = zooKeeperContainer;
-            docker0AdaptorIpAddress = dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
+            docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
         }
 
         @Override

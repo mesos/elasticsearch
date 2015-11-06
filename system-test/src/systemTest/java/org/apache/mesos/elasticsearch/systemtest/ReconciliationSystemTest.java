@@ -128,7 +128,7 @@ public class ReconciliationSystemTest extends TestBase {
                     .createContainerCmd(getTestConfig().getSchedulerImageName())
                     .withName(getTestConfig().getSchedulerName() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + DOCKER0_ADAPTOR_IP_ADDRESS).toArray(String[]::new))
+                    .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",
