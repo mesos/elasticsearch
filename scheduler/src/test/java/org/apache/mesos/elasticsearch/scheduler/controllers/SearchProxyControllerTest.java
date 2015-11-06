@@ -49,7 +49,7 @@ public class SearchProxyControllerTest {
 
     private Map<String, Task> createTasksMap(int nodes) {
         return IntStream.rangeClosed(1, nodes)
-                .mapToObj(value -> new Task(null, "task-" + value, null, null, new InetSocketAddress(HOSTNAME, 1000 + value), null))
+                .mapToObj(value -> new Task(HOSTNAME, "task-" + value, null, null, new InetSocketAddress(HOSTNAME, 1000 + value), null))
                 .collect(Collectors.toMap(Task::getTaskId, task -> task));
     }
 
