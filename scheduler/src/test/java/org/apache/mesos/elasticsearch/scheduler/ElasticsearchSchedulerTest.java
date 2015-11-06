@@ -31,7 +31,7 @@ public class ElasticsearchSchedulerTest {
 
     private ElasticsearchScheduler scheduler;
 
-    private SchedulerDriver driver;
+    private SchedulerDriver driver = mock(SchedulerDriver.class);
 
     private Protos.FrameworkID frameworkID = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
 
@@ -64,10 +64,14 @@ public class ElasticsearchSchedulerTest {
 
         scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, taskInfoFactory, offerStrategy, serializableState);
 
-        driver = mock(SchedulerDriver.class);
-
         masterInfo = newMasterInfo();
         scheduler.registered(driver, frameworkID, masterInfo);
+    }
+
+    @Test
+    public void willRunDriver() throws Exception {
+        scheduler.run(driver);
+        verify(driver).run();
     }
 
     @Test
@@ -125,19 +129,6 @@ public class ElasticsearchSchedulerTest {
         scheduler.resourceOffers(driver, singletonList(offer));
 
         verify(driver).launchTasks(singleton(offer.getId()), singleton(taskInfo));
-    }
-
-    @Test
-    public void shouldRunWithCredentials() {
-        when(configuration.getFrameworkPrincipal()).thenReturn("user1");
-        when(configuration.getFrameworkSecretPath()).thenReturn("/etc/passwd");
-        try {
-            scheduler.run();
-        } catch (java.lang.UnsatisfiedLinkError e) {
-            LOGGER.info("This error is normal. Don't worry.");
-        }
-        verify(configuration, atLeastOnce()).getFrameworkPrincipal();
-        verify(configuration, atLeastOnce()).getFrameworkSecretPath();
     }
 
     private Protos.Offer.Builder newOffer(String hostname) {
