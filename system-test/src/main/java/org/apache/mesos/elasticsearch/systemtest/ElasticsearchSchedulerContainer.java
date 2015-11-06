@@ -5,6 +5,8 @@ import com.containersol.minimesos.container.AbstractContainer;
 import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.model.ExposedPort;
+import com.github.dockerjava.api.model.PortBinding;
 import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -21,7 +23,7 @@ import java.util.List;
 public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    public static final String DOCKER0_ADAPTOR_IP_ADDRESS = "172.17.42.1";
+    protected final String DOCKER0_ADAPTOR_IP_ADDRESS;
 
     private final String zkIp;
 
@@ -40,6 +42,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         this.zkIp = zkIp;
         this.frameworkRole = frameworkRole;
         this.cluster = cluster;
+
+        DOCKER0_ADAPTOR_IP_ADDRESS = dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
     }
 
     @Override
