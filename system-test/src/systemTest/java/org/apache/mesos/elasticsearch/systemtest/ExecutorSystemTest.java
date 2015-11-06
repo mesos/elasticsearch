@@ -1,8 +1,10 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Before;
@@ -22,6 +24,7 @@ import static org.junit.Assert.assertTrue;
  * System test for the executor
  */
 public class ExecutorSystemTest extends SchedulerTestBase {
+    private static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
@@ -44,14 +47,13 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
         // Get remote env vars
-        final ExecCreateCmdResponse exec = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("env").exec();
-
         Awaitility.await().atMost(1L, TimeUnit.MINUTES).until(() -> {
-                    List<String> env = getEnvVars(exec);
+                    List<String> env = getEnvVars();
+                    LOGGER.debug("Wating until env vars contain LIB_MESOS: " + getAllEnvVars());
                     return env.size() > 0;
                 });
 
-        List<String> env = getEnvVars(exec);
+        List<String> env = getEnvVars();
         assertTrue("env does not have MESOS_NATIVE_JAVA_LIBRARY.", env.size() > 0);
 
         // Remote execute the ENV var to make sure it points to a real file
@@ -60,18 +62,30 @@ public class ExecutorSystemTest extends SchedulerTestBase {
         assertFalse(path + " does not exist: " + result, result.contains("No such file"));
     }
 
-    public String getResultOfLs(String path) throws IOException {
-        ExecCreateCmdResponse exec2 = CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
-        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec2.getId()).exec();
-        return IOUtils.toString(execCmdStream, "UTF-8");
+    private String getResultOfLs(String path) throws IOException {
+        ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("ls", path).exec();
+        return getResultFromExec(exec);
     }
 
-    public List<String> getEnvVars(ExecCreateCmdResponse exec) throws IOException {
-        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
-        String result = IOUtils.toString(execCmdStream, "UTF-8");
+    private ExecCreateCmd getExecForRandomExecutor() {
+        return CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr();
+    }
+
+    private List<String> getEnvVars() throws IOException {
+        String result = getAllEnvVars();
 
         // Get MESOS_NATIVE_JAVA_LIBRARY from env
         return Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
+    }
+
+    private String getAllEnvVars() throws IOException {
+        final ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("env").exec();
+        return getResultFromExec(exec);
+    }
+
+    private String getResultFromExec(ExecCreateCmdResponse exec) throws IOException {
+        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
+        return IOUtils.toString(execCmdStream, "UTF-8");
     }
 
     private String getRandomExecutorId() {
