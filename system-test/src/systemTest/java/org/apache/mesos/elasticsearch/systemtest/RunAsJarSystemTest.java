@@ -26,7 +26,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * A system test to ensure that the framework can run as a JAR, not using docker.
  */
-@SuppressWarnings({"PMD.TooManyMethods"})
+@SuppressWarnings({"PMD.TooManyMethods", "PMD.AvoidUsingHardCodedIP"})
 public class RunAsJarSystemTest {
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
     private static final int NUMBER_OF_TEST_TASKS = 1;
@@ -40,8 +40,8 @@ public class RunAsJarSystemTest {
     public void before() {
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster(zooKeeper -> new MesosMaster22(dockerClient, zooKeeper))
-                .withSlave(zooKeeper -> new MesosSlave22(dockerClient, zooKeeper)) // Have to have a slave before we build. Bit of a minimesos bug. This offer wont get accepted.
+                .withMaster()
+                .withSlave() // Have to have a slave before we build. Bit of a minimesos bug. This offer wont get accepted.
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.build().getClusterContainers().getOne(container -> container instanceof JarScheduler).get();
         IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(dummy ->
@@ -88,10 +88,12 @@ public class RunAsJarSystemTest {
 
     private static class JarScheduler extends AbstractContainer {
         private final ZooKeeper zooKeeperContainer;
+        private String docker0AdaptorIpAddress;
 
         protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
             super(dockerClient);
             this.zooKeeperContainer = zooKeeperContainer;
+            docker0AdaptorIpAddress = dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
         }
 
         @Override
@@ -105,7 +107,7 @@ public class RunAsJarSystemTest {
                     .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
                     .withName(TEST_CONFIG.getSchedulerName() + "_" + MesosCluster.getClusterId() + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                    .withExtraHosts("hostnamehack:" + ElasticsearchSchedulerContainer.DOCKER0_ADAPTOR_IP_ADDRESS) // Will redirect hostnamehack to host IP address (where ports are bound)
+                    .withExtraHosts("hostnamehack:" + docker0AdaptorIpAddress) // Will redirect hostnamehack to host IP address (where ports are bound)
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.FRAMEWORK_USE_DOCKER, "false",
@@ -121,7 +123,7 @@ public class RunAsJarSystemTest {
         }
     }
 
-    private static  class MesosSlaveWithSchedulerLink extends MesosSlave22 {
+    private static  class MesosSlaveWithSchedulerLink extends MesosSlave {
 
         private final JarScheduler scheduler;
 
@@ -143,34 +145,6 @@ public class RunAsJarSystemTest {
                     .withPortBindings(ports)
                     ;
             return createContainerCmd;
-        }
-    }
-
-    // TODO (pnw): Remove when upgrading ES to 25
-    private static  class MesosMaster22 extends MesosMaster {
-
-        public MesosMaster22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
-            super(dockerClient, zooKeeperContainer);
-        }
-
-        @Override
-        protected CreateContainerCmd dockerCommand() {
-            CreateContainerCmd createContainerCmd = super.dockerCommand();
-            return createContainerCmd.withImage("containersol/mesos-master:" + Main.MESOS_IMAGE_TAG);
-        }
-    }
-
-    // TODO (pnw): Remove when upgrading ES to 25
-    private static  class MesosSlave22 extends MesosSlave {
-
-        public MesosSlave22(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
-            super(dockerClient, zooKeeperContainer);
-        }
-
-        @Override
-        protected CreateContainerCmd dockerCommand() {
-            CreateContainerCmd createContainerCmd = super.dockerCommand();
-            return createContainerCmd.withImage("containersol/mesos-agent:" + Main.MESOS_IMAGE_TAG);
         }
     }
 }
