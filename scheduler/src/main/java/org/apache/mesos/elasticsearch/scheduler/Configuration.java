@@ -240,7 +240,11 @@ public class Configuration {
     }
 
     public String getJavaHome() {
-        return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
+        if (!javaHome.isEmpty()) {
+            return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
+        } else {
+            return "";
+        }
     }
 
     /**
