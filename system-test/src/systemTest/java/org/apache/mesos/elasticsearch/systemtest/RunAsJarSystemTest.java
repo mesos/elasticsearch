@@ -74,9 +74,8 @@ public class RunAsJarSystemTest {
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster()
-                .withSlave() // Have to have a slave before we build. Bit of a minimesos bug. This offer wont get accepted.
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer), ClusterContainers.Filter.zooKeeper());
-        scheduler = (JarScheduler) builder.build().getClusterContainers().getOne(container -> container instanceof JarScheduler).get();
+        scheduler = (JarScheduler) builder.getContainers().getOne(container -> container instanceof JarScheduler).get();
         IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(dummy ->
             builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(dockerClient, zooKeeper, scheduler))
         );
