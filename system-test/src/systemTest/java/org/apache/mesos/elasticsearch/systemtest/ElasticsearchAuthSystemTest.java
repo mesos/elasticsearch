@@ -4,7 +4,10 @@ import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.*;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import org.apache.log4j.Logger;
+import com.github.dockerjava.api.command.CreateContainerResponse;
+import com.github.dockerjava.api.model.AccessMode;
+import com.github.dockerjava.api.model.Bind;
+import com.github.dockerjava.api.model.Volume;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
@@ -13,15 +16,21 @@ import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import java.io.FileNotFoundException;
 import java.util.TreeMap;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * Test Auth.
+ * This currently tests authentication and roles. It does not test ACL's yet.
  */
 public class ElasticsearchAuthSystemTest {
     protected static final Configuration TEST_CONFIG = new Configuration();
+    public static final String FRAMEWORKPASSWD = "frameworkpasswd";
+    public static final String SECRET = "mesospasswd";
+    public static final String SECRET_FOLDER = "/tmp/test/";
+    public static final String ALPINE = "alpine";
     private MesosCluster cluster;
     private static DockerClient dockerClient = DockerClientFactory.build();
 
@@ -40,7 +49,8 @@ public class ElasticsearchAuthSystemTest {
     };
 
     @Before
-    public void before() {
+    public void before() throws FileNotFoundException {
+        writePasswordFileToVM();
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(zooKeeper -> new SimpleAuthMaster(dockerClient, zooKeeper))
@@ -49,6 +59,31 @@ public class ElasticsearchAuthSystemTest {
                 .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"));
         cluster = new MesosCluster(builder.build());
         cluster.start();
+    }
+
+    /**
+     * Use an alpine image to write files to the VM/docker host. Then all the containers can mount that DIR and get access to the passwd files.
+     */
+    private void writePasswordFileToVM() {
+        // Mesos password
+        CreateContainerResponse exec = dockerClient.createContainerCmd(ALPINE)
+                .withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER), AccessMode.rw))
+                .withCmd("rm", "-r", SECRET_FOLDER)
+                .exec();
+        dockerClient.startContainerCmd(exec.getId()).exec();
+        exec = dockerClient.createContainerCmd(ALPINE)
+                .withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER), AccessMode.rw))
+                .withCmd("sh", "-c", "echo -n testRole secret | tee -a " + SECRET_FOLDER + SECRET)
+                .exec();
+        dockerClient.startContainerCmd(exec.getId()).exec();
+
+        // Framework password
+        // Note that the definition is slightly different. There is no username specified in the file. Just the password.
+        exec = dockerClient.createContainerCmd(ALPINE)
+                .withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER), AccessMode.rw))
+                .withCmd("sh", "-c", "echo -n secret | tee -a " + SECRET_FOLDER + FRAMEWORKPASSWD)
+                .exec();
+        dockerClient.startContainerCmd(exec.getId()).exec();
     }
 
     @After
@@ -64,7 +99,7 @@ public class ElasticsearchAuthSystemTest {
 
     @Test
     public void shouldStartFrameworkWithRole() {
-        ElasticsearchSchedulerContainer scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
+        SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
         cluster.addAndStartContainer(scheduler);
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
@@ -73,7 +108,6 @@ public class ElasticsearchAuthSystemTest {
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
-
 
     /**
      * Only the role "testRole" can start frameworks.
@@ -88,7 +122,16 @@ public class ElasticsearchAuthSystemTest {
         public TreeMap<String, String> getDefaultEnvVars() {
             TreeMap<String, String> envVars = super.getDefaultEnvVars();
             envVars.put("MESOS_ROLES", "testRole");
+            envVars.put("MESOS_CREDENTIALS",  SECRET_FOLDER + SECRET);
+            envVars.put("MESOS_AUTHENTICATE", "true");
             return envVars;
+        }
+
+        @Override
+        protected CreateContainerCmd dockerCommand() {
+            CreateContainerCmd createContainerCmd = super.dockerCommand();
+            createContainerCmd.withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER)));
+            return createContainerCmd;
         }
     }
 
@@ -118,12 +161,15 @@ public class ElasticsearchAuthSystemTest {
         @Override
         protected CreateContainerCmd dockerCommand() {
             CreateContainerCmd createContainerCmd = super.dockerCommand();
+            createContainerCmd.withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER)));
             createContainerCmd.withCmd(
                     ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                     ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                     org.apache.mesos.elasticsearch.scheduler.Configuration.ELASTICSEARCH_RAM, "256",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.ELASTICSEARCH_DISK, "10",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_ROLE, "testRole",
+                    org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_PRINCIPAL, "testRole",
+                    org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_SECRET_PATH, SECRET_FOLDER + FRAMEWORKPASSWD,
                     org.apache.mesos.elasticsearch.scheduler.Configuration.ELASTICSEARCH_CPU, "0.2"
             );
             return createContainerCmd;
