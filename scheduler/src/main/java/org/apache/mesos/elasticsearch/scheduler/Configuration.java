@@ -24,6 +24,8 @@ public class Configuration {
     public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
     public static final String ELASTICSEARCH_DISK = "--elasticsearchDisk";
+    public static final String ELASTICSEARCH_EXECUTOR_CPU = "--elasticsearchExecutorCpu";
+    public static final String ELASTICSEARCH_EXECUTOR_RAM =  "--elasticsearchExecutorRam";
     // **** WEB UI
     public static final String WEB_UI_PORT = "--webUiPort";
     public static final String FRAMEWORK_NAME = "--frameworkName";
@@ -55,6 +57,10 @@ public class Configuration {
     private double mem = 256;
     @Parameter(names = {ELASTICSEARCH_DISK}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
     private double disk = 1024;
+    @Parameter(names = {ELASTICSEARCH_EXECUTOR_CPU}, description = "The amount of CPU resource to allocate to the elasticsearch executor.", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double executorCpus = 0.1;
+    @Parameter(names = {ELASTICSEARCH_EXECUTOR_RAM}, description = "The amount of ram resource to allocate to the elasticsearch executor (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     // **** FRAMEWORK
@@ -113,6 +119,14 @@ public class Configuration {
 
     public double getDisk() {
         return disk;
+    }
+
+    public double getExecutorCpus() {
+        return executorCpus;
+    }
+
+    public double getExecutorMem() {
+        return executorMem;
     }
 
     public int getElasticsearchNodes() {
