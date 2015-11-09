@@ -35,7 +35,7 @@ public class ElasticsearchZookeeperResponse {
             try {
                 String url = "http://" + esTasks.getTasks().get(0).getString("http_address");
                 LOGGER.debug("Querying: " + url);
-                JSONObject nodes = Unirest.get( url + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes");
+                JSONObject nodes = Unirest.get(url + "/_nodes").asJson().getBody().getObject().getJSONObject("nodes");
                 String nodeKey = (String) nodes.keys().next();
                 JSONObject node = nodes.getJSONObject(nodeKey);
                 host = node

@@ -62,7 +62,7 @@ public class RunAsJarSystemTest {
     }
 
     @Rule
-    public final TestWatcher WATCHER = new TestWatcher() {
+    public final TestWatcher watcher = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
             cluster.stop();
