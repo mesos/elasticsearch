@@ -2,6 +2,19 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.6.0] - [09 November 2015]
+
+### Features
+- [Upgrade Mesos support to 0.25.0](https://github.com/mesos/elasticsearch/issues/338)
+
+### Enhanced
+- [Test Authentication in system tests](https://github.com/mesos/elasticsearch/issues/304)
+- [Test JAR-mode (no docker) in system tests](https://github.com/mesos/elasticsearch/issues/354)
+
+### Fixed
+- [Resolving executor IP address when using jar](https://github.com/mesos/elasticsearch/issues/388)
+- [Use hostname, use system to resolve hostnames](https://github.com/mesos/elasticsearch/issues/392)
+
 ## [0.5.2] - [29 October 2015]
 
 ### Fixed

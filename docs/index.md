@@ -50,8 +50,6 @@
 - Rollback
 - Snapshot and restore 
 
-Rough timescales:
-
 ### Blocked features
 
 - [Persistent Volumes](https://github.com/mesos/elasticsearch/issues/228)
@@ -74,7 +72,7 @@ Rough timescales:
 
 ## Getting Started
 
-We recommend that users install via marathon or via the DCOS command line (coming soon!).
+We recommend that users install via marathon, using a docker container.
 
 This framework requires:
 
@@ -82,6 +80,10 @@ This framework requires:
 * The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is strongly recommended to provide resiliency against scheduler failover.
 
 ## Users Guide
+
+### Mesos version support
+
+The framework currently supports Mesos 0.25.0. It may work with newer or older versions of Mesos, but the tests are only performed on this version.
 
 ### How to install on Marathon
 
