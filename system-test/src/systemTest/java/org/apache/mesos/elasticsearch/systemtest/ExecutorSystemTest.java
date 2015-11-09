@@ -2,19 +2,16 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertFalse;
@@ -46,24 +43,17 @@ public class ExecutorSystemTest extends SchedulerTestBase {
      */
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
-        // Get remote env vars
-        Awaitility.await().atMost(1L, TimeUnit.MINUTES).until(() -> {
-                    List<String> env = getEnvVars();
-                    LOGGER.debug("Wating until env vars contain LIB_MESOS: " + getAllEnvVars());
-                    return env.size() > 0;
-                });
-
-        List<String> env = getEnvVars();
-        assertTrue("env does not have MESOS_NATIVE_JAVA_LIBRARY.", env.size() > 0);
+        // Make sure MESOS_NATIVE_JAVA_LIBRARY is in the env vars
+        String allEnvVars = getAllEnvVars();
+        assertTrue("Env does not contain MESOS_NATIVE_JAVA_LIBRARY", allEnvVars.contains("MESOS_NATIVE_JAVA_LIBRARY"));
 
         // Remote execute the ENV var to make sure it points to a real file
-        String path = env.get(0).split("=")[1].replace("\r", "").replace("\n", "");
-        String result = getResultOfLs(path);
-        assertFalse(path + " does not exist: " + result, result.contains("No such file"));
+        String result = getResultOfLs("$MESOS_NATIVE_JAVA_LIBRARY");
+        assertFalse("The file located by MESOS_NATIVE_JAVA_LIBRARY does not exist: " + result, result.contains("No such file"));
     }
 
     private String getResultOfLs(String path) throws IOException {
-        ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("ls", path).exec();
+        ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("sh", "-c", "ls " + path).exec();
         return getResultFromExec(exec);
     }
 
