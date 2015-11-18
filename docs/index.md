@@ -302,7 +302,7 @@ You can run Mesos-Elasticsearch using <a href="https://github.com/containersolut
 * Docker
 
 ```
-$ ./gradlew build system-test:main
+$ ./gradlew build buildDockerImage system-test:main
 ```
 
 ### How to run on Mac 
@@ -331,7 +331,7 @@ The project contains a system-test module which tests if the framework interacts
 Run all system tests
 
 ```
-$ ./gradlew build system-test:systemTest
+$ ./gradlew build buildDockerImage system-test:systemTest
 ```
 
 Run a single system test

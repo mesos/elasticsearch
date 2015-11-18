@@ -172,7 +172,6 @@ subprojects {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
-            project.build.dependsOn buildDockerImage
             [ 'snapshot', 'latest', 'version' ].each { aTag ->
                 String uppercasedName = aTag.capitalize()
                 task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
