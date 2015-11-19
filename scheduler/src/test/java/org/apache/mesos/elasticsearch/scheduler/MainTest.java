@@ -44,7 +44,7 @@ public class MainTest {
         FileFilter fileFilter = new WildcardFileFilter("*.jar");
         File[] files = dir.listFiles(fileFilter);
         assertNotNull(path.toAbsolutePath() + " does not denote a directory", files);
-        assertEquals("Jar file not found in " + path, 1, files.length);
+        assertTrue("Jar file not found in " + path, files.length > 0);
         File schedulerJar = files[0];
         Boolean executorFound = false;
 
