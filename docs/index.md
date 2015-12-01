@@ -95,7 +95,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "BRIDGE"
+      "network": "HOST"
     }
   },
   "args": ["--zookeeperMesosUrl", "zk://ZOOKEEPER_IP_ADDRESS:2181/mesos"],
