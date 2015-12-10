@@ -13,8 +13,7 @@ import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
-import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.*;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;

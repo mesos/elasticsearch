@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import org.apache.mesos.mini.container.AbstractContainer;
 
 import java.security.SecureRandom;
 

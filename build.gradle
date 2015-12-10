@@ -3,7 +3,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 
 ext {
-    mesosVer = "0.22.1"
+    mesosVer = "0.25.0"
     elasticsearchVersion="1.7.1"
     imagePrefix = 'mesos'
     springBootVersion = "1.2.5.RELEASE"
@@ -130,6 +130,7 @@ subprojects {
 
         compile "org.apache.mesos:mesos:${mesosVer}"
         compile 'com.google.code.gson:gson:2.3'         // marshalling between the scheduler and executor
+        compile 'com.google.code.findbugs:annotations:3.0.0'
 
         testCompile 'junit:junit:4.12'
         testCompile "org.mockito:mockito-all:1.9.5"
@@ -154,7 +155,7 @@ subprojects {
     afterEvaluate { project ->
         if (new File(project.projectDir, 'Dockerfile').exists()) {
             if (!project.hasProperty('imageName')) {
-                throw new GradleException('Root directory of ' + project.name 
+                throw new GradleException('Root directory of ' + project.name
                         + ' contains Dockerfile, but it does not define project.ext.imageName value')
             }
             docker.url = 'unix:///var/run/docker.sock'
@@ -163,16 +164,15 @@ subprojects {
             }
             if (System.env.DOCKER_HOST) {
                 docker.url = "$System.env.DOCKER_HOST".replace("tcp","https")
-                    if (System.env.DOCKER_CERT_PATH) {
-                        docker.certPath = new File(System.env.DOCKER_CERT_PATH)
-                    }
+                if (System.env.DOCKER_CERT_PATH) {
+                    docker.certPath = new File(System.env.DOCKER_CERT_PATH)
+                }
             }
             task buildDockerImage(type: DockerBuildImage, dependsOn: [taskCopyFilesForDocker], description: 'build Docker image') {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
-            project.build.dependsOn buildDockerImage
-            [ 'snapshot', 'version' ].each { aTag ->
+            [ 'snapshot', 'latest', 'version' ].each { aTag ->
                 String uppercasedName = aTag.capitalize()
                 task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
                     imageId = project.imageName

@@ -4,7 +4,9 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
+import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 
+import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
@@ -20,10 +22,15 @@ public class ClusterState {
     public static final String STATE_LIST = "stateList";
     private SerializableState zooKeeperStateDriver;
     private FrameworkState frameworkState;
+    private TaskInfoFactory taskInfoFactory;
 
-    public ClusterState(SerializableState zooKeeperStateDriver, FrameworkState frameworkState) {
+    public ClusterState(@NotNull SerializableState zooKeeperStateDriver, @NotNull FrameworkState frameworkState, @NotNull TaskInfoFactory taskInfoFactory) {
+        if (zooKeeperStateDriver == null || frameworkState == null) {
+            throw new NullPointerException();
+        }
         this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
+        this.taskInfoFactory = taskInfoFactory;
         frameworkState.onStatusUpdate(this::updateTask);
     }
 
@@ -47,7 +54,7 @@ public class ClusterState {
      */
     public Map<String, Task> getGuiTaskList() {
         Map<String, Task> tasks = new HashMap<>();
-        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), Task.from(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
+        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), taskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
         return tasks;
     }
 
@@ -106,10 +113,8 @@ public class ClusterState {
      */
     public TaskInfo getTask(TaskID taskID) throws IllegalArgumentException {
         List<TaskInfo> taskInfoList = getTaskList();
-        LOGGER.debug("Getting task " + taskID.getValue() + ", from " + logTaskList(taskInfoList));
         TaskInfo taskInfo = null;
         for (TaskInfo info : taskInfoList) {
-            LOGGER.debug("Testing: " + info.getTaskId().getValue() + " .equals " + taskID.getValue() + " = " + info.getTaskId().getValue().equals(taskID.getValue()));
             if (info.getTaskId().getValue().equals(taskID.getValue())) {
                 taskInfo = info;
                 break;
@@ -126,10 +131,8 @@ public class ClusterState {
             throw new IllegalArgumentException("ExecutorID.value() is blank. Cannot be blank.");
         }
         List<TaskInfo> taskInfoList = getTaskList();
-        LOGGER.debug("Getting task " + executorID.getValue());
         TaskInfo taskInfo = null;
         for (TaskInfo info : taskInfoList) {
-            LOGGER.debug("Testing: " + info.getExecutor().getExecutorId().getValue() + " .equals " + executorID.getValue() + " = " + info.getExecutor().getExecutorId().getValue().equals(executorID.getValue()));
             if (info.getExecutor().getExecutorId().getValue().equals(executorID.getValue())) {
                 taskInfo = info;
                 break;
@@ -195,7 +198,7 @@ public class ClusterState {
         }
     }
 
-    private String getKey() throws NotSerializableException {
+    private String getKey() {
         return frameworkState.getFrameworkID().getValue() + "/" + STATE_LIST;
     }
 }

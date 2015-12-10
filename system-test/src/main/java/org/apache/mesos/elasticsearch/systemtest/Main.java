@@ -1,27 +1,26 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.mesos.MesosClusterConfig;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
-import org.json.JSONObject;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 
-import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Main app to run Mesos Elasticsearch with Mini Mesos.
  */
-@SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Main {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
+    public static final Configuration TEST_CONFIG = new Configuration();
+    public static final String MESOS_IMAGE_TAG = "0.25.0-0.2.70.ubuntu1404";
 
     public static void main(String[] args) throws InterruptedException {
         MesosCluster cluster = new MesosCluster(
             MesosClusterConfig.builder()
-                .numberOfSlaves(3)
-                .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-                .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
+                .mesosImageTag(MESOS_IMAGE_TAG)
+                .slaveResources(TEST_CONFIG.getPortRanges())
                 .build()
         );
 
@@ -34,20 +33,19 @@ public class Main {
                     schedulerReference.get().remove();
                 }
                 cluster.stop();
+                new DockerUtil(cluster.getConfig().dockerClient).killAllExecutors();
             }
         });
         cluster.start();
-        cluster.injectImage("mesos/elasticsearch-executor");
 
         LOGGER.info("Starting scheduler");
-
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getMesosContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(cluster.getConfig().dockerClient, cluster.getZkContainer().getIpAddress(), cluster);
         schedulerReference.set(scheduler);
         scheduler.start();
 
         seedData(cluster, scheduler);
 
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":31100");
+        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
         LOGGER.info("Type CTRL-C to quit");
         while (true) {
             Thread.sleep(1000);
@@ -57,8 +55,9 @@ public class Main {
     private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
         String taskHttpAddress;
         try {
-            List<JSONObject> tasks = new TasksResponse(schedulerContainer.getIpAddress(), cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING").getTasks();
-            taskHttpAddress = tasks.get(0).getString("http_address");
+            ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
+            new TasksResponse(esTasks, cluster.getConfig().getNumberOfSlaves(), "TASK_RUNNING");
+            taskHttpAddress = esTasks.getTasks().get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

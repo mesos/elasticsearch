@@ -2,98 +2,97 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.StartContainerCmd;
 import com.github.dockerjava.api.model.Container;
 import com.jayway.awaitility.Awaitility;
-import org.apache.commons.io.IOUtils;
-import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
-import org.apache.mesos.elasticsearch.scheduler.Configuration;
-import org.apache.mesos.mini.MesosCluster;
-import org.apache.mesos.mini.mesos.MesosClusterConfig;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.callbacks.LogContainerTestCallback;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Test;
 
-import java.io.InputStream;
-import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.assertTrue;
 
 /**
  * Tests the main method.
  */
-public class SchedulerMainSystemTest {
-    
-    protected static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-            .numberOfSlaves(3)
-            .privateRegistryPort(15000) // Currently you have to choose an available port by yourself
-            .slaveResources(new String[]{"ports(*):[9200-9200,9300-9300]", "ports(*):[9201-9201,9301-9301]", "ports(*):[9202-9202,9302-9302]"})
-            .build()
-    );
+public class SchedulerMainSystemTest extends TestBase {
+    private static final Logger LOGGER = Logger.getLogger(SchedulerMainSystemTest.class);
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
-        CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
-                .createContainerCmd(schedulerImage)
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
-
-        CreateContainerResponse r = createCommand.exec();
-        String containerId = r.getId();
-        StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
-        startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-            return !IOUtils.toString(exec).isEmpty();
-        });
-        InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-        String log = IOUtils.toString(exec);
-        assertTrue(log.contains("Exception"));
-        assertTrue(log.contains("heap"));
+        CreateContainerCmd createCommand = getCreateContainerCmd("");
+        String containerId = startContainer(createCommand);
+        waitForSchedulerStartStop(containerId);
+        String containerLog = containerLog(containerId);
+        LOGGER.debug(containerLog);
+        assertTrue(containerLog.contains("Exception"));
+        assertTrue(containerLog.contains("heap"));
     }
 
     @Test
     public void ensureMainFailsIfInvalidHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
-        CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
-                .createContainerCmd(schedulerImage)
-                .withEnv("JAVA_OPTS=-Xms128s1m -Xmx256f5m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
-
-        CreateContainerResponse r = createCommand.exec();
-        String containerId = r.getId();
-        StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
-        startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-            return !IOUtils.toString(exec).isEmpty();
-        });
-        InputStream exec = CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdErr().exec();
-        String log = IOUtils.toString(exec);
-        assertTrue(log.contains("Invalid initial heap size"));
+        CreateContainerCmd createCommand = getCreateContainerCmd("-Xms128s1m -Xmx256f5m");
+        String containerId = startContainer(createCommand);
+        waitForSchedulerStartStop(containerId);
+        String containerLog = containerLog(containerId);
+        LOGGER.debug(containerLog);
+        assertTrue(containerLog.contains("Invalid initial heap size"));
     }
-
-
 
     @Test
     public void ensureMainWorksIfValidHeap() throws Exception {
-        final String schedulerImage = "mesos/elasticsearch-scheduler";
-        CreateContainerCmd createCommand = CLUSTER.getConfig().dockerClient
-                .createContainerCmd(schedulerImage)
-                .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withCmd(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos", ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3", Configuration.ELASTICSEARCH_RAM, "256");
+        CreateContainerCmd createCommand = getCreateContainerCmd("-Xms128m -Xmx256m");
+        String containerId = startContainer(createCommand);
+        waitFor(schedulerWithId(containerId));
+    }
 
+    private CreateContainerCmd getCreateContainerCmd(String heapString) {
+        return CLUSTER.getConfig().dockerClient
+                .createContainerCmd(getTestConfig().getSchedulerImageName())
+                .withEnv("JAVA_OPTS=" + heapString)
+                .withCmd(
+                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + "noIP" + ":2181/mesos"
+                );
+    }
+
+    private String containerLog(String containerId) throws Exception {
+        return CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withFollowStream().exec(new LogContainerTestCallback()).awaitCompletion().toString();
+    }
+
+    private String startContainer(CreateContainerCmd createCommand) {
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
-        StartContainerCmd startMesosClusterContainerCmd = CLUSTER.getConfig().dockerClient.startContainerCmd(containerId);
-        startMesosClusterContainerCmd.exec();
-        Awaitility.await().atMost(5, TimeUnit.SECONDS).until(() -> {
-            List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-            return !containers.isEmpty();
-        });
-        List<Container> containers = CLUSTER.getConfig().dockerClient.listContainersCmd().exec();
-        Boolean containerExists = containers.stream().anyMatch(c -> c.getId().equals(containerId));
-        assertTrue(containerExists);
+        CLUSTER.getConfig().dockerClient.startContainerCmd(containerId).exec();
+        return containerId;
     }
+
+    private void waitForSchedulerStartStop(String containerId) {
+        waitFor(schedulerWithId(containerId));
+        LOGGER.debug("Scheduler with id " + containerId + " started");
+        waitFor(noSchedulers());
+        LOGGER.debug("Scheduler stopped");
+    }
+
+    private Callable<Boolean> schedulerWithId(String containerId) {
+        return () -> getContainerStream(true).anyMatch(container -> container.getId().equals(containerId));
+    }
+
+    private Callable<Boolean> noSchedulers() {
+        return () -> getContainerStream(false).noneMatch(container -> container.getImage().contains("scheduler"));
+    }
+
+    private void waitFor(Callable<Boolean> callable) {
+        Awaitility.await().atMost(30L, TimeUnit.SECONDS).until(callable);
+    }
+
+    private Stream<Container> getContainerStream(Boolean showAll) {
+        return dockerUtil.getContainers(showAll).stream();
+    }
+
 }

@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 
 import java.io.IOException;
 import java.util.List;
@@ -25,9 +26,11 @@ public class FrameworkState {
     private final SerializableState zookeeperStateDriver;
     private final StatePath statePath;
     private SchedulerDriver driver;
+    private TaskInfoFactory taskInfoFactory;
 
-    public FrameworkState(SerializableState zookeeperStateDriver) {
+    public FrameworkState(SerializableState zookeeperStateDriver, TaskInfoFactory taskInfoFactory) {
         this.zookeeperStateDriver = zookeeperStateDriver;
+        this.taskInfoFactory = taskInfoFactory;
         statePath = new StatePath(zookeeperStateDriver);
     }
 
@@ -51,11 +54,13 @@ public class FrameworkState {
         try {
             statePath.mkdir(FRAMEWORKID_KEY);
             zookeeperStateDriver.set(FRAMEWORKID_KEY, frameworkId);
+            LOGGER.debug("FrameworkID stored in zookeeper: " + FRAMEWORKID_KEY + " = " + frameworkId);
         } catch (IOException e) {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }
         this.driver = driver;
-        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, this);
+
+        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, this, taskInfoFactory);
         registeredListeners.forEach(listener -> listener.accept(clusterState));
     }
 

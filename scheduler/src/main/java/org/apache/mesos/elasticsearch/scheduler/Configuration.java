@@ -24,6 +24,8 @@ public class Configuration {
     public static final String ELASTICSEARCH_CPU = "--elasticsearchCpu";
     public static final String ELASTICSEARCH_RAM = "--elasticsearchRam";
     public static final String ELASTICSEARCH_DISK = "--elasticsearchDisk";
+    public static final String ELASTICSEARCH_EXECUTOR_CPU = "--elasticsearchExecutorCpu";
+    public static final String ELASTICSEARCH_EXECUTOR_RAM =  "--elasticsearchExecutorRam";
     // **** WEB UI
     public static final String WEB_UI_PORT = "--webUiPort";
     public static final String FRAMEWORK_NAME = "--frameworkName";
@@ -55,10 +57,14 @@ public class Configuration {
     private double mem = 256;
     @Parameter(names = {ELASTICSEARCH_DISK}, description = "The amount of Disk resource to allocate to the elasticsearch instance (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
     private double disk = 1024;
+    @Parameter(names = {ELASTICSEARCH_EXECUTOR_CPU}, description = "The amount of CPU resource to allocate to the elasticsearch executor.", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double executorCpus = 0.1;
+    @Parameter(names = {ELASTICSEARCH_EXECUTOR_RAM}, description = "The amount of ram resource to allocate to the elasticsearch executor (MB).", validateValueWith = CLIValidators.PositiveDouble.class)
+    private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
     // **** FRAMEWORK
-    private String version = "0.4.3";
+    private String version = "0.6.0";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
@@ -82,9 +88,9 @@ public class Configuration {
     @Parameter(names = {FRAMEWORK_SECRET_PATH}, description = "The path to the file which contains the secret for the principal (password). Password in file must not have a newline.")
     private String frameworkSecretPath = "";
     @Parameter(names = {FRAMEWORK_USE_DOCKER}, arity = 1, description = "The framework will use docker if true, or jar files if false. If false, the user must ensure that the scheduler jar is on all slaves.")
-    private Boolean frameworkUseDocker = true;
+    private Boolean isFrameworkUseDocker = true;
     private InetSocketAddress frameworkFileServerAddress;
-    @Parameter(names = {JAVA_HOME}, description = "(Only when frameworkUseDocker is false) When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {JAVA_HOME}, description = "(Only when " + FRAMEWORK_USE_DOCKER + " is false) When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
     private String javaHome = "";
     // ****************** Runtime configuration **********************
 
@@ -113,6 +119,14 @@ public class Configuration {
 
     public double getDisk() {
         return disk;
+    }
+
+    public double getExecutorCpus() {
+        return executorCpus;
+    }
+
+    public double getExecutorMem() {
+        return executorMem;
     }
 
     public int getElasticsearchNodes() {
@@ -223,12 +237,16 @@ public class Configuration {
         return frameworkPrincipal;
     }
 
-    public Boolean frameworkUseDocker() {
-        return frameworkUseDocker;
+    public Boolean isFrameworkUseDocker() {
+        return isFrameworkUseDocker;
     }
 
     public String getFrameworkFileServerAddress() {
-        return "http://" + frameworkFileServerAddress.getHostName() + ":" + frameworkFileServerAddress.getPort();
+        String result = "";
+        if (frameworkFileServerAddress != null) {
+            result = "http://" + frameworkFileServerAddress.getHostName() + ":" + frameworkFileServerAddress.getPort();
+        }
+        return result;
     }
 
     public void setFrameworkFileServerAddress(InetSocketAddress addr) {
@@ -240,7 +258,11 @@ public class Configuration {
     }
 
     public String getJavaHome() {
-        return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
+        if (!javaHome.isEmpty()) {
+            return javaHome.replaceAll("java$", "").replaceAll("/$", "") + "/";
+        } else {
+            return "";
+        }
     }
 
     /**

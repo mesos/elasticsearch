@@ -1,28 +1,47 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.google.protobuf.ByteString;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
 
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Date;
+import java.util.Optional;
+import java.util.Properties;
 import java.util.UUID;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Tests TaskInfoFactory
  */
+@RunWith(MockitoJUnitRunner.class)
 public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
-    private FrameworkState frameworkState = mock(FrameworkState.class);
-    private Configuration configuration = mock(Configuration.class);
+
+    @Mock
+    private FrameworkState frameworkState;
+
+    @Mock
+    private Configuration configuration;
+
+    @Mock
+    private Clock clock;
 
     @Before
     public void before() {
@@ -37,19 +56,17 @@ public class TaskInfoFactoryTest {
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
         when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
         when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
-        when(configuration.frameworkUseDocker()).thenReturn(true);
+        when(configuration.isFrameworkUseDocker()).thenReturn(true);
     }
 
     @Test
     public void testCreateTaskInfo() {
-        Clock clock = mock(Clock.class);
-
         TaskInfoFactory factory = new TaskInfoFactory();
         factory.clock = clock;
 
         Date now = new DateTime().withDayOfMonth(1).withDayOfYear(1).withYear(1970).withHourOfDay(1).withMinuteOfHour(2).withSecondOfMinute(3).withMillisOfSecond(400).toDate();
         when(clock.now()).thenReturn(now);
-        when(clock.zonedNow()).thenReturn(ZonedDateTime.now());
+        when(clock.nowUTC()).thenReturn(ZonedDateTime.now(ZoneOffset.UTC));
 
 
         Protos.Offer offer = getOffer(frameworkState.getFrameworkID());
@@ -111,7 +128,7 @@ public class TaskInfoFactoryTest {
 
     @Test
     public void shouldAddJarInfoAndRemoveContainerInfo() {
-        when(configuration.frameworkUseDocker()).thenReturn(false);
+        when(configuration.isFrameworkUseDocker()).thenReturn(false);
         String address = "http://localhost:1234";
         when(configuration.getFrameworkFileServerAddress()).thenReturn(address);
         TaskInfoFactory factory = new TaskInfoFactory();
@@ -121,4 +138,111 @@ public class TaskInfoFactoryTest {
         assertEquals(1, taskInfo.getExecutor().getCommand().getUrisCount());
         assertTrue(taskInfo.getExecutor().getCommand().getUris(0).getValue().contains(address));
     }
+
+    @Test
+    public void canParseTask() throws Exception {
+        final ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+        when(clock.nowUTC()).thenReturn(nowUTC.minusYears(100));
+
+        TaskInfoFactory factory = new TaskInfoFactory();
+        factory.clock = clock;
+
+        final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue("TaskID").build();
+
+        final Protos.TaskInfo taskInfo = createTaskInfo(taskId, createData(Optional.of(nowUTC)));
+
+        final Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
+                .setTaskId(taskId)
+                .setState(Protos.TaskState.TASK_STAGING)
+                .build();
+
+        final Task task = factory.parse(taskInfo, taskStatus);
+        assertEquals(nowUTC, task.getStartedAt());
+        verify(clock, never()).nowUTC();
+    }
+
+    @Test
+    public void canParseTaskWithoutTimestamp() throws Exception {
+        final ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+        when(clock.nowUTC()).thenReturn(nowUTC);
+
+        TaskInfoFactory factory = new TaskInfoFactory();
+        factory.clock = clock;
+
+        final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue("TaskID").build();
+
+        final Protos.TaskInfo taskInfo = createTaskInfo(taskId, createData(Optional.<ZonedDateTime>empty()));
+
+        final Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
+                .setTaskId(taskId)
+                .setState(Protos.TaskState.TASK_STAGING)
+                .build();
+
+        final Task task = factory.parse(taskInfo, taskStatus);
+        assertEquals(nowUTC, task.getStartedAt());
+    }
+
+    @Test
+    public void canParseTaskCappedTimestamp() throws Exception {
+        final ZonedDateTime nowUTC = ZonedDateTime.now(ZoneOffset.UTC);
+        when(clock.nowUTC()).thenReturn(nowUTC);
+
+        TaskInfoFactory factory = new TaskInfoFactory();
+        factory.clock = clock;
+
+        final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue("TaskID").build();
+
+        Properties data = new Properties();
+        data.put("hostname", "hostname");
+        data.put("ipAddress", "ip address");
+        data.put("startedAt", nowUTC.withZoneSameInstant(ZoneId.of("Europe/Paris")).toString());
+
+        StringWriter writer = new StringWriter();
+        data.list(new PrintWriter(writer));
+
+        final Protos.TaskInfo taskInfo = createTaskInfo(taskId, ByteString.copyFromUtf8(writer.getBuffer().toString()));
+
+        final Protos.TaskStatus taskStatus = Protos.TaskStatus.newBuilder()
+                .setTaskId(taskId)
+                .setState(Protos.TaskState.TASK_STAGING)
+                .build();
+
+        final Task task = factory.parse(taskInfo, taskStatus);
+        assertEquals(nowUTC, task.getStartedAt());
+    }
+
+    private Protos.TaskInfo createTaskInfo(Protos.TaskID taskId, ByteString data) {
+        Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder()
+                .setPorts(Protos.Ports.newBuilder()
+                        .addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9001).setName(Discovery.CLIENT_PORT_NAME))
+                        .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9002).setName(Discovery.TRANSPORT_PORT_NAME)))
+                .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
+
+        return Protos.TaskInfo.newBuilder()
+                .setName("Name")
+                .setTaskId(taskId)
+                .setSlaveId(Protos.SlaveID.newBuilder().setValue("SlaveID").build())
+                .setData(data)
+                .setDiscovery(discovery)
+                .build();
+    }
+
+    private ByteString createData(Optional<ZonedDateTime> startedAt) {
+        Properties data = new Properties();
+        data.put("hostname", "hostname");
+        data.put("ipAddress", "ip address");
+        if (startedAt.isPresent()) {
+            data.put("startedAt", startedAt.get().toString());
+        }
+
+        StringWriter writer = new StringWriter();
+        try {
+            data.store(new PrintWriter(writer), "Data");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return ByteString.copyFromUtf8(writer.getBuffer().toString());
+    }
+
 }

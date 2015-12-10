@@ -1,71 +1,29 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.github.dockerjava.api.command.ExecCreateCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.github.dockerjava.api.model.Container;
-import com.github.dockerjava.api.model.ExposedPort;
-import com.github.dockerjava.api.model.Link;
-import com.github.dockerjava.api.model.PortBinding;
-import com.github.dockerjava.core.DockerClientBuilder;
-import com.github.dockerjava.core.DockerClientConfig;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
-import org.apache.mesos.mini.container.AbstractContainer;
-import org.junit.BeforeClass;
+import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.jayway.awaitility.Awaitility.await;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * System test for the executor
  */
-public class ExecutorSystemTest extends TestBase {
-    public static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
+public class ExecutorSystemTest extends SchedulerTestBase {
+    private static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
-    public static final int DOCKER_PORT = 2376;
-
-    private static DockerClient clusterClient;
-
-    private static String executorId;
-
-    @BeforeClass
-    public static void beforeClass() {
-        String innerDockerHost;
-
-        LOGGER.debug("Local docker environment");
-        innerDockerHost = CLUSTER.getMesosContainer().getIpAddress() + ":" + DOCKER_PORT;
-
-        DockerClientConfig.DockerClientConfigBuilder dockerConfigBuilder = DockerClientConfig.createDefaultConfigBuilder().withUri("http://" + innerDockerHost);
-        clusterClient = DockerClientBuilder.getInstance(dockerConfigBuilder.build()).build();
-        await().atMost(60, TimeUnit.SECONDS).until(() -> {
-            try {
-                return clusterClient.listContainersCmd().exec().size() > 0;
-            } catch (javax.ws.rs.ProcessingException ignored) {
-                return false;
-            }
-        });
-        List<Container> containers = clusterClient.listContainersCmd().exec();
-
-        // Find a single executor container
-        executorId = "";
-        for (Container container : containers) {
-            if (container.getImage().contains("executor")) {
-                executorId = container.getId();
-                break;
-            }
-        }
-    }
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
 
     /**
      * Make sure that lib mesos exists in /usr/lib/libmesos.so
@@ -74,9 +32,8 @@ public class ExecutorSystemTest extends TestBase {
     @Test
     public void ensureLibMesosExists() throws IOException {
         // Remote execute an ls command to make sure the file exists
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", "/usr/lib/libmesos.so").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
-        String result = IOUtils.toString(execCmdStream, "UTF-8");
+        String path = "/usr/lib/libmesos.so";
+        String result = getResultOfLs(path);
         assertFalse(result.contains("No such file"));
     }
 
@@ -86,21 +43,42 @@ public class ExecutorSystemTest extends TestBase {
      */
     @Test
     public void ensureEnvVarPointsToLibMesos() throws IOException {
-        // Get remote env vars
-        ExecCreateCmdResponse exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("env").exec();
-        InputStream execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
-        String result = IOUtils.toString(execCmdStream, "UTF-8");
-
-        // Get MESOS_NATIVE_JAVA_LIBRARY from env
-        List<String> env = Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
-        assertEquals(1, env.size());
+        // Make sure MESOS_NATIVE_JAVA_LIBRARY is in the env vars
+        String allEnvVars = getAllEnvVars();
+        assertTrue("Env does not contain MESOS_NATIVE_JAVA_LIBRARY", allEnvVars.contains("MESOS_NATIVE_JAVA_LIBRARY"));
 
         // Remote execute the ENV var to make sure it points to a real file
-        String path = env.get(0).split("=")[1];
-        exec = clusterClient.execCreateCmd(executorId).withAttachStdout().withAttachStderr().withCmd("ls", path).exec();
-        execCmdStream = clusterClient.execStartCmd(exec.getId()).exec();
-        result = IOUtils.toString(execCmdStream, "UTF-8");
-        assertFalse(result.contains("No such file"));
+        String result = getResultOfLs("$MESOS_NATIVE_JAVA_LIBRARY");
+        assertFalse("The file located by MESOS_NATIVE_JAVA_LIBRARY does not exist: " + result, result.contains("No such file"));
+    }
 
+    private String getResultOfLs(String path) throws IOException {
+        ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("sh", "-c", "ls " + path).exec();
+        return getResultFromExec(exec);
+    }
+
+    private ExecCreateCmd getExecForRandomExecutor() {
+        return CLUSTER.getConfig().dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr();
+    }
+
+    private List<String> getEnvVars() throws IOException {
+        String result = getAllEnvVars();
+
+        // Get MESOS_NATIVE_JAVA_LIBRARY from env
+        return Arrays.asList(result.split("\n")).stream().filter(s -> s.contains("MESOS_NATIVE_JAVA_LIBRARY")).collect(Collectors.toList());
+    }
+
+    private String getAllEnvVars() throws IOException {
+        final ExecCreateCmdResponse exec = getExecForRandomExecutor().withCmd("env").exec();
+        return getResultFromExec(exec);
+    }
+
+    private String getResultFromExec(ExecCreateCmdResponse exec) throws IOException {
+        InputStream execCmdStream = CLUSTER.getConfig().dockerClient.execStartCmd(exec.getId()).exec();
+        return IOUtils.toString(execCmdStream, "UTF-8");
+    }
+
+    private String getRandomExecutorId() {
+        return dockerUtil.getExecutorContainers().get(0).getId();
     }
 }

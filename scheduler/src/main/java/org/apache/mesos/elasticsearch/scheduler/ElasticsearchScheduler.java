@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
@@ -22,13 +21,10 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private final Configuration configuration;
     private final TaskInfoFactory taskInfoFactory;
-    private final CredentialFactory credentialFactory;
     private final ClusterState clusterState;
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
-
-    private SchedulerDriver schedulerDriver;
 
     public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
@@ -37,7 +33,6 @@ public class ElasticsearchScheduler implements Scheduler {
         this.taskInfoFactory = taskInfoFactory;
         this.offerStrategy = offerStrategy;
         this.zookeeperStateDriver = zookeeperStateDriver;
-        this.credentialFactory = new CredentialFactory(configuration);
     }
 
     public Map<String, Task> getTasks() {
@@ -48,30 +43,17 @@ public class ElasticsearchScheduler implements Scheduler {
         }
     }
 
-    public void run() {
+    public void run(SchedulerDriver schedulerDriver) {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() +
                 ", zk mesos: " + configuration.getMesosZKURL() +
                 ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
-        FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
-        final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();
-        final Protos.Credential.Builder credentialBuilder = credentialFactory.getBuilder();
-        final MesosSchedulerDriver driver;
-        if (credentialBuilder.isInitialized()) {
-            LOGGER.debug("Creating Scheduler driver with principal: " + credentialBuilder.toString());
-            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL(), credentialBuilder.build());
-        } else {
-            driver = new MesosSchedulerDriver(this, frameworkBuilder.build(), configuration.getMesosZKURL());
-        }
-
-        driver.run();
+        schedulerDriver.run();
     }
 
     @Override
     public void registered(SchedulerDriver driver, Protos.FrameworkID frameworkId, Protos.MasterInfo masterInfo) {
-        this.schedulerDriver = driver;
-
         LOGGER.info("Framework registered as " + frameworkId.getValue());
 
         List<Protos.Resource> resources = Resources.buildFrameworkResources(configuration);
@@ -102,13 +84,14 @@ public class ElasticsearchScheduler implements Scheduler {
         // This current behavior is not correct, e.g. it can cause a system "deadlock" if we are using all Mesos
         // resources but wish to scale down (Mesos will never give us any new offers, so we will never relinquish any
         // resources).
-        removeExcessElasticsearchNodes();
+        removeExcessElasticsearchNodes(driver);
 
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
             if (!result.acceptable) {
-                LOGGER.debug("Declined offer: " + result.reason.orElse("Unknown"));
+                LOGGER.debug("Declined offer: " + flattenProtobufString(offer.toString()) +
+                        "Reason: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer);
@@ -121,19 +104,23 @@ public class ElasticsearchScheduler implements Scheduler {
         }
     }
 
-    public void removeExcessElasticsearchNodes() {
+    private String flattenProtobufString(String s) {
+        return s.replace("  ", " ").replace("{\n", "{").replace("\n}", " }").replace("\n", ", ");
+    }
+
+    public void removeExcessElasticsearchNodes(SchedulerDriver driver) {
         while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
-            killLastStartedExecutor();
+            killLastStartedExecutor(driver);
         }
     }
 
-    private void killLastStartedExecutor() {
+    private void killLastStartedExecutor(SchedulerDriver driver) {
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         int size = taskList.size();
         Protos.TaskInfo killTaskInfo = taskList.get(size - 1);
         Protos.TaskID killTaskId = killTaskInfo.getTaskId();
         LOGGER.debug("Killing task: " + killTaskId);
-        schedulerDriver.killTask(killTaskId);
+        driver.killTask(killTaskId);
         while (clusterState.getTaskList().stream().filter(taskInfo -> taskInfo.getTaskId().equals(killTaskId)).count() > 0) {
             LOGGER.debug("Waiting for task to be removed from list: " + killTaskId);
         }
@@ -185,5 +172,4 @@ public class ElasticsearchScheduler implements Scheduler {
     public void error(SchedulerDriver driver, String message) {
         LOGGER.error("Error: " + message);
     }
-
 }

@@ -40,7 +40,7 @@ public class ClusterController {
     }
 
     private Map<String, Object> toMap(Configuration configuration) {
-        return Arrays.stream(configuration.getClass().getDeclaredMethods()).filter(this::isGetter).collect(Collectors.toMap(method -> method.getName().substring(3), this::invokeConfigurationGetter));
+        return Arrays.stream(configuration.getClass().getMethods()).filter(this::isGetter).collect(Collectors.toMap(method -> method.getName().substring(3), this::invokeConfigurationGetter));
     }
 
     private boolean isGetter(Method method) {
@@ -54,8 +54,6 @@ public class ClusterController {
                 return "************";
             } else if (result instanceof Number || result instanceof Boolean || result instanceof String) {
                 return result;
-            } else if (result instanceof Protos.FrameworkID) {
-                return ((Protos.FrameworkID) result).getValue();
             }
             return result.toString();
         } catch (Exception e) {

@@ -9,15 +9,15 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -62,40 +62,62 @@ public class TaskInfoFactory {
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
 
+        String hostname = offer.getHostname();
+        LOGGER.debug("Attempting to resolve hostname: " + hostname);
+        InetSocketAddress address = new InetSocketAddress(hostname, ports.get(0));
+        String hostAddress = address.getAddress().getHostAddress(); // Note this will always resolve because of the check in OfferStrategy
+
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
-                .setData(toData(offer.getHostname(), new InetSocketAddress(offer.getHostname(), 1).getAddress().getHostAddress(), clock.zonedNow()))
+                .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration)).build();
+                .setExecutor(newExecutorInfo(configuration, discoveryPorts.build())).build();
     }
 
-    private ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
+    public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
         Properties data = new Properties();
         data.put("hostname", hostname);
         data.put("ipAddress", ipAddress);
         data.put("startedAt", zonedDateTime.toString());
 
         StringWriter writer = new StringWriter();
-        data.list(new PrintWriter(writer));
+        try {
+            data.store(new PrintWriter(writer), "Task metadata");
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to write task metadata", e);
+        }
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, Protos.Ports discoveryPorts) {
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
                 .setCommand(newCommandInfo(configuration));
-        if (configuration.frameworkUseDocker()) {
+        if (configuration.isFrameworkUseDocker()) {
+
+            List<Protos.ContainerInfo.DockerInfo.PortMapping> portMappings = discoveryPorts.getPortsList().stream().map(
+                    port -> Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setHostPort(port.getNumber()).setContainerPort(port.getNumber()).build()
+            ).collect(Collectors.toList());
+            Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
+                    .setImage(configuration.getExecutorImage())
+                    .setForcePullImage(configuration.getExecutorForcePullImage())
+                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
+                    .addAllPortMappings(portMappings);
+
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
-                    .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder().setImage(configuration.getExecutorImage()).setForcePullImage(configuration.getExecutorForcePullImage()))
+                    .setDocker(containerBuilder)
                     .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                     .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
-                    .build());
+                    .build())
+                    .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
+                    .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
+            ;
         }
         return executorInfoBuilder;
     }
@@ -115,7 +137,7 @@ public class TaskInfoFactory {
         Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder()
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()));
 
-        if (configuration.frameworkUseDocker()) {
+        if (configuration.isFrameworkUseDocker()) {
             commandInfoBuilder
                     .setShell(false)
                     .addAllArguments(args)
@@ -147,4 +169,33 @@ public class TaskInfoFactory {
         return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
     }
 
+    public Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
+        Properties data = new Properties();
+        try {
+            data.load(taskInfo.getData().newInput());
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to parse properties", e);
+        }
+
+        String hostName = Optional.ofNullable(data.getProperty("hostname")).orElseGet(() -> {
+            LOGGER.error("Hostname is empty. Reported IP addresses will be incorrect.");
+            return "";
+        });
+        String ipAddress = data.getProperty("ipAddress", hostName);
+
+        final ZonedDateTime startedAt = Optional.ofNullable(data.getProperty("startedAt"))
+                .map(s -> s.endsWith("...") ? s.substring(0, 29) : s) //We're convert dates that was capped with Properties.list() method, see https://github.com/mesos/elasticsearch/pull/367
+                .map(ZonedDateTime::parse)
+                .orElseGet(clock::nowUTC)
+                .withZoneSameInstant(ZoneOffset.UTC);
+
+        return new Task(
+                hostName,
+                taskInfo.getTaskId().getValue(),
+                taskStatus == null ? Protos.TaskState.TASK_STAGING : taskStatus.getState(),
+                startedAt,
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()),
+                new InetSocketAddress(ipAddress, taskInfo.getDiscovery().getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber())
+        );
+    }
 }

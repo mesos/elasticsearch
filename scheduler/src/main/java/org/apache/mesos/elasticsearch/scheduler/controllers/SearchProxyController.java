@@ -53,7 +53,7 @@ public class SearchProxyController {
     public ResponseEntity<InputStreamResource> search(@RequestParam("q") String query, @RequestHeader(value = "X-ElasticSearch-Host", required = false) String elasticSearchHost) throws IOException {
         HttpHost httpHost = null;
         Collection<Task> tasks = scheduler.getTasks().values();
-        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> toHttpHost(task.getClientAddress()));
+        Stream<HttpHost> httpHostStream = tasks.stream().map(task -> new HttpHost(task.getHostname(), task.getClientAddress().getPort()));
 
         if (elasticSearchHost != null) {
             httpHost = httpHostStream.filter(host -> host.toHostString().equalsIgnoreCase(elasticSearchHost)).findAny().get();
