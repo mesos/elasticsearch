@@ -1,15 +1,20 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.jayway.awaitility.core.ConditionTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.scheduler.cluster.TaskReaper;
 import org.apache.mesos.elasticsearch.scheduler.state.*;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduler for Elasticsearch.
@@ -25,6 +30,8 @@ public class ElasticsearchScheduler implements Scheduler {
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
+
+    private final ScheduledExecutorService scheduledThread = Executors.newScheduledThreadPool(1);
 
     public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
@@ -49,6 +56,8 @@ public class ElasticsearchScheduler implements Scheduler {
                 ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
+        LOGGER.debug("Starting task reaper");
+        scheduledThread.scheduleWithFixedDelay(new TaskReaper(schedulerDriver, configuration, clusterState), 0, 1, TimeUnit.SECONDS);
         schedulerDriver.run();
     }
 
@@ -84,7 +93,6 @@ public class ElasticsearchScheduler implements Scheduler {
         // This current behavior is not correct, e.g. it can cause a system "deadlock" if we are using all Mesos
         // resources but wish to scale down (Mesos will never give us any new offers, so we will never relinquish any
         // resources).
-        removeExcessElasticsearchNodes(driver);
 
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
@@ -109,21 +117,30 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void removeExcessElasticsearchNodes(SchedulerDriver driver) {
-        while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
-            killLastStartedExecutor(driver);
+        try {
+            while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
+                killLastStartedExecutor(driver);
+            }
+        } catch (ConditionTimeoutException e) {
+            LOGGER.error("Requested task was not killed. Aborting scale.");
         }
     }
 
-    private void killLastStartedExecutor(SchedulerDriver driver) {
+    private void killLastStartedExecutor(SchedulerDriver driver) throws ConditionTimeoutException {
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         int size = taskList.size();
         Protos.TaskInfo killTaskInfo = taskList.get(size - 1);
         Protos.TaskID killTaskId = killTaskInfo.getTaskId();
         LOGGER.debug("Killing task: " + killTaskId);
-        driver.killTask(killTaskId);
-        while (clusterState.getTaskList().stream().filter(taskInfo -> taskInfo.getTaskId().equals(killTaskId)).count() > 0) {
-            LOGGER.debug("Waiting for task to be removed from list: " + killTaskId);
-        }
+        Protos.Status status = driver.killTask(killTaskId);
+        LOGGER.debug("Kill request response: " + status.toString());
+//        Awaitility.await().atMost(1, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(
+//                () -> {
+//                    LOGGER.debug("Waiting for task to be removed from list: " + killTaskId);
+//                    return !clusterState.getTaskList().contains(killTaskInfo);
+//                }
+//        );
+        LOGGER.debug("Task killed: " + killTaskId);
     }
 
     @Override
