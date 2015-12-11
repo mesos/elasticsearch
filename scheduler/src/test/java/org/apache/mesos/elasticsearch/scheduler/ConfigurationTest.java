@@ -6,9 +6,11 @@ import org.junit.Test;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests
@@ -40,4 +42,24 @@ public class ConfigurationTest {
         configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.JAVA_HOME, "/usr/bin");
         assertEquals("/usr/bin/", configuration.getJavaHome());
     }
+
+    private static final Pattern PATTERN = Pattern.compile(
+            "^(([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\.){3}([01]?\\d\\d?|2[0-4]\\d|25[0-5])$");
+
+    public static boolean validate(final String ip) {
+        return PATTERN.matcher(ip).matches();
+    }
+
+    @Test
+    public void shouldProvideIPAddress() {
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.USE_IP_ADDRESS, "true");
+        String string = configuration.addressToString(configuration.hostSocket(1234));
+        assertTrue(validate(string.replace("http://","").replace(":1234","")));
+    }
+
+    @Test
+    public void shouldProvideHostname() {
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa");
+        String string = configuration.addressToString(configuration.hostSocket(1234));
+        assertFalse(validate(string.replace("http://","").replace(":1234","")));    }
 }

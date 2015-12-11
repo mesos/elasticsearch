@@ -28,6 +28,7 @@ public class FrameworkInfoFactoryTest {
         when(configuration.getFrameworkName()).thenReturn("TestFrameworkName");
         when(configuration.getWebUiPort()).thenReturn(DUMMY_PORT);
         when(configuration.getFrameworkRole()).thenReturn(DUMMY_FRAMEWORK_ROLE);
+        when(configuration.webUiAddress()).thenReturn("http://localhost:" + DUMMY_PORT);
     }
 
     @Test
