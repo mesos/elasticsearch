@@ -104,15 +104,11 @@ node.data: true
 #
 #index.number_of_shards: 5
 
-# Set the number of replicas (additional copies) of an index (1 by default):
-#
-#index.number_of_replicas: 2
-
-# Note, that for development on a local machine, with small indices, it usually
-# makes sense to "disable" the distributed features:
-#
-# index.number_of_shards: 1
-# index.number_of_replicas: 0
+################################# AUTO REPLICAS ##############################
+# This is required to allow scaling. To prevent dataloss we replicate to all nodes in the cluster.
+# <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/indices-update-settings.html>
+index.number_of_replicas: 0
+index.auto_expand_replicas: "0-all"
 
 # These settings directly affect the performance of index and search operations
 # in your cluster. Assuming you have enough machines to hold shards and
@@ -158,7 +154,7 @@ node.data: true
 
 # Path to log files:
 #
-# path.logs: /path/to/logs
+path.logs: /var/log/elasticsearch
 
 # Path to where plugins are installed:
 #
