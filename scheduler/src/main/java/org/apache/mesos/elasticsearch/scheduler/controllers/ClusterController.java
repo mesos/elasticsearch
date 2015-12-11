@@ -85,6 +85,7 @@ public class ClusterController {
     @RequestMapping(value = "/elasticsearchNodes", method = RequestMethod.PUT)
     public void putElasticsearchNodes(@RequestBody ElasticsearchNodesWrapper elasticsearchNodes) {
         configuration.setElasticsearchNodes(elasticsearchNodes.getValue());
+        scheduler.reapTasks();
     }
 
     /**

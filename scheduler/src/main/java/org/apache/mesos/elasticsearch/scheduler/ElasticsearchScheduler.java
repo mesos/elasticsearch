@@ -30,8 +30,7 @@ public class ElasticsearchScheduler implements Scheduler {
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
-
-    private final ScheduledExecutorService scheduledThread = Executors.newScheduledThreadPool(1);
+    private TaskReaper taskReaper;
 
     public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
@@ -57,8 +56,13 @@ public class ElasticsearchScheduler implements Scheduler {
                 ", ram:" + configuration.getMem() + "]");
 
         LOGGER.debug("Starting task reaper");
-        scheduledThread.scheduleWithFixedDelay(new TaskReaper(schedulerDriver, configuration, clusterState), 0, 1, TimeUnit.SECONDS);
+        taskReaper = new TaskReaper(schedulerDriver, configuration, clusterState);
         schedulerDriver.run();
+    }
+
+    public void reapTasks() {
+        LOGGER.debug("Running task reaper");
+        taskReaper.run();
     }
 
     @Override
@@ -89,11 +93,6 @@ public class ElasticsearchScheduler implements Scheduler {
             return;
         }
 
-        // TODO (jhf@trifork.com): This should happen immediately after the target number of nodes has been changed.
-        // This current behavior is not correct, e.g. it can cause a system "deadlock" if we are using all Mesos
-        // resources but wish to scale down (Mesos will never give us any new offers, so we will never relinquish any
-        // resources).
-
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
@@ -114,33 +113,6 @@ public class ElasticsearchScheduler implements Scheduler {
 
     private String flattenProtobufString(String s) {
         return s.replace("  ", " ").replace("{\n", "{").replace("\n}", " }").replace("\n", ", ");
-    }
-
-    public void removeExcessElasticsearchNodes(SchedulerDriver driver) {
-        try {
-            while (clusterState.getTaskList().size() > configuration.getElasticsearchNodes()) {
-                killLastStartedExecutor(driver);
-            }
-        } catch (ConditionTimeoutException e) {
-            LOGGER.error("Requested task was not killed. Aborting scale.");
-        }
-    }
-
-    private void killLastStartedExecutor(SchedulerDriver driver) throws ConditionTimeoutException {
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
-        int size = taskList.size();
-        Protos.TaskInfo killTaskInfo = taskList.get(size - 1);
-        Protos.TaskID killTaskId = killTaskInfo.getTaskId();
-        LOGGER.debug("Killing task: " + killTaskId);
-        Protos.Status status = driver.killTask(killTaskId);
-        LOGGER.debug("Kill request response: " + status.toString());
-//        Awaitility.await().atMost(1, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(
-//                () -> {
-//                    LOGGER.debug("Waiting for task to be removed from list: " + killTaskId);
-//                    return !clusterState.getTaskList().contains(killTaskInfo);
-//                }
-//        );
-        LOGGER.debug("Task killed: " + killTaskId);
     }
 
     @Override

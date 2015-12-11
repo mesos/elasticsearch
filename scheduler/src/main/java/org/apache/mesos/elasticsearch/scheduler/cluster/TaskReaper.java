@@ -11,7 +11,7 @@ import java.util.List;
 /**
  * A scheduled task to reap tasks when the configuration changes
  */
-public class TaskReaper implements Runnable {
+public class TaskReaper {
     private static final Logger LOGGER = Logger.getLogger(TaskReaper.class);
 
     private ClusterState clusterState;
@@ -27,7 +27,6 @@ public class TaskReaper implements Runnable {
         }
     }
 
-    @Override
     public void run() {
         try {
             int numToKill = clusterState.getTaskList().size() - configuration.getElasticsearchNodes();
