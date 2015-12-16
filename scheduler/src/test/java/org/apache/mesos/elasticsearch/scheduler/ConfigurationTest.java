@@ -52,14 +52,19 @@ public class ConfigurationTest {
 
     @Test
     public void shouldProvideIPAddress() {
+        int port = 1234;
         Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.USE_IP_ADDRESS, "true");
-        String string = configuration.addressToString(configuration.hostSocket(1234));
-        assertTrue(validate(string.replace("http://","").replace(":1234","")));
+        String string = configuration.addressToString(configuration.hostSocket(port));
+        assertTrue(validate(string.replace("http://", "").replace(":" + port, "")));
     }
+
 
     @Test
     public void shouldProvideHostname() {
+        int port = 1234;
         Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa");
-        String string = configuration.addressToString(configuration.hostSocket(1234));
-        assertFalse(validate(string.replace("http://","").replace(":1234","")));    }
+        String string = configuration.addressToString(configuration.hostSocket(port));
+        assertFalse(validate(string.replace("http://", "").replace(":" + port, "")));
+    }
+
 }
