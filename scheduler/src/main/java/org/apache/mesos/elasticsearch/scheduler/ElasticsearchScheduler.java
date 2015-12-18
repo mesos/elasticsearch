@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import com.jayway.awaitility.core.ConditionTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
@@ -12,9 +11,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Scheduler for Elasticsearch.
