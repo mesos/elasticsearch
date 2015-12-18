@@ -29,7 +29,7 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
     public void testDataVolumes() throws IOException {
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(CLUSTER.getConfig().dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
+        AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
         CLUSTER.addAndStartContainer(dataContainer);
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
@@ -41,7 +41,7 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
 
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(CLUSTER.getConfig().dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
+        AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR);
         CLUSTER.addAndStartContainer(dataContainer);
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
@@ -59,13 +59,13 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
 
         @Override
         public Boolean call() throws Exception {
-            ExecCreateCmdResponse execResponse = CLUSTER.getConfig().dockerClient.execCreateCmd(containerId)
+            ExecCreateCmdResponse execResponse = clusterArchitecture.dockerClient.execCreateCmd(containerId)
                     .withCmd("ls", "-R", dataDirectory)
                     .withTty(true)
                     .withAttachStderr()
                     .withAttachStdout()
                     .exec();
-            try (InputStream inputstream = CLUSTER.getConfig().dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
+            try (InputStream inputstream = clusterArchitecture.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
                 String contents = IOUtils.toString(inputstream, "UTF-8");
                 LOGGER.info("Mesos-local contents of " + dataDirectory);
                 return contents.contains("0") && contents.contains("1") && contents.contains("2");

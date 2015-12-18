@@ -32,10 +32,10 @@ import static org.junit.Assert.assertTrue;
 public class ReconciliationSystemTest extends TestBase {
     private static final int TIMEOUT = 60;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
-    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
+    private DockerUtil dockerUtil = new DockerUtil(clusterArchitecture.dockerClient);
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
         CONTAINER_MANAGER.addAndStart(scheduler);
         return scheduler;
     }
@@ -55,7 +55,7 @@ public class ReconciliationSystemTest extends TestBase {
 
     @Test
     public void forceCheckExecutorTimeout() throws IOException {
-        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress());
+        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler);
         assertCorrectNumberOfExecutors(); // Start with 3
         assertLessThan(getTestConfig().getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor

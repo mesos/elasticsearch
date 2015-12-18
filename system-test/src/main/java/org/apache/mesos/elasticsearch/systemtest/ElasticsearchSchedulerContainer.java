@@ -9,6 +9,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 
 import java.security.SecureRandom;
 import java.util.Arrays;

@@ -22,7 +22,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SchedulerMainSystemTest extends TestBase {
     private static final Logger LOGGER = Logger.getLogger(SchedulerMainSystemTest.class);
-    private DockerUtil dockerUtil = new DockerUtil(CLUSTER.getConfig().dockerClient);
+    private DockerUtil dockerUtil = new DockerUtil(clusterArchitecture.dockerClient);
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
@@ -53,7 +53,7 @@ public class SchedulerMainSystemTest extends TestBase {
     }
 
     private CreateContainerCmd getCreateContainerCmd(String heapString) {
-        return CLUSTER.getConfig().dockerClient
+        return clusterArchitecture.dockerClient
                 .createContainerCmd(getTestConfig().getSchedulerImageName())
                 .withEnv("JAVA_OPTS=" + heapString)
                 .withCmd(
@@ -62,13 +62,13 @@ public class SchedulerMainSystemTest extends TestBase {
     }
 
     private String containerLog(String containerId) throws Exception {
-        return CLUSTER.getConfig().dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withFollowStream().exec(new LogContainerTestCallback()).awaitCompletion().toString();
+        return clusterArchitecture.dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withFollowStream().exec(new LogContainerTestCallback()).awaitCompletion().toString();
     }
 
     private String startContainer(CreateContainerCmd createCommand) {
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
-        CLUSTER.getConfig().dockerClient.startContainerCmd(containerId).exec();
+        clusterArchitecture.dockerClient.startContainerCmd(containerId).exec();
         return containerId;
     }
 
