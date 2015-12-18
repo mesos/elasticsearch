@@ -4,6 +4,7 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.scheduler.cluster.TaskReaper;
 import org.apache.mesos.elasticsearch.scheduler.state.*;
 
 import java.util.Collections;
@@ -25,6 +26,7 @@ public class ElasticsearchScheduler implements Scheduler {
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
+    private TaskReaper taskReaper;
 
     public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
         this.configuration = configuration;
@@ -49,7 +51,14 @@ public class ElasticsearchScheduler implements Scheduler {
                 ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
+        LOGGER.debug("Starting task reaper");
+        taskReaper = new TaskReaper(schedulerDriver, configuration, clusterState);
         schedulerDriver.run();
+    }
+
+    public void reapTasks() {
+        LOGGER.debug("Running task reaper");
+        taskReaper.run();
     }
 
     @Override
@@ -79,6 +88,7 @@ public class ElasticsearchScheduler implements Scheduler {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
+
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
