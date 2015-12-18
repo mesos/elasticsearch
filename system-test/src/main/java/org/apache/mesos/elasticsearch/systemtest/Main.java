@@ -21,9 +21,9 @@ public class Main {
         clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster()
-                .withSlave()
-                .withSlave()
-                .withSlave()
+                .withSlave("ports:[30000-31000]")
+                .withSlave("ports:[31001-32000]")
+                .withSlave("ports:[32001-33000]")
                 .build();
         MesosCluster cluster = new MesosCluster(clusterArchitecture);
 

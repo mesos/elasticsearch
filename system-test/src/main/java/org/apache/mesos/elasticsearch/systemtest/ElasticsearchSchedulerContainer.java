@@ -69,6 +69,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                         Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
+                        Configuration.ELASTICSEARCH_CPU, "0.1",
+                        Configuration.ELASTICSEARCH_DISK, "150",
                         Configuration.WEB_UI_PORT, Integer.toString(TEST_CONFIG.getSchedulerGuiPort()),
                         Configuration.EXECUTOR_NAME, TEST_CONFIG.getElasticsearchJobName(),
                         Configuration.DATA_DIR, getDataDirectory(),

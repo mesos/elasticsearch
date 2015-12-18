@@ -76,7 +76,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         List<String> esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
         LOGGER.info("Addresses: " + esAddresses);
 
-        DataPusherContainer pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, esAddresses.get(0));
+        DataPusherContainer pusher = new DataPusherContainer(clusterArchitecture.dockerClient, esAddresses.get(0));
         CLUSTER.addAndStartContainer(pusher);
         LOGGER.info("Started data push");
 
