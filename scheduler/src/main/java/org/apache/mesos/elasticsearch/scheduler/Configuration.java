@@ -133,6 +133,10 @@ public class Configuration {
         return elasticsearchCLI.getElasticsearchNodes();
     }
 
+    public void setElasticsearchNodes(int numberOfNodes) throws IllegalArgumentException {
+        elasticsearchCLI.setElasticsearchNodes(numberOfNodes);
+    }
+
     public String getElasticsearchSettingsLocation() {
         return elasticsearchCLI.getElasticsearchSettingsLocation();
     }

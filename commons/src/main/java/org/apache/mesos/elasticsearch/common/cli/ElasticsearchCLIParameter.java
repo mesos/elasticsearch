@@ -32,6 +32,12 @@ public class ElasticsearchCLIParameter {
     public int getElasticsearchNodes() {
         return elasticsearchNodes;
     }
+    public void setElasticsearchNodes(int numberOfNodes) throws IllegalArgumentException {
+        if (numberOfNodes <= 0) {
+            throw new IllegalArgumentException("Cluster size cannot be zero. This will result in data loss.");
+        }
+        elasticsearchNodes = numberOfNodes;
+    }
 
     /**
      * Adds a warning message if an even number is encountered

@@ -5,8 +5,10 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
@@ -73,6 +75,33 @@ public class ClusterController {
         final ClusterSchedulerInfoResponse response = new ClusterSchedulerInfoResponse();
         response.docker = dockerMap("image", "tag", "id");
         return response;
+    }
+
+    @RequestMapping(value = "/elasticsearchNodes", method = RequestMethod.GET)
+    @ResponseBody public ElasticsearchNodesWrapper getElasticsearchNodes() {
+        return new ElasticsearchNodesWrapper(scheduler.getTasks().size()); // This method should represent the current state, not the setting in the config.
+    }
+
+    @RequestMapping(value = "/elasticsearchNodes", method = RequestMethod.PUT)
+    public void putElasticsearchNodes(@RequestBody ElasticsearchNodesWrapper elasticsearchNodes) {
+        configuration.setElasticsearchNodes(elasticsearchNodes.getValue());
+        scheduler.reapTasks();
+    }
+
+    /**
+     *
+     */
+    public static class ElasticsearchNodesWrapper {
+        private int value;
+        public int getValue() {
+            return value;
+        }
+        public ElasticsearchNodesWrapper() {
+            // Used by Jackson
+        }
+        public ElasticsearchNodesWrapper(int value) {
+            this.value = value;
+        }
     }
 
     /**

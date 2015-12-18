@@ -113,17 +113,7 @@ controllers.controller('ScalingController', function($scope, config, Scaling) {
     };
     $scope.scalingSubmit = function() {
         if ($scope.scaling.nodes) {
-            var success = function(data) {
-                $scope.scaling.result = data;
-            }
-            var error = function(data) {
-                if (data.hasOwnProperty('error')) {
-                    $scope.scaling.error = data.error;
-                } else {
-                    $scope.scaling.error = "Unknown error"
-                }
-            }
-            Scaling.save({to: $scope.scaling.nodes}, {}, success, error);
+            Scaling.save({}, {value: $scope.scaling.nodes});
         }
     };
 });
