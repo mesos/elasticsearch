@@ -49,8 +49,11 @@ public class ExecutorHealth implements Runnable {
             Long thisUpdateMs = (long) (thisUpdate * 1000.0);
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
-                Protos.ExecutorID executorId = taskStatus.getTaskInfo().getExecutor().getExecutorId();
-                LOGGER.warn("Executor " + executorId.getValue() +
+                Protos.ExecutorID executorId = null;
+                if (taskStatus.getTaskInfo() != null && taskStatus.getTaskInfo().getExecutor() != null ) {
+                    executorId = taskStatus.getTaskInfo().getExecutor().getExecutorId();
+                }
+                LOGGER.warn("Executor " + ((executorId != null) ? executorId.getValue() : null) +
                         " is not responding to healthchecks in required timeout (" + maxTimeout + " ms). " +
                         "It has been " + timeSinceUpdate + " ms since the last update. (" + thisUpdateMs + " - " + lastUpdate + ")");
                 scheduler.executorLost(driver, executorId, status.getSlaveId(), EXIT_STATUS);

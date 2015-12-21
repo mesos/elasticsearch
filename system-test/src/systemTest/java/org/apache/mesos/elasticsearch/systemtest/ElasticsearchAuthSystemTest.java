@@ -88,7 +88,9 @@ public class ElasticsearchAuthSystemTest {
 
     @After
     public void stopContainer() {
-        cluster.stop();
+        if (cluster != null) {
+            cluster.stop();
+        }
     }
 
     @AfterClass
