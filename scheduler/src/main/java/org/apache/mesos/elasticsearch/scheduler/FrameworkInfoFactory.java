@@ -5,9 +5,6 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-
 /**
  * Factory for creating {@link org.apache.mesos.Protos.FrameworkInfo}s
  */
@@ -52,12 +49,8 @@ public class FrameworkInfoFactory {
     }
 
     private void setWebuiUrl(Protos.FrameworkInfo.Builder frameworkBuilder) {
-        try {
-            String hostName = "http://" + InetAddress.getLocalHost().getHostName() + ":" + configuration.getWebUiPort();
-            LOGGER.debug("Setting webuiUrl to " + hostName);
-            frameworkBuilder.setWebuiUrl(hostName);
-        } catch (UnknownHostException e) {
-            LOGGER.error("Unable to get hostname for webuiUrl");
-        }
+        String hostName = configuration.webUiAddress();
+        LOGGER.debug("Setting webuiUrl to " + hostName);
+        frameworkBuilder.setWebuiUrl(hostName);
     }
 }
