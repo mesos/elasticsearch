@@ -68,36 +68,4 @@ public class ConfigurationTest {
         String string = configuration.addressToString(configuration.hostSocket(port));
         assertFalse(validate(string.replace("http://", "").replace(":" + port, "")));
     }
-
-    @Test
-    public void shouldParseValidPorts() {
-        String validPorts = "9200,9300";
-        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
-        List<Integer> elasticsearchPorts = configuration.getElasticsearchPorts();
-        assertEquals(9200, elasticsearchPorts.get(0).intValue());
-        assertEquals(9300, elasticsearchPorts.get(1).intValue());
-    }
-
-    @Test
-    public void shouldBeOkWithSpaces() {
-        String validPorts = "9200, 9300";
-        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
-        List<Integer> elasticsearchPorts = configuration.getElasticsearchPorts();
-        assertEquals(9200, elasticsearchPorts.get(0).intValue());
-        assertEquals(9300, elasticsearchPorts.get(1).intValue());
-    }
-
-    @Test(expected = ParameterException.class)
-    public void shouldNotAcceptSinglePort() {
-        String validPorts = "9200";
-        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
-
-    }
-
-    @Test(expected = ParameterException.class)
-    public void shouldNotAcceptMultiplePorts() {
-        String validPorts = "9200,9300,9400";
-        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
-    }
-
 }
