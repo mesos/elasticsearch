@@ -65,4 +65,18 @@ public class CLIValidators {
             }
         }
     }
+
+    /**
+     * Ensures that the string is not empty. Will strip spaces.
+     */
+    public static class ListOfSizeTwo implements IParameterValidator {
+        @Override
+        public void validate(String name, String value) throws ParameterException {
+
+            if (value.isEmpty() || !value.contains(",") || value.split(",").length != 2) {
+                throw new ParameterException("Must provide two parameters in the format 'x,y'");
+            }
+        }
+    }
+
 }
