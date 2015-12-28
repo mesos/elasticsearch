@@ -31,15 +31,15 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     @Before
     public void before() {
         LOGGER.info("Starting Extra zookeeper container");
-        zookeeper = new ZookeeperContainer(CLUSTER.getConfig().dockerClient);
+        zookeeper = new ZookeeperContainer(clusterArchitecture.dockerClient);
         CLUSTER.addAndStartContainer(zookeeper);
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER.getConfig().dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
+        scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
     }
 
     @After
     public void after() {
         CONTAINER_LIFECYCLE_MANAGEMENT.stopAll();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+        new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
     }
 
     @ClassRule
@@ -56,9 +56,9 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
@@ -71,9 +71,9 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
         CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
 
-        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
         ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));

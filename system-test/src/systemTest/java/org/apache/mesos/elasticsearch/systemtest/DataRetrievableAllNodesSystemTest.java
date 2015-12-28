@@ -43,7 +43,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
             }
         });
 
-        pusher = new DataPusherContainer(CLUSTER.getConfig().dockerClient, esAddresses.get(0));
+        pusher = new DataPusherContainer(clusterArchitecture.dockerClient, esAddresses.get(0));
         CLUSTER.addAndStartContainer(pusher);
 
         LOGGER.info("Addresses:");

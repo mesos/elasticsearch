@@ -1,10 +1,10 @@
 package org.apache.mesos.elasticsearch.systemtest.base;
 
 import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.MesosClusterConfig;
+import com.containersol.minimesos.mesos.ClusterArchitecture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
-import org.apache.mesos.elasticsearch.systemtest.Main;
+import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -17,15 +17,19 @@ import org.junit.runner.Description;
  */
 @SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
 public abstract class TestBase {
+
     protected static final Configuration TEST_CONFIG = new Configuration();
 
+    protected static final ClusterArchitecture clusterArchitecture = new ClusterArchitecture.Builder()
+            .withZooKeeper()
+            .withMaster()
+            .withSlave(TEST_CONFIG.getPortRanges()[0])
+            .withSlave(TEST_CONFIG.getPortRanges()[1])
+            .withSlave(TEST_CONFIG.getPortRanges()[2])
+            .build();
+
     @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(
-        MesosClusterConfig.builder()
-                .mesosImageTag(Main.MESOS_IMAGE_TAG)
-                .slaveResources(TEST_CONFIG.getPortRanges())
-                .build()
-    );
+    public static final MesosCluster CLUSTER = new MesosCluster(clusterArchitecture);
 
     @ClassRule
     public static final TestWatcher WATCHER = new TestWatcher() {
@@ -37,14 +41,20 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void prepareCleanDockerEnvironment() {
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllSchedulers();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+        new DockerUtil(clusterArchitecture.dockerClient).killAllSchedulers();
+        new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
+
+        // Completely wipe out old data dir, just in case there is any old data in there.
+        String dataDir = org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR;
+        AlpineContainer alpineContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDir, dataDir, new String[]{"sh", "-c", "rm -rf " + dataDir + "/* ; sleep 9999 ;"});
+        alpineContainer.start();
+        alpineContainer.remove();
     }
 
     @AfterClass
     public static void killAllContainers() {
         CLUSTER.stop();
-        new DockerUtil(CLUSTER.getConfig().dockerClient).killAllExecutors();
+        new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
     }
 
     public static Configuration getTestConfig() {

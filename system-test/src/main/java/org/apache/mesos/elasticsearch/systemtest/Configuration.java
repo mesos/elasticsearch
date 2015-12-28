@@ -10,8 +10,8 @@ public class Configuration {
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
-    private int elasticsearchNodesCount = 3;
-    private int elasticsearchMemorySize = 512;
+    private int elasticsearchNodesCount = getPortRanges().length;
+    private int elasticsearchMemorySize = 250;
     private String elasticsearchJobName = "esdemo";
 
     public static String getDocker0AdaptorIpAddress(DockerClient dockerClient) {

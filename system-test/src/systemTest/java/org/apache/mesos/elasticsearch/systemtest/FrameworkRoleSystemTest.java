@@ -34,7 +34,7 @@ public class FrameworkRoleSystemTest extends TestBase {
     private void testMiniMesosReportsFrameworkRole(String role) throws UnirestException, JsonParseException, JsonMappingException {
         LOGGER.info("Starting Elasticsearch scheduler with framework role: " + role);
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
-                CLUSTER.getConfig().dockerClient,
+                clusterArchitecture.dockerClient,
                 CLUSTER.getZkContainer().getIpAddress(),
                 role,
                 CLUSTER);
@@ -42,8 +42,8 @@ public class FrameworkRoleSystemTest extends TestBase {
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
-        new TasksResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
-        new ElasticsearchNodesResponse(esTasks, CLUSTER.getConfig().getNumberOfSlaves());
+        new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
+        new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(5, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(role, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());

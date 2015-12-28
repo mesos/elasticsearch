@@ -104,7 +104,6 @@ subprojects {
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
     apply plugin: 'jacoco'
-    apply from: "$rootDir/gradle/spock.gradle"
     apply from: "$rootDir/gradle/quality.gradle"
     apply plugin: 'com.bmuschko.docker-remote-api'
 
