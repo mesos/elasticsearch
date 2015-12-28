@@ -21,9 +21,9 @@ public class Main {
         clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster()
-                .withSlave("ports:[30000-31000]")
-                .withSlave("ports:[31001-32000]")
-                .withSlave("ports:[32001-33000]")
+                .withSlave(TEST_CONFIG.getPortRanges()[0])
+                .withSlave(TEST_CONFIG.getPortRanges()[1])
+                .withSlave(TEST_CONFIG.getPortRanges()[2])
                 .build();
         MesosCluster cluster = new MesosCluster(clusterArchitecture);
 
@@ -35,6 +35,7 @@ public class Main {
                 if (schedulerReference.get() != null) {
                     schedulerReference.get().remove();
                 }
+
                 cluster.stop();
                 new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
             }
@@ -59,7 +60,7 @@ public class Main {
         String taskHttpAddress;
         try {
             ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
-            new TasksResponse(esTasks, 3, "TASK_RUNNING");
+            new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount(), "TASK_RUNNING");
             taskHttpAddress = esTasks.getTasks().get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

@@ -42,8 +42,8 @@ public class FrameworkRoleSystemTest extends TestBase {
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
-        new TasksResponse(esTasks, 3);
-        new ElasticsearchNodesResponse(esTasks, 3);
+        new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
+        new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(5, TimeUnit.SECONDS).until(() -> CLUSTER.getStateInfo().getFramework("elasticsearch") != null);
         Assert.assertEquals(role, CLUSTER.getStateInfo().getFramework("elasticsearch").getRole());

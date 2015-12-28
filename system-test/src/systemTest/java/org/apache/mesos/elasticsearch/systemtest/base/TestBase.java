@@ -3,8 +3,8 @@ package org.apache.mesos.elasticsearch.systemtest.base;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.ClusterArchitecture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
+import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -21,11 +21,11 @@ public abstract class TestBase {
     protected static final Configuration TEST_CONFIG = new Configuration();
 
     protected static final ClusterArchitecture clusterArchitecture = new ClusterArchitecture.Builder()
-            .withMaster()
-            .withSlave()
-            .withSlave()
-            .withSlave(StringUtils.join(TEST_CONFIG.getPortRanges(), ","))
             .withZooKeeper()
+            .withMaster()
+            .withSlave(TEST_CONFIG.getPortRanges()[0])
+            .withSlave(TEST_CONFIG.getPortRanges()[1])
+            .withSlave(TEST_CONFIG.getPortRanges()[2])
             .build();
 
     @ClassRule
@@ -43,6 +43,12 @@ public abstract class TestBase {
     public static void prepareCleanDockerEnvironment() {
         new DockerUtil(clusterArchitecture.dockerClient).killAllSchedulers();
         new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
+
+        // Completely wipe out old data dir, just in case there is any old data in there.
+        String dataDir = org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR;
+        AlpineContainer alpineContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDir, dataDir, new String[]{"sh", "-c", "rm -rf " + dataDir + "/* ; sleep 9999 ;"});
+        alpineContainer.start();
+        alpineContainer.remove();
     }
 
     @AfterClass
