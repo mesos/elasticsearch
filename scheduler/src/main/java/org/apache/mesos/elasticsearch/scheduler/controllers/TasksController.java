@@ -3,12 +3,14 @@ package org.apache.mesos.elasticsearch.scheduler.controllers;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
 import org.apache.mesos.elasticsearch.scheduler.Task;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.InetSocketAddress;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -28,10 +30,16 @@ public class TasksController {
     @Autowired
     Configuration configuration;
 
+    @Autowired
+    FrameworkState frameworkState;
+
     @RequestMapping
     public List<GetTasksResponse> getTasks() {
-        return scheduler.getTasks().entrySet().stream().map(this::from).collect(toList());
-
+        if (frameworkState.isRegistered()) {
+            return scheduler.getTasks().entrySet().stream().map(this::from).collect(toList());
+        } else {
+            return new ArrayList<>(0);
+        }
     }
 
     private GetTasksResponse from(Map.Entry<String, Task> task) {

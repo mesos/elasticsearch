@@ -83,6 +83,7 @@ public class Main {
                 .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("frameworkState", frameworkState))
                 .showBanner(false)
                 .run(args);
 
