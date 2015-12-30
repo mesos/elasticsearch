@@ -19,10 +19,14 @@ import java.net.UnknownHostException;
  */
 public class SimpleFileServer implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SimpleFileServer.class);
-    public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";
     private HttpServer server;
+    private final String file;
 
-    private static void writeClassPathResource(HttpExchange t, String classPathResource) throws IOException {
+    public SimpleFileServer(String file) {
+        this.file = file;
+    }
+
+    private void writeClassPathResource(HttpExchange t, String classPathResource) throws IOException {
         InputStream in = SimpleFileServer.class.getClassLoader().getResourceAsStream(classPathResource);
 
         // Must send headers before body.
@@ -62,7 +66,7 @@ public class SimpleFileServer implements Runnable {
         }
     }
 
-    static class InfoHandler implements HttpHandler {
+    class InfoHandler implements HttpHandler {
         public void handle(HttpExchange t) throws IOException {
             String response = "Use /get to download the executor jar";
             t.sendResponseHeaders(200, response.length());
@@ -73,13 +77,13 @@ public class SimpleFileServer implements Runnable {
         }
     }
 
-    static class GetHandler implements HttpHandler {
+    class GetHandler implements HttpHandler {
         public void handle(HttpExchange t) throws IOException {
 
             Headers h = t.getResponseHeaders();
             h.add("Content-Type", "application/octet-stream");
 
-            writeClassPathResource(t, ES_EXECUTOR_JAR);
+            writeClassPathResource(t, file);
         }
     }
 

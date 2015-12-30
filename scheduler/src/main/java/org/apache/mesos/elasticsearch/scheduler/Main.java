@@ -39,7 +39,7 @@ public class Main {
 
         if (!configuration.isFrameworkUseDocker()) {
             try {
-                final SimpleFileServer simpleFileServer = new SimpleFileServer();
+                final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_EXECUTOR_JAR);
                 simpleFileServer.run();
                 configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
             } catch (UnknownHostException e) {
