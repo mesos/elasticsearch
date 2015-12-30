@@ -6,6 +6,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,11 +19,11 @@ import java.net.InetSocketAddress;
 public class SimpleFileServer implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SimpleFileServer.class);
     private HttpServer server;
-    private final Configuration configuration;
+    private final NetworkUtils networkUtils;
     private final String file;
 
-    public SimpleFileServer(Configuration configuration, String file) {
-        this.configuration = configuration;
+    public SimpleFileServer(NetworkUtils networkUtils, String file) {
+        this.networkUtils = networkUtils;
         this.file = file;
     }
 
@@ -51,7 +52,7 @@ public class SimpleFileServer implements Runnable {
         if (server == null) {
             throw new IllegalStateException("Fileserver is not running. Cannot get address.");
         } else {
-            return configuration.hostSocket(server.getAddress().getPort());
+            return networkUtils.hostSocket(server.getAddress().getPort());
         }
     }
 

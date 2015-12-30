@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
@@ -37,7 +38,7 @@ public class Main {
         configuration = new Configuration(args);
 
         if (!configuration.isFrameworkUseDocker()) {
-            final SimpleFileServer simpleFileServer = new SimpleFileServer(configuration, Configuration.ES_EXECUTOR_JAR);
+            final SimpleFileServer simpleFileServer = new SimpleFileServer(new NetworkUtils(), Configuration.ES_EXECUTOR_JAR);
             simpleFileServer.run();
             configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
         }
