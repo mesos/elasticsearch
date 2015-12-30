@@ -10,9 +10,7 @@ import org.apache.log4j.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 
 /**
  * Simple file server for distributing jars and zips across the cluster
@@ -20,9 +18,11 @@ import java.net.UnknownHostException;
 public class SimpleFileServer implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(SimpleFileServer.class);
     private HttpServer server;
+    private final Configuration configuration;
     private final String file;
 
-    public SimpleFileServer(String file) {
+    public SimpleFileServer(Configuration configuration, String file) {
+        this.configuration = configuration;
         this.file = file;
     }
 
@@ -41,17 +41,17 @@ public class SimpleFileServer implements Runnable {
 
     public void serve() throws IOException {
         server = HttpServer.create(new InetSocketAddress(0), 0); // Pick a random available port
-        server.createContext("/info", new InfoHandler());
         server.createContext("/get", new GetHandler());
         server.setExecutor(null); // creates a default executor
         server.start();
+        LOGGER.info("Running Executor JAR file server on: " + this.getAddress().getHostName() + ":" + this.getAddress().getPort());
     }
 
-    public InetSocketAddress getAddress() throws UnknownHostException {
-        if (server != null) {
-            return new InetSocketAddress(InetAddress.getLocalHost().getHostName(), server.getAddress().getPort());
+    public InetSocketAddress getAddress() {
+        if (server == null) {
+            throw new IllegalStateException("Fileserver is not running. Cannot get address.");
         } else {
-            return null;
+            return configuration.hostSocket(server.getAddress().getPort());
         }
     }
 
@@ -59,21 +59,8 @@ public class SimpleFileServer implements Runnable {
     public void run() {
         try {
             this.serve();
-            LOGGER.info("Running Executor JAR file server on: " + this.getAddress().getHostName() + ":" + this.getAddress().getPort());
         } catch (IOException e) {
             LOGGER.error("Elasticsearch file server stopped", e);
-            e.printStackTrace();
-        }
-    }
-
-    class InfoHandler implements HttpHandler {
-        public void handle(HttpExchange t) throws IOException {
-            String response = "Use /get to download the executor jar";
-            t.sendResponseHeaders(200, response.length());
-
-            OutputStream os = t.getResponseBody();
-            IOUtils.write(response, os);
-            os.close();
         }
     }
 

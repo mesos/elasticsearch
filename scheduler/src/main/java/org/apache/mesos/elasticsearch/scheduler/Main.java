@@ -10,7 +10,6 @@ import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -38,13 +37,9 @@ public class Main {
         configuration = new Configuration(args);
 
         if (!configuration.isFrameworkUseDocker()) {
-            try {
-                final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_EXECUTOR_JAR);
-                simpleFileServer.run();
-                configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
-            } catch (UnknownHostException e) {
-                throw new IllegalStateException("Unable to start file server. See stack trace.", e);
-            }
+            final SimpleFileServer simpleFileServer = new SimpleFileServer(configuration, Configuration.ES_EXECUTOR_JAR);
+            simpleFileServer.run();
+            configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
         }
 
         final SerializableZookeeperState zookeeperStateDriver = new SerializableZookeeperState(new ZooKeeperState(
