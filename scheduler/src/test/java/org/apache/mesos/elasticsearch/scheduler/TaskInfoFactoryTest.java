@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
