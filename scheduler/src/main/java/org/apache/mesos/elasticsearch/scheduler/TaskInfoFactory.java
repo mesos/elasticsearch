@@ -8,6 +8,7 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -12,10 +12,9 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 
 /**
  * Holder object for framework configuration.
@@ -98,7 +97,9 @@ public class Configuration {
     private String javaHome = "";
     @Parameter(names = {USE_IP_ADDRESS}, arity = 1, description = "If true, the framework will resolve the local ip address. If false, it uses the hostname.")
     private Boolean isUseIpAddress = false;
+
     // ****************** Runtime configuration **********************
+    private final NetworkUtils networkUtils = new NetworkUtils();
 
     public Configuration(String... args) {
         final JCommander jCommander = new JCommander();
@@ -254,34 +255,13 @@ public class Configuration {
     public String getFrameworkFileServerAddress() {
         String result = "";
         if (frameworkFileServerAddress != null) {
-            return addressToString(frameworkFileServerAddress);
+            return networkUtils.addressToString(frameworkFileServerAddress, getIsUseIpAddress());
         }
         return result;
     }
 
     public String webUiAddress() {
-        return addressToString(hostSocket(getWebUiPort()));
-    }
-
-    public InetAddress hostAddress() {
-        try {
-            return InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            LOGGER.error(e);
-            throw new RuntimeException("Unable to bind to local host.");
-        }
-    }
-
-    public InetSocketAddress hostSocket(int port) {
-        return new InetSocketAddress(hostAddress(), port);
-    }
-
-    public String addressToString(InetSocketAddress address) {
-        if (getIsUseIpAddress()) {
-            return "http://" + address.getAddress().getHostAddress() + ":" + address.getPort();
-        } else {
-            return "http://" + address.getAddress().getHostName() + ":" + address.getPort();
-        }
+        return networkUtils.addressToString(networkUtils.hostSocket(getWebUiPort()), getIsUseIpAddress());
     }
 
     public void setFrameworkFileServerAddress(InetSocketAddress addr) {
