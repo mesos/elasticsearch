@@ -8,7 +8,6 @@ import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
-import java.io.NotSerializableException;
 import java.security.InvalidParameterException;
 import java.util.*;
 
@@ -22,15 +21,13 @@ public class ClusterState {
     public static final String STATE_LIST = "stateList";
     private SerializableState zooKeeperStateDriver;
     private FrameworkState frameworkState;
-    private TaskInfoFactory taskInfoFactory;
 
-    public ClusterState(@NotNull SerializableState zooKeeperStateDriver, @NotNull FrameworkState frameworkState, @NotNull TaskInfoFactory taskInfoFactory) {
+    public ClusterState(@NotNull SerializableState zooKeeperStateDriver, @NotNull FrameworkState frameworkState) {
         if (zooKeeperStateDriver == null || frameworkState == null) {
             throw new NullPointerException();
         }
         this.zooKeeperStateDriver = zooKeeperStateDriver;
         this.frameworkState = frameworkState;
-        this.taskInfoFactory = taskInfoFactory;
         frameworkState.onStatusUpdate(this::updateTask);
     }
 
@@ -54,7 +51,7 @@ public class ClusterState {
      */
     public Map<String, Task> getGuiTaskList() {
         Map<String, Task> tasks = new HashMap<>();
-        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), taskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
+        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), TaskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
         return tasks;
     }
 
