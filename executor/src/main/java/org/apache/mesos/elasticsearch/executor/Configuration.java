@@ -7,9 +7,11 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.executor.cli.HostsCLIParameter;
 import org.elasticsearch.common.lang3.StringUtils;
 
 import java.net.URISyntaxException;
+import java.util.List;
 
 /**
  * Executor configuration
@@ -21,11 +23,13 @@ public class Configuration {
 
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
+    private final HostsCLIParameter hostsCLIParameter = new HostsCLIParameter();
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
         jCommander.addObject(elasticsearchCLI);
+        jCommander.addObject(hostsCLIParameter);
         jCommander.addObject(this);
         try {
             jCommander.parse(args); // Parse command line args into configuration class.
@@ -77,5 +81,9 @@ public class Configuration {
 
     public String getElasticsearchClusterName() {
         return elasticsearchCLI.getElasticsearchClusterName();
+    }
+
+    public List<String> getElasticsearchHosts() {
+        return hostsCLIParameter.getElasticsearchHosts();
     }
 }

@@ -7,9 +7,9 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
+import org.apache.mesos.elasticsearch.executor.model.HostsModel;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
-import org.apache.mesos.elasticsearch.executor.model.ZooKeeperModel;
 import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.node.Node;
 
@@ -77,9 +77,9 @@ public class ElasticsearchExecutor implements Executor {
             RunTimeSettings ports = new PortsModel(task);
             launcher.addRuntimeSettings(ports.getRuntimeSettings());
 
-            // Parse ZooKeeper address
-            RunTimeSettings zk = new ZooKeeperModel(configuration.getElasticsearchZKURL(), configuration.getElasticsearchZKTimeout());
-            launcher.addRuntimeSettings(zk.getRuntimeSettings());
+            // Parse unicast hosts
+            RunTimeSettings hostsModel = new HostsModel(configuration.getElasticsearchHosts());
+            launcher.addRuntimeSettings(hostsModel.getRuntimeSettings());
 
             // Parse cluster name
             launcher.addRuntimeSettings(ImmutableSettings.builder().put("cluster.name", configuration.getElasticsearchClusterName()));
