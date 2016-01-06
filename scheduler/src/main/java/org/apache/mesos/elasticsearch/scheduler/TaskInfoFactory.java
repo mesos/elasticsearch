@@ -47,7 +47,7 @@ public class TaskInfoFactory {
      */
     public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer) {
         this.frameworkState = frameworkState;
-        List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
+        List<Integer> ports = Resources.selectTwoUnprivilegedPortsFromRange(offer.getResourcesList());
 
         List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
 
