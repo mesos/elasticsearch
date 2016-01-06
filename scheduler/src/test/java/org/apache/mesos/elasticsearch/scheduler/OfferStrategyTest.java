@@ -65,7 +65,37 @@ public class OfferStrategyTest {
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .build());
         assertFalse(offerResult.acceptable);
-        assertEquals("Offer did not have 2 ports", offerResult.reason.get());
+        assertEquals("Offer did not have 2 unprivileged ports", offerResult.reason.get());
+    }
+
+    @Test
+    public void willDeclineIfOfferOnlyHasPrivilegedPorts() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(100, 100, configuration.getFrameworkRole()))
+                .addResources(portRange(101, 101, configuration.getFrameworkRole()))
+                .addResources(cpus(0.1, configuration.getFrameworkRole()))
+                .build());
+
+        assertFalse(offerResult.acceptable);
+        assertEquals("Offer did not have 2 unprivileged ports", offerResult.reason.get());
+    }
+
+    @Test
+    public void willDeclineIfOfferHasOnlyOneUnPrivilegedPorts() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(100, 100, configuration.getFrameworkRole()))
+                .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
+                .addResources(cpus(0.1, configuration.getFrameworkRole()))
+                .build());
+
+        assertFalse(offerResult.acceptable);
+        assertEquals("Offer did not have 2 unprivileged ports", offerResult.reason.get());
     }
 
     @Test
@@ -113,6 +143,21 @@ public class OfferStrategyTest {
                 .build());
         assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have enough disk resources", offerResult.reason.get());
+    }
+
+    @Test
+    public void willAcceptValidOfferWhenPortRangeBeginsInPrivilegedRange() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(100, 2000, configuration.getFrameworkRole()))
+                .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
+                .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
+                .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
+                .build());
+        assertTrue(offerResult.acceptable);
+        assertFalse(offerResult.reason.isPresent());
     }
 
     @Test

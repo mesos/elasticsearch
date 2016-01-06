@@ -5,8 +5,10 @@ import org.apache.mesos.Protos;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static java.util.Arrays.asList;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.LongStream;
 
 /**
  * Helper class for building Mesos resources.
@@ -63,16 +65,15 @@ public class Resources {
                 .build();
     }
 
-    public static List<Integer> selectTwoPortsFromRange(List<Protos.Resource> offeredResources) {
-        List<Integer> ports = new ArrayList<>();
-        offeredResources.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.RANGES))
-                .forEach(resource -> resource.getRanges().getRangeList().stream().filter(range -> ports.size() < 2).forEach(range -> {
-                    ports.add((int) range.getBegin());
-                    if (ports.size() < 2 && range.getBegin() != range.getEnd()) {
-                        ports.add((int) range.getBegin() + 1);
-                    }
-                }));
-        return ports;
+    public static List<Integer> selectTwoUnprivilegedPortsFromRange(List<Protos.Resource> offeredResources) {
+        return offeredResources.stream()
+                .filter(resource -> resource.getType().equals(Protos.Value.Type.RANGES))
+                .flatMap(resource -> resource.getRanges().getRangeList().stream())
+                .flatMapToInt(range -> IntStream.rangeClosed((int) range.getBegin(), (int) range.getEnd()))
+                .filter(port -> port > 1024)
+                .limit(2)
+                .boxed()
+                .collect(Collectors.toList());
     }
 
     public static ArrayList<Protos.Resource> buildFrameworkResources(Configuration configuration) {
