@@ -23,7 +23,7 @@ public class OfferStrategy {
             new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
             new OfferRule("Hostname is unresolveable", offer -> !isHostnameResolveable(offer.getHostname())),
             new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() >= configuration.getElasticsearchNodes()),
-            new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
+            new OfferRule("Offer did not have 2 unprivileged ports", offer -> !containsTwoUnprivilegedPorts(offer.getResourcesList())),
             new OfferRule("Offer did not have enough CPU resources", offer -> !isEnoughCPU(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough RAM resources", offer -> !isEnoughRAM(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough disk resources", offer -> !isEnoughDisk(configuration, offer.getResourcesList()))
@@ -93,8 +93,8 @@ public class OfferStrategy {
         return new ResourceCheck(Resources.RESOURCE_MEM).isEnough(resourcesList, configuration.getMem());
     }
 
-    private boolean containsTwoPorts(List<Protos.Resource> resources) {
-        return Resources.selectTwoPortsFromRange(resources).size() == 2;
+    private boolean containsTwoUnprivilegedPorts(List<Protos.Resource> resources) {
+        return Resources.selectTwoUnprivilegedPortsFromRange(resources).size() == 2;
     }
 
     /**
