@@ -157,7 +157,7 @@ public class ElasticsearchAuthSystemTest {
     private static class SmallerCPUScheduler extends ElasticsearchSchedulerContainer {
 
         public SmallerCPUScheduler(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster) {
-            super(dockerClient, zkIp, frameworkRole, cluster);
+            super(dockerClient, zkIp, frameworkRole, cluster, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
         }
 
         @Override

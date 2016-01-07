@@ -27,18 +27,22 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private String frameworkRole;
     private final MesosCluster cluster;
-
-    private String dataDirectory;
+    private final String dataDirectory;
 
     public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, MesosCluster cluster) {
-        this(dockerClient, zkIp, "*", cluster);
+        this(dockerClient, zkIp, "*", cluster, Configuration.DEFAULT_HOST_DATA_DIR);
     }
 
-    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster) {
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, MesosCluster cluster, String dataDirectory) {
+        this(dockerClient, zkIp, "*", cluster, dataDirectory);
+    }
+
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster, String dataDir) {
         super(dockerClient);
         this.zkIp = zkIp;
         this.frameworkRole = frameworkRole;
         this.cluster = cluster;
+        this.dataDirectory = dataDir;
 
         docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
     }
@@ -69,20 +73,8 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.USE_IP_ADDRESS, "true",
                         Configuration.WEB_UI_PORT, Integer.toString(TEST_CONFIG.getSchedulerGuiPort()),
                         Configuration.EXECUTOR_NAME, TEST_CONFIG.getElasticsearchJobName(),
-                        Configuration.DATA_DIR, getDataDirectory(),
+                        Configuration.DATA_DIR, dataDirectory,
                         Configuration.FRAMEWORK_ROLE, frameworkRole);
-    }
-
-    private String getDataDirectory() {
-        if (dataDirectory == null) {
-            return Configuration.DEFAULT_HOST_DATA_DIR;
-        } else {
-            return dataDirectory;
-        }
-    }
-
-    public void setDataDirectory(String dataDirectory) {
-        this.dataDirectory = dataDirectory;
     }
 
     public String getZookeeperMesosUrl() {
