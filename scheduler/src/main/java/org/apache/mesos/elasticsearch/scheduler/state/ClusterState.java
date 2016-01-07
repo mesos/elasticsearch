@@ -5,6 +5,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
+import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
@@ -51,7 +52,7 @@ public class ClusterState {
      */
     public Map<String, Task> getGuiTaskList() {
         Map<String, Task> tasks = new HashMap<>();
-        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), TaskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus())));
+        getTaskList().forEach(taskInfo -> tasks.put(taskInfo.getTaskId().getValue(), TaskInfoFactory.parse(taskInfo, getStatus(taskInfo.getTaskId()).getStatus(), new Clock())));
         return tasks;
     }
 

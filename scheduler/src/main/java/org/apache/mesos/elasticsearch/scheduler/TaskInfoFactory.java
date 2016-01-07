@@ -37,7 +37,6 @@ public class TaskInfoFactory {
 
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
 
-    static Clock clock = new Clock();
     private FrameworkState frameworkState;
     private final ClusterState clusterState;
     private final NetworkUtils networkUtils = new NetworkUtils();
@@ -54,7 +53,7 @@ public class TaskInfoFactory {
      *
      * @return TaskInfo
      */
-    public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer) {
+    public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer, Clock clock) {
         this.frameworkState = frameworkState;
         List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
 
@@ -79,7 +78,7 @@ public class TaskInfoFactory {
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
-                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
+                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer, clock)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
@@ -143,7 +142,7 @@ public class TaskInfoFactory {
             Protos.TaskInfo taskInfo = taskList.get(0);
             String taskId = taskInfo.getTaskId().getValue();
             InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
-            hostAddress = networkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://","");
+            hostAddress = networkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
         }
         addIfNotEmpty(args, HostsCLIParameter.ELASTICSEARCH_HOST, hostAddress);
 
@@ -177,12 +176,12 @@ public class TaskInfoFactory {
         }
     }
 
-    private String taskId(Protos.Offer offer) {
+    private String taskId(Protos.Offer offer, Clock clock) {
         String date = new SimpleDateFormat(TASK_DATE_FORMAT).format(clock.now());
         return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
     }
 
-    public static Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
+    public static Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus, Clock clock) {
         Properties data = new Properties();
         try {
             data.load(taskInfo.getData().newInput());

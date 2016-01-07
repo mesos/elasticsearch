@@ -5,7 +5,6 @@ import com.containersol.minimesos.container.AbstractContainer;
 import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import org.apache.commons.lang.StringUtils;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -29,7 +28,6 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     private String frameworkRole;
     private final MesosCluster cluster;
 
-    private String zookeeperFrameworkUrl;
     private String dataDirectory;
 
     public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, MesosCluster cluster) {
@@ -64,8 +62,6 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, getZookeeperFrameworkUrl(),
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "30000",
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                         Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
                         Configuration.ELASTICSEARCH_CPU, "0.1",
@@ -91,17 +87,5 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     public String getZookeeperMesosUrl() {
         return "zk://" + zkIp + ":2181/mesos";
-    }
-
-    public String getZookeeperFrameworkUrl() {
-      if (StringUtils.isBlank(zookeeperFrameworkUrl)) {
-        return getZookeeperMesosUrl();
-      } else {
-        return zookeeperFrameworkUrl;
-      }
-    }
-
-    public void setZookeeperFrameworkUrl(String zookeeperFrameworkUrl) {
-        this.zookeeperFrameworkUrl = zookeeperFrameworkUrl;
     }
 }
