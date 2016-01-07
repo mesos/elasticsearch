@@ -32,7 +32,7 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     public void before() {
         LOGGER.info("Starting Extra zookeeper container");
         zookeeper = new ZookeeperContainer(clusterArchitecture.dockerClient);
-        CLUSTER.addAndStartContainer(zookeeper);
+        CLUSTER.addAndStartContainer(zookeeper, TEST_CONFIG.getClusterTimeout());
         scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
     }
 
@@ -53,30 +53,30 @@ public class ZookeeperFrameworkSystemTest extends TestBase {
     @Test
     public void testZookeeperFramework() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181");
-        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
 
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 
     @Test
     public void testZookeeperFramework_differentPath() throws UnirestException {
         scheduler.setZookeeperFrameworkUrl("zk://" + zookeeper.getIpAddress() + ":2181/framework");
-        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler);
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        CONTAINER_LIFECYCLE_MANAGEMENT.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
 
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
 
-        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress()));
+        ElasticsearchZookeeperResponse elasticsearchZookeeperResponse = new ElasticsearchZookeeperResponse(new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true));
         assertEquals("zk://" + zookeeper.getIpAddress() + ":2181", elasticsearchZookeeperResponse.getHost());
     }
 }

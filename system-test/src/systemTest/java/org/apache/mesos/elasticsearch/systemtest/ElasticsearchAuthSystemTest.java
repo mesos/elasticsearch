@@ -58,7 +58,7 @@ public class ElasticsearchAuthSystemTest {
                 .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
                 .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"));
         cluster = new MesosCluster(builder.build());
-        cluster.start();
+        cluster.start(TEST_CONFIG.getClusterTimeout());
     }
 
     /**
@@ -102,9 +102,9 @@ public class ElasticsearchAuthSystemTest {
     @Test
     public void shouldStartFrameworkWithRole() {
         SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
-        cluster.addAndStartContainer(scheduler);
+        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());

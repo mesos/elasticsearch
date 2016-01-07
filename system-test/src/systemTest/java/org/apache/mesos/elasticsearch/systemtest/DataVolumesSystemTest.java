@@ -1,11 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.container.AbstractContainer;
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.github.dockerjava.api.model.Bind;
-import com.github.dockerjava.api.model.Volume;
 import com.jayway.awaitility.Awaitility;
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -16,7 +11,6 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.security.SecureRandom;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -31,7 +25,7 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
         AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer);
+        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
     }
@@ -43,7 +37,7 @@ public class DataVolumesSystemTest extends SchedulerTestBase {
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
         AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer);
+        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
     }

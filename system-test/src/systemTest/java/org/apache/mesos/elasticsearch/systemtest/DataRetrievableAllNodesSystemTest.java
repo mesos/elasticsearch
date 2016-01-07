@@ -2,22 +2,15 @@ package org.apache.mesos.elasticsearch.systemtest;
 
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.Unirest;
-import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
-import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.json.JSONArray;
-import org.json.JSONObject;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-
-import static org.junit.Assert.assertTrue;
 
 
 /**
@@ -32,7 +25,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
 
     @Test
     public void testDataConsistency() throws Exception {
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress(), true);
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             try {
                 esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
@@ -44,7 +37,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
         });
 
         pusher = new DataPusherContainer(clusterArchitecture.dockerClient, esAddresses.get(0));
-        CLUSTER.addAndStartContainer(pusher);
+        CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Addresses:");
         LOGGER.info(esAddresses);

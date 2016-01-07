@@ -70,14 +70,14 @@ public class ScalingSystemTest extends SchedulerTestBase {
         // Make sure we have three nodes
         shouldScaleUp();
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress(), true);
         waitForGreen(esTasks);
 
         List<String> esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
         LOGGER.info("Addresses: " + esAddresses);
 
         DataPusherContainer pusher = new DataPusherContainer(clusterArchitecture.dockerClient, esAddresses.get(0));
-        CLUSTER.addAndStartContainer(pusher);
+        CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started data push");
 
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {

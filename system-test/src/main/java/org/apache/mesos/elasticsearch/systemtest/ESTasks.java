@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.mesos.DockerClientFactory;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -16,8 +17,10 @@ import java.util.List;
 public class ESTasks {
     private static final Logger LOGGER = Logger.getLogger(ESTasks.class);
     private final String tasksEndPoint;
+    private final Boolean portsExposed;
 
-    public ESTasks(Configuration config, String schedulerIpAddress) {
+    public ESTasks(Configuration config, String schedulerIpAddress, Boolean portsExposed) {
+        this.portsExposed = portsExposed;
         tasksEndPoint = "http://" + schedulerIpAddress + ":" + config.getSchedulerGuiPort() + "/v1/tasks";
     }
 
@@ -30,7 +33,17 @@ public class ESTasks {
         LOGGER.debug("Fetching tasks on " + tasksEndPoint);
         HttpResponse<JsonNode> response = Unirest.get(tasksEndPoint).asJson();
         for (int i = 0; i < response.getBody().getArray().length(); i++) {
-            tasks.add(response.getBody().getArray().getJSONObject(i));
+            JSONObject jsonObject = response.getBody().getArray().getJSONObject(i);
+            // If the ports are exposed on the docker adaptor, then force the http_address's to point to the docker adaptor IP address.
+            // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
+            // real-life network setup.
+            if (portsExposed) {
+                String old_address = (String) jsonObject.remove("http_address");
+                String new_address = Configuration.getDocker0AdaptorIpAddress(DockerClientFactory.build())
+                        + ":" + old_address.split(":")[1];
+                jsonObject.put("http_address", new_address);
+            }
+            tasks.add(jsonObject);
         }
         return tasks;
     }

@@ -74,14 +74,14 @@ public class RunAsJarSystemTest {
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster()
-                .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer), ClusterContainers.Filter.zooKeeper());
+                .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer, zkContainer.getClusterId()), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.getContainers().getOne(container -> container instanceof JarScheduler).get();
         IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(dummy ->
             builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(dockerClient, zooKeeper, scheduler))
         );
         cluster = new MesosCluster(builder.build());
 
-        cluster.start();
+        cluster.start(TEST_CONFIG.getClusterTimeout());
     }
 
     @After
@@ -97,7 +97,7 @@ public class RunAsJarSystemTest {
 
     @Test
     public void shouldStartScheduler() throws IOException, InterruptedException {
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
         new TasksResponse(esTasks, NUMBER_OF_TEST_TASKS);
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, NUMBER_OF_TEST_TASKS);
@@ -106,11 +106,13 @@ public class RunAsJarSystemTest {
 
     private static class JarScheduler extends AbstractContainer {
         private final ZooKeeper zooKeeperContainer;
+        private final String clusterId;
         private String docker0AdaptorIpAddress;
 
-        protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
+        protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String clusterId) {
             super(dockerClient);
             this.zooKeeperContainer = zooKeeperContainer;
+            this.clusterId = clusterId;
             docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
         }
 
@@ -123,7 +125,7 @@ public class RunAsJarSystemTest {
         protected CreateContainerCmd dockerCommand() {
             return dockerClient
                     .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
-                    .withName(TEST_CONFIG.getSchedulerName() + "_" + MesosCluster.getClusterId() + "_" + new SecureRandom().nextInt())
+                    .withName(TEST_CONFIG.getSchedulerName() + "_" + clusterId + "_" + new SecureRandom().nextInt())
                     .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                     .withExtraHosts("hostnamehack:" + docker0AdaptorIpAddress) // Will redirect hostnamehack to host IP address (where ports are bound)
                     .withCmd(
