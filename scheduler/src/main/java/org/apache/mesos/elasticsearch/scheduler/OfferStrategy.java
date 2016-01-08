@@ -24,6 +24,7 @@ public class OfferStrategy {
             new OfferRule("Hostname is unresolveable", offer -> !isHostnameResolveable(offer.getHostname())),
             new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() >= configuration.getElasticsearchNodes()),
             new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
+            new OfferRule("The offer does not contain the user specified ports", offer -> !containsUserSpecifiedPorts(offer.getResourcesList())),
             new OfferRule("Offer did not have enough CPU resources", offer -> !isEnoughCPU(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough RAM resources", offer -> !isEnoughRAM(configuration, offer.getResourcesList())),
             new OfferRule("Offer did not have enough disk resources", offer -> !isEnoughDisk(configuration, offer.getResourcesList()))
@@ -95,6 +96,18 @@ public class OfferStrategy {
 
     private boolean containsTwoPorts(List<Protos.Resource> resources) {
         return Resources.selectTwoPortsFromRange(resources).size() == 2;
+    }
+
+    private boolean containsUserSpecifiedPorts(List<Protos.Resource> resourcesList) {
+        // If there are user specified ports, check each port is contained within the offer
+        if (!configuration.getElasticsearchPorts().isEmpty()) {
+            for (Integer port : configuration.getElasticsearchPorts()) {
+                if (!Resources.isPortAvailable(resourcesList, port)) {
+                    return false;
+                }
+            }
+        }
+        return true;
     }
 
     /**

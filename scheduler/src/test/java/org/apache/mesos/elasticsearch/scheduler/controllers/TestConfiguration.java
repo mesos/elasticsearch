@@ -45,5 +45,7 @@ public class TestConfiguration {
     }
 
     @Bean
-    public FrameworkState getMockFrameworkState() { return Mockito.mock(FrameworkState.class); }
+    public FrameworkState getMockFrameworkState() {
+        return Mockito.mock(FrameworkState.class);
+    }
 }
