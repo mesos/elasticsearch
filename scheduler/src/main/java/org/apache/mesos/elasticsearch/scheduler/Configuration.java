@@ -71,7 +71,7 @@ public class Configuration {
     private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.ListOfSizeTwo.class)
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.NumericListOfSizeTwo.class)
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK

@@ -174,7 +174,12 @@ public class CLITest {
     public void shouldNotAcceptSinglePort() {
         String validPorts = "9200";
         new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
+    }
 
+    @Test(expected = ParameterException.class)
+    public void shouldNotAcceptNonIntegers() {
+        String validPorts = "9200,abc";
+        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
     }
 
     @Test(expected = ParameterException.class)
