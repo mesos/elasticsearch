@@ -157,7 +157,7 @@ public class ElasticsearchAuthSystemTest {
     private static class SmallerCPUScheduler extends ElasticsearchSchedulerContainer {
 
         public SmallerCPUScheduler(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster) {
-            super(dockerClient, zkIp, frameworkRole, cluster);
+            super(dockerClient, zkIp, frameworkRole, cluster, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
         }
 
         @Override
@@ -169,6 +169,7 @@ public class ElasticsearchAuthSystemTest {
                     ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                     org.apache.mesos.elasticsearch.scheduler.Configuration.ELASTICSEARCH_RAM, "256",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.ELASTICSEARCH_DISK, "10",
+                    org.apache.mesos.elasticsearch.scheduler.Configuration.USE_IP_ADDRESS, "true",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_ROLE, "testRole",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_PRINCIPAL, "testRole",
                     org.apache.mesos.elasticsearch.scheduler.Configuration.FRAMEWORK_SECRET_PATH, SECRET_FOLDER + FRAMEWORKPASSWD,

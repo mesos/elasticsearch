@@ -50,7 +50,7 @@ public class ExecutorHealth implements Runnable {
             Long timeSinceUpdate = thisUpdateMs - lastUpdate;
             if (timeSinceUpdate > maxTimeout) {
                 Protos.ExecutorID executorId = null;
-                if (taskStatus.getTaskInfo() != null && taskStatus.getTaskInfo().getExecutor() != null ) {
+                if (taskStatus.getTaskInfo() != null && taskStatus.getTaskInfo().getExecutor() != null) {
                     executorId = taskStatus.getTaskInfo().getExecutor().getExecutorId();
                 }
                 LOGGER.warn("Executor " + ((executorId != null) ? executorId.getValue() : null) +

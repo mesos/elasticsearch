@@ -63,18 +63,6 @@ public class CLITest {
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectZookeeperFrameworkTimeoutEqualTo0() {
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "0", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
-    @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectZookeeperFrameworkTimeoutLessThan0() {
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
-    @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldFailIfExecutorTimeoutLessThanHealthDelay() {
         String[] args = {Configuration.EXECUTOR_HEALTH_DELAY, "1000", Configuration.EXECUTOR_TIMEOUT, "10", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
@@ -135,23 +123,7 @@ public class CLITest {
                 ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
-
-    @Test
-    public void shouldUseMesosZKURLIfFrameworkZKURLNotSupplied() {
-        String frameworkFormattedZKURL = "dummyIPAddress:2181";
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
-        Configuration configuration = new Configuration(args);
-        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
-    }
-
-    @Test
-    public void shouldReturnBlankIfDefaultFrameworkZKURL() {
-        String frameworkFormattedZKURL = "dummyIPAddress:2181";
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, ZookeeperCLIParameter.DEFAULT, ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
-        Configuration configuration = new Configuration(args);
-        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
-    }
-
+    
     @Test
     public void shouldParseValidPorts() {
         String validPorts = "9200,9300";

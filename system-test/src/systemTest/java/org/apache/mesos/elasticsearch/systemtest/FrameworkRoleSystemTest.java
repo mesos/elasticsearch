@@ -37,7 +37,7 @@ public class FrameworkRoleSystemTest extends TestBase {
                 clusterArchitecture.dockerClient,
                 CLUSTER.getZkContainer().getIpAddress(),
                 role,
-                CLUSTER);
+                CLUSTER, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
         CLUSTER.addAndStartContainer(scheduler);
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 

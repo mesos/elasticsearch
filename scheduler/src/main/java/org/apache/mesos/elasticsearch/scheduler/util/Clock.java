@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.scheduler;
+package org.apache.mesos.elasticsearch.scheduler.util;
 
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;

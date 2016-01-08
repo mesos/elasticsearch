@@ -6,6 +6,7 @@ import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.cluster.TaskReaper;
 import org.apache.mesos.elasticsearch.scheduler.state.*;
+import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -48,7 +49,6 @@ public class ElasticsearchScheduler implements Scheduler {
     public void run(SchedulerDriver schedulerDriver) {
         LOGGER.info("Starting ElasticSearch on Mesos - [numHwNodes: " + configuration.getElasticsearchNodes() +
                 ", zk mesos: " + configuration.getMesosZKURL() +
-                ", zk framework: " + configuration.getFrameworkZKURL() +
                 ", ram:" + configuration.getMem() + "]");
 
         LOGGER.debug("Starting task reaper");
@@ -97,7 +97,7 @@ public class ElasticsearchScheduler implements Scheduler {
                         "Reason: " + result.reason.orElse("Unknown"));
                 driver.declineOffer(offer.getId());
             } else {
-                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer);
+                Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer, new Clock());
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
                 ESTaskStatus esTask = new ESTaskStatus(zookeeperStateDriver, frameworkState.getFrameworkID(), taskInfo, new StatePath(zookeeperStateDriver)); // Write staging state to zk
