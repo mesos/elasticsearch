@@ -164,10 +164,10 @@ public class TaskInfoFactory {
             if (address == null) {
                 throw new NullPointerException("Webserver address is null");
             }
-            String httpPath =  address + "/get/" + SimpleFileServer.ES_EXECUTOR_JAR;
+            String httpPath =  address + "/get/" + Configuration.ES_EXECUTOR_JAR;
             LOGGER.debug("Using file server: " + httpPath);
             commandInfoBuilder
-                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + SimpleFileServer.ES_EXECUTOR_JAR)
+                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + Configuration.ES_EXECUTOR_JAR)
                     .addAllArguments(args)
                     .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
         }
