@@ -41,15 +41,10 @@ public class Configuration {
     public Settings.Builder getElasticsearchYmlSettings() {
         String settingsLocation = getElasticsearchCLI().getElasticsearchSettingsLocation();
         if (settingsLocation.isEmpty()) {
-            settingsLocation = getElasticsearchSettingsPath();
-            return Settings.builder().loadFromStream(settingsLocation, Thread.currentThread().getContextClassLoader().getResourceAsStream(settingsLocation));
+            return Settings.builder().loadFromStream(ELASTICSEARCH_YML, this.getClass().getClassLoader().getResourceAsStream(ELASTICSEARCH_YML));
         } else {
             return Settings.builder().loadFromPath(Paths.get(settingsLocation));
         }
-    }
-
-    private String getElasticsearchSettingsPath() {
-        return ELASTICSEARCH_YML;
     }
 
     public ElasticsearchCLIParameter getElasticsearchCLI() {
