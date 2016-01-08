@@ -48,9 +48,9 @@ public class Main {
                 configuration.getZookeeperCLI().getZookeeperMesosTimeout(),
                 TimeUnit.MILLISECONDS,
                 "/" + configuration.getFrameworkName() + "/" + configuration.getElasticsearchCLI().getElasticsearchClusterName()));
-        final TaskInfoFactory taskInfoFactory = new TaskInfoFactory();
-        final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver, taskInfoFactory);
-        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState, taskInfoFactory);
+        final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
+        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
+        final TaskInfoFactory taskInfoFactory = new TaskInfoFactory(clusterState);
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(
                 configuration,
@@ -79,6 +79,7 @@ public class Main {
                 .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("frameworkState", frameworkState))
                 .showBanner(false)
                 .run(args);
 

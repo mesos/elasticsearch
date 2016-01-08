@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -15,6 +14,7 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -71,7 +71,7 @@ public class Configuration {
     private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.ListOfSizeTwo.class)
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.NumericListOfSizeTwo.class)
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
@@ -211,33 +211,12 @@ public class Configuration {
     // ******* Helper methods
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
-        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
-            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-        } else {
-            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
-        }
+        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
     public String getMesosZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
         return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-    }
-
-    public String getFrameworkZKURL() {
-        ZKFormatter mesosZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
-        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
-            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-        } else {
-            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
-        }
-    }
-
-    public long getFrameworkZKTimeout() {
-        return zookeeperCLI.getZookeeperFrameworkTimeout();
     }
 
     public ZookeeperCLIParameter getZookeeperCLI() {

@@ -297,7 +297,47 @@ indices.recovery.max_bytes_per_sec: 100mb
 
 ################################## Discovery ##################################
 
-# SET BY FRAMEWORK - USES ZOOKEEPER
+# Discovery infrastructure ensures nodes can be found within a cluster
+# and master node is elected. Multicast discovery is the default.
+
+# Set to ensure a node sees N other master eligible nodes to be considered
+# operational within the cluster. Its recommended to set it to a higher value
+# than 1 when running more than 2 nodes in the cluster.
+#
+# discovery.zen.minimum_master_nodes: 1
+
+# Set the time to wait for ping responses from other nodes when discovering.
+# Set this option to a higher value on a slow or congested network
+# to minimize discovery failures:
+#
+# discovery.zen.ping.timeout: 3s
+
+# For more information, see
+# <http://elasticsearch.org/guide/en/elasticsearch/reference/current/modules-discovery-zen.html>
+
+# Unicast discovery allows to explicitly control which nodes will be used
+# to discover the cluster. It can be used when multicast is not present,
+# or to restrict the cluster communication-wise.
+#
+# 1. Disable multicast discovery (enabled by default):
+#
+# discovery.zen.ping.multicast.enabled: false
+#
+# 2. Configure an initial list of master nodes in the cluster
+#    to perform discovery when new nodes (master or data) are started:
+#
+# discovery.zen.ping.unicast.hosts: ["host1", "host2:port"]
+
+# EC2 discovery allows to use AWS EC2 API in order to perform discovery.
+#
+# You have to install the cloud-aws plugin for enabling the EC2 discovery.
+#
+# For more information, see
+# <http://elasticsearch.org/guide/en/elasticsearch/reference/current/modules-discovery-ec2.html>
+#
+# See <http://elasticsearch.org/tutorials/elasticsearch-on-ec2/>
+# for a step-by-step tutorial.
+
 
 
 ################################## Slow Log ##################################

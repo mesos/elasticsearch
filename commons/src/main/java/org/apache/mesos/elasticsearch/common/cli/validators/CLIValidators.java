@@ -69,12 +69,19 @@ public class CLIValidators {
     /**
      * Ensures that the string is not empty. Will strip spaces.
      */
-    public static class ListOfSizeTwo implements IParameterValidator {
+    public static class NumericListOfSizeTwo implements IParameterValidator {
         @Override
         public void validate(String name, String value) throws ParameterException {
-
-            if (value.isEmpty() || !value.contains(",") || value.split(",").length != 2) {
+            if (value.isEmpty() || value.split(",").length != 2) {
                 throw new ParameterException("Must provide two parameters in the format 'x,y'");
+            }
+            String[] strings = value.split(",");
+            for (String string : strings) {
+                try {
+                    Integer.parseInt(string.replace(" ","")); // Check that ports are parsable
+                } catch (NumberFormatException e) {
+                    throw new ParameterException("Ports must be integers.");
+                }
             }
         }
     }

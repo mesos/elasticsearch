@@ -10,6 +10,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.Arrays;
+
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
@@ -66,6 +68,48 @@ public class OfferStrategyTest {
                 .build());
         assertFalse(offerResult.acceptable);
         assertEquals("Offer did not have 2 ports", offerResult.reason.get());
+    }
+
+    @Test
+    public void shouldDeclineIfUserPortsNotAvailable() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
+                .build());
+        assertFalse(offerResult.acceptable);
+        assertEquals("The offer does not contain the user specified ports", offerResult.reason.get());
+    }
+
+    @Test
+    public void shouldDeclineIfOneOfUserPortsNotAvailable() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(31000, 9300));
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
+                .build());
+        assertFalse(offerResult.acceptable);
+        assertEquals("The offer does not contain the user specified ports", offerResult.reason.get());
+    }
+
+    @Test
+    public void shouldAcceptIfUserPortsAreAvailable() throws Exception {
+        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
+        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
+
+        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+                .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
+                .addResources(portRange(9200, 9300, configuration.getFrameworkRole()))
+                .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
+                .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
+                .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
+                .build());
+        assertTrue(offerResult.acceptable);
     }
 
     @Test
