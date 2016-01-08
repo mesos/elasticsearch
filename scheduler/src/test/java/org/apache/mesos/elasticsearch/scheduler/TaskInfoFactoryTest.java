@@ -211,8 +211,8 @@ public class TaskInfoFactoryTest {
     @Test
     public void shouldAllowUserSpecifiedPorts() {
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(123, 456));
-        TaskInfoFactory factory = new TaskInfoFactory();
-        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
         assertFalse(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
         assertTrue(taskInfo.getExecutor().toString().contains("123"));
@@ -221,8 +221,8 @@ public class TaskInfoFactoryTest {
 
     @Test
     public void shouldUseMesosProvidedPorts() {
-        TaskInfoFactory factory = new TaskInfoFactory();
-        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
         assertFalse(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
         assertTrue(taskInfo.getExecutor().toString().contains("9200"));
