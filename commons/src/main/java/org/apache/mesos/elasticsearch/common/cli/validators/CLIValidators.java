@@ -78,7 +78,7 @@ public class CLIValidators {
             String[] strings = value.split(",");
             for (String string : strings) {
                 try {
-                    Integer.parseInt(string.replace(" ","")); // Check that ports are parsable
+                    Integer.parseInt(string.replace(" ", "")); // Check that ports are parsable
                 } catch (NumberFormatException e) {
                     throw new ParameterException("Ports must be integers.");
                 }
