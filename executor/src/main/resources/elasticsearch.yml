@@ -133,6 +133,8 @@ index.auto_expand_replicas: "0-all"
 
 
 #################################### Paths ####################################
+# Path to home. Required for ES 2.0+
+path.home: /usr/share/elasticsearch
 
 # Path to directory containing configuration (this file and logging.yml):
 #

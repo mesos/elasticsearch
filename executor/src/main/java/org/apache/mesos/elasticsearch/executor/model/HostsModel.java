@@ -2,7 +2,7 @@ package org.apache.mesos.elasticsearch.executor.model;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.executor.mesos.ElasticsearchExecutor;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,8 +19,8 @@ public class HostsModel implements RunTimeSettings {
 
 
     @Override
-    public ImmutableSettings.Builder getRuntimeSettings() {
-        return ImmutableSettings.settingsBuilder()
+    public Settings.Builder getRuntimeSettings() {
+        return Settings.settingsBuilder()
                 .put("discovery.zen.ping.unicast.hosts", getHosts());
     }
 

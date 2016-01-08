@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.executor.elasticsearch;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 
 /**
@@ -8,5 +8,5 @@ import org.elasticsearch.node.Node;
  */
 public interface Launcher {
     Node launch();
-    void addRuntimeSettings(ImmutableSettings.Builder settings);
+    void addRuntimeSettings(Settings.Builder settings);
 }

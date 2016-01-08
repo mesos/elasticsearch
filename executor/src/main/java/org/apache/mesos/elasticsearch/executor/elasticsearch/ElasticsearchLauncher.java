@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.executor.elasticsearch;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
 
@@ -8,9 +8,9 @@ import org.elasticsearch.node.NodeBuilder;
  * Launches an elasticsearch node
  */
 public class ElasticsearchLauncher implements Launcher {
-    private ImmutableSettings.Builder settings;
+    private Settings.Builder settings;
 
-    public ElasticsearchLauncher(ImmutableSettings.Builder newSettings) {
+    public ElasticsearchLauncher(Settings.Builder newSettings) {
         if (newSettings == null) {
             throw new NullPointerException("Settings cannot be null");
         }
@@ -23,7 +23,7 @@ public class ElasticsearchLauncher implements Launcher {
     }
 
     @Override
-    public void addRuntimeSettings(ImmutableSettings.Builder settingsToAdd) {
+    public void addRuntimeSettings(Settings.Builder settingsToAdd) {
         if (settingsToAdd != null) {
             this.settings.put(settingsToAdd.build());
         }

@@ -10,10 +10,9 @@ import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
 import org.apache.mesos.elasticsearch.executor.model.HostsModel;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 
-import java.net.*;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
@@ -68,9 +67,8 @@ public class ElasticsearchExecutor implements Executor {
             configuration = new Configuration(args);
 
             // Add settings provided in es Settings file
-            URL elasticsearchSettingsPath = java.net.URI.create(configuration.getElasticsearchSettingsLocation()).toURL();
-            LOGGER.debug("Using elasticsearch settings file: " + elasticsearchSettingsPath);
-            ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromUrl(elasticsearchSettingsPath);
+            LOGGER.debug("Using elasticsearch settings file: " + configuration.getElasticsearchCLI().getElasticsearchSettingsLocation());
+            Settings.Builder esSettings = configuration.getElasticsearchYmlSettings();
             launcher.addRuntimeSettings(esSettings);
 
             // Parse ports
@@ -82,7 +80,7 @@ public class ElasticsearchExecutor implements Executor {
             launcher.addRuntimeSettings(hostsModel.getRuntimeSettings());
 
             // Parse cluster name
-            launcher.addRuntimeSettings(ImmutableSettings.builder().put("cluster.name", configuration.getElasticsearchClusterName()));
+            launcher.addRuntimeSettings(Settings.builder().put("cluster.name", configuration.getElasticsearchCLI().getElasticsearchClusterName()));
 
             // Print final settings for logs.
             LOGGER.debug(launcher.toString());
@@ -92,7 +90,7 @@ public class ElasticsearchExecutor implements Executor {
 
             // Send status update, running
             driver.sendStatusUpdate(taskStatus.running());
-        } catch (InvalidParameterException | MalformedURLException e) {
+        } catch (InvalidParameterException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);
         }

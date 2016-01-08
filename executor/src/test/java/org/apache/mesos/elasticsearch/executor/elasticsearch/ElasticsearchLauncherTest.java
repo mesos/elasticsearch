@@ -1,10 +1,16 @@
 package org.apache.mesos.elasticsearch.executor.elasticsearch;
 
+import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
+import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.*;
@@ -15,6 +21,7 @@ import static org.mockito.Mockito.*;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class ElasticsearchLauncherTest {
+
     @Test(expected = NullPointerException.class)
     public void shouldExceptionIfNullSettings() {
         new ElasticsearchLauncher(null);
@@ -23,14 +30,9 @@ public class ElasticsearchLauncherTest {
     @Test
     public void shouldLaunchWithDefaultSettings() throws InterruptedException {
         ElasticsearchSettings esSettings = new ElasticsearchSettings();
-        ImmutableSettings.Builder settings = esSettings.defaultSettings()
-                // Set local
-                .put("node.local", true);
-        // Remove zookeeper settings
-        settings.remove("discovery.type");
-        settings.remove("sonian.elasticsearch.zookeeper.settings.enabled");
-        settings.remove("sonian.elasticsearch.zookeeper.client.host");
-        settings.remove("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled");
+        Settings.Builder settings = esSettings.defaultSettings()
+                .put("node.local", true)
+                .put("path.home", ".");
         ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
         elasticsearchLauncher.launch();
     }
@@ -38,14 +40,9 @@ public class ElasticsearchLauncherTest {
     @Test
     public void shouldLaunchWithRunTimeSettings() throws InterruptedException {
         ElasticsearchSettings esSettings = new ElasticsearchSettings();
-        ImmutableSettings.Builder settings = esSettings.defaultSettings()
-                // Set local
-                .put("node.local", true);
-        // Remove zookeeper settings
-        settings.remove("discovery.type");
-        settings.remove("sonian.elasticsearch.zookeeper.settings.enabled");
-        settings.remove("sonian.elasticsearch.zookeeper.client.host");
-        settings.remove("sonian.elasticsearch.zookeeper.discovery.state_publishing.enabled");
+        Settings.Builder settings = esSettings.defaultSettings()
+                .put("node.local", true)
+                .put("path.home", ".");
         ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
         elasticsearchLauncher.addRuntimeSettings(getClientPort());
         elasticsearchLauncher.launch();
@@ -54,11 +51,11 @@ public class ElasticsearchLauncherTest {
     @Test
     public void shouldBeAbleToAddRunTimeSettings() {
         // Given settings
-        ImmutableSettings.Builder settings = mock(ImmutableSettings.Builder.class);
+        Settings.Builder settings = mock(Settings.Builder.class);
         Launcher launcher = new ElasticsearchLauncher(settings);
 
         // When add runtime
-        ImmutableSettings.Builder runtimeSettings = spy(getClientPort());
+        Settings.Builder runtimeSettings = spy(getClientPort());
         launcher.addRuntimeSettings(runtimeSettings);
 
         // Ensure settings are updated
@@ -67,12 +64,27 @@ public class ElasticsearchLauncherTest {
 
     @Test
     public void shouldBeAbleToLoadSettingsFromResources() {
-        ImmutableSettings.Builder esSettings = ImmutableSettings.builder().loadFromClasspath("elasticsearch.yml");
+        Configuration configuration = new Configuration(new String[]{""});
+        Settings.Builder esSettings = configuration.getElasticsearchYmlSettings();
         assertNotNull(esSettings);
     }
 
-    private ImmutableSettings.Builder getClientPort() {
-        return ImmutableSettings.settingsBuilder().put(PortsModel.HTTP_PORT_KEY, "1234");
+    @Test
+    public void shouldBeAbleToLoadSettingsFromFile() throws IOException {
+        // Create temp file
+        Path tempFile = Files.createTempFile("elasticsearchTest", ".yml");
+        Settings.Builder esSettings;
+        try {
+            Configuration configuration = new Configuration(new String[]{ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, tempFile.toString()});
+            esSettings = configuration.getElasticsearchYmlSettings();
+        } finally {
+            Files.delete(tempFile);
+        }
+        assertNotNull(esSettings);
+    }
+
+    private Settings.Builder getClientPort() {
+        return Settings.settingsBuilder().put(PortsModel.HTTP_PORT_KEY, "1234");
 
     }
 }
