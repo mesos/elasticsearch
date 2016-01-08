@@ -72,7 +72,7 @@ public class CLIValidators {
     public static class NumericListOfSizeTwo implements IParameterValidator {
         @Override
         public void validate(String name, String value) throws ParameterException {
-            if (value.isEmpty() || !value.contains(",") || value.split(",").length != 2) {
+            if (value.isEmpty() || value.split(",").length != 2) {
                 throw new ParameterException("Must provide two parameters in the format 'x,y'");
             }
             String[] strings = value.split(",");
