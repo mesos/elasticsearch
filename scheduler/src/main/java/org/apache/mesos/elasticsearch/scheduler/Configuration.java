@@ -14,6 +14,10 @@ import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
 import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Holder object for framework configuration.
@@ -43,10 +47,12 @@ public class Configuration {
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
+    public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";
     public static final String USE_IP_ADDRESS = "--useIpAddress";
+    public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
 
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
@@ -65,6 +71,9 @@ public class Configuration {
     private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.NumericListOfSizeTwo.class)
+    private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
+
     // **** FRAMEWORK
     private String version = "0.6.0";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
@@ -256,6 +265,18 @@ public class Configuration {
         } else {
             return "";
         }
+    }
+
+    public List<Integer> getElasticsearchPorts() {
+        if (elasticsearchPorts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String[] portsRaw = elasticsearchPorts.replace(" ", "").split(",");
+        ArrayList<Integer> portsList = new ArrayList<>(2);
+        for (String port : portsRaw) {
+            portsList.add(Integer.parseInt(port));
+        }
+        return portsList;
     }
 
     /**

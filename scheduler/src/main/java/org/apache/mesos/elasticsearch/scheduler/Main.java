@@ -7,10 +7,10 @@ import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
-import java.net.UnknownHostException;
 import java.util.HashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -38,13 +38,9 @@ public class Main {
         configuration = new Configuration(args);
 
         if (!configuration.isFrameworkUseDocker()) {
-            try {
-                final SimpleFileServer simpleFileServer = new SimpleFileServer();
-                simpleFileServer.run();
-                configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
-            } catch (UnknownHostException e) {
-                throw new IllegalStateException("Unable to start file server. See stack trace.", e);
-            }
+            final SimpleFileServer simpleFileServer = new SimpleFileServer(new NetworkUtils(), Configuration.ES_EXECUTOR_JAR);
+            simpleFileServer.run();
+            configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
         }
 
         final SerializableZookeeperState zookeeperStateDriver = new SerializableZookeeperState(new ZooKeeperState(
@@ -83,6 +79,7 @@ public class Main {
                 .properties(properties)
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("scheduler", scheduler))
                 .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("configuration", configuration))
+                .initializers(applicationContext -> applicationContext.getBeanFactory().registerSingleton("frameworkState", frameworkState))
                 .showBanner(false)
                 .run(args);
 

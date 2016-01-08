@@ -19,10 +19,7 @@ import java.io.StringWriter;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.UUID;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
@@ -61,6 +58,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
         when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
         when(configuration.isFrameworkUseDocker()).thenReturn(true);
+        when(configuration.getElasticsearchPorts()).thenReturn(Collections.emptyList());
     }
 
     @Test
@@ -208,6 +206,27 @@ public class TaskInfoFactoryTest {
 
         final Task task = TaskInfoFactory.parse(taskInfo, taskStatus, clock);
         assertEquals(nowUTC, task.getStartedAt());
+    }
+
+    @Test
+    public void shouldAllowUserSpecifiedPorts() {
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(123, 456));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
+        assertFalse(taskInfo.getContainer().isInitialized());
+        assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
+        assertTrue(taskInfo.getExecutor().toString().contains("123"));
+        assertTrue(taskInfo.getExecutor().toString().contains("456"));
+    }
+
+    @Test
+    public void shouldUseMesosProvidedPorts() {
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
+        assertFalse(taskInfo.getContainer().isInitialized());
+        assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
+        assertTrue(taskInfo.getExecutor().toString().contains("9200"));
+        assertTrue(taskInfo.getExecutor().toString().contains("9300"));
     }
 
     private Protos.TaskInfo createTaskInfo(Protos.TaskID taskId, ByteString data) {

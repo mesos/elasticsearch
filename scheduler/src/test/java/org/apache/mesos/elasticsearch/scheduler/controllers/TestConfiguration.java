@@ -4,6 +4,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.http.client.HttpClient;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.ElasticsearchScheduler;
+import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.mockito.Mockito;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -41,5 +42,10 @@ public class TestConfiguration {
     @Bean
     public HttpClient getMockHttpClient() {
         return Mockito.mock(HttpClient.class);
+    }
+
+    @Bean
+    public FrameworkState getMockFrameworkState() {
+        return Mockito.mock(FrameworkState.class);
     }
 }
