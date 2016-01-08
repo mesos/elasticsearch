@@ -22,22 +22,4 @@ public class ZookeeperCLIParameter {
     public long getZookeeperMesosTimeout() {
         return zookeeperMesosTimeout;
     }
-
-    public static final String ZOOKEEPER_FRAMEWORK_URL = "--zookeeperFrameworkUrl";
-    @Parameter(names = {ZOOKEEPER_FRAMEWORK_URL}, required = false, description = "Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)", validateWith = CLIValidators.NotEmptyString.class)
-    private String zookeeperFrameworkUrl = "";
-    public String getZookeeperFrameworkUrl() {
-        if (zookeeperFrameworkUrl.equals(DEFAULT)) {
-            zookeeperFrameworkUrl = "";
-        }
-        return zookeeperFrameworkUrl;
-    }
-
-    public static final String ZOOKEEPER_FRAMEWORK_TIMEOUT = "--zookeeperFrameworkTimeout";
-    @Parameter(names = {ZOOKEEPER_FRAMEWORK_TIMEOUT}, required = false, description = "The timeout for connecting to zookeeper for the framework (ms).", validateValueWith = CLIValidators.PositiveLong.class)
-    private long zookeeperFrameworkTimeout = 20000L;
-    public long getZookeeperFrameworkTimeout() {
-        return zookeeperFrameworkTimeout;
-    }
-
 }
