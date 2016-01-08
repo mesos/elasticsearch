@@ -5,8 +5,7 @@ import org.apache.mesos.Protos;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
-import static java.util.Arrays.asList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Helper class for building Mesos resources.
@@ -80,5 +79,16 @@ public class Resources {
         Protos.Resource mem = Resources.mem(configuration.getMem() - configuration.getExecutorMem(), configuration.getFrameworkRole());
         Protos.Resource disk = Resources.disk(configuration.getDisk(), configuration.getFrameworkRole());
         return new ArrayList<>(Arrays.asList(cpus, mem, disk));
+    }
+
+    public static boolean isPortAvailable(List<Protos.Resource> resourcesList, Integer port) {
+        final AtomicBoolean available = new AtomicBoolean(false);
+        resourcesList.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.RANGES))
+                .forEach(resource -> resource.getRanges().getRangeList().stream().forEach(range -> {
+                    if (range.getBegin() <= port && port <= range.getEnd()) {
+                        available.set(true);
+                    }
+                }));
+        return available.get();
     }
 }
