@@ -2,10 +2,11 @@ import com.bmuschko.gradle.docker.tasks.image.DockerBuildImage
 import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
+import com.github.zafarkhaja.semver.Version
 
 ext {
     mesosVer = "0.25.0"
-    elasticsearchVersion="2.0.0"
+    elasticsearchVersion="2.1.1"
     imagePrefix = 'mesos'
     springBootVersion = "1.2.5.RELEASE"
 }
@@ -34,7 +35,6 @@ buildscript {
   }
 }
 
-import com.github.zafarkhaja.semver.Version
 import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
 
