@@ -85,12 +85,12 @@ public class ScalingSystemTest extends SchedulerTestBase {
             for (String httpAddress : esAddresses) {
                 try {
                     responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
+                    LOGGER.info(responseElements);
+                    if (9 > responseElements.getJSONObject(0).getInt("count")) {
+                        return false;
+                    }
                 } catch (Exception e) {
                     LOGGER.error("Unirest exception:" + e.getMessage());
-                    return false;
-                }
-                LOGGER.info(responseElements);
-                if (9 > responseElements.getJSONObject(0).getInt("count")) {
                     return false;
                 }
             }

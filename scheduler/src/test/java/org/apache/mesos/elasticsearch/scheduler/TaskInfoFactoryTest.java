@@ -22,6 +22,8 @@ import java.time.ZonedDateTime;
 import java.util.*;
 
 import static java.util.Arrays.asList;
+import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
+import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_PATH_SETTINGS;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -104,10 +106,10 @@ public class TaskInfoFactoryTest {
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
 
         assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
-        assertEquals(TaskInfoFactory.SETTINGS_PATH_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
-        assertEquals(TaskInfoFactory.SETTINGS_PATH_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
+        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
+        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
-        assertEquals(TaskInfoFactory.SETTINGS_DATA_VOLUME_CONTAINER, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
+        assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
         assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
     }

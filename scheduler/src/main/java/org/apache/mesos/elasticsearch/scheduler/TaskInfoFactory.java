@@ -23,6 +23,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
+import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
+import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_PATH_SETTINGS;
 
 /**
  * Factory for creating {@link Protos.TaskInfo}s
@@ -32,10 +34,6 @@ public class TaskInfoFactory {
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-
-    public static final String SETTINGS_PATH_VOLUME = "/tmp/config";
-
-    public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
 
     private FrameworkState frameworkState;
     private final ClusterState clusterState;
@@ -125,8 +123,8 @@ public class TaskInfoFactory {
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(containerBuilder)
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(SETTINGS_PATH_VOLUME).setContainerPath(SETTINGS_PATH_VOLUME).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(SETTINGS_DATA_VOLUME_CONTAINER).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
+                    .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
+                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
                     .build())
                     .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
                     .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))

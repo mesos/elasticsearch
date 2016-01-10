@@ -29,7 +29,7 @@
 # Cluster name identifies your cluster for auto-discovery. If you're running
 # multiple clusters on the same network, make sure you're using unique names.
 #
-# cluster.name: SET_BY_FRAMEWORK
+# cluster.name: {DEFAULT SET BY ES FRAMEWORK}
 
 
 #################################### Node #####################################
@@ -37,7 +37,7 @@
 # Node names are generated dynamically on startup, so you're relieved
 # from configuring them manually. You can tie this node to a specific name:
 #
-# node.name: SET_BY_FRAMEWORK
+# node.name: {DEFAULT SET BY ES FRAMEWORK}
 
 # Every node can be configured to allow or deny being eligible as the master,
 # and to allow or deny to store the data.
@@ -107,8 +107,8 @@ node.data: true
 ################################# AUTO REPLICAS ##############################
 # This is required to allow scaling. To prevent dataloss we replicate to all nodes in the cluster.
 # <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/indices-update-settings.html>
-index.number_of_replicas: 0
-index.auto_expand_replicas: "0-all"
+#index.number_of_replicas: {DEFAULT SET BY ES FRAMEWORK}
+#index.auto_expand_replicas: {DEFAULT SET BY ES FRAMEWORK}
 
 # These settings directly affect the performance of index and search operations
 # in your cluster. Assuming you have enough machines to hold shards and
@@ -133,16 +133,15 @@ index.auto_expand_replicas: "0-all"
 
 
 #################################### Paths ####################################
-# Path to home. Required for ES 2.0+
-path.home: /usr/share/elasticsearch
+# path.home: {DEFAULT SET BY ES FRAMEWORK}
 
 # Path to directory containing configuration (this file and logging.yml):
 #
-# path.conf: /path/to/conf
+# path.conf: {DEFAULT SET BY ES FRAMEWORK}
 
 # Path to directory where to store index data allocated for this node.
 #
-# path.data: /path/to/data
+# path.data: {DEFAULT SET BY ES FRAMEWORK}
 #
 # Can optionally include more than one location, causing data to be striped across
 # the locations (a la RAID 0) on a file level, favouring locations with most free
@@ -156,7 +155,7 @@ path.home: /usr/share/elasticsearch
 
 # Path to log files:
 #
-path.logs: /var/log/elasticsearch
+# path.logs: /var/log/elasticsearch
 
 # Path to where plugins are installed:
 #
@@ -209,7 +208,7 @@ bootstrap.mlockall: true
 
 # Set a custom port for the node to node communication (9300 by default):
 #
-# transport.tcp.port: SET_BY_FRAMEWORK
+# transport.tcp.port: {DEFAULT SET BY ES FRAMEWORK}
 
 # Enable compression for all communication between nodes (disabled by default):
 #
@@ -217,7 +216,7 @@ bootstrap.mlockall: true
 
 # Set a custom port to listen for HTTP traffic:
 #
-# http.port: SET_BY_FRAMEWORK
+# http.port: {DEFAULT SET BY ES FRAMEWORK}
 
 # Set a custom allowed content length:
 #
@@ -248,7 +247,7 @@ bootstrap.mlockall: true
 
 # Allow recovery process after N nodes in a cluster are up:
 #
-#gateway.recover_after_nodes: 1
+#gateway.recover_after_nodes: {DEFAULT SET BY ES FRAMEWORK}
 
 # Set the timeout to initiate the recovery process, once the N nodes
 # from previous setting are up (accepts time value):
@@ -259,7 +258,7 @@ bootstrap.mlockall: true
 # are up (and recover_after_nodes is met), begin recovery process immediately
 # (without waiting for recover_after_time to expire):
 #
-#gateway.expected_nodes: SET_BY_FRAMEWORK
+#gateway.expected_nodes: {DEFAULT SET BY ES FRAMEWORK}
 
 # Require explicit index creation
 # action.auto_create_index: false
