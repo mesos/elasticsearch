@@ -86,6 +86,7 @@ node.data: true
 # to disable it, set the following:
 # node.max_local_storage_nodes: 1
 
+node.local: false
 
 #################################### Index ####################################
 
@@ -107,8 +108,8 @@ node.data: true
 ################################# AUTO REPLICAS ##############################
 # This is required to allow scaling. To prevent dataloss we replicate to all nodes in the cluster.
 # <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/indices-update-settings.html>
-#index.number_of_replicas: {DEFAULT SET BY ES FRAMEWORK}
-#index.auto_expand_replicas: {DEFAULT SET BY ES FRAMEWORK}
+index.number_of_replicas: 0
+index.auto_expand_replicas: 0-all
 
 # These settings directly affect the performance of index and search operations
 # in your cluster. Assuming you have enough machines to hold shards and
@@ -133,15 +134,18 @@ node.data: true
 
 
 #################################### Paths ####################################
-# path.home: {DEFAULT SET BY ES FRAMEWORK}
+path.home: /usr/share/elasticsearch
 
 # Path to directory containing configuration (this file and logging.yml):
-#
-# path.conf: {DEFAULT SET BY ES FRAMEWORK}
+# ES FRAMEWORK: DO NOT CHANGE THIS.
+# Your custom YML file setting provided via the framework will be mounted in this location. This is the location inside the container.
+path.conf: /tmp/config
 
 # Path to directory where to store index data allocated for this node.
-#
-# path.data: {DEFAULT SET BY ES FRAMEWORK}
+# ES FRAMEWORK: DO NOT CHANGE THIS.
+# Your custom data directory setting provided via the framework will be mounted in this location. This is the location inside the container.
+path.data: /data
+
 #
 # Can optionally include more than one location, causing data to be striped across
 # the locations (a la RAID 0) on a file level, favouring locations with most free
@@ -155,7 +159,7 @@ node.data: true
 
 # Path to log files:
 #
-# path.logs: /var/log/elasticsearch
+path.logs: /var/log/elasticsearch
 
 # Path to where plugins are installed:
 #
@@ -195,12 +199,12 @@ bootstrap.mlockall: true
 
 # Set the bind address specifically (IPv4 or IPv6):
 #
-# network.bind_host: 192.168.0.1
+network.bind_host: 0.0.0.0
 
 # Set the address other nodes will use to communicate with this node. If not
 # set, it is automatically derived. It must point to an actual IP address.
 #
-# network.publish_host: 192.168.0.1
+network.publish_host: _non_loopback:ipv4_
 
 # Set both 'bind_host' and 'publish_host':
 #
@@ -247,7 +251,7 @@ bootstrap.mlockall: true
 
 # Allow recovery process after N nodes in a cluster are up:
 #
-#gateway.recover_after_nodes: {DEFAULT SET BY ES FRAMEWORK}
+gateway.recover_after_nodes: 1
 
 # Set the timeout to initiate the recovery process, once the N nodes
 # from previous setting are up (accepts time value):
@@ -258,7 +262,7 @@ bootstrap.mlockall: true
 # are up (and recover_after_nodes is met), begin recovery process immediately
 # (without waiting for recover_after_time to expire):
 #
-#gateway.expected_nodes: {DEFAULT SET BY ES FRAMEWORK}
+gateway.expected_nodes: 1
 
 # Require explicit index creation
 # action.auto_create_index: false
@@ -297,7 +301,7 @@ indices.recovery.max_bytes_per_sec: 100mb
 
 
 ################################## Discovery ##################################
-
+discovery.type: zen
 # Discovery infrastructure ensures nodes can be found within a cluster
 # and master node is elected. Multicast discovery is the default.
 
@@ -322,7 +326,7 @@ indices.recovery.max_bytes_per_sec: 100mb
 #
 # 1. Disable multicast discovery (enabled by default):
 #
-# discovery.zen.ping.multicast.enabled: false
+discovery.zen.ping.multicast.enabled: false
 #
 # 2. Configure an initial list of master nodes in the cluster
 #    to perform discovery when new nodes (master or data) are started:

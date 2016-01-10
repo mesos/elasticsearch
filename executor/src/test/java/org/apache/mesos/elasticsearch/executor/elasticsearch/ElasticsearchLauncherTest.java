@@ -39,8 +39,7 @@ public class ElasticsearchLauncherTest {
 
     @Test
     public void shouldLaunchWithDefaultSettings() throws InterruptedException, UnirestException, ExecutionException {
-        ElasticsearchSettings esSettings = new ElasticsearchSettings();
-        Settings.Builder settings = esSettings.defaultSettings()
+        Settings.Builder settings = Settings.builder()
                 .put("node.local", true)
                 .put("path.data", ".")
                 .put("path.home", ".");
@@ -57,8 +56,7 @@ public class ElasticsearchLauncherTest {
 
     @Test
     public void shouldLaunchWithRunTimeSettings() throws InterruptedException, ExecutionException, UnirestException {
-        ElasticsearchSettings esSettings = new ElasticsearchSettings();
-        Settings.Builder settings = esSettings.defaultSettings()
+        Settings.Builder settings = Settings.builder()
                 .put("node.local", true)
                 .put("path.data", ".")
                 .put("path.home", ".");
