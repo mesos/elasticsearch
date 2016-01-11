@@ -10,8 +10,8 @@ import java.util.List;
  */
 public class ContainerLifecycleManagement {
     private List<AbstractContainer> containers = new ArrayList<>();
-    public void addAndStart(AbstractContainer container) {
-        container.start();
+    public void addAndStart(AbstractContainer container, Integer timeout) {
+        container.start(timeout);
         containers.add(container);
     }
 

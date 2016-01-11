@@ -21,11 +21,11 @@ public abstract class SchedulerTestBase extends TestBase {
         LOGGER.info("Starting Elasticsearch scheduler");
 
         scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
-        CLUSTER.addAndStartContainer(scheduler);
+        CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());

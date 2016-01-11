@@ -40,12 +40,12 @@ public class Main {
                 new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
             }
         });
-        cluster.start();
+        cluster.start(TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Starting scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, cluster.getZkContainer().getIpAddress(), cluster);
         schedulerReference.set(scheduler);
-        scheduler.start();
+        cluster.start(TEST_CONFIG.getClusterTimeout());
 
         seedData(cluster, scheduler);
 
@@ -59,14 +59,14 @@ public class Main {
     private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
         String taskHttpAddress;
         try {
-            ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
+            ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress(), true);
             new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount(), "TASK_RUNNING");
             taskHttpAddress = esTasks.getTasks().get(0).getString("http_address");
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
         SeedDataContainer seedData = new SeedDataContainer(clusterArchitecture.dockerClient, "http://" + taskHttpAddress);
-        cluster.addAndStartContainer(seedData);
+        cluster.addAndStartContainer(seedData, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Elasticsearch node " + taskHttpAddress + " seeded with data");
     }
 

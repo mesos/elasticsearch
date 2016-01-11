@@ -47,7 +47,7 @@ public abstract class TestBase {
         // Completely wipe out old data dir, just in case there is any old data in there.
         String dataDir = org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR;
         AlpineContainer alpineContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDir, dataDir, new String[]{"sh", "-c", "rm -rf " + dataDir + "/* ; sleep 9999 ;"});
-        alpineContainer.start();
+        alpineContainer.start(TEST_CONFIG.getClusterTimeout());
         alpineContainer.remove();
     }
 

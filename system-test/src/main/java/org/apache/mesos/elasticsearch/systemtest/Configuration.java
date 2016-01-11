@@ -13,6 +13,7 @@ public class Configuration {
     private int elasticsearchNodesCount = getPortRanges().length;
     private int elasticsearchMemorySize = 256;
     private String elasticsearchJobName = "esdemo";
+    private final Integer clusterTimeout = 60;
 
     public static String getDocker0AdaptorIpAddress(DockerClient dockerClient) {
         return dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
@@ -48,5 +49,9 @@ public class Configuration {
             "ports(*):[9201-9201,9301-9301]",
             "ports(*):[9202-9202,9302-9302]"
         };
+    }
+
+    public Integer getClusterTimeout() {
+        return clusterTimeout;
     }
 }

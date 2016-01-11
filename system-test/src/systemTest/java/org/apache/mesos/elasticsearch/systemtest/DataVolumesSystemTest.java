@@ -28,11 +28,11 @@ public class DataVolumesSystemTest extends TestBase {
         LOGGER.info("Starting Elasticsearch scheduler");
 
         scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER, dataDir);
-        CLUSTER.addAndStartContainer(scheduler);
+        CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), false);
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
@@ -45,7 +45,7 @@ public class DataVolumesSystemTest extends TestBase {
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
         AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer);
+        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
     }
@@ -58,7 +58,7 @@ public class DataVolumesSystemTest extends TestBase {
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
         AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDirectory, dataDirectory, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer);
+        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
     }

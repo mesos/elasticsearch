@@ -37,8 +37,8 @@ public class DataPusherContainer extends AbstractContainer {
     }
 
     @Override
-    public void start() {
-        super.start();
+    public void start(int timeout) {
+        super.start(timeout);
         dockerClient.logContainerCmd(getContainerId()).withStdOut().withStdErr().exec(callback);
     }
 }

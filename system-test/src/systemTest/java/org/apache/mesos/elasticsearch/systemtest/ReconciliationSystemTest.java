@@ -36,7 +36,7 @@ public class ReconciliationSystemTest extends TestBase {
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
-        CONTAINER_MANAGER.addAndStart(scheduler);
+        CONTAINER_MANAGER.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
         return scheduler;
     }
 
@@ -56,7 +56,7 @@ public class ReconciliationSystemTest extends TestBase {
     @Test
     public void forceCheckExecutorTimeout() throws IOException {
         ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress());
-        CONTAINER_MANAGER.addAndStart(scheduler);
+        CONTAINER_MANAGER.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
         assertCorrectNumberOfExecutors(); // Start with 3
         assertLessThan(getTestConfig().getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
         assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
