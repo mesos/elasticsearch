@@ -4,7 +4,7 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.executor.parser.ParsePorts;
 import org.apache.mesos.elasticsearch.executor.parser.TaskParser;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 
 import java.security.InvalidParameterException;
 import java.util.List;
@@ -29,18 +29,18 @@ public class PortsModel implements RunTimeSettings {
         transportPort = portsList.get(Discovery.TRANSPORT_PORT_INDEX);
     }
 
-    private ImmutableSettings.Builder getClientPort() {
-        return ImmutableSettings.settingsBuilder().put(HTTP_PORT_KEY, String.valueOf(clientPort.getNumber()));
+    private Settings.Builder getClientPort() {
+        return Settings.settingsBuilder().put(HTTP_PORT_KEY, String.valueOf(clientPort.getNumber()));
 
     }
 
-    private ImmutableSettings.Builder getTransportPort() {
-        return ImmutableSettings.settingsBuilder().put(TRANSPORT_PORT_KEY, String.valueOf(transportPort.getNumber()));
+    private Settings.Builder getTransportPort() {
+        return Settings.settingsBuilder().put(TRANSPORT_PORT_KEY, String.valueOf(transportPort.getNumber()));
     }
 
     @Override
-    public ImmutableSettings.Builder getRuntimeSettings() {
-        return ImmutableSettings.settingsBuilder()
+    public Settings.Builder getRuntimeSettings() {
+        return Settings.settingsBuilder()
                 .put(getClientPort().build())
                 .put(getTransportPort().build());
     }

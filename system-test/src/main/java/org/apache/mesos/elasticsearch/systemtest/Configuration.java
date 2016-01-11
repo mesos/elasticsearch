@@ -11,7 +11,7 @@ public class Configuration {
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
     private int elasticsearchNodesCount = getPortRanges().length;
-    private int elasticsearchMemorySize = 250;
+    private int elasticsearchMemorySize = 256;
     private String elasticsearchJobName = "esdemo";
     private final Integer clusterTimeout = 60;
 

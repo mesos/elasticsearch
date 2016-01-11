@@ -5,8 +5,9 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.HostsCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.elasticsearch.common.settings.Settings;
 
-import java.net.URISyntaxException;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -23,7 +24,7 @@ public class Configuration {
 
     public Configuration(String[] args) {
         final JCommander jCommander = new JCommander();
-        jCommander.addObject(elasticsearchCLI);
+        jCommander.addObject(getElasticsearchCLI());
         jCommander.addObject(hostsCLIParameter);
         jCommander.addObject(this);
         try {
@@ -37,30 +38,17 @@ public class Configuration {
     }
 
     // ******* ELASTICSEARCH
-    public String getElasticsearchSettingsLocation() {
-        String result = elasticsearchCLI.getElasticsearchSettingsLocation();
-        if (result.isEmpty()) {
-            result = getElasticsearchSettingsPath();
+    public Settings.Builder getElasticsearchYmlSettings() {
+        String settingsLocation = getElasticsearchCLI().getElasticsearchSettingsLocation();
+        if (settingsLocation.isEmpty()) {
+            return Settings.builder().loadFromStream(ELASTICSEARCH_YML, this.getClass().getClassLoader().getResourceAsStream(ELASTICSEARCH_YML));
+        } else {
+            return Settings.builder().loadFromPath(Paths.get(settingsLocation));
         }
-        return result;
     }
 
-    public int getElasticsearchNodes() {
-        return elasticsearchCLI.getElasticsearchNodes();
-    }
-
-    private String getElasticsearchSettingsPath() {
-        String path = "";
-        try {
-            path = getClass().getClassLoader().getResource(ELASTICSEARCH_YML).toURI().toString();
-        } catch (NullPointerException | URISyntaxException ex) {
-            LOGGER.error("Unable to read default settings file from resources", ex);
-        }
-        return path;
-    }
-
-    public String getElasticsearchClusterName() {
-        return elasticsearchCLI.getElasticsearchClusterName();
+    public ElasticsearchCLIParameter getElasticsearchCLI() {
+        return elasticsearchCLI;
     }
 
     public List<String> getElasticsearchHosts() {
