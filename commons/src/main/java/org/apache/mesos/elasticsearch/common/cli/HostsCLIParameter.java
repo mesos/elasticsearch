@@ -8,6 +8,7 @@ import java.util.List;
 
 /**
  */
+@SuppressWarnings("PMD.AvoidUsingHardCodedIP")
 public class HostsCLIParameter {
     public static final String ELASTICSEARCH_HOST = "--elasticsearchHost";
     public static final String DOCKER_1_9_GATEWAY = "172.17.0.1";
