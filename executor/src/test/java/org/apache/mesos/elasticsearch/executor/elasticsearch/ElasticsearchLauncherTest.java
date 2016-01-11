@@ -29,6 +29,7 @@ import static org.mockito.Mockito.*;
 /**
  * Tests that ES node can be launched using provided settings.
  */
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class ElasticsearchLauncherTest {
     private static final Logger LOG = Logger.getLogger(ElasticsearchLauncherTest.class);
 
