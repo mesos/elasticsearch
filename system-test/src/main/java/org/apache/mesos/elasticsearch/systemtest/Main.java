@@ -45,7 +45,7 @@ public class Main {
         LOGGER.info("Starting scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, cluster.getZkContainer().getIpAddress(), cluster);
         schedulerReference.set(scheduler);
-        cluster.start(TEST_CONFIG.getClusterTimeout());
+        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         seedData(cluster, scheduler);
 

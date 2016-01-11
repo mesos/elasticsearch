@@ -65,6 +65,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
                 .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                 .withCmd(
+                        ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, "" + new SecureRandom().nextInt(),    // Start a new cluster every timedod
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                         Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),

@@ -39,7 +39,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     @Before
     public void before() {
         ipAddress = getScheduler().getIpAddress();
-        esTasks = new ESTasks(TEST_CONFIG, ipAddress, false);
+        esTasks = new ESTasks(TEST_CONFIG, ipAddress, true);
     }
 
     @Test
