@@ -29,7 +29,7 @@
 # Cluster name identifies your cluster for auto-discovery. If you're running
 # multiple clusters on the same network, make sure you're using unique names.
 #
-# cluster.name: SET_BY_FRAMEWORK
+# cluster.name: {DEFAULT SET BY ES FRAMEWORK}
 
 
 #################################### Node #####################################
@@ -37,7 +37,7 @@
 # Node names are generated dynamically on startup, so you're relieved
 # from configuring them manually. You can tie this node to a specific name:
 #
-# node.name: SET_BY_FRAMEWORK
+# node.name: {DEFAULT SET BY ES FRAMEWORK}
 
 # Every node can be configured to allow or deny being eligible as the master,
 # and to allow or deny to store the data.
@@ -86,6 +86,7 @@ node.data: true
 # to disable it, set the following:
 # node.max_local_storage_nodes: 1
 
+node.local: false
 
 #################################### Index ####################################
 
@@ -108,7 +109,7 @@ node.data: true
 # This is required to allow scaling. To prevent dataloss we replicate to all nodes in the cluster.
 # <https://www.elastic.co/guide/en/elasticsearch/reference/1.4/indices-update-settings.html>
 index.number_of_replicas: 0
-index.auto_expand_replicas: "0-all"
+index.auto_expand_replicas: 0-all
 
 # These settings directly affect the performance of index and search operations
 # in your cluster. Assuming you have enough machines to hold shards and
@@ -133,14 +134,18 @@ index.auto_expand_replicas: "0-all"
 
 
 #################################### Paths ####################################
+path.home: /usr/share/elasticsearch
 
 # Path to directory containing configuration (this file and logging.yml):
-#
-# path.conf: /path/to/conf
+# ES FRAMEWORK: DO NOT CHANGE THIS.
+# Your custom YML file setting provided via the framework will be mounted in this location. This is the location inside the container.
+path.conf: /tmp/config
 
 # Path to directory where to store index data allocated for this node.
-#
-# path.data: /path/to/data
+# ES FRAMEWORK: DO NOT CHANGE THIS.
+# Your custom data directory setting provided via the framework will be mounted in this location. This is the location inside the container.
+path.data: /data
+
 #
 # Can optionally include more than one location, causing data to be striped across
 # the locations (a la RAID 0) on a file level, favouring locations with most free
@@ -194,12 +199,12 @@ bootstrap.mlockall: true
 
 # Set the bind address specifically (IPv4 or IPv6):
 #
-# network.bind_host: 192.168.0.1
+network.bind_host: 0.0.0.0
 
 # Set the address other nodes will use to communicate with this node. If not
 # set, it is automatically derived. It must point to an actual IP address.
 #
-# network.publish_host: 192.168.0.1
+network.publish_host: _non_loopback:ipv4_
 
 # Set both 'bind_host' and 'publish_host':
 #
@@ -207,7 +212,7 @@ bootstrap.mlockall: true
 
 # Set a custom port for the node to node communication (9300 by default):
 #
-# transport.tcp.port: SET_BY_FRAMEWORK
+# transport.tcp.port: {DEFAULT SET BY ES FRAMEWORK}
 
 # Enable compression for all communication between nodes (disabled by default):
 #
@@ -215,7 +220,7 @@ bootstrap.mlockall: true
 
 # Set a custom port to listen for HTTP traffic:
 #
-# http.port: SET_BY_FRAMEWORK
+# http.port: {DEFAULT SET BY ES FRAMEWORK}
 
 # Set a custom allowed content length:
 #
@@ -246,7 +251,7 @@ bootstrap.mlockall: true
 
 # Allow recovery process after N nodes in a cluster are up:
 #
-#gateway.recover_after_nodes: 1
+gateway.recover_after_nodes: 1
 
 # Set the timeout to initiate the recovery process, once the N nodes
 # from previous setting are up (accepts time value):
@@ -257,7 +262,7 @@ bootstrap.mlockall: true
 # are up (and recover_after_nodes is met), begin recovery process immediately
 # (without waiting for recover_after_time to expire):
 #
-#gateway.expected_nodes: SET_BY_FRAMEWORK
+gateway.expected_nodes: 1
 
 # Require explicit index creation
 # action.auto_create_index: false
@@ -296,7 +301,7 @@ indices.recovery.max_bytes_per_sec: 100mb
 
 
 ################################## Discovery ##################################
-
+discovery.type: zen
 # Discovery infrastructure ensures nodes can be found within a cluster
 # and master node is elected. Multicast discovery is the default.
 
@@ -321,7 +326,7 @@ indices.recovery.max_bytes_per_sec: 100mb
 #
 # 1. Disable multicast discovery (enabled by default):
 #
-# discovery.zen.ping.multicast.enabled: false
+discovery.zen.ping.multicast.enabled: false
 #
 # 2. Configure an initial list of master nodes in the cluster
 #    to perform discovery when new nodes (master or data) are started:

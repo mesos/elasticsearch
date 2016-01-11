@@ -4,7 +4,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.junit.Before;
 import org.junit.Test;
@@ -60,7 +60,7 @@ public class ElasticsearchExecutorTest {
         // When launching
         executor.launchTask(driver, getDefaultTaskInfo().build());
         // Should update settings
-        verify(launcher, atLeastOnce()).addRuntimeSettings(any(ImmutableSettings.Builder.class));
+        verify(launcher, atLeastOnce()).addRuntimeSettings(any(Settings.Builder.class));
     }
 
     @Test
