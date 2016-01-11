@@ -5,9 +5,12 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
-import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.common.cli.HostsCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
+import org.apache.mesos.elasticsearch.scheduler.util.Clock;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -34,8 +37,13 @@ public class TaskInfoFactory {
 
     public static final String SETTINGS_DATA_VOLUME_CONTAINER = "/data";
 
-    Clock clock = new Clock();
     private FrameworkState frameworkState;
+    private final ClusterState clusterState;
+    private final NetworkUtils networkUtils = new NetworkUtils();
+
+    public TaskInfoFactory(ClusterState clusterState) {
+        this.clusterState = clusterState;
+    }
 
     /**
      * Creates TaskInfo for Elasticsearch execcutor running in a Docker container
@@ -45,9 +53,14 @@ public class TaskInfoFactory {
      *
      * @return TaskInfo
      */
-    public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer) {
+    public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer, Clock clock) {
         this.frameworkState = frameworkState;
-        List<Integer> ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
+        List<Integer> ports;
+        if (configuration.getElasticsearchPorts().isEmpty()) {
+            ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
+        } else {
+            ports = configuration.getElasticsearchPorts();
+        }
 
         List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
 
@@ -70,7 +83,7 @@ public class TaskInfoFactory {
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
-                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer)))
+                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer, clock)))
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
@@ -124,15 +137,19 @@ public class TaskInfoFactory {
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
         ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
-        List<String> args = new ArrayList<>(
-                asList(
-                        ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, configuration.getMesosZKURL(),
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://" + configuration.getFrameworkZKURL(), // Make framework url a valid url again.
-                        ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, String.valueOf(configuration.getFrameworkZKTimeout())
-                ));
+        List<String> args = new ArrayList<>();
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
         args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        String hostAddress = "";
+        if (taskList.size() > 0) {
+            Protos.TaskInfo taskInfo = taskList.get(0);
+            String taskId = taskInfo.getTaskId().getValue();
+            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
+            hostAddress = networkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
+        }
+        addIfNotEmpty(args, HostsCLIParameter.ELASTICSEARCH_HOST, hostAddress);
 
         Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder()
                 .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()));
@@ -147,10 +164,10 @@ public class TaskInfoFactory {
             if (address == null) {
                 throw new NullPointerException("Webserver address is null");
             }
-            String httpPath =  address + "/get/" + SimpleFileServer.ES_EXECUTOR_JAR;
+            String httpPath =  address + "/get/" + Configuration.ES_EXECUTOR_JAR;
             LOGGER.debug("Using file server: " + httpPath);
             commandInfoBuilder
-                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + SimpleFileServer.ES_EXECUTOR_JAR)
+                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + Configuration.ES_EXECUTOR_JAR)
                     .addAllArguments(args)
                     .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
         }
@@ -164,12 +181,12 @@ public class TaskInfoFactory {
         }
     }
 
-    private String taskId(Protos.Offer offer) {
+    private String taskId(Protos.Offer offer, Clock clock) {
         String date = new SimpleDateFormat(TASK_DATE_FORMAT).format(clock.now());
         return String.format("elasticsearch_%s_%s", offer.getHostname(), date);
     }
 
-    public Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus) {
+    public static Task parse(Protos.TaskInfo taskInfo, Protos.TaskStatus taskStatus, Clock clock) {
         Properties data = new Properties();
         try {
             data.load(taskInfo.getData().newInput());

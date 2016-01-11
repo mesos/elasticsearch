@@ -1,10 +1,13 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.beust.jcommander.ParameterException;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,18 +59,6 @@ public class CLITest {
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldRejectZookeeperMesosTimeoutLessThan0() {
         String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
-    @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectZookeeperFrameworkTimeoutEqualTo0() {
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "0", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
-    @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldRejectZookeeperFrameworkTimeoutLessThan0() {
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_TIMEOUT, "-1", ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
 
@@ -132,21 +123,41 @@ public class CLITest {
                 ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
     }
-
+    
     @Test
-    public void shouldUseMesosZKURLIfFrameworkZKURLNotSupplied() {
-        String frameworkFormattedZKURL = "dummyIPAddress:2181";
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
-        Configuration configuration = new Configuration(args);
-        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
+    public void shouldParseValidPorts() {
+        String validPorts = "9200,9300";
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
+        List<Integer> elasticsearchPorts = configuration.getElasticsearchPorts();
+        assertEquals(9200, elasticsearchPorts.get(0).intValue());
+        assertEquals(9300, elasticsearchPorts.get(1).intValue());
     }
 
     @Test
-    public void shouldReturnBlankIfDefaultFrameworkZKURL() {
-        String frameworkFormattedZKURL = "dummyIPAddress:2181";
-        String[] args = {ZookeeperCLIParameter.ZOOKEEPER_FRAMEWORK_URL, ZookeeperCLIParameter.DEFAULT, ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://" + frameworkFormattedZKURL};
-        Configuration configuration = new Configuration(args);
-        assertEquals(frameworkFormattedZKURL, configuration.getFrameworkZKURL());
+    public void shouldBeOkWithSpaces() {
+        String validPorts = "9200, 9300";
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
+        List<Integer> elasticsearchPorts = configuration.getElasticsearchPorts();
+        assertEquals(9200, elasticsearchPorts.get(0).intValue());
+        assertEquals(9300, elasticsearchPorts.get(1).intValue());
+    }
+
+    @Test(expected = ParameterException.class)
+    public void shouldNotAcceptSinglePort() {
+        String validPorts = "9200";
+        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
+    }
+
+    @Test(expected = ParameterException.class)
+    public void shouldNotAcceptNonIntegers() {
+        String validPorts = "9200,abc";
+        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
+    }
+
+    @Test(expected = ParameterException.class)
+    public void shouldNotAcceptMultiplePorts() {
+        String validPorts = "9200,9300,9400";
+        new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.ELASTICSEARCH_PORTS, validPorts);
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)

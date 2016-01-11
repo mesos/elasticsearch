@@ -1,7 +1,6 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
 import org.junit.Test;
@@ -24,7 +23,7 @@ public class ClusterStateTest {
 
     private FrameworkState frameworkState = mock(FrameworkState.class);
 
-    private ClusterState clusterState = new ClusterState(state, frameworkState, mock(TaskInfoFactory.class));
+    private ClusterState clusterState = new ClusterState(state, frameworkState);
 
     @Before
     public void before() throws IOException {

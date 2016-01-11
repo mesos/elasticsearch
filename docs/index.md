@@ -130,9 +130,19 @@ Usage: (Options preceded by an asterisk are required) [options]
        The amount of Disk resource to allocate to the elasticsearch instance
        (MB).
        Default: 1024.0
+    --elasticsearchExecutorCpu
+       The amount of CPU resource to allocate to the elasticsearch executor.
+       Default: 0.1
+    --elasticsearchExecutorRam
+       The amount of ram resource to allocate to the elasticsearch executor
+       (MB).
+       Default: 32.0
     --elasticsearchNodes
        Number of elasticsearch instances.
        Default: 3
+    --elasticsearchPorts
+       User specified ES HTTP and transport ports.(Not recommended)
+       Default: <empty string>
     --elasticsearchRam
        The amount of ram resource to allocate to the elasticsearch instance
        (MB).
@@ -181,9 +191,13 @@ Usage: (Options preceded by an asterisk are required) [options]
        the user must ensure that the scheduler jar is on all slaves.
        Default: true
     --javaHome
-       (Only when frameworkUseDocker is false) When starting in jar mode, if java
-       is not on the path, you can specify the path here.
+       (Only when --frameworkUseDocker is false) When starting in jar mode, if
+       java is not on the path, you can specify the path here.
        Default: <empty string>
+    --useIpAddress
+       If true, the framework will resolve the local ip address. If false, it
+       uses the hostname.
+       Default: false
     --webUiPort
        TCP port for web ui interface.
        Default: 31100

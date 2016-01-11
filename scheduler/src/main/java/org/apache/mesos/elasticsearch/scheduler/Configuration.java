@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -12,10 +11,13 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Holder object for framework configuration.
@@ -45,10 +47,12 @@ public class Configuration {
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
+    public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";
     public static final String USE_IP_ADDRESS = "--useIpAddress";
+    public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
 
     @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
     private static Long executorHealthDelay = 30000L;
@@ -67,6 +71,9 @@ public class Configuration {
     private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.NumericListOfSizeTwo.class)
+    private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
+
     // **** FRAMEWORK
     private String version = "0.6.0";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
@@ -98,7 +105,9 @@ public class Configuration {
     private String javaHome = "";
     @Parameter(names = {USE_IP_ADDRESS}, arity = 1, description = "If true, the framework will resolve the local ip address. If false, it uses the hostname.")
     private Boolean isUseIpAddress = false;
+
     // ****************** Runtime configuration **********************
+    private final NetworkUtils networkUtils = new NetworkUtils();
 
     public Configuration(String... args) {
         final JCommander jCommander = new JCommander();
@@ -202,33 +211,12 @@ public class Configuration {
     // ******* Helper methods
     public String getMesosStateZKURL() {
         ZKFormatter mesosStateZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
-        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
-            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-        } else {
-            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
-        }
+        return mesosStateZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
     }
 
     public String getMesosZKURL() {
         ZKFormatter mesosZKFormatter = new MesosZKFormatter(new ZKAddressParser());
         return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-    }
-
-    public String getFrameworkZKURL() {
-        ZKFormatter mesosZKFormatter = new IpPortsListZKFormatter(new ZKAddressParser());
-        if (StringUtils.isBlank(zookeeperCLI.getZookeeperFrameworkUrl())) {
-            LOGGER.info("Zookeeper framework option is blank, using Zookeeper for Mesos: " + zookeeperCLI.getZookeeperMesosUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperMesosUrl());
-        } else {
-            LOGGER.info("Zookeeper framework option : " + zookeeperCLI.getZookeeperFrameworkUrl());
-            return mesosZKFormatter.format(zookeeperCLI.getZookeeperFrameworkUrl());
-        }
-    }
-
-    public long getFrameworkZKTimeout() {
-        return zookeeperCLI.getZookeeperFrameworkTimeout();
     }
 
     public ZookeeperCLIParameter getZookeeperCLI() {
@@ -254,34 +242,13 @@ public class Configuration {
     public String getFrameworkFileServerAddress() {
         String result = "";
         if (frameworkFileServerAddress != null) {
-            return addressToString(frameworkFileServerAddress);
+            return networkUtils.addressToString(frameworkFileServerAddress, getIsUseIpAddress());
         }
         return result;
     }
 
     public String webUiAddress() {
-        return addressToString(hostSocket(getWebUiPort()));
-    }
-
-    public InetAddress hostAddress() {
-        try {
-            return InetAddress.getLocalHost();
-        } catch (UnknownHostException e) {
-            LOGGER.error(e);
-            throw new RuntimeException("Unable to bind to local host.");
-        }
-    }
-
-    public InetSocketAddress hostSocket(int port) {
-        return new InetSocketAddress(hostAddress(), port);
-    }
-
-    public String addressToString(InetSocketAddress address) {
-        if (getIsUseIpAddress()) {
-            return "http://" + address.getAddress().getHostAddress() + ":" + address.getPort();
-        } else {
-            return "http://" + address.getAddress().getHostName() + ":" + address.getPort();
-        }
+        return networkUtils.addressToString(networkUtils.hostSocket(getWebUiPort()), getIsUseIpAddress());
     }
 
     public void setFrameworkFileServerAddress(InetSocketAddress addr) {
@@ -298,6 +265,18 @@ public class Configuration {
         } else {
             return "";
         }
+    }
+
+    public List<Integer> getElasticsearchPorts() {
+        if (elasticsearchPorts.isEmpty()) {
+            return Collections.emptyList();
+        }
+        String[] portsRaw = elasticsearchPorts.replace(" ", "").split(",");
+        ArrayList<Integer> portsList = new ArrayList<>(2);
+        for (String port : portsRaw) {
+            portsList.add(Integer.parseInt(port));
+        }
+        return portsList;
     }
 
     /**
