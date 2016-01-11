@@ -44,26 +44,26 @@ public class ScalingSystemTest extends SchedulerTestBase {
 
     @Test
     public void shouldScaleDown() throws UnirestException {
-        scaleNumNodesTo(ipAddress, "3"); // Reset to 3 nodes
+        scaleNumNodesTo(ipAddress, 3); // Reset to 3 nodes
         waitForGreen(esTasks);
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
-        scaleNumNodesTo(ipAddress, "2");
+        scaleNumNodesTo(ipAddress, 2);
         waitForGreen(esTasks);
     }
 
     @Test
     public void shouldScaleUp() throws UnirestException {
-        scaleNumNodesTo(ipAddress, "2"); // Reset to 2 nodes
+        scaleNumNodesTo(ipAddress, 2); // Reset to 2 nodes
         waitForGreen(esTasks);
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
-        scaleNumNodesTo(ipAddress, "3");
+        scaleNumNodesTo(ipAddress, 3);
         waitForGreen(esTasks);
     }
 
     @Test
     public void shouldNotLoseDataWhenScalingDown() throws UnirestException {
         // Make sure we have three nodes
-        scaleNumNodesTo(ipAddress, "3");
+        scaleNumNodesTo(ipAddress, 3);
         waitForGreen(esTasks);
 
         List<String> esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
@@ -95,7 +95,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         LOGGER.debug("Correct number of documents: " + correctNumberOfDocuments);
 
         // Scale down to one node
-        scaleNumNodesTo(ipAddress, "1");
+        scaleNumNodesTo(ipAddress, 1);
         waitForGreen(esTasks);
 
         // Refresh ES address list
@@ -118,16 +118,16 @@ public class ScalingSystemTest extends SchedulerTestBase {
         assertEquals(correctNumberOfDocuments, newNumberOfDocuments);
     }
 
-    public void scaleNumNodesTo(String ipAddress, String newNumNodes) throws UnirestException {
-        HttpResponse<JsonNode> response = Unirest.put("http://" + ipAddress + ":" + WEBUI_PORT + "/v1/cluster/elasticsearchNodes").header("Content-Type", "application/json").body(newNumNodes).asJson();
+    public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
+        HttpResponse<JsonNode> response = Unirest.put("http://" + ipAddress + ":" + WEBUI_PORT + "/v1/cluster/elasticsearchNodes").header("Content-Type", "application/json").body(newNumNodes.toString()).asJson();
         assertEquals(200, response.getStatus());
 
         Awaitility.await().atMost(60, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> {
             String numNodes = getNumberOfNodes(ipAddress);
             LOGGER.debug("Number of nodes: " + numNodes);
-            return numNodes.equals(newNumNodes);
+            return numNodes.equals(newNumNodes.toString());
         });
-        assertEquals(newNumNodes, getNumberOfNodes(ipAddress));
+        assertEquals(newNumNodes.toString(), getNumberOfNodes(ipAddress));
     }
 
     public void waitForGreen(ESTasks esTasks) {
