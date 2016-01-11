@@ -39,7 +39,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     @Before
     public void before() {
         ipAddress = getScheduler().getIpAddress();
-        esTasks = new ESTasks(TEST_CONFIG, ipAddress);
+        esTasks = new ESTasks(TEST_CONFIG, ipAddress, false);
     }
 
     @Test
@@ -70,7 +70,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         LOGGER.info("Addresses: " + esAddresses);
 
         DataPusherContainer pusher = new DataPusherContainer(clusterArchitecture.dockerClient, esAddresses.get(0));
-        CLUSTER.addAndStartContainer(pusher);
+        CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started data push");
 
         Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
