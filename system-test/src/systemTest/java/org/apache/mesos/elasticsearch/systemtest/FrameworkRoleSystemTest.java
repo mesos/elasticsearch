@@ -36,7 +36,7 @@ public class FrameworkRoleSystemTest extends TestBase {
     private void testMiniMesosReportsFrameworkRole(String role) throws UnirestException, JsonParseException, JsonMappingException {
         LOGGER.info("Starting Elasticsearch scheduler with framework role: " + role);
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
-                clusterArchitecture.dockerClient,
+                CLUSTER_ARCHITECTURE.dockerClient,
                 CLUSTER.getZkContainer().getIpAddress(),
                 role,
                 CLUSTER, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);

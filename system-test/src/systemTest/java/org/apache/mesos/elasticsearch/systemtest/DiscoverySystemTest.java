@@ -29,7 +29,7 @@ public class DiscoverySystemTest extends SchedulerTestBase {
 
             String status = getJsonObjectFrom(url).getString("status");
             return "green".equals(status);
-        } catch (Exception e) {
+        } catch (MalformedURLException | UnirestException e) {
             return false;
         }
     }
@@ -38,9 +38,9 @@ public class DiscoverySystemTest extends SchedulerTestBase {
         try {
             URL url = clusterHealthUrl(esTasks);
 
-            int number_of_nodes = getJsonObjectFrom(url).getInt("number_of_nodes");
-            return TEST_CONFIG.getElasticsearchNodesCount() == number_of_nodes;
-        } catch (Exception e) {
+            int numberOfNodes = getJsonObjectFrom(url).getInt("number_of_nodes");
+            return TEST_CONFIG.getElasticsearchNodesCount() == numberOfNodes;
+        } catch (MalformedURLException | UnirestException e) {
             return false;
         }
     }

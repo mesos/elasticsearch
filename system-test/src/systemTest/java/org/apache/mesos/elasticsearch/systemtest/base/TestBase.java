@@ -20,7 +20,7 @@ public abstract class TestBase {
 
     protected static final Configuration TEST_CONFIG = new Configuration();
 
-    protected static final ClusterArchitecture clusterArchitecture = new ClusterArchitecture.Builder()
+    protected static final ClusterArchitecture CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
             .withZooKeeper()
             .withMaster()
             .withSlave(TEST_CONFIG.getPortRanges()[0])
@@ -29,7 +29,7 @@ public abstract class TestBase {
             .build();
 
     @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(clusterArchitecture);
+    public static final MesosCluster CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
 
     @ClassRule
     public static final TestWatcher WATCHER = new TestWatcher() {
@@ -41,12 +41,12 @@ public abstract class TestBase {
 
     @BeforeClass
     public static void prepareCleanDockerEnvironment() {
-        new DockerUtil(clusterArchitecture.dockerClient).killAllSchedulers();
-        new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
+        new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient).killAllSchedulers();
+        new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient).killAllExecutors();
 
         // Completely wipe out old data dir, just in case there is any old data in there.
         String dataDir = org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR;
-        AlpineContainer alpineContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDir, dataDir, new String[]{"sh", "-c", "rm -rf " + dataDir + "/* ; sleep 9999 ;"});
+        AlpineContainer alpineContainer = new AlpineContainer(CLUSTER_ARCHITECTURE.dockerClient, dataDir, dataDir, new String[]{"sh", "-c", "rm -rf " + dataDir + "/* ; sleep 9999 ;"});
         alpineContainer.start(TEST_CONFIG.getClusterTimeout());
         alpineContainer.remove();
     }
@@ -54,7 +54,7 @@ public abstract class TestBase {
     @AfterClass
     public static void killAllContainers() {
         CLUSTER.stop();
-        new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
+        new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient).killAllExecutors();
     }
 
     public static Configuration getTestConfig() {

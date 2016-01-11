@@ -27,7 +27,7 @@ public class DataVolumesSystemTest extends TestBase {
     public void startScheduler(String dataDir) {
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER, dataDir);
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER, dataDir);
         CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
@@ -44,7 +44,7 @@ public class DataVolumesSystemTest extends TestBase {
         startScheduler(Configuration.DEFAULT_HOST_DATA_DIR);
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
+        AlpineContainer dataContainer = new AlpineContainer(CLUSTER_ARCHITECTURE.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
         CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
@@ -57,7 +57,7 @@ public class DataVolumesSystemTest extends TestBase {
 
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(clusterArchitecture.dockerClient, dataDirectory, dataDirectory, new String[]{"sleep", "9999"});
+        AlpineContainer dataContainer = new AlpineContainer(CLUSTER_ARCHITECTURE.dockerClient, dataDirectory, dataDirectory, new String[]{"sleep", "9999"});
         CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(2L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
@@ -75,13 +75,13 @@ public class DataVolumesSystemTest extends TestBase {
 
         @Override
         public Boolean call() throws Exception {
-            ExecCreateCmdResponse execResponse = clusterArchitecture.dockerClient.execCreateCmd(containerId)
+            ExecCreateCmdResponse execResponse = CLUSTER_ARCHITECTURE.dockerClient.execCreateCmd(containerId)
                     .withCmd("ls", "-R", dataDirectory)
                     .withTty(true)
                     .withAttachStdout()
                     .withAttachStderr()
                     .exec();
-            try (InputStream inputstream = clusterArchitecture.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
+            try (InputStream inputstream = CLUSTER_ARCHITECTURE.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
                 String contents = IOUtils.toString(inputstream, "UTF-8");
                 LOGGER.info("Mesos-local contents of " + dataDirectory + ": " + contents);
                 return contents.contains("0") && contents.contains("1") && contents.contains("2");

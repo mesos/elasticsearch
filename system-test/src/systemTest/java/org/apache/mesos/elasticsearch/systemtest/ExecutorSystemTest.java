@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 public class ExecutorSystemTest extends SchedulerTestBase {
     private static final Logger LOGGER = Logger.getLogger(ExecutorSystemTest.class);
 
-    private DockerUtil dockerUtil = new DockerUtil(clusterArchitecture.dockerClient);
+    private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
 
     /**
      * Make sure that lib mesos exists in /usr/lib/libmesos.so
@@ -58,7 +58,7 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     }
 
     private ExecCreateCmd getExecForRandomExecutor() {
-        return clusterArchitecture.dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr();
+        return CLUSTER_ARCHITECTURE.dockerClient.execCreateCmd(getRandomExecutorId()).withTty(true).withAttachStdout().withAttachStderr();
     }
 
     private List<String> getEnvVars() throws IOException {
@@ -74,7 +74,7 @@ public class ExecutorSystemTest extends SchedulerTestBase {
     }
 
     private String getResultFromExec(ExecCreateCmdResponse exec) throws IOException {
-        InputStream execCmdStream = clusterArchitecture.dockerClient.execStartCmd(exec.getId()).exec();
+        InputStream execCmdStream = CLUSTER_ARCHITECTURE.dockerClient.execStartCmd(exec.getId()).exec();
         return IOUtils.toString(execCmdStream, "UTF-8");
     }
 

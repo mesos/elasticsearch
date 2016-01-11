@@ -20,7 +20,7 @@ public abstract class SchedulerTestBase extends TestBase {
     public static void startScheduler() throws Exception {
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
         CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());

@@ -38,10 +38,10 @@ public class ESTasks {
             // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
             // real-life network setup.
             if (portsExposed) {
-                String old_address = (String) jsonObject.remove("http_address");
-                String new_address = Configuration.getDocker0AdaptorIpAddress(DockerClientFactory.build())
-                        + ":" + old_address.split(":")[1];
-                jsonObject.put("http_address", new_address);
+                String oldAddress = (String) jsonObject.remove("http_address");
+                String newAddress = Configuration.getDocker0AdaptorIpAddress(DockerClientFactory.build())
+                        + ":" + oldAddress.split(":")[1];
+                jsonObject.put("http_address", newAddress);
             }
             tasks.add(jsonObject);
         }
