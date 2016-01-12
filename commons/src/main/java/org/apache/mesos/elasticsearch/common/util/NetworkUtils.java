@@ -9,11 +9,10 @@ import org.apache.log4j.Logger;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.charset.Charset;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.Map;
 
 /**
@@ -49,27 +48,29 @@ public class NetworkUtils {
 
     public static String getDockerMachineName(Map<String, String> environment) {
         String envVar = DOCKER_MACHINE_NAME;
-        String docker_machine_name = environment.getOrDefault(envVar, "");
-        if (docker_machine_name == null || docker_machine_name.isEmpty()) {
-            LOG.debug("The environmental variable DOCKER_MACHINE_NAME was not found. Using localhost.");
+        String dockerMachineName = environment.getOrDefault(envVar, "");
+        if (dockerMachineName == null || dockerMachineName.isEmpty()) {
+            LOG.debug("The environmental variable DOCKER_MACHINE_NAME was not found. Using docker0 address.");
         }
-        return docker_machine_name;
+        return dockerMachineName;
     }
 
     public static String getDockerHostIpAddress(Map<String, String> environment) {
         String ipAddress = LOCALHOST; // Default of localhost
-        String docker_machine_name = getDockerMachineName(environment);
+        String dockerMachineName = getDockerMachineName(environment);
 
-        if (!docker_machine_name.isEmpty()) {
-            LOG.debug("Docker machine name = " + docker_machine_name);
+        if (!dockerMachineName.isEmpty()) {
+            LOG.debug("Docker machine name = " + dockerMachineName);
             CommandLine commandline = CommandLine.parse(DOCKER_MACHINE_IP);
-            commandline.addArgument(docker_machine_name);
+            commandline.addArgument(dockerMachineName);
             LOG.debug("Running exec: " + commandline.toString());
             try {
                 ipAddress = StringUtils.strip(runCommand(commandline));
             } catch (IOException e) {
                 LOG.error("Unable to run exec command to find ip address.", e);
             }
+        } else {
+            ipAddress = getDocker0AdapterIPAddress();
         }
         LOG.debug("Returned IP address: " + ipAddress);
         return ipAddress;
@@ -92,5 +93,34 @@ public class NetworkUtils {
         exec.setStreamHandler(streamHandler);
         exec.execute(commandline);
         return outputStream.toString(Charset.defaultCharset().name());
+    }
+
+    public static String getDocker0AdapterIPAddress() {
+        InetAddress docker0 = getLocalAddress("docker0");
+        if (docker0 == null) {
+            LOG.error("Could not get address for docker0");
+            return LOCALHOST;
+        } else {
+            return docker0.getHostAddress();
+        }
+    }
+
+    private static InetAddress getLocalAddress(String adaptorName){
+        try {
+            Enumeration<NetworkInterface> b = NetworkInterface.getNetworkInterfaces();
+            while (b.hasMoreElements()) {
+                NetworkInterface networkInterface = b.nextElement();
+                if (networkInterface.getName().equals(adaptorName)) {
+                    for (InterfaceAddress f : networkInterface.getInterfaceAddresses()) {
+                        if (f.getAddress().isSiteLocalAddress()) {
+                            return f.getAddress();
+                        }
+                    }
+                }
+            }
+        } catch (SocketException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }
