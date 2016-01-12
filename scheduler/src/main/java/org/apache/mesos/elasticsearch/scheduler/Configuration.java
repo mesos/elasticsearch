@@ -7,14 +7,13 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
+import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
-import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.net.InetSocketAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -107,8 +106,6 @@ public class Configuration {
     private Boolean isUseIpAddress = false;
 
     // ****************** Runtime configuration **********************
-    private final NetworkUtils networkUtils = new NetworkUtils();
-
     public Configuration(String... args) {
         final JCommander jCommander = new JCommander();
         jCommander.addObject(zookeeperCLI);
@@ -242,13 +239,13 @@ public class Configuration {
     public String getFrameworkFileServerAddress() {
         String result = "";
         if (frameworkFileServerAddress != null) {
-            return networkUtils.addressToString(frameworkFileServerAddress, getIsUseIpAddress());
+            return NetworkUtils.addressToString(frameworkFileServerAddress, getIsUseIpAddress());
         }
         return result;
     }
 
     public String webUiAddress() {
-        return networkUtils.addressToString(networkUtils.hostSocket(getWebUiPort()), getIsUseIpAddress());
+        return NetworkUtils.addressToString(NetworkUtils.hostSocket(getWebUiPort()), getIsUseIpAddress());
     }
 
     public void setFrameworkFileServerAddress(InetSocketAddress addr) {

@@ -44,7 +44,7 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
         this.cluster = cluster;
         this.dataDirectory = dataDir;
 
-        docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
+        docker0AdaptorIpAddress = getDocker0AdaptorIpAddress();
     }
 
     @Override

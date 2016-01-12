@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.mesos.DockerClientFactory;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
@@ -18,6 +17,7 @@ public class ESTasks {
     private static final Logger LOGGER = Logger.getLogger(ESTasks.class);
     private final String tasksEndPoint;
     private final Boolean portsExposed;
+    private String dockerHostAddress = Configuration.getDocker0AdaptorIpAddress();
 
     public ESTasks(Configuration config, String schedulerIpAddress, Boolean portsExposed) {
         this.portsExposed = portsExposed;
@@ -39,7 +39,7 @@ public class ESTasks {
             // real-life network setup.
             if (portsExposed) {
                 String oldAddress = (String) jsonObject.remove("http_address");
-                String newAddress = Configuration.getDocker0AdaptorIpAddress(DockerClientFactory.build())
+                String newAddress = dockerHostAddress
                         + ":" + oldAddress.split(":")[1];
                 jsonObject.put("http_address", newAddress);
             }
