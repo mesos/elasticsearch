@@ -41,8 +41,12 @@ public class NetworkUtilsTest {
     }
 
     @Test
-    public void shouldReturnLocahostWhenNoEnvVar() {
-        assertEquals(NetworkUtils.LOCALHOST, NetworkUtils.getDockerHostIpAddress(Collections.emptyMap()));
+    public void shouldReturnLocahostOrDocker0AddressWhenNoEnvVar() {
+        if (NetworkUtils.getDockerHostIpAddress(Collections.emptyMap()).equals(NetworkUtils.LOCALHOST)) {
+            assertEquals(NetworkUtils.LOCALHOST, NetworkUtils.getDockerHostIpAddress(Collections.emptyMap()));
+        } else {
+            assertEquals(NetworkUtils.getDocker0AdapterIPAddress(), NetworkUtils.getDockerHostIpAddress(Collections.emptyMap()));
+        }
     }
 
     @Test
