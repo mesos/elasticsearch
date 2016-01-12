@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.github.dockerjava.api.DockerClient;
+import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 
 /**
  * SystemTest configuration object
@@ -15,8 +15,8 @@ public class Configuration {
     private String elasticsearchJobName = "esdemo";
     private final Integer clusterTimeout = 60;
 
-    public static String getDocker0AdaptorIpAddress(DockerClient dockerClient) {
-        return dockerClient.versionCmd().exec().getVersion().startsWith("1.9.") ? "172.17.0.1" : "172.17.42.1";
+    public static String getDocker0AdaptorIpAddress() {
+        return NetworkUtils.getDockerHostIpAddress(NetworkUtils.getEnvironment());
     }
 
     public String getSchedulerImageName() {

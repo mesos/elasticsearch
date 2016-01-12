@@ -6,11 +6,11 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.HostsCLIParameter;
+import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
-import org.apache.mesos.elasticsearch.scheduler.util.NetworkUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -37,7 +37,6 @@ public class TaskInfoFactory {
 
     private FrameworkState frameworkState;
     private final ClusterState clusterState;
-    private final NetworkUtils networkUtils = new NetworkUtils();
 
     public TaskInfoFactory(ClusterState clusterState) {
         this.clusterState = clusterState;
@@ -145,7 +144,7 @@ public class TaskInfoFactory {
             Protos.TaskInfo taskInfo = taskList.get(0);
             String taskId = taskInfo.getTaskId().getValue();
             InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
-            hostAddress = networkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
+            hostAddress = NetworkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
         }
         addIfNotEmpty(args, HostsCLIParameter.ELASTICSEARCH_HOST, hostAddress);
 

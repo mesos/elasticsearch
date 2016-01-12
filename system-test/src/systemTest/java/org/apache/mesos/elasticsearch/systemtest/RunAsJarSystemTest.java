@@ -113,7 +113,7 @@ public class RunAsJarSystemTest {
             super(dockerClient);
             this.zooKeeperContainer = zooKeeperContainer;
             this.clusterId = clusterId;
-            docker0AdaptorIpAddress = getDocker0AdaptorIpAddress(dockerClient);
+            docker0AdaptorIpAddress = getDocker0AdaptorIpAddress();
         }
 
         @Override
