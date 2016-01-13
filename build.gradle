@@ -3,6 +3,7 @@ import com.bmuschko.gradle.docker.tasks.image.DockerPushImage
 import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
+import org.ajoberstar.grgit.Grgit
 
 ext {
     mesosVer = "0.25.0"
@@ -35,7 +36,6 @@ buildscript {
   }
 }
 
-import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
 
 def grgit = Grgit.open(project.file('.'))
@@ -171,32 +171,34 @@ subprojects {
                 inputDir = file(project.projectDir)
                 tag = project.imageName
             }
-            [ 'snapshot', 'latest', 'version' ].each { aTag ->
-                String uppercasedName = aTag.capitalize()
-                task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
-                    imageId = project.imageName
-                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
-                    repository = project.imageName
-                    force = true
-                }
-                task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
-                        description: 'publish Docker image') {
-                    imageName = project.imageName
-                    tag = ( 'version'.equals(aTag) ) ? project.version : aTag
-                    doFirst {
-                        ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
-                            assert project.hasProperty(it) : 'Undefined "' + it + '" property'
-                        }
-                        docker {
-                            registryCredentials {
-                                username = project.property('dockerHubUsername')
-                                password = project.property('dockerHubPassword')
-                                email = project.property('dockerHubEmail')
+            if (!project.imageName.contains("base")) { // We don't want to push anything common to the other projects.
+                ['snapshot', 'latest', 'version'].each { aTag ->
+                    String uppercasedName = aTag.capitalize()
+                    task "tagDockerImageWith$uppercasedName"(type: DockerTagImage, description: 'tag Docker image') {
+                        imageId = project.imageName
+                        tag = ('version'.equals(aTag)) ? project.version : aTag
+                        repository = project.imageName
+                        force = true
+                    }
+                    task "publishDockerImageWith$uppercasedName"(type: DockerPushImage, dependsOn: ["tagDockerImageWith$uppercasedName"],
+                            description: 'publish Docker image') {
+                        imageName = project.imageName
+                        tag = ('version'.equals(aTag)) ? project.version : aTag
+                        doFirst {
+                            ['dockerHubUsername', 'dockerHubPassword', 'dockerHubEmail'].each {
+                                assert project.hasProperty(it): 'Undefined "' + it + '" property'
+                            }
+                            docker {
+                                registryCredentials {
+                                    username = project.property('dockerHubUsername')
+                                    password = project.property('dockerHubPassword')
+                                    email = project.property('dockerHubEmail')
+                                }
                             }
                         }
                     }
+                    project.publish.dependsOn "publishDockerImageWith$uppercasedName"
                 }
-                project.publish.dependsOn "publishDockerImageWith$uppercasedName"
             }
         }
     }
