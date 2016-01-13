@@ -15,21 +15,14 @@ import org.junit.runner.Description;
 /**
  * Base test class which launches Mesos CLUSTER
  */
-@SuppressFBWarnings("URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD")
+@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT"})
 public abstract class TestBase {
 
     protected static final Configuration TEST_CONFIG = new Configuration();
 
-    protected static final ClusterArchitecture CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
-            .withZooKeeper()
-            .withMaster()
-            .withSlave(TEST_CONFIG.getPortRanges()[0])
-            .withSlave(TEST_CONFIG.getPortRanges()[1])
-            .withSlave(TEST_CONFIG.getPortRanges()[2])
-            .build();
+    protected static ClusterArchitecture CLUSTER_ARCHITECTURE;
 
-    @ClassRule
-    public static final MesosCluster CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
+    protected static MesosCluster CLUSTER;
 
     @ClassRule
     public static final TestWatcher WATCHER = new TestWatcher() {
@@ -38,6 +31,19 @@ public abstract class TestBase {
             CLUSTER.stop();
         }
     };
+
+    @BeforeClass
+    public static void reinitialiseCluster() {
+        CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
+                .withZooKeeper()
+                .withMaster()
+                .withSlave(TEST_CONFIG.getPortRanges()[0])
+                .withSlave(TEST_CONFIG.getPortRanges()[1])
+                .withSlave(TEST_CONFIG.getPortRanges()[2])
+                .build();
+        CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
+        CLUSTER.start(60);
+    }
 
     @BeforeClass
     public static void prepareCleanDockerEnvironment() {
