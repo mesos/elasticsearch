@@ -2,6 +2,44 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.0] - [13 January 2016]
+
+shouldNotLoseDataWhenScalingDown ocasionally fails bug
+#447 opened 5 days ago by philwinder  0.7.0
+ 2
+		Minimesos hostnames do not point to running containers bug PeerReview testing
+#445 opened 6 days ago by philwinder  0.7.0
+@philwinder	 1
+		Remove dependency on ES Zookeeper PeerReview refactoring
+#439 opened 9 days ago by philwinder  0.7.0
+@philwinder	 1
+		Jenkins system test failure blocked testing
+#436 opened 15 days ago by philwinder  0.7.0
+ 0
+		Update to minimesos 0.5.0 build testing
+#421 opened on Dec 11, 2015 by philwinder  0.7.0
+@frankscholten	 1
+		option to use IP addresses instead of hostname configuration
+#418 opened on Dec 8, 2015 by sadovnikov  0.7.0
+ 3
+		Update demo to use host mode, not bridge. documentation
+#417 opened on Dec 1, 2015 by philwinder  0.7.0
+ 0
+		Upgrade to elasticsearch 2.0+
+#415 opened on Nov 25, 2015 by philwinder  0.7.0
+@philwinder	 2
+		Allow a user to specify his own http/transport ports enhancement PeerReview
+#413 opened on Nov 19, 2015 by philwinder  0.7.0
+ 0
+		Sanity check for framework registration before getting cluster state PeerReview
+#410 opened on Nov 17, 2015 by philwinder  0.7.0
+ 0
+
+- [Jitpack cannot build jar beacuse of docker build ](https://github.com/mesos/elasticsearch/issues/408)
+
+- [Manual horizontal scaling](https://github.com/mesos/elasticsearch/issues/403)
+
+
 ## [0.6.0] - [09 November 2015]
 
 ### Features
