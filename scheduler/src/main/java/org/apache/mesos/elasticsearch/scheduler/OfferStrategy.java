@@ -22,6 +22,7 @@ public class OfferStrategy {
     private List<OfferRule> acceptanceRules = asList(
             new OfferRule("Host already running task", this::isHostAlreadyRunningTask),
             new OfferRule("Hostname is unresolveable", offer -> !isHostnameResolveable(offer.getHostname())),
+            new OfferRule("First ES node is not responding", offer -> !isAtLeastOneESNodeRunning()),
             new OfferRule("Cluster size already fulfilled", offer -> clusterState.getTaskList().size() >= configuration.getElasticsearchNodes()),
             new OfferRule("Offer did not have 2 ports", offer -> !containsTwoPorts(offer.getResourcesList())),
             new OfferRule("The offer does not contain the user specified ports", offer -> !containsUserSpecifiedPorts(offer.getResourcesList())),
@@ -34,6 +35,16 @@ public class OfferStrategy {
         LOGGER.debug("Attempting to resolve hostname: " + hostname);
         InetSocketAddress address = new InetSocketAddress(hostname, DUMMY_PORT);
         return !address.isUnresolved();
+    }
+
+    private boolean isAtLeastOneESNodeRunning() {
+        // If this is the first, do not check
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        if (taskList.size() == 0) {
+            return true;
+        } else {
+            return clusterState.getStatus(taskList.get(0).getTaskId()).getStatus().getState().equals(Protos.TaskState.TASK_RUNNING);
+        }
     }
 
     public OfferStrategy(Configuration configuration, ClusterState clusterState) {

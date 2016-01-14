@@ -4,6 +4,7 @@ import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.NodeUtil;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.node.Node;
 import org.junit.Before;
@@ -12,6 +13,8 @@ import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.concurrent.ExecutionException;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Mockito.*;
@@ -35,10 +38,14 @@ public class ElasticsearchExecutorTest {
     @Mock
     private ExecutorDriver driver;
 
+    @Mock
+    private NodeUtil nodeUtil;
+
     @Before
-    public void setupLauncher() {
-        Node node = mock(Node.class);
+    public void setupLauncher() throws ExecutionException, InterruptedException {
+        Node node = mock(Node.class, RETURNS_DEEP_STUBS);
         when(launcher.launch()).thenReturn(node);
+        when(nodeUtil.getNodeStatus(eq(node))).thenReturn(ElasticsearchExecutor.ES_STATUS_GREEN);
     }
 
     @Test(expected = NullPointerException.class)

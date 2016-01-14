@@ -1,12 +1,15 @@
 package org.apache.mesos.elasticsearch.executor.mesos;
 
 import com.google.protobuf.InvalidProtocolBufferException;
+import com.jayway.awaitility.Awaitility;
+import com.jayway.awaitility.core.ConditionTimeoutException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Executor;
 import org.apache.mesos.ExecutorDriver;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.executor.Configuration;
 import org.apache.mesos.elasticsearch.executor.elasticsearch.Launcher;
+import org.apache.mesos.elasticsearch.executor.elasticsearch.NodeUtil;
 import org.apache.mesos.elasticsearch.executor.model.HostsModel;
 import org.apache.mesos.elasticsearch.executor.model.PortsModel;
 import org.apache.mesos.elasticsearch.executor.model.RunTimeSettings;
@@ -16,21 +19,26 @@ import org.elasticsearch.node.Node;
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Executor for Elasticsearch.
  */
 @SuppressWarnings("PMD.TooManyMethods")
 public class ElasticsearchExecutor implements Executor {
+    public static final long ES_TIMEOUT = 120L;
+    public static final String ES_STATUS_GREEN = "green";
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
+    private final NodeUtil nodeUtil;
     private Configuration configuration;
     private Node node;
 
-    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus) {
+    public ElasticsearchExecutor(Launcher launcher, TaskStatus taskStatus, NodeUtil nodeUtil) {
         this.launcher = launcher;
         this.taskStatus = taskStatus;
+        this.nodeUtil = nodeUtil;
     }
 
     @Override
@@ -88,8 +96,19 @@ public class ElasticsearchExecutor implements Executor {
             // Launch Node
             node = launcher.launch();
 
-            // Send status update, running
-            driver.sendStatusUpdate(taskStatus.running());
+            try {
+                Awaitility.await()
+                        .atMost(ES_TIMEOUT, TimeUnit.SECONDS)
+                        .pollInterval(1L, TimeUnit.SECONDS)
+                        .until(() -> nodeUtil.getNodeStatus(node).equals(ES_STATUS_GREEN));
+
+                // Send status update, running
+                driver.sendStatusUpdate(taskStatus.running());
+            } catch (ConditionTimeoutException e) {
+                LOGGER.error("ES node was not green within " + ES_TIMEOUT + "s.");
+                driver.sendStatusUpdate(taskStatus.failed());
+                killTask(driver, taskID);
+            }
         } catch (InvalidParameterException e) {
             driver.sendStatusUpdate(taskStatus.failed());
             LOGGER.error(e);

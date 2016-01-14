@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
+import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,6 +17,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.junit.Assert.*;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 /**
@@ -37,8 +40,11 @@ public class OfferStrategyTest {
     @Before
     public void setUp() throws Exception {
         when(configuration.getFrameworkRole()).thenReturn("testRole");
+        ESTaskStatus esTaskStatus = mock(ESTaskStatus.class);
+        when(esTaskStatus.getStatus()).thenReturn(taskStatus());
+        when(clusterState.getStatus(any(Protos.TaskID.class))).thenReturn(esTaskStatus);
     }
-
+    
     @Test
     public void willDeclineIfHostIsAlreadyRunningTask() throws Exception {
         when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
@@ -223,5 +229,12 @@ public class OfferStrategyTest {
                 .setFrameworkId(Protos.FrameworkID.newBuilder().setValue("testframework").build())
                 .setHostname("localhost")
                 .setSlaveId(Protos.SlaveID.newBuilder().setValue(slaveId).build());
+    }
+
+    private Protos.TaskStatus taskStatus() {
+        return Protos.TaskStatus.newBuilder()
+                .setTaskId(Protos.TaskID.newBuilder().setValue("TestId").build())
+                .setState(Protos.TaskState.TASK_RUNNING)
+                .build();
     }
 }
