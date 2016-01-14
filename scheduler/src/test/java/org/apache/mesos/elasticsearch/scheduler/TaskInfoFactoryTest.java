@@ -215,10 +215,9 @@ public class TaskInfoFactoryTest {
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(123, 456));
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
-        assertFalse(taskInfo.getContainer().isInitialized());
-        assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
-        assertTrue(taskInfo.getExecutor().toString().contains("123"));
-        assertTrue(taskInfo.getExecutor().toString().contains("456"));
+        assertTrue(taskInfo.isInitialized());
+        assertTrue(taskInfo.toString().contains("123"));
+        assertTrue(taskInfo.toString().contains("456"));
     }
 
     @Test
@@ -226,9 +225,9 @@ public class TaskInfoFactoryTest {
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
         assertFalse(taskInfo.getContainer().isInitialized());
-        assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
-        assertTrue(taskInfo.getExecutor().toString().contains("9200"));
-        assertTrue(taskInfo.getExecutor().toString().contains("9300"));
+        assertTrue(taskInfo.isInitialized());
+        assertTrue(taskInfo.toString().contains("9200"));
+        assertTrue(taskInfo.toString().contains("9300"));
     }
 
     private Protos.TaskInfo createTaskInfo(Protos.TaskID taskId, ByteString data) {

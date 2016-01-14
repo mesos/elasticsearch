@@ -20,7 +20,6 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
@@ -84,7 +83,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration, discoveryPorts.build())).build();
+                .setExecutor(newExecutorInfo(configuration)).build();
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -102,22 +101,17 @@ public class TaskInfoFactory {
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, Protos.Ports discoveryPorts) {
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
                 .setCommand(newCommandInfo(configuration));
         if (configuration.isFrameworkUseDocker()) {
-
-            List<Protos.ContainerInfo.DockerInfo.PortMapping> portMappings = discoveryPorts.getPortsList().stream().map(
-                    port -> Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setHostPort(port.getNumber()).setContainerPort(port.getNumber()).build()
-            ).collect(Collectors.toList());
             Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setImage(configuration.getExecutorImage())
                     .setForcePullImage(configuration.getExecutorForcePullImage())
-                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
-                    .addAllPortMappings(portMappings);
+                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
 
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
