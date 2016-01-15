@@ -4,6 +4,7 @@ import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.json.JSONObject;
 
@@ -54,7 +55,7 @@ public class ElasticsearchNodesResponse {
         // Returns `true` iff endpoint is OK.
         // Returns `false` iff endpoint is definitely not OK or it is not yet determined and we should continue polling.
         private boolean endpointIsOk(JSONObject task) throws Exception {
-            String url = "http://" + task.getString("http_address") + "/_nodes";
+            String url = "http://" + ElasticsearchParser.parseHttpAddress(task) + "/_nodes";
             HttpResponse<String> response = Unirest.get(url).asString();
 
             if (response.getStatus() < 200 || response.getStatus() >= 400) {

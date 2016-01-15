@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -26,7 +27,7 @@ public class StatusApiSystemTest extends SchedulerTestBase {
             assertThat(taskObject.getString("id"), startsWith("elasticsearch_"));
             assertEquals(getTestConfig().getElasticsearchJobName(), taskObject.getString("name"));
             assertThat(taskObject.getString("started_at"), isValidDateTime());
-            assertThat(taskObject.getString("http_address"), isValidAddress());
+            assertThat(ElasticsearchParser.parseHttpAddress(taskObject), isValidAddress());
             assertThat(taskObject.getString("transport_address"), isValidAddress());
         }
     }

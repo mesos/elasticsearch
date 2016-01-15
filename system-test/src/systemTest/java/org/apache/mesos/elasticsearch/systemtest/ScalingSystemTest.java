@@ -10,13 +10,11 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
-import org.json.JSONArray;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 
@@ -45,61 +43,45 @@ public class ScalingSystemTest extends SchedulerTestBase {
     @Test
     public void shouldScaleDown() throws UnirestException {
         scaleNumNodesTo(ipAddress, 3); // Reset to 3 nodes
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
         scaleNumNodesTo(ipAddress, 2);
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
     }
 
     @Test
     public void shouldScaleUp() throws UnirestException {
         scaleNumNodesTo(ipAddress, 2); // Reset to 2 nodes
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
         scaleNumNodesTo(ipAddress, 3);
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
     }
 
     @Test
     public void shouldNotLoseDataWhenScalingDown() throws UnirestException {
         // Make sure we have three nodes
         scaleNumNodesTo(ipAddress, 3);
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
 
-        List<String> esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
         LOGGER.info("Addresses: " + esAddresses);
 
         DataPusherContainer pusher = new DataPusherContainer(CLUSTER_ARCHITECTURE.dockerClient, esAddresses.get(0));
         CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started data push");
 
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
-            JSONArray responseElements;
-            for (String httpAddress : esAddresses) {
-                try {
-                    responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
-                    LOGGER.info(responseElements);
-                    int count = responseElements.getJSONObject(0).getInt("count");
-                    if (count == 0 || count % 10 != 0) { // There are ten documents in the data pusher. This is for repeated testing, if used.
-                        return false;
-                    }
-                } catch (Exception e) {
-                    LOGGER.error("Unirest exception:" + e.getMessage());
-                    return false;
-                }
-            }
-            return true;
-        });
+        esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
 
         Integer correctNumberOfDocuments = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
         LOGGER.debug("Correct number of documents: " + correctNumberOfDocuments);
 
         // Scale down to one node
         scaleNumNodesTo(ipAddress, 1);
-        waitForGreen(esTasks);
+        esTasks.waitForGreen();
 
         // Refresh ES address list
-        List<String> newAddress = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
+        List<String> newAddress = esTasks.getEsHttpAddressList();
         LOGGER.info("New address: " + newAddress);
         assertEquals(1, newAddress.size());
 
@@ -128,21 +110,6 @@ public class ScalingSystemTest extends SchedulerTestBase {
             return numNodes.equals(newNumNodes.toString());
         });
         assertEquals(newNumNodes.toString(), getNumberOfNodes(ipAddress));
-    }
-
-    public void waitForGreen(ESTasks esTasks) {
-        LOGGER.debug("Wating for green.");
-        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(() -> { // This can take some time, somtimes.
-            try {
-                List<String> esAddresses = esTasks.getTasks().stream().map(task -> task.getString("http_address")).collect(Collectors.toList());
-                // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
-                String body = Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asString().getBody();
-                LOGGER.debug(body);
-                return body.contains("green");
-            } catch (Exception e) {
-                return false;
-            }
-        });
     }
 
     public String getNumberOfNodes(String ipAddress) throws UnirestException {

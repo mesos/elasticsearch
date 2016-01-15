@@ -61,7 +61,7 @@ public class Main {
         try {
             ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress(), true);
             new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount(), "TASK_RUNNING");
-            taskHttpAddress = esTasks.getTasks().get(0).getString("http_address");
+            taskHttpAddress = esTasks.getEsHttpAddressList().get(0);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }

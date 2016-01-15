@@ -117,7 +117,6 @@ public class ClusterStateTest {
         verify(state, times(1)).get(anyString());
     }
 
-    // TODO (pnw) Why does this test take so long?
     @Test
     public void shouldReturnCorrectNumberOfExecutors() throws IOException {
         ArrayList<Protos.TaskInfo> mock = Mockito.spy(new ArrayList<>());

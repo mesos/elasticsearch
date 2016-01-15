@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
+import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -47,7 +48,7 @@ public class DiscoverySystemTest extends SchedulerTestBase {
 
     private URL clusterHealthUrl(ESTasks esTasks) throws UnirestException, MalformedURLException {
         JSONObject task = esTasks.getTasks().get(0);
-        return new URL("http://" + task.getString("http_address") + "/_cluster/health");
+        return new URL("http://" + ElasticsearchParser.parseHttpAddress(task) + "/_cluster/health");
     }
 
     private JSONObject getJsonObjectFrom(URL url) throws UnirestException {
