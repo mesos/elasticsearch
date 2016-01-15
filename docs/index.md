@@ -39,16 +39,16 @@
 - Fault tolerance ✓
 - Customised ES configuration ✓
 - Configurable data directory ✓
+- Scale cluster horizontally ✓
+- Snapshot and restore ✓
 
 [Future]
 
 - High availability (master, indexer, replica)
 - Upgrading configuration
-- Scale cluster horizontally
 - Scale cluster vertically
 - Upgrade
 - Rollback
-- Snapshot and restore 
 
 ### Blocked features
 
@@ -59,7 +59,7 @@
 
 - Local environment (Docker-machine) ✓
 - Rapid code + test (Mini Mesos) ✓
-- Build automation (Gradle) ✓
+- Build automation (Gradle and Jenkins) ✓
 
 ### User tools
 
@@ -76,8 +76,9 @@ We recommend that users install via marathon, using a docker container.
 
 This framework requires:
 
-* A running [Mesos](http://mesos.apache.org) cluster
+* A running [Mesos](http://mesos.apache.org) cluster on version 0.25.0
 * The use of <a href="https://github.com/mesosphere/marathon">Marathon</a> is strongly recommended to provide resiliency against scheduler failover.
+* That the slaves have routable IP addresses. The ES ports are exposed on the slaves, so that the ES cluster can discover each other. Please double check that your slaves are routable.
 
 ## Users Guide
 
@@ -201,12 +202,6 @@ Usage: (Options preceded by an asterisk are required) [options]
     --webUiPort
        TCP port for web ui interface.
        Default: 31100
-    --zookeeperFrameworkTimeout
-       The timeout for connecting to zookeeper for the framework (ms).
-       Default: 20000
-    --zookeeperFrameworkUrl
-       Zookeeper urls for the framework in the format zk://IP:PORT,IP:PORT,...)
-       Default: <empty string>
     --zookeeperMesosTimeout
        The timeout for connecting to zookeeper for Mesos (ms).
        Default: 20000
@@ -237,8 +232,8 @@ Please note that the framework password file must only contain the password (no 
 ### Using JAR files instead of docker images
 It is strongly recommended that you use the containerized version of Mesos Elasticsearch. This ensures that all dependencies are met. Limited support is available for the jar version, since many issues are due to OS configuration. However, if you can't or don't want to use containers, use the raw JAR files in the following way:
 0. Requirements: Java 8, Apache Mesos.
-1. Read through the developer documentation and build the jars.
-2. Copy the `./scheduler/build/libs/elasticsearch-mesos-scheduler-$VERSION.jar to all slaves in cluster. (The executor jar is inside and hosted by the scheduler jar)
+1. Download the JAR from jitpack. Replace the version with your required version: https://jitpack.io/com/github/mesos/elasticsearch/scheduler/7a5e30e9b2/scheduler-7a5e30e9b2.jar
+2. Copy the `scheduler-$VERSION.jar to all slaves in cluster. (The executor jar is inside and hosted by the scheduler jar)
 3. Set the CLI parameter frameworkUseDocker to false. Set the javaHome CLI parameter if necessary.
 4. Run the jar file manually, or use marathon. Normal command line parameters apply. For example:
 ```
@@ -296,10 +291,7 @@ Query Browser allows you to examine data stored on individual Elasticsearch node
 
 ### Known issues
 
-- Issue [#388](https://github.com/mesos/elasticsearch/issues/388): When in jars mode, the executor is unable to communicate with the cluster unless the adapter is named eth0.
-- Issue [#188](https://github.com/mesos/elasticsearch/issues/188): Database data IS NOT persisted to disk. Data storage is wholly reliant on cluster redundancy. This means that the framework is not yet recommended for production use.
 - Issue [#177](https://github.com/mesos/elasticsearch/issues/177#issuecomment-135367451): Executors keep running if the scheduler is killed unless the DCOS CLI is used.
-- Issue [#93](https://github.com/mesos/elasticsearch/issues/93): Despite the gui, horizontal scaling is not yet implemented.
 
 ## Developers Guide
 
@@ -329,7 +321,7 @@ $ ./gradlew build buildDockerImage system-test:main
 $ docker-machine create -d virtualbox --virtualbox-memory 4096 --virtualbox-cpu-count 2 mesos-es
 $ eval $(docker-machine env mesos-es)
 $ sudo route delete 172.17.0.0/16; sudo route -n add 172.17.0.0/16 $(docker-machine ip mesos-es)
-$ ./gradlew buildDockerImage system-test:main
+$ ./gradlew build buildDockerImage system-test:main
 ```
 
 ### System test

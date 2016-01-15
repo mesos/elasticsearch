@@ -2,6 +2,29 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.0] - [15 January 2016]
+
+### Features
+- [Update to minimesos 0.5.0+](https://github.com/mesos/elasticsearch/issues/421)
+- [Upgrade to elasticsearch 2.1.1](https://github.com/mesos/elasticsearch/issues/415)
+- [Allow a user to specify his own http/transport ports](https://github.com/mesos/elasticsearch/issues/413)
+- [Manual horizontal scaling](https://github.com/mesos/elasticsearch/issues/403)
+- Networking overhaul. Now uses standard ES zen for clustering.
+
+### Bugs
+
+- [shouldNotLoseDataWhenScalingDown system test occasionally fails](https://github.com/mesos/elasticsearch/issues/447)
+- [Minimesos hostnames do not point to running containers](https://github.com/mesos/elasticsearch/issues/445)
+- [Fix Jenkins system test failures](https://github.com/mesos/elasticsearch/issues/436)
+- [Option to use IP addresses instead of hostname](https://github.com/mesos/elasticsearch/issues/418)
+- [Documentation](https://github.com/mesos/elasticsearch/issues/417)
+- [Jitpack cannot build jar beacuse of docker build](https://github.com/mesos/elasticsearch/issues/408)
+
+### Refactoring
+
+- [Remove dependency on ES Zookeeper](https://github.com/mesos/elasticsearch/issues/439)
+- [Sanity check for framework registration before getting cluster state](https://github.com/mesos/elasticsearch/issues/410)
+
 ## [0.6.0] - [09 November 2015]
 
 ### Features
