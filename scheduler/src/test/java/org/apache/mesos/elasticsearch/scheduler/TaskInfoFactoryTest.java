@@ -20,6 +20,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
@@ -80,23 +81,19 @@ public class TaskInfoFactoryTest {
         assertEquals(offer.getSlaveId(), taskInfo.getSlaveId());
         assertEquals("elasticsearch_localhost_19700101T010203.400Z", taskInfo.getTaskId().getValue());
 
-        // TODO: Should get resources by name, not by index. Position is arbitrary.
-        assertEquals("cpus", taskInfo.getResources(0).getName());
-        assertEquals(configuration.getCpus(), taskInfo.getResources(0).getScalar().getValue(), EPSILON);
+        List<Protos.Resource> resourceList = taskInfo.getResourcesList();
+        assertEquals(configuration.getCpus(), getResourceByName(resourceList, "cpus").getScalar().getValue(), EPSILON);
 
-        assertEquals("disk", taskInfo.getResources(2).getName());
-        assertEquals(configuration.getDisk(), taskInfo.getResources(2).getScalar().getValue(), EPSILON);
+        assertEquals(configuration.getDisk(), getResourceByName(resourceList, "disk").getScalar().getValue(), EPSILON);
 
-        assertEquals("mem", taskInfo.getResources(1).getName());
-        assertEquals(configuration.getMem(), taskInfo.getResources(1).getScalar().getValue(), EPSILON);
+        assertEquals(configuration.getMem(), getResourceByName(resourceList, "mem").getScalar().getValue(), EPSILON);
 
-        assertEquals("ports", taskInfo.getResources(3).getName());
-        assertEquals(9200, taskInfo.getResources(3).getRanges().getRange(0).getBegin());
-        assertEquals(9200, taskInfo.getResources(3).getRanges().getRange(0).getEnd());
+        List<Protos.Resource> portsList = getResourceListByName(resourceList, "ports");
+        assertEquals(9200, portsList.get(0).getRanges().getRange(0).getBegin());
+        assertEquals(9200, portsList.get(0).getRanges().getRange(0).getEnd());
 
-        assertEquals("ports", taskInfo.getResources(4).getName());
-        assertEquals(9300, taskInfo.getResources(4).getRanges().getRange(0).getBegin());
-        assertEquals(9300, taskInfo.getResources(4).getRanges().getRange(0).getEnd());
+        assertEquals(9300, portsList.get(1).getRanges().getRange(0).getBegin());
+        assertEquals(9300, portsList.get(1).getRanges().getRange(0).getEnd());
 
         assertEquals(9200, taskInfo.getDiscovery().getPorts().getPorts(0).getNumber());
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
@@ -112,6 +109,14 @@ public class TaskInfoFactoryTest {
         assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
         assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
+    }
+
+    private Protos.Resource getResourceByName(List<Protos.Resource> resourceList, String name) {
+        return resourceList.stream().filter(resource -> resource.getName().equals(name)).findFirst().get();
+    }
+
+    private List<Protos.Resource> getResourceListByName(List<Protos.Resource> resourceList, String name) {
+        return resourceList.stream().filter(resource -> resource.getName().equals(name)).collect(Collectors.toList());
     }
 
     private Protos.Offer getOffer(Protos.FrameworkID frameworkId) {

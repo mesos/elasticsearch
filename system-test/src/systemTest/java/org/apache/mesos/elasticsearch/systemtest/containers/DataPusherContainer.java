@@ -12,6 +12,7 @@ import java.security.SecureRandom;
  * Data Pusher container implementation
  */
 public class DataPusherContainer extends AbstractContainer {
+    public static final Integer CORRECT_NUM_DOCS = 10;
 
     public String pusherImageName = "alexglv/es-pusher";
 

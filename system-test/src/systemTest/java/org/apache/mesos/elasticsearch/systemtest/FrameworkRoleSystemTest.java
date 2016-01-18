@@ -26,7 +26,7 @@ public class FrameworkRoleSystemTest extends TestBase {
         testMiniMesosReportsFrameworkRole("*");
     }
 
-    // TODO (pnw): Minimesos regression, this does not work. Enable when fixed.
+    // TODO (pnw): Need to rewrite the whole test to use a custom slave with specified roles.
     @Ignore
     @Test
     public void miniMesosReportsFrameworkRoleOther() throws UnirestException, JsonParseException, JsonMappingException {

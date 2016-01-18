@@ -5,6 +5,7 @@ import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.json.JSONObject;
 
 import java.util.Arrays;
@@ -81,7 +82,7 @@ public class TasksResponse {
         @Override
         protected boolean getResult(JSONObject task) {
             try {
-                String url = "http://" + task.getString("http_address");
+                String url = "http://" + ElasticsearchParser.parseHttpAddress(task);
                 LOGGER.debug("Querying ES endpoint: " + url);
                 Unirest.get(url).asJson();
             } catch (UnirestException e) {
