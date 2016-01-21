@@ -1,7 +1,7 @@
 package org.apache.mesos.elasticsearch.systemtest.base;
 
 import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.ClusterArchitecture;
+import com.containersol.minimesos.mesos.*;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
@@ -12,13 +12,16 @@ import org.junit.ClassRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
+import java.util.Collections;
+
 /**
  * Base test class which launches Mesos CLUSTER
  */
-@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT"})
+@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT", "MS_CANNOT_BE_FINAL"})
 public abstract class TestBase {
 
     protected static final Configuration TEST_CONFIG = new Configuration();
+    public static final String MESOS_VERSION_TAG = "0.26.0-0.2.145.ubuntu1404";
 
     protected static ClusterArchitecture CLUSTER_ARCHITECTURE;
 
@@ -36,10 +39,10 @@ public abstract class TestBase {
     public static void reinitialiseCluster() {
         CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster()
-                .withSlave(TEST_CONFIG.getPortRanges()[0])
-                .withSlave(TEST_CONFIG.getPortRanges()[1])
-                .withSlave(TEST_CONFIG.getPortRanges()[2])
+                .withMaster(VersionedMaster::new)
+                .withSlave(zookeeper -> new VersionedSlave(zookeeper, TEST_CONFIG.getPortRanges()[0]))
+                .withSlave(zookeeper -> new VersionedSlave(zookeeper, TEST_CONFIG.getPortRanges()[1]))
+                .withSlave(zookeeper -> new VersionedSlave(zookeeper, TEST_CONFIG.getPortRanges()[2]))
                 .build();
         CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
         CLUSTER.start(60);
@@ -65,5 +68,17 @@ public abstract class TestBase {
 
     public static Configuration getTestConfig() {
         return TEST_CONFIG;
+    }
+
+    private static class VersionedMaster extends MesosMasterExtended {
+        public VersionedMaster(ZooKeeper zooKeeperContainer) {
+            super(DockerClientFactory.build(), zooKeeperContainer, MesosMasterExtended.MESOS_MASTER_IMAGE, MESOS_VERSION_TAG, Collections.emptyMap(), true);
+        }
+    }
+
+    private static class VersionedSlave extends MesosSlaveExtended {
+        public VersionedSlave(ZooKeeper zooKeeperContainer, String resources) {
+            super(DockerClientFactory.build(), resources, String.valueOf(MesosSlaveExtended.MESOS_SLAVE_PORT), zooKeeperContainer, MesosSlaveExtended.MESOS_SLAVE_IMAGE, MESOS_VERSION_TAG);
+        }
     }
 }
