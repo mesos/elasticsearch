@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest extends TestBase {
-    private static final int TIMEOUT = 60;
+    private static final int TIMEOUT = 300;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
 
@@ -131,8 +131,8 @@ public class ReconciliationSystemTest extends TestBase {
                     .withExtraHosts(slaves.stream().map(mesosSlave -> mesosSlave.getHostname() + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
-                            Configuration.EXECUTOR_HEALTH_DELAY, "99",
-                            Configuration.EXECUTOR_TIMEOUT, "100", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
+                            Configuration.EXECUTOR_HEALTH_DELAY, "999",
+                            Configuration.EXECUTOR_TIMEOUT, "1000", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
                             ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                             Configuration.ELASTICSEARCH_RAM, "256"
                     );
