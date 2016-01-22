@@ -38,13 +38,17 @@ public class Configuration {
     }
 
     // ******* ELASTICSEARCH
-    public Settings.Builder getElasticsearchYmlSettings() {
+    public Settings.Builder getUserESSettings() {
         String settingsLocation = getElasticsearchCLI().getElasticsearchSettingsLocation();
         if (settingsLocation.isEmpty()) {
-            return Settings.builder().loadFromStream(ELASTICSEARCH_YML, this.getClass().getClassLoader().getResourceAsStream(ELASTICSEARCH_YML));
+            return Settings.builder();
         } else {
             return Settings.builder().loadFromPath(Paths.get(settingsLocation));
         }
+    }
+
+    public Settings.Builder getDefaultESSettings() {
+        return Settings.builder().loadFromStream(ELASTICSEARCH_YML, this.getClass().getClassLoader().getResourceAsStream(ELASTICSEARCH_YML));
     }
 
     public ElasticsearchCLIParameter getElasticsearchCLI() {

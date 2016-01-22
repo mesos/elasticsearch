@@ -55,6 +55,7 @@ public class ESTasks {
         return tasks;
     }
 
+    // TODO (pnw): I shouldn't have to prepend http everywhere. Add here instead.
     public List<String> getEsHttpAddressList() throws UnirestException {
         return getTasks().stream().map(ElasticsearchParser::parseHttpAddress).collect(Collectors.toList());
     }

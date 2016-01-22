@@ -75,9 +75,16 @@ public class ElasticsearchExecutor implements Executor {
             configuration = new Configuration(args);
 
             // Add settings provided in es Settings file
-            LOGGER.debug("Using elasticsearch settings file: " + configuration.getElasticsearchCLI().getElasticsearchSettingsLocation());
-            Settings.Builder esSettings = configuration.getElasticsearchYmlSettings();
-            launcher.addRuntimeSettings(esSettings);
+            LOGGER.debug("Setting default ES settings");
+            Settings.Builder defaultESSettings = configuration.getDefaultESSettings();
+            launcher.addRuntimeSettings(defaultESSettings);
+
+            // Override default settings with user settings
+            if (!configuration.getElasticsearchCLI().getElasticsearchSettingsLocation().isEmpty()) {
+                LOGGER.debug("Loading user elasticsearch settings file: " + configuration.getElasticsearchCLI().getElasticsearchSettingsLocation());
+            }
+            Settings.Builder userSettings = configuration.getUserESSettings();
+            launcher.addRuntimeSettings(userSettings);
 
             // Parse ports
             RunTimeSettings ports = new PortsModel(task);

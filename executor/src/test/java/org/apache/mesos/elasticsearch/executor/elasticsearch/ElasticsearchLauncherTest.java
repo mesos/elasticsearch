@@ -32,6 +32,7 @@ import static org.mockito.Mockito.*;
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ElasticsearchLauncherTest {
     private static final Logger LOG = Logger.getLogger(ElasticsearchLauncherTest.class);
+    public static final String PATH_HOME = "path.home";
 
     @Test(expected = NullPointerException.class)
     public void shouldExceptionIfNullSettings() {
@@ -43,14 +44,14 @@ public class ElasticsearchLauncherTest {
         Settings.Builder settings = Settings.builder()
                 .put("node.local", true)
                 .put("path.data", ".")
-                .put("path.home", ".");
+                .put(PATH_HOME, ".");
         ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
         safeStartAndShutdownNode(elasticsearchLauncher, nodeConsumer(9200));
     }
 
     @Test
     public void shouldShutdownNode() {
-        Node node = NodeBuilder.nodeBuilder().settings(Settings.settingsBuilder().put("path.home", ".").build()).node();
+        Node node = NodeBuilder.nodeBuilder().settings(Settings.settingsBuilder().put(PATH_HOME, ".").build()).node();
         node.close();
         assertTrue(node.isClosed());
     }
@@ -60,7 +61,7 @@ public class ElasticsearchLauncherTest {
         Settings.Builder settings = Settings.builder()
                 .put("node.local", true)
                 .put("path.data", ".")
-                .put("path.home", ".");
+                .put(PATH_HOME, ".");
         ElasticsearchLauncher elasticsearchLauncher = new ElasticsearchLauncher(settings);
         Integer port = 1234;
         elasticsearchLauncher.addRuntimeSettings(clientPortSetting(port));
@@ -84,8 +85,20 @@ public class ElasticsearchLauncherTest {
     @Test
     public void shouldBeAbleToLoadSettingsFromResources() {
         Configuration configuration = new Configuration(new String[]{""});
-        Settings.Builder esSettings = configuration.getElasticsearchYmlSettings();
+        Settings.Builder esSettings = configuration.getDefaultESSettings();
         assertNotNull(esSettings);
+    }
+
+    @Test
+    public void shouldBeAbleToOverrideDefaults() {
+        Configuration configuration = new Configuration(new String[]{""});
+        Settings.Builder esSettings = configuration.getDefaultESSettings();
+        assertNotNull(esSettings);
+        String value = esSettings.get(PATH_HOME);
+        assertFalse(value.isEmpty());
+        final String testValue = "test";
+        esSettings.put(PATH_HOME, testValue);
+        assertEquals(testValue, esSettings.get(PATH_HOME));
     }
 
     @Test
@@ -95,7 +108,7 @@ public class ElasticsearchLauncherTest {
         Settings.Builder esSettings;
         try {
             Configuration configuration = new Configuration(new String[]{ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, tempFile.toString()});
-            esSettings = configuration.getElasticsearchYmlSettings();
+            esSettings = configuration.getUserESSettings();
         } finally {
             Files.delete(tempFile);
         }
