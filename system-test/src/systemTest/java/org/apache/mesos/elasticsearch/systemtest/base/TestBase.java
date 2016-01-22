@@ -15,7 +15,7 @@ import org.junit.runner.Description;
 /**
  * Base test class which launches Mesos CLUSTER
  */
-@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT"})
+@SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT", "MS_CANNOT_BE_FINAL"})
 public abstract class TestBase {
 
     protected static final Configuration TEST_CONFIG = new Configuration();
