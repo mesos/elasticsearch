@@ -9,8 +9,8 @@
         </layout>
     </appender>
 
-    <category name="org.apache.mesos.mini">
-        <level value="INFO"/>
+    <category name="com.containersol.minimesos">
+        <level value="DEBUG"/>
     </category>
     <category name="org.apache.mesos.elasticsearch">
         <level value="DEBUG"/>

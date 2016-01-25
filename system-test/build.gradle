@@ -40,6 +40,7 @@ test {
 }
 
 task systemTest(type: Test) {
+    dependsOn processTestResources  // Copy files to resources
     testClassesDir = sourceSets.systemTest.output.classesDir
     classpath = sourceSets.systemTest.runtimeClasspath
     include '**/*SystemTest*'
@@ -48,6 +49,13 @@ task systemTest(type: Test) {
     }
     outputs.upToDateWhen { false }
 }
+
+// For IntelliJ, manually copy resources to standard test directory, as this will be the folder on the classpath.
+task copyTestResources(type: Copy) {
+    from "${projectDir}/src/systemTest/resources"
+    into "${buildDir}/resources/test"
+}
+processTestResources.dependsOn copyTestResources
 
 findbugsSystemTest {
     excludeFilter file('config/findbugs/excludeFilter.xml')
