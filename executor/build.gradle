@@ -29,6 +29,7 @@ dependencies {
     compile "log4j:log4j:1.2.16"
     compile "com.beust:jcommander:1.48"
     compile 'com.jayway.awaitility:awaitility:1.6.3'
+    compile "commons-validator:commons-validator:1.5.0"
 
     testCompile 'com.mashape.unirest:unirest-java:1.4.5'
     testCompile 'com.jayway.awaitility:awaitility:1.6.3'
