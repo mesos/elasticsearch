@@ -70,7 +70,7 @@ public class Configuration {
     private double executorMem = 32;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports.(Not recommended)", validateWith = CLIValidators.NumericListOfSizeTwo.class)
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports. [NOT RECOMMENDED]", validateWith = CLIValidators.NumericListOfSizeTwo.class)
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
@@ -79,7 +79,7 @@ public class Configuration {
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
     private String executorName = "elasticsearch-executor";
-    @Parameter(names = {DATA_DIR}, description = "The data directory used by Docker volumes in the executors.")
+    @Parameter(names = {DATA_DIR}, description = "The host data directory used by Docker volumes in the executors. [DOCKER MODE ONLY]")
     private String dataDir = DEFAULT_HOST_DATA_DIR;
     @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
@@ -89,18 +89,18 @@ public class Configuration {
             description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
             validateValueWith = GreaterThanHealthDelay.class)
     private Long executorTimeout = 60000L;
-    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use.", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
-    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image.")
+    @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image. [DOCKER MODE ONLY]")
     private Boolean executorForcePullImage = false;
     @Parameter(names = {FRAMEWORK_PRINCIPAL}, description = "The principal to use when registering the framework (username).")
     private String frameworkPrincipal = "";
     @Parameter(names = {FRAMEWORK_SECRET_PATH}, description = "The path to the file which contains the secret for the principal (password). Password in file must not have a newline.")
     private String frameworkSecretPath = "";
-    @Parameter(names = {FRAMEWORK_USE_DOCKER}, arity = 1, description = "The framework will use docker if true, or jar files if false. If false, the user must ensure that the scheduler jar is on all slaves.")
+    @Parameter(names = {FRAMEWORK_USE_DOCKER}, arity = 1, description = "The framework will use docker if true, or jar files if false. If false, the user must ensure that the scheduler jar is available to all slaves.")
     private Boolean isFrameworkUseDocker = true;
     private InetSocketAddress frameworkFileServerAddress;
-    @Parameter(names = {JAVA_HOME}, description = "(Only when " + FRAMEWORK_USE_DOCKER + " is false) When starting in jar mode, if java is not on the path, you can specify the path here.", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {JAVA_HOME}, description = "When starting in jar mode, if java is not on the path, you can specify the path here. [JAR MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
     private String javaHome = "";
     @Parameter(names = {USE_IP_ADDRESS}, arity = 1, description = "If true, the framework will resolve the local ip address. If false, it uses the hostname.")
     private Boolean isUseIpAddress = false;
