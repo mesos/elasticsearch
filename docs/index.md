@@ -119,7 +119,8 @@ Other command line options include:
 Usage: (Options preceded by an asterisk are required) [options]
   Options:
     --dataDir
-       The data directory used by Docker volumes in the executors.
+       The host data directory used by Docker volumes in the executors. [DOCKER
+       MODE ONLY]
        Default: /var/lib/mesos/slave/elasticsearch
     --elasticsearchClusterName
        Name of the elasticsearch cluster
@@ -142,7 +143,7 @@ Usage: (Options preceded by an asterisk are required) [options]
        Number of elasticsearch instances.
        Default: 3
     --elasticsearchPorts
-       User specified ES HTTP and transport ports.(Not recommended)
+       User specified ES HTTP and transport ports. [NOT RECOMMENDED]
        Default: <empty string>
     --elasticsearchRam
        The amount of ram resource to allocate to the elasticsearch instance
@@ -154,13 +155,13 @@ Usage: (Options preceded by an asterisk are required) [options]
        'http://webserver.com/elasticsearch.yml'
        Default: <empty string>
     --executorForcePullImage
-       Option to force pull the executor image.
+       Option to force pull the executor image. [DOCKER MODE ONLY]
        Default: false
     --executorHealthDelay
        The delay between executor healthcheck requests (ms).
        Default: 30000
     --executorImage
-       The docker executor image to use.
+       The docker executor image to use. [DOCKER MODE ONLY]
        Default: mesos/elasticsearch-executor
     --executorName
        The name given to the executor task.
@@ -189,11 +190,11 @@ Usage: (Options preceded by an asterisk are required) [options]
        Default: <empty string>
     --frameworkUseDocker
        The framework will use docker if true, or jar files if false. If false,
-       the user must ensure that the scheduler jar is on all slaves.
+       the user must ensure that the scheduler jar is available to all slaves.
        Default: true
     --javaHome
-       (Only when --frameworkUseDocker is false) When starting in jar mode, if
-       java is not on the path, you can specify the path here.
+       When starting in jar mode, if java is not on the path, you can specify
+       the path here. [JAR MODE ONLY]
        Default: <empty string>
     --useIpAddress
        If true, the framework will resolve the local ip address. If false, it
@@ -231,25 +232,37 @@ Please note that the framework password file must only contain the password (no 
 
 ### Using JAR files instead of docker images
 It is strongly recommended that you use the containerized version of Mesos Elasticsearch. This ensures that all dependencies are met. Limited support is available for the jar version, since many issues are due to OS configuration. However, if you can't or don't want to use containers, use the raw JAR files in the following way:
-0. Requirements: Java 8, Apache Mesos.
-1. Download the JAR from jitpack. Replace the version with your required version: https://jitpack.io/com/github/mesos/elasticsearch/scheduler/7a5e30e9b2/scheduler-7a5e30e9b2.jar
-2. Copy the `scheduler-$VERSION.jar to all slaves in cluster. (The executor jar is inside and hosted by the scheduler jar)
-3. Set the CLI parameter frameworkUseDocker to false. Set the javaHome CLI parameter if necessary.
-4. Run the jar file manually, or use marathon. Normal command line parameters apply. For example:
+1. Requirements: Java 8, Apache Mesos.
+2. Set the CLI parameter frameworkUseDocker to false. Set the javaHome CLI parameter if necessary.
+3. Run the jar file manually, or use marathon. Normal command line parameters apply. For example:
 ```
 {
-  "id": "elasticsearch-jar",
-  "cpus": 0.5,
+  "id": "elasticsearch",
+  "cpus": 0.2,
   "mem": 512,
   "instances": 1,
-  "cmd": "/opt/mesosphere/bin/java -jar /home/core/elasticsearch-mesos-scheduler-0.4.3.jar --javaHome /opt/mesosphere/bin/java --frameworkName esjar --frameworkUseDocker false --zookeeperMesosUrl zk://1.2.3.4:2181",
+  "cmd": "java -jar scheduler-0.7.0.jar --frameworkUseDocker false --zookeeperMesosUrl zk://10.0.0.254:2181 --frameworkName elasticsearch --elasticsearchClusterName mesos-elasticsearch --elasticsearchCpu 1 --elasticsearchRam 1024 --elasticsearchDisk 1024 --elasticsearchNodes 3 --elasticsearchSettingsLocation /home/ubuntu/elasticsearch.yml",
+  "uris": [ "https://github.com/mesos/elasticsearch/releases/download/0.7.0/scheduler-0.7.0.jar" ],
   "env": {
-    "JAVA_OPTS": "-Xms128m -Xmx256m"
+    "JAVA_OPTS": "-Xms256m -Xmx512m"
   },
   "ports": [31100],
-  "requirePorts": true
+  "requirePorts": true,
+  "healthChecks": [
+    {
+      "gracePeriodSeconds": 120,
+      "intervalSeconds": 10,
+      "maxConsecutiveFailures": 6,
+      "path": "/",
+      "portIndex": 0,
+      "protocol": "HTTP",
+      "timeoutSeconds": 5
+    }
+  ]
 }
 ```
+
+Jars are available under the (releases section of github)[https://github.com/mesos/elasticsearch/releases].
 
 ### User Interface
 
