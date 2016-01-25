@@ -119,7 +119,8 @@ Other command line options include:
 Usage: (Options preceded by an asterisk are required) [options]
   Options:
     --dataDir
-       The data directory used by Docker volumes in the executors.
+       The host data directory used by Docker volumes in the executors. [DOCKER
+       MODE ONLY]
        Default: /var/lib/mesos/slave/elasticsearch
     --elasticsearchClusterName
        Name of the elasticsearch cluster
@@ -142,7 +143,7 @@ Usage: (Options preceded by an asterisk are required) [options]
        Number of elasticsearch instances.
        Default: 3
     --elasticsearchPorts
-       User specified ES HTTP and transport ports.(Not recommended)
+       User specified ES HTTP and transport ports. [NOT RECOMMENDED]
        Default: <empty string>
     --elasticsearchRam
        The amount of ram resource to allocate to the elasticsearch instance
@@ -154,13 +155,13 @@ Usage: (Options preceded by an asterisk are required) [options]
        'http://webserver.com/elasticsearch.yml'
        Default: <empty string>
     --executorForcePullImage
-       Option to force pull the executor image.
+       Option to force pull the executor image. [DOCKER MODE ONLY]
        Default: false
     --executorHealthDelay
        The delay between executor healthcheck requests (ms).
        Default: 30000
     --executorImage
-       The docker executor image to use.
+       The docker executor image to use. [DOCKER MODE ONLY]
        Default: mesos/elasticsearch-executor
     --executorName
        The name given to the executor task.
@@ -189,11 +190,11 @@ Usage: (Options preceded by an asterisk are required) [options]
        Default: <empty string>
     --frameworkUseDocker
        The framework will use docker if true, or jar files if false. If false,
-       the user must ensure that the scheduler jar is on all slaves.
+       the user must ensure that the scheduler jar is available to all slaves.
        Default: true
     --javaHome
-       (Only when --frameworkUseDocker is false) When starting in jar mode, if
-       java is not on the path, you can specify the path here.
+       When starting in jar mode, if java is not on the path, you can specify
+       the path here. [JAR MODE ONLY]
        Default: <empty string>
     --useIpAddress
        If true, the framework will resolve the local ip address. If false, it
