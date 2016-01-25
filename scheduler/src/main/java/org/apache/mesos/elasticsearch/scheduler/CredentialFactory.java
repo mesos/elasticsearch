@@ -1,11 +1,12 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
-import com.google.protobuf.ByteString;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 
 /**
  * Factory to read credentials and return credential builder.
@@ -25,8 +26,8 @@ public class CredentialFactory {
         if (!principal.isEmpty() && !secretFilePath.isEmpty()) {
             credentialBuilder.setPrincipal(principal);
             try {
-                ByteString bytes = ByteString.readFrom(new FileInputStream(secretFilePath));
-                credentialBuilder.setSecret(bytes);
+                String secretData = IOUtils.toString(new FileInputStream(secretFilePath), Charset.defaultCharset());
+                credentialBuilder.setSecret(secretData);
             } catch (IOException cause) {
                 LOGGER.error("Error reading authentication secret from file: " + secretFilePath, cause);
             }

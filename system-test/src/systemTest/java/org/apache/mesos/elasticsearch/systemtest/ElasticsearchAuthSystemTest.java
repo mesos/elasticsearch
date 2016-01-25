@@ -10,6 +10,7 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.*;
@@ -17,6 +18,7 @@ import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 
 import java.io.FileNotFoundException;
+import java.util.Collections;
 import java.util.TreeMap;
 
 import static org.junit.Assert.assertTrue;
@@ -53,10 +55,10 @@ public class ElasticsearchAuthSystemTest {
         writePasswordFileToVM();
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster(zooKeeper -> new SimpleAuthMaster(dockerClient, zooKeeper))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"));
+                .withMaster(zooKeeper -> new SimpleAuthMaster(dockerClient, zooKeeper, TestBase.MESOS_VERSION_TAG))
+                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200", TestBase.MESOS_VERSION_TAG))
+                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200", TestBase.MESOS_VERSION_TAG))
+                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200", TestBase.MESOS_VERSION_TAG));
         cluster = new MesosCluster(builder.build());
         cluster.start(TEST_CONFIG.getClusterTimeout());
     }
@@ -114,10 +116,10 @@ public class ElasticsearchAuthSystemTest {
     /**
      * Only the role "testRole" can start frameworks.
      */
-    private static class SimpleAuthMaster extends MesosMaster {
+    private static class SimpleAuthMaster extends MesosMasterExtended {
 
-        protected SimpleAuthMaster(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
-            super(dockerClient, zooKeeperContainer);
+        public SimpleAuthMaster(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String mesosImageTag) {
+            super(dockerClient, zooKeeperContainer, MesosMasterExtended.MESOS_MASTER_IMAGE, mesosImageTag, Collections.emptyMap(), true);
         }
 
         @Override
@@ -137,20 +139,9 @@ public class ElasticsearchAuthSystemTest {
         }
     }
 
-    private static class SimpleAuthSlave extends MesosSlave {
-        private final String resources;
-
-        protected SimpleAuthSlave(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String resources) {
-            super(dockerClient, zooKeeperContainer);
-            this.resources = resources;
-        }
-
-        @Override
-        public TreeMap<String, String> getDefaultEnvVars() {
-            TreeMap<String, String> envVars = super.getDefaultEnvVars();
-            envVars.remove("MESOS_RESOURCES");
-            envVars.put("MESOS_RESOURCES", resources);
-            return envVars;
+    private static class SimpleAuthSlave extends MesosSlaveExtended {
+        public SimpleAuthSlave(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String resources, String mesosImageTag) {
+            super(dockerClient, resources, String.valueOf(MesosSlaveExtended.MESOS_SLAVE_PORT), zooKeeperContainer, MesosSlaveExtended.MESOS_SLAVE_IMAGE, mesosImageTag);
         }
     }
 
