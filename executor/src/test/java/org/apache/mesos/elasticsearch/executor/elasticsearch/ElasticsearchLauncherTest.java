@@ -33,6 +33,7 @@ import static org.mockito.Mockito.*;
 public class ElasticsearchLauncherTest {
     private static final Logger LOG = Logger.getLogger(ElasticsearchLauncherTest.class);
     public static final String PATH_HOME = "path.home";
+    public static final String GITHUB_YML_URL = "https://raw.githubusercontent.com/mesos/elasticsearch/master/executor/src/main/resources/elasticsearch.yml";
 
     @Test(expected = NullPointerException.class)
     public void shouldExceptionIfNullSettings() {
@@ -113,6 +114,12 @@ public class ElasticsearchLauncherTest {
             Files.delete(tempFile);
         }
         assertNotNull(esSettings);
+    }
+
+    @Test
+    public void shouldLoadSettingsFromURL() {
+        Configuration configuration = new Configuration(new String[]{ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, GITHUB_YML_URL});
+        assertNotNull(configuration.getUserESSettings());
     }
 
     private Settings.Builder clientPortSetting(Integer http) {
