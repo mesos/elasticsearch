@@ -16,7 +16,7 @@ public class ElasticsearchCLIParameter {
 
     public static final String ELASTICSEARCH_SETTINGS_LOCATION = "--elasticsearchSettingsLocation";
     @Parameter(names = {ELASTICSEARCH_SETTINGS_LOCATION},
-            description = "URI to ES yml settings file. If file is copied to all slaves, the file must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml', 'http://webserver.com/elasticsearch.yml'",
+            description = "Path or URL to ES yml settings file. E.g. '/tmp/config/elasticsearch.yml' or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'",
             validateWith = CLIValidators.NotEmptyString.class)
     private String elasticsearchSettingsLocation = "";
     public String getElasticsearchSettingsLocation() {

@@ -150,9 +150,8 @@ Usage: (Options preceded by an asterisk are required) [options]
        (MB).
        Default: 256.0
     --elasticsearchSettingsLocation
-       URI to ES yml settings file. If file is copied to all slaves, the file
-       must be in /tmp/config. E.g. 'file:/tmp/config/elasticsearch.yml',
-       'http://webserver.com/elasticsearch.yml'
+       Path or URL to ES yml settings file. E.g. '/tmp/config/elasticsearch.yml'
+       or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'
        Default: <empty string>
     --executorForcePullImage
        Option to force pull the executor image. [DOCKER MODE ONLY]
