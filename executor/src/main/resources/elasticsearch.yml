@@ -142,7 +142,7 @@ path.home: /usr/share/elasticsearch
 path.conf: /tmp/config
 
 # Path to directory where to store index data allocated for this node.
-# ES FRAMEWORK: DO NOT CHANGE THIS WHEN IN DOCKER MODE.
+# ES FRAMEWORK: DO NOT CHANGE THIS WHEN IN DOCKER MODE. WE MOUNT --dataDir to /data.
 # Your custom data directory setting provided via the framework will be mounted in this location. This is the location inside the container.
 path.data: /data
 
