@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.1] - [25 January 2016]
+
+### Bugs
+
+- [Always load default yml file first then load custom yml](https://github.com/mesos/elasticsearch/issues/465)
+- [Load yml from URL](https://github.com/mesos/elasticsearch/issues/464)
+- [Documentation](https://github.com/mesos/elasticsearch/issues/432)
+
 ## [0.7.0] - [15 January 2016]
 
 ### Features
