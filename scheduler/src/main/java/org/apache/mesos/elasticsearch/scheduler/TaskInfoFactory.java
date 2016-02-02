@@ -3,6 +3,8 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.Protos.Environment.Variable;
+import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.HostsCLIParameter;
@@ -102,22 +104,57 @@ public class TaskInfoFactory {
     }
 
     private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
+        //this creates and assigns a unique id to an elastic search node
+        long lElasticSearchNodeId = configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0 ?
+                clusterState.getElasticNodeId() : ExecutorEnvironmentalVariables.EXTERNAL_VOLUME_NOT_CONFIGURED;
+                
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
                 .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
-                .setCommand(newCommandInfo(configuration));
+                .setCommand(newCommandInfo(configuration, lElasticSearchNodeId));
+        
         if (configuration.isFrameworkUseDocker()) {
+                      
             Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setImage(configuration.getExecutorImage())
                     .setForcePullImage(configuration.getExecutorForcePullImage())
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
-
+            
+            //These are the default settings... use the hosts underlying storage
+            Protos.Volume.Mode configMode = Protos.Volume.Mode.RO;
+            String sHostPathOrExternalVolumeForConfig = CONTAINER_PATH_SETTINGS;
+            String sHostPathOrExternalVolumeForData = configuration.getDataDir();
+            
+            //this should generically work for all Docker Volume drivers to enable
+            //external storage
+            if (configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0) {
+                
+                //add docker external volume driver
+                containerBuilder.addParameters(Protos.Parameter.newBuilder()
+                                .setKey("volume-driver")
+                                .setValue(configuration.getExternalVolumeDriver()));
+                
+                configMode = Protos.Volume.Mode.RW;
+                
+                //note: this makes a unique configuration volume name per elastic search node
+                StringBuffer sbConfig = new StringBuffer(configuration.getFrameworkName());
+                sbConfig.append(Long.toString(lElasticSearchNodeId));
+                sbConfig.append("config");
+                sHostPathOrExternalVolumeForConfig = sbConfig.toString();
+                
+                //note: this makes a unique data volume name per elastic search node
+                StringBuffer sbData = new StringBuffer(configuration.getFrameworkName());
+                sbData.append(Long.toString(lElasticSearchNodeId));
+                sbData.append("data");
+                sHostPathOrExternalVolumeForData = sbData.toString();
+            }
+            
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(containerBuilder)
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
+                    .addVolumes(Protos.Volume.newBuilder().setHostPath(sHostPathOrExternalVolumeForConfig).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(configMode)) // Temporary fix until we get a data container.
+                    .addVolumes(Protos.Volume.newBuilder().setHostPath(sHostPathOrExternalVolumeForData).setContainerPath(CONTAINER_DATA_VOLUME).setMode(Protos.Volume.Mode.RW).build())
                     .build())
                     .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
                     .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
@@ -126,12 +163,15 @@ public class TaskInfoFactory {
         return executorInfoBuilder;
     }
 
-    private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
-        ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
+    private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration, long lNodeId) {
+
+        ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration, lNodeId);
+        
         List<String> args = new ArrayList<>();
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
         addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
         args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
+        
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         String hostAddress = "";
         if (taskList.size() > 0) {
