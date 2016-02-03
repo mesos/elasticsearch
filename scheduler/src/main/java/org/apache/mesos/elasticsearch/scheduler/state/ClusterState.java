@@ -2,9 +2,11 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import javax.validation.constraints.NotNull;
@@ -44,6 +46,36 @@ public class ClusterState {
             LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.", e);
         }
         return taskInfoList == null ? new ArrayList<>(0) : taskInfoList;
+    }
+    
+    /**
+     * When using external volumes, retrieve the next available elasticsearch node id
+     * @return long (node id)
+     */
+    public long getElasticNodeId() {
+        List<TaskInfo> taskList = getTaskList();
+        
+        //create a bitmask of all the node ids currently being used
+        long bitmask = 0;
+        for (TaskInfo info : taskList) {
+            for (Variable var : info.getCommand().getEnvironment().getVariablesList()) {
+                if (var.getName().equalsIgnoreCase(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID)) {
+                    bitmask |= 1 << Integer.parseInt(var.getValue());
+                    break;
+                }
+            }
+        }
+        
+        //the find out which node ids are not being used
+        long lNodeId = 0;
+        for (int i = 0; i < 31; i++) {
+            if ((bitmask & (1 << i)) == 0) {
+                lNodeId = i + 1;
+                break;
+            }
+        }
+        
+        return lNodeId;
     }
 
     /**

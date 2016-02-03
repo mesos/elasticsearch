@@ -35,7 +35,7 @@ public class OfferStrategyTest {
     ClusterState clusterState;
 
     @InjectMocks
-    OfferStrategy offerStrategy;
+    OfferStrategyNormal offerStrategy;
 
     @Before
     public void setUp() throws Exception {
@@ -49,7 +49,7 @@ public class OfferStrategyTest {
     public void willDeclineIfHostIsAlreadyRunningTask() throws Exception {
         when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
 
-        final OfferStrategy.OfferResult result = offerStrategy.evaluate(validOffer("host1"));
+        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(validOffer("host1"));
         assertFalse(result.acceptable);
         assertEquals("Host already running task", result.reason.get());
     }
@@ -59,7 +59,7 @@ public class OfferStrategyTest {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2"), createTask("host3")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
-        final OfferStrategy.OfferResult result = offerStrategy.evaluate(validOffer("host4"));
+        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(validOffer("host4"));
         assertFalse(result.acceptable);
         assertEquals("Cluster size already fulfilled", result.reason.get());
     }
@@ -69,7 +69,7 @@ public class OfferStrategyTest {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .build());
         assertFalse(offerResult.acceptable);
@@ -82,7 +82,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
                 .build());
         assertFalse(offerResult.acceptable);
@@ -95,7 +95,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(31000, 9300));
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
                 .build());
         assertFalse(offerResult.acceptable);
@@ -108,7 +108,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
                 .addResources(portRange(9200, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
@@ -124,7 +124,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getCpus()).thenReturn(1.0);
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(0.1, configuration.getFrameworkRole()))
@@ -138,7 +138,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getMem()).thenReturn(100.0);
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(10.0, configuration.getFrameworkRole()))
@@ -154,7 +154,7 @@ public class OfferStrategyTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getDisk()).thenReturn(100.0);
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(10.0, configuration.getFrameworkRole()))
@@ -170,7 +170,7 @@ public class OfferStrategyTest {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
@@ -185,7 +185,7 @@ public class OfferStrategyTest {
     public void shouldDeclineWhenHostIsUnresolveable() throws InvalidProtocolBufferException {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
@@ -200,7 +200,7 @@ public class OfferStrategyTest {
     public void shouldAcceptWhenHostIsResolveable() throws InvalidProtocolBufferException {
         when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
-        final OfferStrategy.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
+        final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
                 .addResources(portRange(9300, 9300, configuration.getFrameworkRole()))
                 .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
