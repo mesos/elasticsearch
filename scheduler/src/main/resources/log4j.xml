@@ -21,12 +21,20 @@
    </appender>
 
     <logger name="org.apache.mesos.elasticsearch">
-        <level value="TRACE"/>
+        <level value="DEBUG"/>
         <appender-ref ref="file" />
     </logger>
 
-    <root>
+    <logger name="org.springframework">
         <level value="WARN"/>
+    </logger>
+
+    <logger name="org.apache.http">
+        <level value="WARN"/>
+    </logger>
+
+    <root>
+        <level value="DEBUG"/>
         <appender-ref ref="console" />
     </root>
 

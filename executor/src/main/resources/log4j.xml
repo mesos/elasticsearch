@@ -12,7 +12,7 @@
     <appender name="file" class="org.apache.log4j.RollingFileAppender">
     	<param name="file" value="/tmp/executor.log"/>
     	<param name="encoding" value="UTF-8" />
-    	<param name="MaxFileSize" value="5000KB"/>
+    	<param name="MaxFileSize" value="2000KB"/>
     	<param name="MaxBackupIndex" value="5"/>
     	<layout class="org.apache.log4j.PatternLayout">
      		<param name="ConversionPattern" value="%d{yyyy-MM-dd'T'HH:mm:ss.SSSZZZZ} %-5.5p [%-15.15t][%30.30c{2}#%17.17M]: %m%n" />
@@ -21,7 +21,7 @@
 
 
     <logger name="org.apache.mesos.elasticsearch">
-        <level value="TRACE"/>
+        <level value="DEBUG"/>
         <appender-ref ref="file" />
     </logger>
 
