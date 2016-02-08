@@ -1,9 +1,10 @@
 package org.apache.mesos.elasticsearch.scheduler.healthcheck;
 
 import org.apache.log4j.Logger;
-import org.apache.mesos.Protos.TaskInfo;
-import org.apache.mesos.Protos.HealthCheck;
+import org.apache.mesos.Protos;
 import org.apache.mesos.SchedulerDriver;
+
+import java.util.Collections;
 
 /**
  * Health check implementation
@@ -11,15 +12,15 @@ import org.apache.mesos.SchedulerDriver;
 public class BumpExecutor implements Runnable {
     private static final Logger LOGGER = Logger.getLogger(BumpExecutor.class);
     private final SchedulerDriver driver;
-    private final TaskInfo taskInfo;
+    private final Protos.TaskStatus taskStatus;
 
-    public BumpExecutor(SchedulerDriver driver, TaskInfo taskInfo) {
+    public BumpExecutor(SchedulerDriver driver, Protos.TaskStatus taskStatus) {
         this.driver = driver;
-        this.taskInfo = taskInfo;
+        this.taskStatus = taskStatus;
     }
 
     @Override
     public void run() {
-        driver.sendFrameworkMessage(taskInfo.getExecutor().getExecutorId(), taskInfo.getSlaveId(), HealthCheck.newBuilder().build().toByteArray());
+        driver.reconcileTasks(Collections.singletonList(taskStatus));
     }
 }

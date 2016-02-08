@@ -43,7 +43,7 @@ public class OfferStrategy {
         if (taskList.size() == 0) {
             return true;
         } else {
-            return clusterState.getStatus(taskList.get(0).getTaskId()).getStatus().getState().equals(Protos.TaskState.TASK_RUNNING);
+            return true;    // TODO (pnw): Need to check cluster health here.d
         }
     }
 

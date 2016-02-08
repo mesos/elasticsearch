@@ -1,6 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler.healthcheck;
 
-import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -40,8 +39,7 @@ public class AsyncPing {
     }
 
     private ExecutorHealthCheck createNewExecutorBump() {
-        Protos.TaskInfo taskInfo = taskStatus.getTaskInfo();
-        BumpExecutor bumpExecutor = new BumpExecutor(schedulerDriver, taskInfo);
+        BumpExecutor bumpExecutor = new BumpExecutor(schedulerDriver, taskStatus.getStatus());
         return new ExecutorHealthCheck(new PollService(bumpExecutor, configuration.getExecutorHealthDelay()));
     }
 }

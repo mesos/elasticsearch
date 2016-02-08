@@ -11,7 +11,7 @@ public class Configuration {
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
     private int elasticsearchNodesCount = getPortRanges().length;
-    private int elasticsearchMemorySize = 256;
+    private int elasticsearchMemorySize = 200;
     private String elasticsearchJobName = "esdemo";
     private final Integer clusterTimeout = 60;
 
@@ -45,9 +45,9 @@ public class Configuration {
 
     public String[] getPortRanges() {
         return new String[]{
-            "ports(*):[9200-9200,9300-9300]",
-            "ports(*):[9201-9201,9301-9301]",
-            "ports(*):[9202-9202,9302-9302]"
+                "ports(*):[9200-9200,9300-9300]; cpus(*):1.0; mem(*):256; disk(*):200",
+                "ports(*):[9201-9201,9301-9301]; cpus(*):1.0; mem(*):256; disk(*):200",
+                "ports(*):[9202-9202,9302-9302]; cpus(*):1.0; mem(*):256; disk(*):200"
         };
     }
 

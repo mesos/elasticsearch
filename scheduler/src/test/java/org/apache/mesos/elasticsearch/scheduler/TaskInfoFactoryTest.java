@@ -8,6 +8,7 @@ import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -99,16 +100,13 @@ public class TaskInfoFactoryTest {
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
-        assertEquals(frameworkState.getFrameworkID(), taskInfo.getExecutor().getFrameworkId());
-        assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
-
-        assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
-        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
-        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
-        assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
-        assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
-        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
-        assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
+        assertEquals(2, taskInfo.getContainer().getVolumesCount());
+        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getContainer().getVolumes(0).getContainerPath());
+        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getContainer().getVolumes(0).getHostPath());
+        assertEquals(Protos.Volume.Mode.RO, taskInfo.getContainer().getVolumes(0).getMode());
+        assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getContainer().getVolumes(1).getContainerPath());
+        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getContainer().getVolumes(1).getHostPath());
+        assertEquals(Protos.Volume.Mode.RW, taskInfo.getContainer().getVolumes(1).getMode());
     }
 
     private Protos.Resource getResourceByName(List<Protos.Resource> resourceList, String name) {
@@ -134,6 +132,8 @@ public class TaskInfoFactoryTest {
                                             .build();
     }
 
+    // TODO (PNW): Reinstate this test when Jar mode is added.
+    @Ignore
     @Test
     public void shouldAddJarInfoAndRemoveContainerInfo() {
         when(configuration.isFrameworkUseDocker()).thenReturn(false);
@@ -229,7 +229,7 @@ public class TaskInfoFactoryTest {
     public void shouldUseMesosProvidedPorts() {
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
-        assertFalse(taskInfo.getContainer().isInitialized());
+        assertTrue(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.isInitialized());
         assertTrue(taskInfo.toString().contains("9200"));
         assertTrue(taskInfo.toString().contains("9300"));

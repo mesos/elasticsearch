@@ -4,10 +4,6 @@ import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
-import org.apache.mesos.elasticsearch.common.cli.HostsCLIParameter;
-import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
-import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
@@ -19,7 +15,10 @@ import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
 import static java.util.Arrays.asList;
 import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
@@ -60,7 +59,7 @@ public class TaskInfoFactory {
 
         List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
 
-        LOGGER.info("Creating Elasticsearch task [client port: " + ports.get(0) + ", transport port: " + ports.get(1) + "]");
+        LOGGER.info("Creating Elasticsearch task with resources: " + acceptedResources.toString());
 
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
@@ -83,7 +82,9 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration)).build();
+                .setCommand(newCommandInfo(configuration))
+                .setContainer(newContainerInfo(configuration, discoveryPorts.build())) // TODO (PNW): IF JAR MODE DONT ADD CONTAINER
+                .build();
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -101,66 +102,34 @@ public class TaskInfoFactory {
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
-        Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
-                .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
-                .setFrameworkId(frameworkState.getFrameworkID())
-                .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
-                .setCommand(newCommandInfo(configuration));
-        if (configuration.isFrameworkUseDocker()) {
-            Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
-                    .setImage(configuration.getExecutorImage())
-                    .setForcePullImage(configuration.getExecutorForcePullImage())
-                    .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
-
-            executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
+    private Protos.ContainerInfo newContainerInfo(Configuration configuration, Protos.Ports discoveryPorts) {
+        final Protos.ContainerInfo.DockerInfo.PortMapping httpPort = Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setContainerPort(9200).setHostPort(discoveryPorts.getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()).build();
+        final Protos.ContainerInfo.DockerInfo.PortMapping transportPort = Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setContainerPort(9300).setHostPort(discoveryPorts.getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber()).build();
+        List<Protos.ContainerInfo.DockerInfo.PortMapping> portMappings = Arrays.asList(httpPort, transportPort);
+        return Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
-                    .setDocker(containerBuilder)
+                .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
+                        .setImage(configuration.getExecutorImage())
+                        .setForcePullImage(configuration.getExecutorForcePullImage())
+                        .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
+                        .addAllPortMappings(portMappings))
                     .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                     .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
-                    .build())
-                    .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
-                    .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
-            ;
-        }
-        return executorInfoBuilder;
+                .build();
     }
 
     private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
-        ExecutorEnvironmentalVariables executorEnvironmentalVariables = new ExecutorEnvironmentalVariables(configuration);
-        List<String> args = new ArrayList<>();
-        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
-        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, configuration.getElasticsearchClusterName());
-        args.addAll(asList(ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(configuration.getElasticsearchNodes())));
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
-        String hostAddress = "";
-        if (taskList.size() > 0) {
-            Protos.TaskInfo taskInfo = taskList.get(0);
-            String taskId = taskInfo.getTaskId().getValue();
-            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
-            hostAddress = NetworkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
-        }
-        addIfNotEmpty(args, HostsCLIParameter.ELASTICSEARCH_HOST, hostAddress);
-
-        Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder()
-                .setEnvironment(Protos.Environment.newBuilder().addAllVariables(executorEnvironmentalVariables.getList()));
-
+        Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder();
+        final List<String> args = Arrays.asList(
+                "-Des.network.host=_non_loopback:ipv4_",
+                "-Des.discovery.zen.ping.unicast.hosts=172.17.0.1:9300,172.17.0.1:9301,172.17.0.1:9302" // TODO (pnw): Hardcoded IP.
+        );
         if (configuration.isFrameworkUseDocker()) {
             commandInfoBuilder
                     .setShell(false)
-                    .addAllArguments(args)
-                    .setContainer(Protos.CommandInfo.ContainerInfo.newBuilder().setImage(configuration.getExecutorImage()).build());
+                    .addAllArguments(args);
         } else {
-            String address = configuration.getFrameworkFileServerAddress();
-            if (address == null) {
-                throw new NullPointerException("Webserver address is null");
-            }
-            String httpPath =  address + "/get/" + Configuration.ES_EXECUTOR_JAR;
-            LOGGER.debug("Using file server: " + httpPath);
-            commandInfoBuilder
-                    .setValue(configuration.getJavaHome() + "java $JAVA_OPTS -jar ./" + Configuration.ES_EXECUTOR_JAR)
-                    .addAllArguments(args)
-                    .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
+            LOGGER.info("TODO: Java Binary Stub");
         }
 
         return commandInfoBuilder;
