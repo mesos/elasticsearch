@@ -108,6 +108,8 @@ public class TaskInfoFactory {
         long lElasticSearchNodeId = configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0 ?
                 clusterState.getElasticNodeId() : ExecutorEnvironmentalVariables.EXTERNAL_VOLUME_NOT_CONFIGURED;
                 
+        LOGGER.debug("Elastic Search Node Id: " + lElasticSearchNodeId);
+                
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
                 .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                 .setFrameworkId(frameworkState.getFrameworkID())
@@ -121,44 +123,64 @@ public class TaskInfoFactory {
                     .setForcePullImage(configuration.getExecutorForcePullImage())
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
             
-            //These are the default settings... use the hosts underlying storage
             Protos.Volume.Mode configMode = Protos.Volume.Mode.RO;
-            String sHostPathOrExternalVolumeForConfig = CONTAINER_PATH_SETTINGS;
-            String sHostPathOrExternalVolumeForData = configuration.getDataDir();
             
             //this should generically work for all Docker Volume drivers to enable
             //external storage
             if (configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0) {
                 
-                //add docker external volume driver
-                containerBuilder.addParameters(Protos.Parameter.newBuilder()
-                                .setKey("volume-driver")
-                                .setValue(configuration.getExternalVolumeDriver()));
+                LOGGER.debug("Is Docker Container and External Driver enabled");
                 
+                //containerBuilder.setPrivileged(true);
                 configMode = Protos.Volume.Mode.RW;
+                
+                //docker external volume driver
+                LOGGER.debug("Docker Driver: " + configuration.getExternalVolumeDriver());
                 
                 //note: this makes a unique configuration volume name per elastic search node
                 StringBuffer sbConfig = new StringBuffer(configuration.getFrameworkName());
                 sbConfig.append(Long.toString(lElasticSearchNodeId));
-                sbConfig.append("config");
-                sHostPathOrExternalVolumeForConfig = sbConfig.toString();
+                sbConfig.append("config:");
+                sbConfig.append(CONTAINER_PATH_SETTINGS);
+                String sHostPathOrExternalVolumeForConfig = sbConfig.toString();
+                LOGGER.debug("Config Volume Name: " + sHostPathOrExternalVolumeForConfig);
                 
                 //note: this makes a unique data volume name per elastic search node
                 StringBuffer sbData = new StringBuffer(configuration.getFrameworkName());
                 sbData.append(Long.toString(lElasticSearchNodeId));
-                sbData.append("data");
-                sHostPathOrExternalVolumeForData = sbData.toString();
+                sbData.append("data:");
+                sbData.append(CONTAINER_DATA_VOLUME);
+                String sHostPathOrExternalVolumeForData = sbData.toString();
+                LOGGER.debug("Data Volume Name: " + sHostPathOrExternalVolumeForData);
+                
+                containerBuilder.addParameters(Protos.Parameter.newBuilder()
+                        .setKey("volume-driver")
+                        .setValue(configuration.getExternalVolumeDriver()));
+                containerBuilder.addParameters(Protos.Parameter.newBuilder()
+                        .setKey("volume")
+                        .setValue(sHostPathOrExternalVolumeForConfig));
+                containerBuilder.addParameters(Protos.Parameter.newBuilder()
+                        .setKey("volume")
+                        .setValue(sHostPathOrExternalVolumeForData));
+                
+                executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
+                        .setType(Protos.ContainerInfo.Type.DOCKER)
+                        .setDocker(containerBuilder)
+                        .build())
+                        .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
+                        .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
+                ;
+            } else {
+                executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
+                        .setType(Protos.ContainerInfo.Type.DOCKER)
+                        .setDocker(containerBuilder)
+                        .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(configMode)) // Temporary fix until we get a data container.
+                        .addVolumes(Protos.Volume.newBuilder().setHostPath(configuration.getDataDir()).setContainerPath(CONTAINER_DATA_VOLUME).setMode(Protos.Volume.Mode.RW).build())
+                        .build())
+                        .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
+                        .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
+                ;
             }
-            
-            executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
-                    .setType(Protos.ContainerInfo.Type.DOCKER)
-                    .setDocker(containerBuilder)
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(sHostPathOrExternalVolumeForConfig).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(configMode)) // Temporary fix until we get a data container.
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(sHostPathOrExternalVolumeForData).setContainerPath(CONTAINER_DATA_VOLUME).setMode(Protos.Volume.Mode.RW).build())
-                    .build())
-                    .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
-                    .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))
-            ;
         }
         return executorInfoBuilder;
     }

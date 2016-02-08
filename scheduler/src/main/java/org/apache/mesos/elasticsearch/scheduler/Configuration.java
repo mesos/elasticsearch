@@ -42,7 +42,7 @@ public class Configuration {
     public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
     public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
     public static final String EXECUTOR_IMAGE = "--executorImage";
-    public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
+    public static final String DEFAULT_EXECUTOR_IMAGE = "dvonthenen/elasticsearch-executor";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";

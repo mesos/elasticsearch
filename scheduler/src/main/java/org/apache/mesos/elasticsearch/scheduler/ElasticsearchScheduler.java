@@ -88,7 +88,7 @@ public class ElasticsearchScheduler implements Scheduler {
             LOGGER.debug("Not registered, can't accept resource offers.");
             return;
         }
-
+        
         for (Protos.Offer offer : offers) {
             final OfferStrategy.OfferResult result = offerStrategy.evaluate(offer);
 
