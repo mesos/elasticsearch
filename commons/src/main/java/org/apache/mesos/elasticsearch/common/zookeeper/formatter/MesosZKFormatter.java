@@ -25,7 +25,7 @@ public class MesosZKFormatter extends AbstractZKFormatter {
      * Get the ZooKeeper address for the mesos master, correctly formatted.
      * @param zkUrl The raw ZK address string in the format "zk://host:port/zkNode,..."
      * @throws ZKAddressException if the raw zkURL is invalid.
-     * @return the zookeeper addresses in the format host:port[,host:port,...]/mesos
+     * @return the zookeeper addresses in the format zk://host:port[,host:port,...]/mesos
      */
     public String format(String zkUrl) {
         List<ZKAddress> addressList = parser.validateZkUrl(zkUrl);
