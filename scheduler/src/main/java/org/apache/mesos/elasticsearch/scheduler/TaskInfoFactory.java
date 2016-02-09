@@ -166,6 +166,10 @@ public class TaskInfoFactory {
                 .orElseGet(clock::nowUTC)
                 .withZoneSameInstant(ZoneOffset.UTC);
 
+        if (!taskInfo.getDiscovery().isInitialized()) {
+            throw new IndexOutOfBoundsException("TaskInfo has no discovery information.");
+        }
+
         return new Task(
                 hostName,
                 taskInfo.getTaskId().getValue(),

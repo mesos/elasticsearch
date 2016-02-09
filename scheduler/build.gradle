@@ -48,6 +48,7 @@ dependencies {
     compile 'org.webjars.bower:hightcharts:4.1.5'
     compile "org.webjars.bower:highcharts-ng:0.0.8"
     compile 'com.jayway.awaitility:awaitility:1.6.3'
+    compile 'com.mashape.unirest:unirest-java:1.4.5'
 
     testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
     testCompile 'org.hamcrest:hamcrest-core:1.3'
