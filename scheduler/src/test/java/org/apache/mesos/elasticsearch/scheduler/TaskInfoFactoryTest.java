@@ -101,6 +101,7 @@ public class TaskInfoFactoryTest {
 
         assertEquals(frameworkState.getFrameworkID(), taskInfo.getExecutor().getFrameworkId());
         assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
+        assertEquals("elasticsearch-executor-" + taskInfo.getExecutor().getExecutorId().getValue(), taskInfo.getExecutor().getName());
 
         assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
         assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
