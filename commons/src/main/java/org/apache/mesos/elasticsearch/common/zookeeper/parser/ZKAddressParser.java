@@ -20,11 +20,6 @@ import java.util.regex.Pattern;
  * 2) The MesosSchedulerDriver requires a full ZK url
  *
  * zk://host1:port1,host2:port2/mesos
- *
- * 3) The Elasticsearch ZK plugin requires ZK servers PLUS path WITHOUT the zk:// prefix
- *
- * host1:port1,host2:port2/mesos
- *
  */
 public class ZKAddressParser {
     public static final String ZK_PREFIX_REGEX = "^" + ZKAddress.ZK_PREFIX + ".*";
