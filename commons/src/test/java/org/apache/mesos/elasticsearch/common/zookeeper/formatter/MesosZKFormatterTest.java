@@ -6,13 +6,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 
 import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.when;
 
 /**
@@ -44,6 +41,19 @@ public class MesosZKFormatterTest {
     }
 
     @Test
+    public void testFormat_nestedPath() {
+        String zkUrl = "zk://zookeeper:2181/dev/mesos";
+
+        when(parser.validateZkUrl(zkUrl)).thenReturn(Collections.singletonList(
+                new ZKAddress("zookeeper:2181")
+        ));
+
+        String format = formatter.format(zkUrl);
+
+        assertEquals("zk://zookeeper:2181/dev/mesos", format);
+    }
+
+    @Test
     public void testFormat_threeNodes() {
         String zkUrl = "zk://zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/mesos";
 
@@ -58,39 +68,4 @@ public class MesosZKFormatterTest {
         assertEquals("zk://zookeeper1:2181,zookeeper2:2181,zookeeper3:2181/mesos", format);
     }
 
-    @Test
-    public void testFormat_shouldReturnSameAddressIfValidated() {
-        String add = "192.168.0.1:2182";
-        List<ZKAddress> dummyReturn = new ArrayList<>(1);
-        dummyReturn.add(new ZKAddress(add));
-        when(parser.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
-        assertEquals(ZKAddress.ZK_PREFIX + add + MesosZKFormatter.MESOS_PATH, address);
-    }
-
-    @Test
-    public void testFormat_shouldReturnMultiAddress() {
-        String add1 = "192.168.0.1:2182";
-        String add2 = "192.168.0.2:2183";
-        String concat = add1 + "," + add2;
-        List<ZKAddress> dummyReturn = new ArrayList<>(1);
-        dummyReturn.add(new ZKAddress(add1));
-        dummyReturn.add(new ZKAddress(add2));
-        when(parser.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
-        assertEquals(ZKAddress.ZK_PREFIX + concat + MesosZKFormatter.MESOS_PATH, address);
-    }
-
-    @Test
-    public void testFormat_shouldReturnArrayWhenUsersOrPath() {
-        String add1 = "192.168.0.1:2182";
-        String add2 = "192.168.0.2:2183";
-        String concat = add1 + "," + add2;
-        List<ZKAddress> dummyReturn = new ArrayList<>(1);
-        dummyReturn.add(new ZKAddress(add1 + "/mesos"));
-        dummyReturn.add(new ZKAddress("bob:pass@" + add2));
-        when(parser.validateZkUrl(anyString())).thenReturn(dummyReturn);
-        String address = formatter.format(""); // Doesn't matter. We're returning a dummy.
-        assertEquals(ZKAddress.ZK_PREFIX + concat + MesosZKFormatter.MESOS_PATH, address);
-    }
 }
