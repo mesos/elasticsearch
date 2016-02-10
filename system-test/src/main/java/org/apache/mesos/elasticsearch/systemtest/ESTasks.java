@@ -83,7 +83,7 @@ public class ESTasks {
 
     public void waitForCorrectDocumentCount(Integer docCount) throws UnirestException {
         List<String> esAddresses = getEsHttpAddressList();
-        Awaitility.await().atMost(1, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
+        Awaitility.await().atMost(2, TimeUnit.MINUTES).pollDelay(2, TimeUnit.SECONDS).until(() -> {
             for (String httpAddress : esAddresses) {
                 try {
                     Integer count = getDocumentCount(httpAddress);
