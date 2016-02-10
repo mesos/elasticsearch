@@ -4,6 +4,7 @@ import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
@@ -15,10 +16,11 @@ import java.net.InetSocketAddress;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
@@ -32,6 +34,10 @@ public class TaskInfoFactory {
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
+    public static final String PATH_LOGS = "/var/log/elasticsearch";
+    public static final String PATH_DATA = "/data";
+    public static final String PATH_CONF = "/tmp/config";
+    public static final String PATH_HOME = ".";
 
     private FrameworkState frameworkState;
     private final ClusterState clusterState;
@@ -50,41 +56,184 @@ public class TaskInfoFactory {
      */
     public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer, Clock clock) {
         this.frameworkState = frameworkState;
-        List<Integer> ports;
-        if (configuration.getElasticsearchPorts().isEmpty()) {
-            ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
+
+        if (configuration.isFrameworkUseDocker()) {
+            LOGGER.debug("Building Docker task");
+            Protos.TaskInfo taskInfo = buildDockerTask(offer, configuration, clock);
+            LOGGER.debug(taskInfo.toString());
+            return taskInfo;
         } else {
-            ports = configuration.getElasticsearchPorts();
+            LOGGER.debug("Building native task");
+            Protos.TaskInfo taskInfo = buildNativeTask(offer, configuration, clock);
+            LOGGER.debug(taskInfo.toString());
+            return taskInfo;
         }
+    }
 
-        List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
+    private Protos.TaskInfo buildNativeTask(Protos.Offer offer, Configuration configuration, Clock clock) {
+        final List<Integer> ports = getPorts(offer, configuration);
+        final List<Protos.Resource> resources = getResources(configuration, ports);
+        final Protos.DiscoveryInfo discovery = getDiscovery(ports);
 
-        LOGGER.info("Creating Elasticsearch task with resources: " + acceptedResources.toString());
+        final String hostAddress = resolveHostAddress(offer, ports);
 
-        Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
-        Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        acceptedResources.add(Resources.singlePortRange(ports.get(0), configuration.getFrameworkRole()));
-        acceptedResources.add(Resources.singlePortRange(ports.get(1), configuration.getFrameworkRole()));
-        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
-        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
-        discovery.setPorts(discoveryPorts);
-        discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
+        LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        String hostname = offer.getHostname();
-        LOGGER.debug("Attempting to resolve hostname: " + hostname);
-        InetSocketAddress address = new InetSocketAddress(hostname, ports.get(0));
-        String hostAddress = address.getAddress().getHostAddress(); // Note this will always resolve because of the check in OfferStrategy
+        final List<String> args = getArguments(configuration, discovery);
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
                 .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer, clock)))
                 .setSlaveId(offer.getSlaveId())
-                .addAllResources(acceptedResources)
+                .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(newCommandInfo(configuration))
-                .setContainer(newContainerInfo(configuration, discoveryPorts.build())) // TODO (PNW): IF JAR MODE DONT ADD CONTAINER
+                .setCommand(nativeCommand(configuration, args))
                 .build();
+    }
+
+    private Protos.TaskInfo buildDockerTask(Protos.Offer offer, Configuration configuration, Clock clock) {
+        final List<Integer> ports = getPorts(offer, configuration);
+        final List<Protos.Resource> resources = getResources(configuration, ports);
+        final Protos.DiscoveryInfo discovery = getDiscovery(ports);
+
+        final String hostAddress = resolveHostAddress(offer, ports);
+
+        LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
+
+        final Protos.ContainerInfo containerInfo = getContainer(configuration);
+        final List<String> args = getArguments(configuration, discovery);
+
+        return Protos.TaskInfo.newBuilder()
+                .setName(configuration.getTaskName())
+                .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
+                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer, clock)))
+                .setSlaveId(offer.getSlaveId())
+                .addAllResources(resources)
+                .setDiscovery(discovery)
+                .setCommand(dockerCommand(configuration, args))
+                .setContainer(containerInfo)
+                .build();
+    }
+
+    private String resolveHostAddress(Protos.Offer offer, List<Integer> ports) {
+        String hostname = offer.getHostname();
+        LOGGER.debug("Attempting to resolve hostname: " + hostname);
+        InetSocketAddress address = new InetSocketAddress(hostname, ports.get(0));
+        return address.getAddress().getHostAddress(); // Note this will always resolve because of the check in OfferStrategy
+    }
+
+    private List<Integer> getPorts(Protos.Offer offer, Configuration configuration) {
+        List<Integer> ports;
+        if (configuration.getElasticsearchPorts().isEmpty()) {
+            ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
+        } else {
+            ports = configuration.getElasticsearchPorts();
+        }
+        return ports;
+    }
+
+    private List<Protos.Resource> getResources(Configuration configuration, List<Integer> ports) {
+        List<Protos.Resource> acceptedResources = Resources.buildFrameworkResources(configuration);
+        acceptedResources.add(Resources.singlePortRange(ports.get(0), configuration.getFrameworkRole()));
+        acceptedResources.add(Resources.singlePortRange(ports.get(1), configuration.getFrameworkRole()));
+        return acceptedResources;
+    }
+
+    private Protos.DiscoveryInfo getDiscovery(List<Integer> ports) {
+        Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
+        Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
+        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
+        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
+        discovery.setPorts(discoveryPorts);
+        discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
+        return discovery.build();
+    }
+
+    private Protos.ContainerInfo getContainer(Configuration configuration) {
+        return Protos.ContainerInfo.newBuilder()
+                .setType(Protos.ContainerInfo.Type.DOCKER)
+                .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
+                        .setImage(configuration.getExecutorImage())
+                        .setForcePullImage(configuration.getExecutorForcePullImage())
+                        .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST))
+                .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
+                .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
+                .build();
+    }
+
+    private Protos.CommandInfo dockerCommand(Configuration configuration, List<String> args) {
+        return Protos.CommandInfo.newBuilder()
+                .setShell(false)
+                .addAllArguments(args)
+                .build();
+    }
+
+    private Protos.CommandInfo nativeCommand(Configuration configuration, List<String> args) {
+        String address = configuration.getFrameworkFileServerAddress();
+        if (address == null) {
+            throw new NullPointerException("Webserver address is null");
+        }
+        String httpPath = address + "/get/" + Configuration.ES_TAR;
+        String folders = PATH_DATA + " " + PATH_CONF + " " + PATH_LOGS;
+        String mkdir = "sudo mkdir " + folders + "; ";
+        String chown = "sudo chown -R nobody:nogroup " + folders + "; ";
+        String command =
+                mkdir +
+                        chown +
+                        " sudo su -s /bin/bash -c \""
+                        + Configuration.ES_BINARY
+                        + " "
+                        + args.stream().collect(Collectors.joining(" "))
+                        + "\" nobody";
+        return Protos.CommandInfo.newBuilder()
+                .setValue(command)
+                .setUser("nobody")
+                .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath))
+                .build();
+    }
+
+
+    private List<String> getArguments(Configuration configuration, Protos.DiscoveryInfo discoveryInfo) {
+        List<String> args = new ArrayList<>();
+
+        // TODO (PNW): Reinstate these settings
+//        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        String hostAddress = "";
+        if (taskList.size() > 0) {
+            Protos.TaskInfo taskInfo = taskList.get(0);
+            String taskId = taskInfo.getTaskId().getValue();
+            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
+            hostAddress = NetworkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
+        }
+        addIfNotEmpty(args, "--discovery.zen.ping.unicast.hosts", hostAddress);
+        args.add("--http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
+        args.add("--transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
+        args.add("--cluster.name=" + configuration.getElasticsearchClusterName());
+        args.add("--node.master=true");
+        args.add("--node.data=true");
+        args.add("--node.local=false");
+        args.add("--index.number_of_replicas=0");
+        args.add("--index.auto_expand_replicas=0-all");
+        args.add("--path.home=" + PATH_HOME);
+        args.add("--path.conf=" + PATH_CONF);
+        args.add("--path.data=" + PATH_DATA);
+        args.add("--path.logs=" + PATH_LOGS);
+        args.add("--bootstrap.mlockall=true");
+        args.add("--network.bind_host=0.0.0.0");
+        args.add("--network.publish_host=_non_loopback:ipv4_");
+        args.add("--gateway.recover_after_nodes=1");
+        args.add("--gateway.expected_nodes=1");
+        args.add("--indices.recovery.max_bytes_per_sec=100mb");
+        args.add("--discovery.type=zen");
+        args.add("--discovery.zen.fd.ping_timeout=30s");
+        args.add("--discovery.zen.fd.ping_interval=1s");
+        args.add("--discovery.zen.fd.ping_retries=30");
+        args.add("--discovery.zen.ping.multicast.enabled=false");
+
+
+        return args;
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -100,39 +249,6 @@ public class TaskInfoFactory {
             throw new RuntimeException("Failed to write task metadata", e);
         }
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
-    }
-
-    private Protos.ContainerInfo newContainerInfo(Configuration configuration, Protos.Ports discoveryPorts) {
-        final Protos.ContainerInfo.DockerInfo.PortMapping httpPort = Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setContainerPort(9200).setHostPort(discoveryPorts.getPorts(Discovery.CLIENT_PORT_INDEX).getNumber()).build();
-        final Protos.ContainerInfo.DockerInfo.PortMapping transportPort = Protos.ContainerInfo.DockerInfo.PortMapping.newBuilder().setContainerPort(9300).setHostPort(discoveryPorts.getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber()).build();
-        List<Protos.ContainerInfo.DockerInfo.PortMapping> portMappings = Arrays.asList(httpPort, transportPort);
-        return Protos.ContainerInfo.newBuilder()
-                    .setType(Protos.ContainerInfo.Type.DOCKER)
-                .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
-                        .setImage(configuration.getExecutorImage())
-                        .setForcePullImage(configuration.getExecutorForcePullImage())
-                        .setNetwork(Protos.ContainerInfo.DockerInfo.Network.BRIDGE)
-                        .addAllPortMappings(portMappings))
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
-                .build();
-    }
-
-    private Protos.CommandInfo.Builder newCommandInfo(Configuration configuration) {
-        Protos.CommandInfo.Builder commandInfoBuilder = Protos.CommandInfo.newBuilder();
-        final List<String> args = Arrays.asList(
-                "-Des.network.host=_non_loopback:ipv4_",
-                "-Des.discovery.zen.ping.unicast.hosts=172.17.0.1:9300,172.17.0.1:9301,172.17.0.1:9302" // TODO (pnw): Hardcoded IP.
-        );
-        if (configuration.isFrameworkUseDocker()) {
-            commandInfoBuilder
-                    .setShell(false)
-                    .addAllArguments(args);
-        } else {
-            LOGGER.info("TODO: Java Binary Stub");
-        }
-
-        return commandInfoBuilder;
     }
 
     private void addIfNotEmpty(List<String> args, String key, String value) {

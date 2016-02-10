@@ -46,7 +46,8 @@ public class Configuration {
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
-    public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";
+    public static final String ES_TAR = "public/elasticsearch.tar.gz";
+    public static final String ES_BINARY = "./elasticsearch-*/bin/elasticsearch";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";

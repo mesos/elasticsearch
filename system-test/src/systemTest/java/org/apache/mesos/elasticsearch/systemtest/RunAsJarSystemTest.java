@@ -15,10 +15,7 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesRes
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.slf4j.Logger;
@@ -26,6 +23,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.TreeMap;
 import java.util.stream.IntStream;
 
 import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0AdaptorIpAddress;
@@ -57,16 +55,18 @@ import static org.junit.Assert.assertTrue;
 public class RunAsJarSystemTest {
     private static final Logger LOG = LoggerFactory.getLogger(RunAsJarSystemTest.class);
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
-    private static final int NUMBER_OF_TEST_TASKS = 1;
-    public static final String CUSTOM_YML = "custom.yml";
+    private static final int NUMBER_OF_TEST_TASKS = 3;
+    public static final String CUSTOM_YML = "elasticsearch.yml";
     public static final String CUSTOM_CONFIG_PATH = "/tmp/config/"; // In the container and on the VM/Host
     public static final String CUSTOM_CONFIG_FILE = "/tmp/config/" + CUSTOM_YML; // In the container and on the VM/Host
+    public static final String TEST_PATH_HOME = "./test";
 
     // Need full control over the cluster, so need to do all the lifecycle stuff.
     private static MesosCluster cluster;
     private static DockerClient dockerClient = DockerClientFactory.build();
     private static JarScheduler scheduler;
-    private static AbstractContainer systemTestContainer;
+    private static ESTasks esTasks;
+    private static ElasticsearchNodesResponse nodesResponse;
 
     @Rule
     public final TestWatcher watcher = new TestWatcher() {
@@ -81,7 +81,7 @@ public class RunAsJarSystemTest {
         new DockerUtil(dockerClient).killAllSchedulers();
         new DockerUtil(dockerClient).killAllExecutors();
 
-        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH, "sh", "-c", "echo \"path.home: .\" > " + CUSTOM_CONFIG_FILE);
+        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH, "sh", "-c", "echo \"path.home: " + TEST_PATH_HOME + "\" > " + CUSTOM_CONFIG_FILE); // TODO test external config here
         ymlWrite.start(10);
         ymlWrite.remove();
 
@@ -90,12 +90,18 @@ public class RunAsJarSystemTest {
                 .withMaster()
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer, zkContainer.getClusterId()), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.getContainers().getOne(container -> container instanceof JarScheduler).get();
-        IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(dummy ->
-            builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(dockerClient, zooKeeper, scheduler))
+        IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(number ->
+                        builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(dockerClient, zooKeeper, scheduler, number))
         );
         cluster = new MesosCluster(builder.build());
 
         cluster.start(TEST_CONFIG.getClusterTimeout());
+
+        // Make sure all tasks are running before we test.
+        esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        new TasksResponse(esTasks, NUMBER_OF_TEST_TASKS);
+
+        nodesResponse = new ElasticsearchNodesResponse(esTasks, NUMBER_OF_TEST_TASKS);
     }
 
     @AfterClass
@@ -107,23 +113,23 @@ public class RunAsJarSystemTest {
 
     @Test
     public void shouldStartScheduler() throws IOException, InterruptedException {
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
-        new TasksResponse(esTasks, NUMBER_OF_TEST_TASKS);
-
-        ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, NUMBER_OF_TEST_TASKS);
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
 
     @Test
+    public void shouldCluster() throws IOException, InterruptedException, UnirestException {
+        final int number_of_nodes = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_cluster/health").asJson().getBody().getObject().getInt("number_of_nodes");
+        assertEquals("Elasticsearch nodes did not discover each other within 5 minutes", NUMBER_OF_TEST_TASKS, number_of_nodes);
+    }
+
+    @Ignore // TODO (PNW): Reinstate this test when the config is hosted by the Scheduler
+    @Test
     public void shouldHaveCustomSettingsBasedOnPath() throws UnirestException {
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
-        new TasksResponse(esTasks, NUMBER_OF_TEST_TASKS);
-        new ElasticsearchNodesResponse(esTasks, NUMBER_OF_TEST_TASKS);
         final JSONObject root = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_nodes").asJson().getBody().getObject();
         final JSONObject nodes = root.getJSONObject("nodes");
         final String firstNode = nodes.keys().next();
         final String pathHome = nodes.getJSONObject(firstNode).getJSONObject("settings").getJSONObject("path").getString("home");
-        assertEquals(".", pathHome);
+        assertEquals(TEST_PATH_HOME, pathHome);
     }
 
     private static class JarScheduler extends AbstractContainer {
@@ -169,10 +175,14 @@ public class RunAsJarSystemTest {
     private static  class MesosSlaveWithSchedulerLink extends MesosSlave {
 
         private final JarScheduler scheduler;
+        private final Integer httpPort;
+        private final Integer transportPort;
 
-        protected MesosSlaveWithSchedulerLink(DockerClient dockerClient, ZooKeeper zooKeeperContainer, JarScheduler scheduler) {
+        protected MesosSlaveWithSchedulerLink(DockerClient dockerClient, ZooKeeper zooKeeperContainer, JarScheduler scheduler, Integer slaveNumber) {
             super(dockerClient, zooKeeperContainer);
             this.scheduler = scheduler;
+            httpPort = 31000 + slaveNumber;
+            transportPort = 31100 + slaveNumber;
         }
 
         @Override
@@ -180,15 +190,22 @@ public class RunAsJarSystemTest {
             CreateContainerCmd createContainerCmd = super.dockerCommand();
 
             Ports ports = new Ports();
-            ports.bind(ExposedPort.tcp(31000), Ports.Binding(31000));
+            ports.bind(ExposedPort.tcp(httpPort), Ports.Binding(httpPort));
             createContainerCmd
                     .withHostName("hostnamehack") // Hack to get past offer refusal
                     .withLinks(new Link(scheduler.getContainerId(), scheduler.getContainerId()))
-                    .withExposedPorts(new ExposedPort(31000), new ExposedPort(5051))
+                    .withExposedPorts(new ExposedPort(httpPort), new ExposedPort(5051))
                     .withBinds(new Bind(CUSTOM_CONFIG_PATH, new Volume(CUSTOM_CONFIG_PATH))) // For custom config
                     .withPortBindings(ports)
                     ;
             return createContainerCmd;
+        }
+
+        @Override
+        public TreeMap<String, String> getDefaultEnvVars() {
+            final TreeMap<String, String> defaultEnvVars = super.getDefaultEnvVars();
+            defaultEnvVars.put("MESOS_RESOURCES", "ports(*):[" + httpPort + "-" + httpPort + "," + transportPort + "-" + transportPort + "]; cpus(*):0.2; mem(*):256; disk(*):200");
+            return defaultEnvVars;
         }
     }
 }

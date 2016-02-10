@@ -8,7 +8,6 @@ import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 import org.joda.time.DateTime;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -133,7 +132,6 @@ public class TaskInfoFactoryTest {
     }
 
     // TODO (PNW): Reinstate this test when Jar mode is added.
-    @Ignore
     @Test
     public void shouldAddJarInfoAndRemoveContainerInfo() {
         when(configuration.isFrameworkUseDocker()).thenReturn(false);
@@ -148,8 +146,8 @@ public class TaskInfoFactoryTest {
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), clock);
         assertFalse(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
-        assertEquals(1, taskInfo.getExecutor().getCommand().getUrisCount());
-        assertTrue(taskInfo.getExecutor().getCommand().getUris(0).getValue().contains(address));
+        assertEquals(1, taskInfo.getCommand().getUrisCount());
+        assertTrue(taskInfo.getCommand().getUris(0).getValue().contains(address));
     }
 
     @Test

@@ -66,9 +66,10 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
                         Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
                         Configuration.ELASTICSEARCH_CPU, "0.1",
                         Configuration.ELASTICSEARCH_DISK, "150",
-                        Configuration.USE_IP_ADDRESS, "false",
+                        Configuration.USE_IP_ADDRESS, "true",
                         Configuration.WEB_UI_PORT, Integer.toString(TEST_CONFIG.getSchedulerGuiPort()),
                         Configuration.EXECUTOR_NAME, TEST_CONFIG.getElasticsearchJobName(),
+                        Configuration.FRAMEWORK_USE_DOCKER, "false",
                         Configuration.DATA_DIR, dataDirectory,
                         Configuration.FRAMEWORK_ROLE, frameworkRole);
     }

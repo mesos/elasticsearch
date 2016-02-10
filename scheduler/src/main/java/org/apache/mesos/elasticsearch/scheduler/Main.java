@@ -36,7 +36,7 @@ public class Main {
         configuration = new Configuration(args);
 
         if (!configuration.isFrameworkUseDocker()) {
-            final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_EXECUTOR_JAR);
+            final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_TAR);
             simpleFileServer.run();
             configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
         }
