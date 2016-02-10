@@ -16,7 +16,9 @@ public class ElasticsearchCLIParameter {
 
     public static final String ELASTICSEARCH_SETTINGS_LOCATION = "--elasticsearchSettingsLocation";
     @Parameter(names = {ELASTICSEARCH_SETTINGS_LOCATION},
-            description = "Path or URL to ES yml settings file. [In docker mode file must be in /tmp/config] E.g. '/tmp/config/elasticsearch.yml' or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'",
+            description = "Path or URL to ES yml settings file. Path example: '/var/lib/mesos/config/elasticsearch.yml'." +
+                          " URL example: 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'." +
+                          " In Docker mode a volume will be created from /tmp/config in the container to the directory that contains elasticsearch.yml.",
             validateWith = CLIValidators.NotEmptyString.class)
     private String elasticsearchSettingsLocation = "";
     public String getElasticsearchSettingsLocation() {
