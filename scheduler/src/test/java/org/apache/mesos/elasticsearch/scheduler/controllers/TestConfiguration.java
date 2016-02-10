@@ -31,7 +31,7 @@ public class TestConfiguration {
 
     @Bean
     public org.apache.mesos.elasticsearch.scheduler.Configuration getConfig() {
-        return new org.apache.mesos.elasticsearch.scheduler.Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummy.mesos.master:2181") {
+        return new org.apache.mesos.elasticsearch.scheduler.Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummy.mesos.master:2181/mesos") {
             @SuppressFBWarnings("UMAC_UNCALLABLE_METHOD_OF_ANONYMOUS_CLASS")
             public String getFakePassword() {
                 return "Sh0uld n0t be v1s1bl3";

@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.common.zookeeper.parser;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.mesos.elasticsearch.common.zookeeper.exception.ZKAddressException;
 import org.apache.mesos.elasticsearch.common.zookeeper.model.ZKAddress;
 
@@ -9,7 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Ensures ZooKeeper addresses are formatted properly
+ * Validates ZK url and parses ZK addresses.
  *
  * IMPORTANT: Different components in the framework require different ZK address strings.
  *
@@ -20,11 +21,6 @@ import java.util.regex.Pattern;
  * 2) The MesosSchedulerDriver requires a full ZK url
  *
  * zk://host1:port1,host2:port2/mesos
- *
- * 3) The Elasticsearch ZK plugin requires ZK servers PLUS path WITHOUT the zk:// prefix
- *
- * host1:port1,host2:port2/mesos
- *
  */
 public class ZKAddressParser {
     public static final String ZK_PREFIX_REGEX = "^" + ZKAddress.ZK_PREFIX + ".*";
@@ -35,6 +31,10 @@ public class ZKAddressParser {
         // Ensure that string is prefixed with "zk://"
         Matcher matcher = Pattern.compile(ZK_PREFIX_REGEX).matcher(zkUrl);
         if (!matcher.matches()) {
+            throw new ZKAddressException(zkUrl);
+        }
+
+        if (StringUtils.countMatches(zkUrl, '/') < 3) {
             throw new ZKAddressException(zkUrl);
         }
 
