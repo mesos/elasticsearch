@@ -102,11 +102,11 @@ public class TaskInfoFactory {
     }
 
     private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
-        Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder()
-                .setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
-                .setFrameworkId(frameworkState.getFrameworkID())
-                .setName("elasticsearch-executor-" + UUID.randomUUID().toString())
-                .setCommand(newCommandInfo(configuration));
+        Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder();
+        executorInfoBuilder.setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
+                           .setFrameworkId(frameworkState.getFrameworkID())
+                           .setName("elasticsearch-executor-" + executorInfoBuilder.getExecutorId().getValue())
+                           .setCommand(newCommandInfo(configuration));
         if (configuration.isFrameworkUseDocker()) {
             Protos.ContainerInfo.DockerInfo.Builder containerBuilder = Protos.ContainerInfo.DockerInfo.newBuilder()
                     .setImage(configuration.getExecutorImage())
