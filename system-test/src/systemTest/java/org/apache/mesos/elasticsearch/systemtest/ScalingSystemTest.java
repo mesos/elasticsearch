@@ -93,11 +93,11 @@ public class ScalingSystemTest extends SchedulerTestBase {
                 return false;
             }
         });
-        Integer newNumberOfDocuments = Unirest.get("http://" + newAddress.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
+        int newNumberOfDocuments = Unirest.get("http://" + newAddress.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
 
         // Check that the data is still correct
         LOGGER.debug("New number of documents: " + newNumberOfDocuments);
-        assertEquals(correctNumberOfDocuments, newNumberOfDocuments);
+        assertEquals(DataPusherContainer.CORRECT_NUM_DOCS, newNumberOfDocuments);
     }
 
     public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
