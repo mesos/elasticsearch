@@ -9,7 +9,6 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 
 import java.security.SecureRandom;
-import java.util.stream.IntStream;
 
 import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0AdaptorIpAddress;
 
@@ -52,24 +51,20 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     @Override
     protected CreateContainerCmd dockerCommand() {
-        // Note we are redirecting each slave host to the static docker0 adaptor address (docker0AdaptorIpAddress).
-        // The executors expose ports and when running system tests these are exposed on the single docker daemon machine
-        // (localhost for linux, virtual machine for mac users). However, the docker0 ip address *always* points to the host.
         return dockerClient
                 .createContainerCmd(TEST_CONFIG.getSchedulerImageName())
                 .withName(TEST_CONFIG.getSchedulerName() + "_" + new SecureRandom().nextInt())
                 .withEnv("JAVA_OPTS=-Xms128m -Xmx256m")
-                .withExtraHosts(IntStream.range(2, 127).mapToObj(val -> "172.17.0." + val + ":" + docker0AdaptorIpAddress).toArray(String[]::new))
                 .withCmd(
                         ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                         ElasticsearchCLIParameter.ELASTICSEARCH_NODES, Integer.toString(TEST_CONFIG.getElasticsearchNodesCount()),
                         Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
                         Configuration.ELASTICSEARCH_CPU, "0.1",
                         Configuration.ELASTICSEARCH_DISK, "150",
-                        Configuration.USE_IP_ADDRESS, "true",
+                        Configuration.USE_IP_ADDRESS, "false",
                         Configuration.WEB_UI_PORT, Integer.toString(TEST_CONFIG.getSchedulerGuiPort()),
                         Configuration.EXECUTOR_NAME, TEST_CONFIG.getElasticsearchJobName(),
-                        Configuration.FRAMEWORK_USE_DOCKER, "false",
+                        Configuration.FRAMEWORK_USE_DOCKER, "true",
                         Configuration.DATA_DIR, dataDirectory,
                         Configuration.FRAMEWORK_ROLE, frameworkRole);
     }

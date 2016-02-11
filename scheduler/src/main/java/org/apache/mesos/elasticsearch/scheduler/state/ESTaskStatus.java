@@ -62,7 +62,7 @@ public class ESTaskStatus {
 
     public TaskStatus getDefaultStatus() {
         return TaskStatus.newBuilder()
-                .setState(TaskState.TASK_RUNNING)
+                .setState(TaskState.TASK_STAGING)
                     .setTaskId(taskInfo.getTaskId())
                     .setMessage(DEFAULT_STATUS_NO_MESSAGE_SET)
                     .build();

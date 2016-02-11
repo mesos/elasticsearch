@@ -23,8 +23,6 @@ import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_PATH_SETTINGS;
 
 /**
  * Factory for creating {@link Protos.TaskInfo}s
@@ -36,8 +34,9 @@ public class TaskInfoFactory {
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     public static final String PATH_LOGS = "/var/log/elasticsearch";
     public static final String PATH_DATA = "/data";
-    public static final String PATH_CONF = "/tmp/config";
-    public static final String PATH_HOME = ".";
+    public static final String PATH_CONF = "./config";
+    public static final String HOST_PATH_HOME = "$MESOS_SANDBOX";
+    public static final String DOCKER_ES_HOME = "/usr/share/elasticsearch";
 
     private FrameworkState frameworkState;
     private final ClusterState clusterState;
@@ -101,17 +100,18 @@ public class TaskInfoFactory {
 
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        final Protos.ContainerInfo containerInfo = getContainer(configuration);
+        final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
         final List<String> args = getArguments(configuration, discovery);
+        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId);
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
-                .setTaskId(Protos.TaskID.newBuilder().setValue(taskId(offer, clock)))
+                .setTaskId(taskId)
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(dockerCommand(configuration, args))
+                .setCommand(dockerCommand(args))
                 .setContainer(containerInfo)
                 .build();
     }
@@ -150,19 +150,22 @@ public class TaskInfoFactory {
         return discovery.build();
     }
 
-    private Protos.ContainerInfo getContainer(Configuration configuration) {
+    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID) {
         return Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
                 .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
+                        .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
                         .setImage(configuration.getExecutorImage())
                         .setForcePullImage(configuration.getExecutorForcePullImage())
                         .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST))
-                .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
-                .build();
+                                // We can't set the default docker ES home to the sandbox, because the permissions will be wrong for the /bin/elasticsearch folder.
+//                .addVolumes(Protos.Volume.newBuilder().setHostPath(HOST_PATH_HOME).setContainerPath(DOCKER_ES_HOME).setMode(Protos.Volume.Mode.RW))
+                                // TODO (PNW): Upload config to $SANDBOX/config. Then it will be mounted to DOCKER_ES_HOME/config.
+                                // TODO (PNW): Mount data dir
+                                .build();
     }
 
-    private Protos.CommandInfo dockerCommand(Configuration configuration, List<String> args) {
+    private Protos.CommandInfo dockerCommand(List<String> args) {
         return Protos.CommandInfo.newBuilder()
                 .setShell(false)
                 .addAllArguments(args)
@@ -175,11 +178,10 @@ public class TaskInfoFactory {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
-        String folders = PATH_DATA + " " + PATH_CONF + " " + PATH_LOGS;
+        String folders = PATH_DATA + " " + PATH_CONF;
         String mkdir = "sudo mkdir " + folders + "; ";
         String chown = "sudo chown -R nobody:nogroup " + folders + "; ";
-        String command =
-                mkdir +
+        String command = mkdir +
                         chown +
                         " sudo su -s /bin/bash -c \""
                         + Configuration.ES_BINARY
@@ -216,10 +218,10 @@ public class TaskInfoFactory {
         args.add("--node.local=false");
         args.add("--index.number_of_replicas=0");
         args.add("--index.auto_expand_replicas=0-all");
-        args.add("--path.home=" + PATH_HOME);
-        args.add("--path.conf=" + PATH_CONF);
-        args.add("--path.data=" + PATH_DATA);
-        args.add("--path.logs=" + PATH_LOGS);
+        if (!configuration.isFrameworkUseDocker()) {
+            args.add("--path.home=" + HOST_PATH_HOME);
+            args.add("--path.data=" + PATH_DATA);
+        }
         args.add("--bootstrap.mlockall=true");
         args.add("--network.bind_host=0.0.0.0");
         args.add("--network.publish_host=_non_loopback:ipv4_");

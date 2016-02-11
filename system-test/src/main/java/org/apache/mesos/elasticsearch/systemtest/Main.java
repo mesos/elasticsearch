@@ -21,9 +21,9 @@ public class Main {
         clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster()
-                .withSlave(TEST_CONFIG.getPortRanges()[0])
-                .withSlave(TEST_CONFIG.getPortRanges()[1])
-                .withSlave(TEST_CONFIG.getPortRanges()[2])
+                .withSlave(TEST_CONFIG.getPortRanges().get(0))
+                .withSlave(TEST_CONFIG.getPortRanges().get(1))
+                .withSlave(TEST_CONFIG.getPortRanges().get(2))
                 .build();
         MesosCluster cluster = new MesosCluster(clusterArchitecture);
 
