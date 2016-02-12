@@ -33,7 +33,7 @@ public class TaskInfoFactory {
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     public static final String PATH_LOGS = "/var/log/elasticsearch";
-    public static final String PATH_DATA = "/data";
+    public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
     public static final String PATH_CONF = "./config";
     public static final String HOST_PATH_HOME = "$MESOS_SANDBOX";
     public static final String DOCKER_ES_HOME = "/usr/share/elasticsearch";
@@ -161,7 +161,11 @@ public class TaskInfoFactory {
                                 // We can't set the default docker ES home to the sandbox, because the permissions will be wrong for the /bin/elasticsearch folder.
 //                .addVolumes(Protos.Volume.newBuilder().setHostPath(HOST_PATH_HOME).setContainerPath(DOCKER_ES_HOME).setMode(Protos.Volume.Mode.RW))
                                 // TODO (PNW): Upload config to $SANDBOX/config. Then it will be mounted to DOCKER_ES_HOME/config.
-                                // TODO (PNW): Mount data dir
+                .addVolumes(Protos.Volume.newBuilder()
+                        .setHostPath(configuration.getDataDir())
+                        .setContainerPath(CONTAINER_PATH_DATA)
+                        .setMode(Protos.Volume.Mode.RW)
+                        .build())
                                 .build();
     }
 
@@ -178,7 +182,7 @@ public class TaskInfoFactory {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
-        String folders = PATH_DATA + " " + PATH_CONF;
+        String folders = configuration.getDataDir() + " " + PATH_CONF;
         String mkdir = "sudo mkdir " + folders + "; ";
         String chown = "sudo chown -R nobody:nogroup " + folders + "; ";
         String command = mkdir +
@@ -220,7 +224,9 @@ public class TaskInfoFactory {
         args.add("--index.auto_expand_replicas=0-all");
         if (!configuration.isFrameworkUseDocker()) {
             args.add("--path.home=" + HOST_PATH_HOME);
-            args.add("--path.data=" + PATH_DATA);
+            args.add("--path.data=" + configuration.getDataDir());
+        } else {
+            args.add("--path.data=" + CONTAINER_PATH_DATA);
         }
         args.add("--bootstrap.mlockall=true");
         args.add("--network.bind_host=0.0.0.0");
