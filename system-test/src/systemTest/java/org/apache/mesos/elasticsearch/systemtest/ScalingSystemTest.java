@@ -73,31 +73,12 @@ public class ScalingSystemTest extends SchedulerTestBase {
 
         esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
 
-        Integer correctNumberOfDocuments = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
-        LOGGER.debug("Correct number of documents: " + correctNumberOfDocuments);
-
         // Scale down to one node
         scaleNumNodesTo(ipAddress, 1);
         esTasks.waitForGreen();
 
-        // Refresh ES address list
-        List<String> newAddress = esTasks.getEsHttpAddressList();
-        LOGGER.info("New address: " + newAddress);
-        assertEquals(1, newAddress.size());
-
-        Awaitility.await().atMost(60, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> {
-            try {
-                Unirest.get("http://" + newAddress.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
-                return true;
-            } catch (Exception e) {
-                return false;
-            }
-        });
-        int newNumberOfDocuments = Unirest.get("http://" + newAddress.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
-
         // Check that the data is still correct
-        LOGGER.debug("New number of documents: " + newNumberOfDocuments);
-        assertEquals(DataPusherContainer.CORRECT_NUM_DOCS, newNumberOfDocuments);
+        esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
     }
 
     public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
