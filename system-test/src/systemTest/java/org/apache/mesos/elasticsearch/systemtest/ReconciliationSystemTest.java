@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest extends TestBase {
-    private static final int TIMEOUT = 60;
+    private static final int TIMEOUT = 120;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
 
@@ -51,15 +51,6 @@ public class ReconciliationSystemTest extends TestBase {
     @After
     public void killContainers() {
         CONTAINER_MANAGER.stopAll();
-    }
-
-    @Test
-    public void forceCheckExecutorTimeout() throws IOException {
-        ElasticsearchSchedulerContainer scheduler = new TimeoutSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress());
-        CONTAINER_MANAGER.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
-        assertCorrectNumberOfExecutors(); // Start with 3
-        assertLessThan(getTestConfig().getElasticsearchNodesCount()); // Then should be less than 3, because at some point we kill an executor
-        assertCorrectNumberOfExecutors(); // Then at some point should get back to 3.
     }
 
     @Test
@@ -132,6 +123,7 @@ public class ReconciliationSystemTest extends TestBase {
                     .withCmd(
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",
+                            Configuration.ELASTICSEARCH_DISK, "150",
                             Configuration.EXECUTOR_TIMEOUT, "100", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
                             ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
                             Configuration.ELASTICSEARCH_RAM, "256"

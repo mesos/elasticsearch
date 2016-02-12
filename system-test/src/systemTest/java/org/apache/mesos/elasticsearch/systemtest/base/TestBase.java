@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.systemtest.base;
 
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.*;
+import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.jayway.awaitility.Awaitility;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
@@ -20,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -55,30 +57,37 @@ public abstract class TestBase {
                 .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
         CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
-        CLUSTER.start(60);
+        CLUSTER.start(TEST_CONFIG.getClusterTimeout());
+        applyIptables(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER, TEST_CONFIG);
+    }
 
+    public static void applyIptables(DockerClient client, MesosCluster cluster, Configuration config) {
         // Install IP tables and reroute traffic from slaves to ports exposed on host.
-        for (MesosSlave slave : CLUSTER.getSlaves()) {
+        for (MesosSlave slave : cluster.getSlaves()) {
             LOGGER.debug("Applying iptable redirect to " + slave.getIpAddress());
-            Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(10, TimeUnit.SECONDS).until(new ApplyIptables(slave.getContainerId()));
+            Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(30, TimeUnit.SECONDS).until(new ApplyIptables(client, config, slave.getContainerId()));
         }
     }
 
     private static class ApplyIptables implements Callable<Boolean> {
         public static final String IPTABLES_FINISHED_FLAG = "iptables_finished_flag";
+        private final DockerClient client;
+        private final Configuration config;
         private final String containerId;
 
-        private ApplyIptables(String containerId) {
+        private ApplyIptables(DockerClient client, Configuration config, String containerId) {
+            this.client = client;
+            this.config = config;
             this.containerId = containerId;
         }
 
         @Override
         public Boolean call() throws Exception {
-            String iptablesRoute = TEST_CONFIG.getPorts().stream().map(ports -> "" +
+            String iptablesRoute = config.getPorts().stream().map(ports -> "" +
                             "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.client() + " -j DNAT --to-destination 172.17.0.1:" + ports.client() + " ; " +
                             "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.transport() + " -j DNAT --to-destination 172.17.0.1:" + ports.transport() + " ; "
             ).collect(Collectors.joining(" "));
-            ExecCreateCmdResponse execResponse = CLUSTER_ARCHITECTURE.dockerClient.execCreateCmd(containerId)
+            ExecCreateCmdResponse execResponse = client.execCreateCmd(containerId)
                     .withAttachStdout()
                     .withAttachStderr()
                     .withTty(true)
@@ -88,8 +97,8 @@ public abstract class TestBase {
                                     "sudo iptables -t nat -A POSTROUTING -j MASQUERADE  ; " +
                                     "echo " + IPTABLES_FINISHED_FLAG
                     ).exec();
-            try (InputStream inputstream = CLUSTER_ARCHITECTURE.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
-                String log = IOUtils.toString(inputstream, "UTF-8");
+            try (InputStream inputStream = client.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
+                String log = IOUtils.toString(inputStream, "UTF-8");
                 LOGGER.info("Install iptables log: " + log);
                 return log.contains(IPTABLES_FINISHED_FLAG);
             } catch (IOException e) {
@@ -121,13 +130,17 @@ public abstract class TestBase {
         return TEST_CONFIG;
     }
 
-    private static class MesosMasterTagged extends MesosMasterExtended {
+    public static class MesosMasterTagged extends MesosMasterExtended {
         public MesosMasterTagged(ZooKeeper zooKeeperContainer) {
             super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, TestBase.MESOS_IMAGE_TAG, Collections.emptyMap(), true);
         }
+
+        public MesosMasterTagged(ZooKeeper zooKeeperContainer, Map<String, String> extraEnvVars) {
+            super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, TestBase.MESOS_IMAGE_TAG, extraEnvVars, true);
+        }
     }
 
-    private static class MesosSlaveTagged extends MesosSlaveExtended {
+    public static class MesosSlaveTagged extends MesosSlaveExtended {
         public MesosSlaveTagged(ZooKeeper zooKeeperContainer, String resources) {
             super(DockerClientFactory.build(), resources, Integer.toString(MESOS_SLAVE_PORT), zooKeeperContainer, MESOS_SLAVE_IMAGE, TestBase.MESOS_IMAGE_TAG);
         }

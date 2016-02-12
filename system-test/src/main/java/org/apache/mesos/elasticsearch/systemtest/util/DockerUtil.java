@@ -22,7 +22,7 @@ public class DockerUtil {
     }
 
     public List<Container> getExecutorContainers() {
-        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch-executor") && container.getStatus().contains("Up")).collect(Collectors.toList());
+        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch:") && container.getStatus().contains("Up")).collect(Collectors.toList());
     }
 
     public List<Container> getSchedulerContainers() {
