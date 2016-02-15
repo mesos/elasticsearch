@@ -3,7 +3,11 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.mesos.ClusterArchitecture;
 import org.apache.log4j.Logger;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -20,10 +24,10 @@ public class Main {
     public static void main(String[] args) throws InterruptedException {
         clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster()
-                .withSlave(TEST_CONFIG.getPortRanges().get(0))
-                .withSlave(TEST_CONFIG.getPortRanges().get(1))
-                .withSlave(TEST_CONFIG.getPortRanges().get(2))
+                .withMaster(MesosMasterTagged::new)
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
         MesosCluster cluster = new MesosCluster(clusterArchitecture);
 
@@ -41,6 +45,7 @@ public class Main {
             }
         });
         cluster.start(TEST_CONFIG.getClusterTimeout());
+        IpTables.apply(clusterArchitecture.dockerClient, cluster, TEST_CONFIG);
 
         LOGGER.info("Starting scheduler");
         ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, cluster.getZkContainer().getIpAddress(), cluster);

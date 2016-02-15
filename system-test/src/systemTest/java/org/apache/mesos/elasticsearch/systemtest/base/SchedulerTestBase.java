@@ -2,9 +2,9 @@ package org.apache.mesos.elasticsearch.systemtest.base;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.ESTasks;
-import org.apache.mesos.elasticsearch.systemtest.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.TasksResponse;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.junit.BeforeClass;
 
 import static org.junit.Assert.assertTrue;

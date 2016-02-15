@@ -9,6 +9,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;

@@ -8,6 +8,7 @@ import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Test;
 

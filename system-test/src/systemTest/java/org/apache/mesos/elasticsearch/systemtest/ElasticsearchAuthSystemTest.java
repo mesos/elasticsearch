@@ -12,9 +12,12 @@ import com.github.dockerjava.api.model.Bind;
 import com.github.dockerjava.api.model.Volume;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
-import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -63,7 +66,7 @@ public class ElasticsearchAuthSystemTest {
                 .build();
         cluster = new MesosCluster(architecture);
         cluster.start(TEST_CONFIG.getClusterTimeout());
-        TestBase.applyIptables(architecture.dockerClient, cluster, TEST_CONFIG);
+        IpTables.apply(architecture.dockerClient, cluster, TEST_CONFIG);
     }
 
     /**
@@ -119,7 +122,7 @@ public class ElasticsearchAuthSystemTest {
     /**
      * Only the role "testRole" can start frameworks.
      */
-    private static class SimpleAuthMaster extends TestBase.MesosMasterTagged {
+    private static class SimpleAuthMaster extends MesosMasterTagged {
         protected SimpleAuthMaster(ZooKeeper zooKeeperContainer) {
             super(zooKeeperContainer, envVars());
         }
@@ -140,7 +143,7 @@ public class ElasticsearchAuthSystemTest {
         }
     }
 
-    private static class SimpleAuthSlave extends TestBase.MesosSlaveTagged {
+    private static class SimpleAuthSlave extends MesosSlaveTagged {
 
         protected SimpleAuthSlave(ZooKeeper zooKeeperContainer, String resources) {
             super(zooKeeperContainer, resources);

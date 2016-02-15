@@ -12,6 +12,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Configuration {
+    public static final String MESOS_IMAGE_TAG = "0.25.0-0.2.70.ubuntu1404";
+
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;

@@ -7,6 +7,7 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.After;

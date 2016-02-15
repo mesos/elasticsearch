@@ -1,15 +1,14 @@
 package org.apache.mesos.elasticsearch.systemtest.base;
 
 import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.*;
-import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.ExecCreateCmdResponse;
-import com.jayway.awaitility.Awaitility;
+import com.containersol.minimesos.mesos.ClusterArchitecture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
-import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -18,14 +17,6 @@ import org.junit.runner.Description;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Collections;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
 /**
  * Base test class which launches Mesos CLUSTER
  */
@@ -33,7 +24,6 @@ import java.util.stream.Collectors;
 public abstract class TestBase {
     private static final Logger LOGGER = LoggerFactory.getLogger(TestBase.class);
     protected static final Configuration TEST_CONFIG = new Configuration();
-    public static final String MESOS_IMAGE_TAG = "0.25.0-0.2.70.ubuntu1404";
 
     protected static ClusterArchitecture CLUSTER_ARCHITECTURE;
 
@@ -58,54 +48,7 @@ public abstract class TestBase {
                 .build();
         CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
         CLUSTER.start(TEST_CONFIG.getClusterTimeout());
-        applyIptables(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER, TEST_CONFIG);
-    }
-
-    public static void applyIptables(DockerClient client, MesosCluster cluster, Configuration config) {
-        // Install IP tables and reroute traffic from slaves to ports exposed on host.
-        for (MesosSlave slave : cluster.getSlaves()) {
-            LOGGER.debug("Applying iptable redirect to " + slave.getIpAddress());
-            Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(30, TimeUnit.SECONDS).until(new ApplyIptables(client, config, slave.getContainerId()));
-        }
-    }
-
-    private static class ApplyIptables implements Callable<Boolean> {
-        public static final String IPTABLES_FINISHED_FLAG = "iptables_finished_flag";
-        private final DockerClient client;
-        private final Configuration config;
-        private final String containerId;
-
-        private ApplyIptables(DockerClient client, Configuration config, String containerId) {
-            this.client = client;
-            this.config = config;
-            this.containerId = containerId;
-        }
-
-        @Override
-        public Boolean call() throws Exception {
-            String iptablesRoute = config.getPorts().stream().map(ports -> "" +
-                            "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.client() + " -j DNAT --to-destination 172.17.0.1:" + ports.client() + " ; " +
-                            "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.transport() + " -j DNAT --to-destination 172.17.0.1:" + ports.transport() + " ; "
-            ).collect(Collectors.joining(" "));
-            ExecCreateCmdResponse execResponse = client.execCreateCmd(containerId)
-                    .withAttachStdout()
-                    .withAttachStderr()
-                    .withTty(true)
-                    .withCmd("sh", "-c", "" +
-                                    "echo 1 > /proc/sys/net/ipv4/ip_forward ; " +
-                                    iptablesRoute +
-                                    "sudo iptables -t nat -A POSTROUTING -j MASQUERADE  ; " +
-                                    "echo " + IPTABLES_FINISHED_FLAG
-                    ).exec();
-            try (InputStream inputStream = client.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
-                String log = IOUtils.toString(inputStream, "UTF-8");
-                LOGGER.info("Install iptables log: " + log);
-                return log.contains(IPTABLES_FINISHED_FLAG);
-            } catch (IOException e) {
-                LOGGER.error("Could not read log. Retrying.");
-                return false;
-            }
-        }
+        IpTables.apply(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER, TEST_CONFIG);
     }
 
     @BeforeClass
@@ -130,25 +73,5 @@ public abstract class TestBase {
         return TEST_CONFIG;
     }
 
-    /**
-     * A tagged version of MesosMaster
-     */
-    public static class MesosMasterTagged extends MesosMasterExtended {
-        public MesosMasterTagged(ZooKeeper zooKeeperContainer) {
-            super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, TestBase.MESOS_IMAGE_TAG, Collections.emptyMap(), true);
-        }
 
-        public MesosMasterTagged(ZooKeeper zooKeeperContainer, Map<String, String> extraEnvVars) {
-            super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, TestBase.MESOS_IMAGE_TAG, extraEnvVars, true);
-        }
-    }
-
-    /**
-     * A tagged version of MesosSlave
-     */
-    public static class MesosSlaveTagged extends MesosSlaveExtended {
-        public MesosSlaveTagged(ZooKeeper zooKeeperContainer, String resources) {
-            super(DockerClientFactory.build(), resources, Integer.toString(MESOS_SLAVE_PORT), zooKeeperContainer, MESOS_SLAVE_IMAGE, TestBase.MESOS_IMAGE_TAG);
-        }
-    }
 }

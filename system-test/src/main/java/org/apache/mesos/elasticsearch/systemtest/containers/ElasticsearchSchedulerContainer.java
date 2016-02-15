@@ -1,4 +1,4 @@
-package org.apache.mesos.elasticsearch.systemtest;
+package org.apache.mesos.elasticsearch.systemtest.containers;
 
 import com.containersol.minimesos.MesosCluster;
 import com.containersol.minimesos.container.AbstractContainer;
