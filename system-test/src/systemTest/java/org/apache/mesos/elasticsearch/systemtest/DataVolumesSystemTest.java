@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 
@@ -86,15 +87,15 @@ public class DataVolumesSystemTest extends TestBase {
         @Override
         public Boolean call() throws Exception {
             ExecCreateCmdResponse execResponse = CLUSTER_ARCHITECTURE.dockerClient.execCreateCmd(containerId)
-                    .withCmd("ls", "-R", dataDirectory)
+                    .withCmd("ls", "--color=never", dataDirectory + "/mesos-ha")
                     .withTty(true)
                     .withAttachStdout()
                     .withAttachStderr()
                     .exec();
             try (InputStream inputstream = CLUSTER_ARCHITECTURE.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
-                String contents = IOUtils.toString(inputstream, "UTF-8");
-                LOGGER.info("Mesos-local contents of " + dataDirectory + ": " + contents);
-                return contents.contains("0") && contents.contains("1") && contents.contains("2");
+                String contents = IOUtils.toString(inputstream, Charset.defaultCharset()).replaceAll("\\p{C}", "");
+                LOGGER.info("Contents of " + dataDirectory + ": " + contents);
+                return contents.contains("S0") && contents.contains("S1") && contents.contains("S2");
             } catch (IOException e) {
                 LOGGER.error("Could not list contents of " + dataDirectory + " in Mesos-Local");
                 return false;

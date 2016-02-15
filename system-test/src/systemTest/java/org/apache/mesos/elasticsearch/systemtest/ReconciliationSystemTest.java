@@ -3,6 +3,8 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
+import com.jayway.awaitility.core.ConditionTimeoutException;
+import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
@@ -30,6 +32,9 @@ import static org.junit.Assert.assertTrue;
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest extends TestBase {
+
+    private static final Logger LOGGER = Logger.getLogger(ReconciliationSystemTest.class);
+
     private static final int TIMEOUT = 60;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
@@ -111,8 +116,12 @@ public class ReconciliationSystemTest extends TestBase {
     }
 
     private void assertCorrectNumberOfExecutors(int expected) throws IOException {
-        await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() == expected);
-        assertEquals(expected, dockerUtil.getExecutorContainers().size());
+        try {
+            await().atMost(TIMEOUT, TimeUnit.SECONDS).until(() -> dockerUtil.getExecutorContainers().size() == expected);
+        } catch (ConditionTimeoutException e) {
+            LOGGER.info("Expected " + expected + " executors, got " + dockerUtil.getExecutorContainers().size());
+        }
+        assertEquals("Expected " + expected + " executors, got " + dockerUtil.getExecutorContainers().size(), expected, dockerUtil.getExecutorContainers().size());
     }
 
     private static class TimeoutSchedulerContainer extends ElasticsearchSchedulerContainer {

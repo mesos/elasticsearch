@@ -83,7 +83,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(acceptedResources)
                 .setDiscovery(discovery)
-                .setExecutor(newExecutorInfo(configuration)).build();
+                .setExecutor(newExecutorInfo(configuration, offer)).build();
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -101,7 +101,7 @@ public class TaskInfoFactory {
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
     }
 
-    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration) {
+    private Protos.ExecutorInfo.Builder newExecutorInfo(Configuration configuration, Protos.Offer offer) {
         Protos.ExecutorInfo.Builder executorInfoBuilder = Protos.ExecutorInfo.newBuilder();
         executorInfoBuilder.setExecutorId(Protos.ExecutorID.newBuilder().setValue(UUID.randomUUID().toString()))
                            .setFrameworkId(frameworkState.getFrameworkID())
@@ -113,11 +113,13 @@ public class TaskInfoFactory {
                     .setForcePullImage(configuration.getExecutorForcePullImage())
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
 
+            String taskSpecificDataDir = configuration.getDataDir() + "/" + configuration.getElasticsearchClusterName() + "/" + offer.getSlaveId().getValue();
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(containerBuilder)
                     .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
-                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
+                    .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(
+                            taskSpecificDataDir).setMode(Protos.Volume.Mode.RW).build())
                     .build())
                     .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
                     .addResources(Resources.mem(configuration.getExecutorMem(), configuration.getFrameworkRole()))

@@ -11,8 +11,10 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -79,6 +81,25 @@ public class ScalingSystemTest extends SchedulerTestBase {
 
         // Check that the data is still correct
         esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
+    }
+
+    @Ignore
+    public void shouldNoHaveStaleData() throws UnirestException, IOException {
+        LOGGER.info("Scaling down to 2 nodes");
+        scaleNumNodesTo(ipAddress, 2);
+        esTasks.waitForGreen();
+        esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
+
+        JsonNode body = Unirest.delete("http://" + esAddresses.get(0) + "/shakespeare-2016.02").asJson().getBody();
+        LOGGER.info("Deleting data " + body);
+
+        LOGGER.info("Scaling back to 3 nodes");
+        scaleNumNodesTo(ipAddress, 3);
+        esTasks.waitForGreen();
+
+        int documentCount = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
+        assertEquals("There should not be any stale data but there are " + documentCount + " documents in the cluster", 0, documentCount);
     }
 
     public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
