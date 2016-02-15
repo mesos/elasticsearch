@@ -15,7 +15,10 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesRes
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.Test;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
 import org.slf4j.Logger;
@@ -60,6 +63,8 @@ public class RunAsJarSystemTest {
     public static final String CUSTOM_CONFIG_PATH = "/tmp/config/"; // In the container and on the VM/Host
     public static final String CUSTOM_CONFIG_FILE = "/tmp/config/" + CUSTOM_YML; // In the container and on the VM/Host
     public static final String TEST_PATH_HOME = "./test";
+    public static final String TEST_PATH_PLUGINS = "./TESTPLUGINS";
+    public static final String TEST_AUTO_EXPAND_REPLICAS = "false";
 
     // Need full control over the cluster, so need to do all the lifecycle stuff.
     private static MesosCluster cluster;
@@ -81,7 +86,7 @@ public class RunAsJarSystemTest {
         new DockerUtil(dockerClient).killAllSchedulers();
         new DockerUtil(dockerClient).killAllExecutors();
 
-        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH, "sh", "-c", "echo \"path.home: " + TEST_PATH_HOME + "\" > " + CUSTOM_CONFIG_FILE); // TODO test external config here
+        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH, "sh", "-c", "echo \"index.auto_expand_replicas: " + TEST_AUTO_EXPAND_REPLICAS + "\npath.plugins: " + TEST_PATH_PLUGINS + "\" > " + CUSTOM_CONFIG_FILE); // TODO test external config here
         ymlWrite.start(10);
         ymlWrite.remove();
 
@@ -122,14 +127,19 @@ public class RunAsJarSystemTest {
         assertEquals("Elasticsearch nodes did not discover each other within 5 minutes", NUMBER_OF_TEST_TASKS, number_of_nodes);
     }
 
-    @Ignore // TODO (PNW): Reinstate this test when the config is hosted by the Scheduler
     @Test
     public void shouldHaveCustomSettingsBasedOnPath() throws UnirestException {
         final JSONObject root = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_nodes").asJson().getBody().getObject();
         final JSONObject nodes = root.getJSONObject("nodes");
         final String firstNode = nodes.keys().next();
-        final String pathHome = nodes.getJSONObject(firstNode).getJSONObject("settings").getJSONObject("path").getString("home");
-        assertEquals(TEST_PATH_HOME, pathHome);
+
+        // Test a setting that is not specified by the framework (to test that it is written correctly)
+        final String pathPlugins = nodes.getJSONObject(firstNode).getJSONObject("settings").getJSONObject("path").getString("plugins");
+        assertEquals(TEST_PATH_PLUGINS, pathPlugins);
+
+        // Test a setting that is specified by the framework (to test it is overwritten correctly)
+        final String autoExpandReplicas = nodes.getJSONObject(firstNode).getJSONObject("settings").getJSONObject("index").getString("auto_expand_replicas");
+        assertEquals(TEST_AUTO_EXPAND_REPLICAS, autoExpandReplicas);
     }
 
     private static class JarScheduler extends AbstractContainer {

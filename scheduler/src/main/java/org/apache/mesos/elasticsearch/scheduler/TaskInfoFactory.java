@@ -13,6 +13,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.InetSocketAddress;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
@@ -32,13 +34,11 @@ public class TaskInfoFactory {
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    public static final String PATH_LOGS = "/var/log/elasticsearch";
     public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
-    public static final String PATH_CONF = "./config";
-    public static final String HOST_PATH_HOME = "$MESOS_SANDBOX";
-    public static final String DOCKER_ES_HOME = "/usr/share/elasticsearch";
+    public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
+    public static final String HOST_PATH_HOME = "./es_home";
+    public static final String HOST_PATH_CONF = ".";
 
-    private FrameworkState frameworkState;
     private final ClusterState clusterState;
 
     public TaskInfoFactory(ClusterState clusterState) {
@@ -54,8 +54,6 @@ public class TaskInfoFactory {
      * @return TaskInfo
      */
     public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer, Clock clock) {
-        this.frameworkState = frameworkState;
-
         if (configuration.isFrameworkUseDocker()) {
             LOGGER.debug("Building Docker task");
             Protos.TaskInfo taskInfo = buildDockerTask(offer, configuration, clock);
@@ -111,7 +109,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(dockerCommand(args))
+                .setCommand(dockerCommand(configuration, args))
                 .setContainer(containerInfo)
                 .build();
     }
@@ -151,28 +149,40 @@ public class TaskInfoFactory {
     }
 
     private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID) {
-        return Protos.ContainerInfo.newBuilder()
+        final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
                 .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
                         .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
                         .setImage(configuration.getExecutorImage())
                         .setForcePullImage(configuration.getExecutorForcePullImage())
                         .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST))
-                                // We can't set the default docker ES home to the sandbox, because the permissions will be wrong for the /bin/elasticsearch folder.
-//                .addVolumes(Protos.Volume.newBuilder().setHostPath(HOST_PATH_HOME).setContainerPath(DOCKER_ES_HOME).setMode(Protos.Volume.Mode.RW))
-                                // TODO (PNW): Upload config to $SANDBOX/config. Then it will be mounted to DOCKER_ES_HOME/config.
                 .addVolumes(Protos.Volume.newBuilder()
                         .setHostPath(configuration.getDataDir())
                         .setContainerPath(CONTAINER_PATH_DATA)
                         .setMode(Protos.Volume.Mode.RW)
-                        .build())
-                                .build();
+                        .build());
+        if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
+            final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());
+            final Path fileName = path.getFileName();
+            final String settingsFilename = fileName.toString();
+            builder.addVolumes(Protos.Volume.newBuilder()
+                    .setHostPath("./" + settingsFilename) // Because the file has been uploaded by the uris.
+                    .setContainerPath(CONTAINER_PATH_CONF)
+                    .setMode(Protos.Volume.Mode.RO)
+                    .build());
+        }
+        return builder
+                .build();
     }
 
-    private Protos.CommandInfo dockerCommand(List<String> args) {
-        return Protos.CommandInfo.newBuilder()
+    private Protos.CommandInfo dockerCommand(Configuration configuration, List<String> args) {
+        final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setShell(false)
-                .addAllArguments(args)
+                .addAllArguments(args);
+        if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
+            builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchSettingsLocation()));
+        }
+        return builder
                 .build();
     }
 
@@ -182,8 +192,8 @@ public class TaskInfoFactory {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
-        String folders = configuration.getDataDir() + " " + PATH_CONF;
-        String mkdir = "sudo mkdir " + folders + "; ";
+        String folders = configuration.getDataDir();
+        String mkdir = "sudo mkdir -p " + folders + "; ";
         String chown = "sudo chown -R nobody:nogroup " + folders + "; ";
         String command = mkdir +
                         chown +
@@ -192,19 +202,20 @@ public class TaskInfoFactory {
                         + " "
                         + args.stream().collect(Collectors.joining(" "))
                         + "\" nobody";
-        return Protos.CommandInfo.newBuilder()
+        final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setValue(command)
                 .setUser("nobody")
-                .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath))
+                .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
+        if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
+            builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchSettingsLocation()));
+        }
+        return builder
                 .build();
     }
 
 
     private List<String> getArguments(Configuration configuration, Protos.DiscoveryInfo discoveryInfo) {
         List<String> args = new ArrayList<>();
-
-        // TODO (PNW): Reinstate these settings
-//        addIfNotEmpty(args, ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configuration.getElasticsearchSettingsLocation());
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         String hostAddress = "";
         if (taskList.size() > 0) {
@@ -213,32 +224,33 @@ public class TaskInfoFactory {
             InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
             hostAddress = NetworkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
         }
-        addIfNotEmpty(args, "--discovery.zen.ping.unicast.hosts", hostAddress);
-        args.add("--http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
-        args.add("--transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
-        args.add("--cluster.name=" + configuration.getElasticsearchClusterName());
-        args.add("--node.master=true");
-        args.add("--node.data=true");
-        args.add("--node.local=false");
-        args.add("--index.number_of_replicas=0");
-        args.add("--index.auto_expand_replicas=0-all");
+        addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);
+        args.add("--default.http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
+        args.add("--default.transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
+        args.add("--default.cluster.name=" + configuration.getElasticsearchClusterName());
+        args.add("--default.node.master=true");
+        args.add("--default.node.data=true");
+        args.add("--default.node.local=false");
+        args.add("--default.index.number_of_replicas=0");
+        args.add("--default.index.auto_expand_replicas=0-all");
         if (!configuration.isFrameworkUseDocker()) {
-            args.add("--path.home=" + HOST_PATH_HOME);
-            args.add("--path.data=" + configuration.getDataDir());
+            args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
+            args.add("--default.path.data=" + configuration.getDataDir());
+            args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
         } else {
-            args.add("--path.data=" + CONTAINER_PATH_DATA);
+            args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
         }
-        args.add("--bootstrap.mlockall=true");
-        args.add("--network.bind_host=0.0.0.0");
-        args.add("--network.publish_host=_non_loopback:ipv4_");
-        args.add("--gateway.recover_after_nodes=1");
-        args.add("--gateway.expected_nodes=1");
-        args.add("--indices.recovery.max_bytes_per_sec=100mb");
-        args.add("--discovery.type=zen");
-        args.add("--discovery.zen.fd.ping_timeout=30s");
-        args.add("--discovery.zen.fd.ping_interval=1s");
-        args.add("--discovery.zen.fd.ping_retries=30");
-        args.add("--discovery.zen.ping.multicast.enabled=false");
+        args.add("--default.bootstrap.mlockall=true");
+        args.add("--default.network.bind_host=0.0.0.0");
+        args.add("--default.network.publish_host=_non_loopback:ipv4_");
+        args.add("--default.gateway.recover_after_nodes=1");
+        args.add("--default.gateway.expected_nodes=1");
+        args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
+        args.add("--default.discovery.type=zen");
+        args.add("--default.discovery.zen.fd.ping_timeout=30s");
+        args.add("--default.discovery.zen.fd.ping_interval=1s");
+        args.add("--default.discovery.zen.fd.ping_retries=30");
+        args.add("--default.discovery.zen.ping.multicast.enabled=false");
 
 
         return args;
