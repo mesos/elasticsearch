@@ -108,7 +108,7 @@ public class TaskInfoFactoryTest {
         assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
         assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
-        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
+        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR + "/" + configuration.getElasticsearchClusterName() + "/" + offer.getSlaveId().getValue(), taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
     }
 

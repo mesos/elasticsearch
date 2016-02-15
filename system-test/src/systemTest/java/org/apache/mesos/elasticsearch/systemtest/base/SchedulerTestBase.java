@@ -5,6 +5,7 @@ import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.apache.mesos.elasticsearch.systemtest.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.TasksResponse;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
 import static org.junit.Assert.assertTrue;
@@ -20,7 +21,7 @@ public abstract class SchedulerTestBase extends TestBase {
     public static void startScheduler() throws Exception {
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
+        scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER, "/tmp/es-data");
         CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
