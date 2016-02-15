@@ -54,8 +54,6 @@ public class ElasticsearchSchedulerTest {
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getTaskName()).thenReturn("esdemo");
-        when(configuration.getExecutorHealthDelay()).thenReturn(10L);
-        when(configuration.getExecutorTimeout()).thenReturn(10L);
         when(configuration.getFrameworkRole()).thenReturn("*");
         when(configuration.getFrameworkName()).thenReturn("FrameworkName");
 

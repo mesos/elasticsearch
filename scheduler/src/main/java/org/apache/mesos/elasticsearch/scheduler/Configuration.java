@@ -2,7 +2,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
@@ -54,8 +53,6 @@ public class Configuration {
     public static final String USE_IP_ADDRESS = "--useIpAddress";
     public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
 
-    @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
-    private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
     private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
@@ -86,11 +83,7 @@ public class Configuration {
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkRole = "*"; // This is the default if none is passed to Mesos
-    @Parameter(names = {EXECUTOR_TIMEOUT},
-            description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
-            validateValueWith = GreaterThanHealthDelay.class)
-    private Long executorTimeout = 60000L;
-    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. E.g. 'elasticsearch:latest' [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image. [DOCKER MODE ONLY]")
     private Boolean executorForcePullImage = false;
@@ -186,14 +179,6 @@ public class Configuration {
         return frameworkRole;
     }
 
-    public Long getExecutorHealthDelay() {
-        return executorHealthDelay;
-    }
-
-    public Long getExecutorTimeout() {
-        return executorTimeout;
-    }
-
     public String getExecutorImage() {
         return executorImage;
     }
@@ -275,17 +260,5 @@ public class Configuration {
             portsList.add(Integer.parseInt(port));
         }
         return portsList;
-    }
-
-    /**
-     * Ensures that the number is > than the EXECUTOR_HEALTH_DELAY
-     */
-    public static class GreaterThanHealthDelay extends CLIValidators.PositiveLong {
-        @Override
-        public void validate(String name, Long value) throws ParameterException {
-            if (notValid(value) || value <= Configuration.executorHealthDelay) {
-                throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
-            }
-        }
     }
 }
