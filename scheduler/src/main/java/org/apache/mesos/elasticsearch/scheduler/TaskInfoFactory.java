@@ -5,6 +5,7 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
@@ -149,18 +150,26 @@ public class TaskInfoFactory {
     }
 
     private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID) {
+        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
+        final Protos.ContainerInfo.DockerInfo.Builder dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder()
+                .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
+                .setImage(configuration.getExecutorImage())
+                .setForcePullImage(configuration.getExecutorForcePullImage())
+                .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
+        // Add all env vars to container
+        for (Protos.Environment.Variable variable : environment.getVariablesList()) {
+            dockerInfo.addParameters(Protos.Parameter.newBuilder().setKey("env").setValue(variable.getName() + "=" + variable.getValue()));
+        }
         final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
-                .setDocker(Protos.ContainerInfo.DockerInfo.newBuilder()
-                        .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
-                        .setImage(configuration.getExecutorImage())
-                        .setForcePullImage(configuration.getExecutorForcePullImage())
-                        .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST))
+                .setDocker(dockerInfo)
                 .addVolumes(Protos.Volume.newBuilder()
                         .setHostPath(configuration.getDataDir())
                         .setContainerPath(CONTAINER_PATH_DATA)
                         .setMode(Protos.Volume.Mode.RW)
                         .build());
+
+
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());
             final Path fileName = path.getFileName();
@@ -205,9 +214,11 @@ public class TaskInfoFactory {
                         + " "
                         + args.stream().collect(Collectors.joining(" "))
                         + "\" nobody";
+        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
         final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setValue(command)
                 .setUser("nobody")
+                .mergeEnvironment(environment)
                 .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchSettingsLocation()));

@@ -10,9 +10,8 @@ import java.util.List;
  * Environmental variables for the executor
  */
 public class ExecutorEnvironmentalVariables {
-    private static final String native_mesos_library_key = "MESOS_NATIVE_JAVA_LIBRARY";
-    private static final String native_mesos_library_path = "/usr/lib/libmesos.so"; // libmesos.so is usually symlinked to the version.
     public static final String JAVA_OPTS = "JAVA_OPTS";
+    public static final String ES_HEAP = "ES_HEAP_SIZE";
     private final List<Protos.Environment.Variable> envList = new ArrayList<>();
 
     /**
@@ -35,10 +34,7 @@ public class ExecutorEnvironmentalVariables {
      * @param configuration
      */
     private void populateEnvMap(Configuration configuration) {
-        if (configuration.isFrameworkUseDocker()) {
-            addToList(native_mesos_library_key, native_mesos_library_path);
-        }
-        addToList(JAVA_OPTS, getHeapSpaceString(configuration));
+        addToList(ES_HEAP, getHeapSpaceString(configuration));
     }
 
     private void addToList(String key, String value) {
@@ -58,6 +54,6 @@ public class ExecutorEnvironmentalVariables {
      */
     private String getHeapSpaceString(Configuration configuration) {
         int osRam = (int) Math.min(256.0, configuration.getMem() / 4.0);
-        return "-Xms" + (int) (configuration.getMem() / 4.0) + "m -Xmx" + ((int) configuration.getMem() - osRam) + "m";
+        return "" + ((int) configuration.getMem() - osRam) + "m";
     }
 }
