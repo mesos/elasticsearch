@@ -37,7 +37,7 @@ public class TaskInfoFactory {
     public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
     public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
     public static final String HOST_PATH_HOME = "./es_home";
-    public static final String HOST_PATH_CONF = ".";
+    public static final String HOST_PATH_CONF = "./.";
 
     private final ClusterState clusterState;
 
@@ -164,6 +164,9 @@ public class TaskInfoFactory {
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());
             final Path fileName = path.getFileName();
+            if (fileName == null) {
+                throw new IllegalArgumentException("Cannot parse filename from settings location. Please include the /elasticsearch.yml in the settings location.");
+            }
             final String settingsFilename = fileName.toString();
             builder.addVolumes(Protos.Volume.newBuilder()
                     .setHostPath("./" + settingsFilename) // Because the file has been uploaded by the uris.

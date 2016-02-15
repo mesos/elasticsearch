@@ -68,6 +68,9 @@ public class Configuration {
         return clusterTimeout;
     }
 
+    /**
+     * Represents ES ports.
+     */
     public static class ESPorts {
         private final Pair<Integer, Integer> ports;
 

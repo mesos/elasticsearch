@@ -130,6 +130,9 @@ public abstract class TestBase {
         return TEST_CONFIG;
     }
 
+    /**
+     * A tagged version of MesosMaster
+     */
     public static class MesosMasterTagged extends MesosMasterExtended {
         public MesosMasterTagged(ZooKeeper zooKeeperContainer) {
             super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, TestBase.MESOS_IMAGE_TAG, Collections.emptyMap(), true);
@@ -140,6 +143,9 @@ public abstract class TestBase {
         }
     }
 
+    /**
+     * A tagged version of MesosSlave
+     */
     public static class MesosSlaveTagged extends MesosSlaveExtended {
         public MesosSlaveTagged(ZooKeeper zooKeeperContainer, String resources) {
             super(DockerClientFactory.build(), resources, Integer.toString(MESOS_SLAVE_PORT), zooKeeperContainer, MESOS_SLAVE_IMAGE, TestBase.MESOS_IMAGE_TAG);

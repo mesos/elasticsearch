@@ -86,7 +86,8 @@ public class RunAsJarSystemTest {
         new DockerUtil(dockerClient).killAllSchedulers();
         new DockerUtil(dockerClient).killAllExecutors();
 
-        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH, "sh", "-c", "echo \"index.auto_expand_replicas: " + TEST_AUTO_EXPAND_REPLICAS + "\npath.plugins: " + TEST_PATH_PLUGINS + "\" > " + CUSTOM_CONFIG_FILE); // TODO test external config here
+        final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH,
+                "sh", "-c", "echo \"index.auto_expand_replicas: " + TEST_AUTO_EXPAND_REPLICAS + "\npath.plugins: " + TEST_PATH_PLUGINS + "\" > " + CUSTOM_CONFIG_FILE);
         ymlWrite.start(10);
         ymlWrite.remove();
 
@@ -123,8 +124,8 @@ public class RunAsJarSystemTest {
 
     @Test
     public void shouldCluster() throws IOException, InterruptedException, UnirestException {
-        final int number_of_nodes = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_cluster/health").asJson().getBody().getObject().getInt("number_of_nodes");
-        assertEquals("Elasticsearch nodes did not discover each other within 5 minutes", NUMBER_OF_TEST_TASKS, number_of_nodes);
+        final int numberOfNodes = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_cluster/health").asJson().getBody().getObject().getInt("number_of_nodes");
+        assertEquals("Elasticsearch nodes did not discover each other within 5 minutes", NUMBER_OF_TEST_TASKS, numberOfNodes);
     }
 
     @Test
