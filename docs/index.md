@@ -63,12 +63,7 @@
 
 ### User tools
 
-- One click DCOS install ✓
 - One JSON post to marathon install ✓
-
-### Certification
-
-- DCOS Certified
 
 ## Getting Started
 
@@ -156,19 +151,13 @@ Usage: (Options preceded by an asterisk are required) [options]
     --executorForcePullImage
        Option to force pull the executor image. [DOCKER MODE ONLY]
        Default: false
-    --executorHealthDelay
-       The delay between executor healthcheck requests (ms).
-       Default: 30000
     --executorImage
-       The docker executor image to use. [DOCKER MODE ONLY]
-       Default: mesos/elasticsearch-executor
+       The docker executor image to use. E.g. 'elasticsearch:latest' [DOCKER
+       MODE ONLY]
+       Default: elasticsearch:latest
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
-    --executorTimeout
-       The maximum executor healthcheck timeout (ms). Must be greater than
-       --executorHealthDelay. Will start new executor after this length of time.
-       Default: 60000
     --frameworkFailoverTimeout
        The time before Mesos kills a scheduler and tasks if it has not recovered
        (ms).
