@@ -52,7 +52,7 @@ public class FrameworkRoleSystemTest extends TestBase {
     }
 
     public State getStateInfo(MesosCluster cluster) throws UnirestException, JsonParseException, JsonMappingException {
-        return State.fromJSON(cluster.getClusterStateInfo());
+        return State.fromJSON(cluster.getClusterStateInfo().toString(2));
     }
 
 }
