@@ -55,7 +55,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
-        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var");
+        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var/elasticsearch.yml");
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
         when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
@@ -105,7 +105,7 @@ public class TaskInfoFactoryTest {
 
         assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
         assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
-        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
+        assertEquals("/var", taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
         assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
         assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());

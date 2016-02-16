@@ -30,7 +30,7 @@ import static org.junit.Assert.assertTrue;
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
 public class ReconciliationSystemTest extends TestBase {
-    private static final int TIMEOUT = 60;
+    private static final int TIMEOUT = 120;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
     private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
 

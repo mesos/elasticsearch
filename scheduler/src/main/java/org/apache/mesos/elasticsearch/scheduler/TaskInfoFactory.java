@@ -113,10 +113,12 @@ public class TaskInfoFactory {
                     .setForcePullImage(configuration.getExecutorForcePullImage())
                     .setNetwork(Protos.ContainerInfo.DockerInfo.Network.HOST);
 
+            String elasticsearchConfigPath = configuration.getElasticsearchSettingsLocation().replace("/elasticsearch.yml", "");
+
             executorInfoBuilder.setContainer(Protos.ContainerInfo.newBuilder()
                     .setType(Protos.ContainerInfo.Type.DOCKER)
                     .setDocker(containerBuilder)
-                    .addVolumes(Protos.Volume.newBuilder().setHostPath(CONTAINER_PATH_SETTINGS).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
+                    .addVolumes(Protos.Volume.newBuilder().setHostPath(elasticsearchConfigPath).setContainerPath(CONTAINER_PATH_SETTINGS).setMode(Protos.Volume.Mode.RO)) // Temporary fix until we get a data container.
                     .addVolumes(Protos.Volume.newBuilder().setContainerPath(CONTAINER_DATA_VOLUME).setHostPath(configuration.getDataDir()).setMode(Protos.Volume.Mode.RW).build())
                     .build())
                     .addResources(Resources.cpus(configuration.getExecutorCpus(), configuration.getFrameworkRole()))
