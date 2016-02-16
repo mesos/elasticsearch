@@ -99,8 +99,17 @@ public class ScalingSystemTest extends SchedulerTestBase {
         scaleNumNodesTo(ipAddress, 3);
         esTasks.waitForGreen();
 
-        int documentCount = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
-        assertEquals("There should not be any stale data but there are " + documentCount + " documents in the cluster", 0, documentCount);
+        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(() -> { // This can take some time, somtimes.
+            try {
+                List<String> esHttpAddressList = esTasks.getEsHttpAddressList();
+                String body1 = Unirest.get("http://" + esHttpAddressList.get(0) + "/_cluster/health").asString().getBody();
+                LOGGER.debug(body1);
+                int documentCount = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
+                return documentCount == 0;
+            } catch (Exception e) {
+                return false;
+            }
+        });
     }
 
     public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
