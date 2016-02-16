@@ -14,6 +14,6 @@ public class MesosSlaveTagged extends MesosSlaveExtended {
     private static final Logger LOG = LoggerFactory.getLogger(MesosSlaveTagged.class);
     public MesosSlaveTagged(ZooKeeper zooKeeperContainer, String resources) {
         super(DockerClientFactory.build(), resources, Integer.toString(MESOS_SLAVE_PORT), zooKeeperContainer, MESOS_SLAVE_IMAGE, Configuration.MESOS_IMAGE_TAG);
-        LOG.debug("Using image: " + MESOS_SLAVE_IMAGE + "/" + Configuration.MESOS_IMAGE_TAG);
+        LOG.debug("Using image: " + MESOS_SLAVE_IMAGE + ":" + Configuration.MESOS_IMAGE_TAG);
     }
 }

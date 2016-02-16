@@ -17,11 +17,11 @@ public class MesosMasterTagged extends MesosMasterExtended {
     private static final Logger LOG = LoggerFactory.getLogger(MesosMasterTagged.class);
     public MesosMasterTagged(ZooKeeper zooKeeperContainer) {
         super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, Configuration.MESOS_IMAGE_TAG, Collections.emptyMap(), true);
-        LOG.debug("Using image: " + MESOS_MASTER_IMAGE + "/" + Configuration.MESOS_IMAGE_TAG);
+        LOG.debug("Using image: " + MESOS_MASTER_IMAGE + ":" + Configuration.MESOS_IMAGE_TAG);
     }
 
     public MesosMasterTagged(ZooKeeper zooKeeperContainer, Map<String, String> extraEnvVars) {
         super(DockerClientFactory.build(), zooKeeperContainer, MESOS_MASTER_IMAGE, Configuration.MESOS_IMAGE_TAG, extraEnvVars, true);
-        LOG.debug("Using image: " + MESOS_MASTER_IMAGE + "/" + Configuration.MESOS_IMAGE_TAG);
+        LOG.debug("Using image: " + MESOS_MASTER_IMAGE + ":" + Configuration.MESOS_IMAGE_TAG);
     }
 }
