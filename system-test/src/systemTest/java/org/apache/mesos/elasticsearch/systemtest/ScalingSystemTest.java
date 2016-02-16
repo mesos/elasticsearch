@@ -85,14 +85,14 @@ public class ScalingSystemTest extends SchedulerTestBase {
     }
 
     @Test
-    public void shouldNoHaveStaleData() throws UnirestException, IOException {
+    public void shouldNotHaveStaleData() throws UnirestException, IOException {
         LOGGER.info("Scaling down to 2 nodes");
         scaleNumNodesTo(ipAddress, 2);
         esTasks.waitForGreen();
         esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
         List<String> esAddresses = esTasks.getEsHttpAddressList();
 
-        JsonNode body = Unirest.delete("http://" + esAddresses.get(0) + "/shakespeare-2016.02").asJson().getBody();
+        JsonNode body = Unirest.delete("http://" + esAddresses.get(0) + "/shakespeare-*").asJson().getBody();
         LOGGER.info("Deleting data " + body);
 
         LOGGER.info("Scaling back to 3 nodes");
