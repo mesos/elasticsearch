@@ -37,8 +37,9 @@ public class TaskInfoFactory {
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
     public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
     public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
-    public static final String HOST_PATH_HOME = "./es_home";
-    public static final String HOST_PATH_CONF = "./.";
+    public static final String HOST_SANDBOX = "./."; // Do to some protobuf weirdness. Requires './.' Not just '.'
+    public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
+    public static final String HOST_PATH_CONF = HOST_SANDBOX;
 
     private final ClusterState clusterState;
 
@@ -204,20 +205,21 @@ public class TaskInfoFactory {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
-        String folders = configuration.getDataDir();
-        String mkdir = "sudo mkdir -p " + folders + "; ";
-        String chown = "sudo chown -R nobody:nogroup " + folders + "; ";
+        String folders = configuration.getDataDir() + " " + HOST_SANDBOX;
+        String mkdir = "mkdir -p " + folders + "; ";
+        String chown = "chown -R nobody:nogroup " + folders + "; ";
         String command = mkdir +
                         chown +
-                        " sudo su -s /bin/bash -c \""
+                " su -s /bin/sh -c \""
                         + Configuration.ES_BINARY
                         + " "
                         + args.stream().collect(Collectors.joining(" "))
                         + "\" nobody";
         final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
         final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
+                .setShell(true)
                 .setValue(command)
-                .setUser("nobody")
+                .setUser("root")
                 .mergeEnvironment(environment)
                 .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
