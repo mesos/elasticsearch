@@ -38,7 +38,6 @@ public class Configuration {
     public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
     // DCOS Certification requirement 13
     public static final String FRAMEWORK_ROLE = "--frameworkRole";
-    public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
     public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
     public static final String EXECUTOR_IMAGE = "--executorImage";
     public static final String DEFAULT_EXECUTOR_IMAGE = "elasticsearch:latest";

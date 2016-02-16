@@ -63,12 +63,6 @@ public class CLITest {
     }
 
     @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void shouldFailIfExecutorTimeoutLessThanHealthDelay() {
-        String[] args = {Configuration.EXECUTOR_HEALTH_DELAY, "1000", Configuration.EXECUTOR_TIMEOUT, "10", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
-    @Test(expected = com.beust.jcommander.ParameterException.class)
     public void shouldFailIfParamIsEmpty() {
         String[] args = {ElasticsearchCLIParameter.ELASTICSEARCH_CLUSTER_NAME, " ", ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);
@@ -106,19 +100,9 @@ public class CLITest {
         new Configuration(args);
     }
 
-    @Test
-    public void shouldAcceptTimeoutGreaterThanHealthDelay() {
-        String[] args = {
-                Configuration.EXECUTOR_HEALTH_DELAY, "100",
-                Configuration.EXECUTOR_TIMEOUT, "5000",
-                ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-
     @Test(expected = com.beust.jcommander.ParameterException.class)
     public void orderingOfParametersIsImportant() {
         String[] args = {
-                Configuration.EXECUTOR_HEALTH_DELAY, "5000", // This won't work, because EXECUTOR_TIMEOUT is still the default 30000. I.e. (4999 !> 300000)
                 Configuration.EXECUTOR_TIMEOUT, "3000",
                 ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
         new Configuration(args);

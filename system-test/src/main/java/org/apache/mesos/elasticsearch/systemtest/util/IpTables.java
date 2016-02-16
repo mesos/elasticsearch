@@ -16,6 +16,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
+/**
+ * Adds ip table rules to forward all ES traffic to the docker host.
+ */
 public class IpTables implements Callable<Boolean> {
     private static final Logger LOGGER = LoggerFactory.getLogger(IpTables.class);
     public static final String IPTABLES_FINISHED_FLAG = "iptables_finished_flag";
