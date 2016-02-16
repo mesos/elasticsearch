@@ -40,4 +40,10 @@ public class AlpineContainer extends AbstractContainer {
                 .withAttachStderr(true)
                 .withCmd(cmd);
     }
+
+    @Override
+    public String getRole() {
+        return "Alpine";
+    }
+
 }

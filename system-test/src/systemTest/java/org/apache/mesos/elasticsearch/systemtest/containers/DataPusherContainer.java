@@ -42,4 +42,9 @@ public class DataPusherContainer extends AbstractContainer {
         super.start(timeout);
         dockerClient.logContainerCmd(getContainerId()).withStdOut().withStdErr().exec(callback);
     }
+
+    @Override
+    public String getRole() {
+        return "es_pusher";
+    }
 }

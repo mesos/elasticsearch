@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.container.AbstractContainer;
 import com.containersol.minimesos.mesos.*;
 import com.github.dockerjava.api.DockerClient;
@@ -163,6 +163,11 @@ public class RunAsJarSystemTest {
         }
         public String getZookeeperMesosUrl() {
             return "zk://" + zooKeeperContainer.getIpAddress() + ":2181/mesos";
+        }
+
+        @Override
+        public String getRole() {
+            return TEST_CONFIG.getSchedulerName();
         }
     }
 

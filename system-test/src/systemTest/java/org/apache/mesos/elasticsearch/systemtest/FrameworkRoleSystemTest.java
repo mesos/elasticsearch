@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.state.State;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
@@ -52,6 +52,7 @@ public class FrameworkRoleSystemTest extends TestBase {
     }
 
     public State getStateInfo(MesosCluster cluster) throws UnirestException, JsonParseException, JsonMappingException {
-        return State.fromJSON(cluster.getStateInfoJSON().toString());
+        return State.fromJSON(cluster.getClusterStateInfo());
     }
+
 }

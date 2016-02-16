@@ -32,4 +32,9 @@ public class SeedDataContainer extends AbstractContainer {
                 .withName("seed_data_" + new SecureRandom().nextInt());
     }
 
+    @Override
+    public String getRole() {
+        return "seed_data";
+    }
+
 }

@@ -28,4 +28,9 @@ public class ZookeeperContainer extends AbstractContainer {
                 .createContainerCmd(ZOOKEEPER_IMAGE)
                 .withName("zookeeper_" + new SecureRandom().nextInt());
     }
+
+    @Override
+    public String getRole() {
+        return "zookeeper";
+    }
 }
