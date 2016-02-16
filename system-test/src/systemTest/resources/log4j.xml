@@ -10,13 +10,13 @@
     </appender>
 
     <category name="com.containersol.minimesos">
-        <level value="DEBUG"/>
+        <level value="ERROR"/>
     </category>
     <category name="org.apache.mesos.elasticsearch">
-        <level value="DEBUG"/>
+        <level value="ERROR"/>
     </category>
     <root>
-        <level value="INFO"/>
+        <level value="ERROR"/>
         <appender-ref ref="console" />
     </root>
 
