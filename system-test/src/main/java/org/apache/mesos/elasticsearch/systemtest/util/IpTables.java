@@ -43,17 +43,17 @@ public class IpTables implements Callable<Boolean> {
     @Override
     public Boolean call() throws Exception {
         String iptablesRoute = config.getPorts().stream().map(ports -> "" +
-                        "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.client() + " -j DNAT --to-destination 172.17.0.1:" + ports.client() + " ; " +
-                        "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.transport() + " -j DNAT --to-destination 172.17.0.1:" + ports.transport() + " ; "
+                        "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.client() + " -j DNAT --to-destination " + Configuration.getDocker0AdaptorIpAddress() + ":" + ports.client() + " && " +
+                        "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.transport() + " -j DNAT --to-destination " + Configuration.getDocker0AdaptorIpAddress() + ":" + ports.transport() + " && "
         ).collect(Collectors.joining(" "));
         ExecCreateCmdResponse execResponse = client.execCreateCmd(containerId)
                 .withAttachStdout()
                 .withAttachStderr()
                 .withTty(true)
                 .withCmd("sh", "-c", "" +
-                                "echo 1 > /proc/sys/net/ipv4/ip_forward ; " +
+                                "echo 1 > /proc/sys/net/ipv4/ip_forward && " +
                                 iptablesRoute +
-                                "sudo iptables -t nat -A POSTROUTING -j MASQUERADE  ; " +
+                                "sudo iptables -t nat -A POSTROUTING -j MASQUERADE  && " +
                                 "echo " + IPTABLES_FINISHED_FLAG
                 ).exec();
         try (InputStream inputStream = client.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
