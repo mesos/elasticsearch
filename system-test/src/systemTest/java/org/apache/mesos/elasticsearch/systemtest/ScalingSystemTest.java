@@ -3,8 +3,6 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.mesos.DockerClientFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.jayway.awaitility.Awaitility;
-import com.mashape.unirest.http.HttpResponse;
-import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
@@ -16,8 +14,6 @@ import org.junit.Test;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.Assert.assertEquals;
 
 /**
  * Tests the scaling capabilities. To run multiple times, uncomment the code below.
@@ -95,16 +91,13 @@ public class ScalingSystemTest extends SchedulerTestBase {
         }
     }
 
-    public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
-        HttpResponse<JsonNode> response = Unirest.put("http://" + ipAddress + ":" + WEBUI_PORT + "/v1/cluster/elasticsearchNodes").header("Content-Type", "application/json").body(newNumNodes.toString()).asJson();
-        assertEquals(200, response.getStatus());
-
+    public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) {
         Awaitility.await().atMost(60, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> {
+            Unirest.put("http://" + ipAddress + ":" + WEBUI_PORT + "/v1/cluster/elasticsearchNodes").header("Content-Type", "application/json").body(newNumNodes.toString()).asJson();
             String numNodes = getNumberOfNodes(ipAddress);
             LOGGER.debug("Number of nodes: " + numNodes);
             return numNodes.equals(newNumNodes.toString());
         });
-        assertEquals(newNumNodes.toString(), getNumberOfNodes(ipAddress));
     }
 
     public String getNumberOfNodes(String ipAddress) throws UnirestException {
