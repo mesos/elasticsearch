@@ -36,7 +36,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     @Before
     public void before() {
         ipAddress = getScheduler().getIpAddress();
-        esTasks = new ESTasks(TEST_CONFIG, ipAddress, true);
+        esTasks = new ESTasks(TEST_CONFIG, ipAddress);
     }
 
     @Test
@@ -62,6 +62,8 @@ public class ScalingSystemTest extends SchedulerTestBase {
         // Make sure we have three nodes
         scaleNumNodesTo(ipAddress, 3);
         esTasks.waitForGreen(3);
+
+        esTasks.waitForCorrectDocumentCount(0); // Make sure we can actually connect.
 
         List<String> esAddresses = esTasks.getEsHttpAddressList();
         LOGGER.info("Addresses: " + esAddresses);

@@ -15,19 +15,14 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser.HTTP_ADDRESS;
-
 /**
  * Get Array of tasks from the API
  */
 public class ESTasks {
     private static final Logger LOGGER = Logger.getLogger(ESTasks.class);
     private final String tasksEndPoint;
-    private final Boolean portsExposed;
-    private String dockerHostAddress = Configuration.getDocker0AdaptorIpAddress();
 
-    public ESTasks(Configuration config, String schedulerIpAddress, Boolean portsExposed) {
-        this.portsExposed = portsExposed;
+    public ESTasks(Configuration config, String schedulerIpAddress) {
         tasksEndPoint = "http://" + schedulerIpAddress + ":" + config.getSchedulerGuiPort() + "/v1/tasks";
     }
 
@@ -41,15 +36,6 @@ public class ESTasks {
         HttpResponse<JsonNode> response = Unirest.get(tasksEndPoint).asJson();
         for (int i = 0; i < response.getBody().getArray().length(); i++) {
             JSONObject jsonObject = response.getBody().getArray().getJSONObject(i);
-            // If the ports are exposed on the docker adaptor, then force the http_address's to point to the docker adaptor IP address.
-            // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
-            // real-life network setup.
-            if (portsExposed) {
-                String oldAddress = (String) jsonObject.remove(HTTP_ADDRESS);
-                String newAddress = dockerHostAddress
-                        + ":" + oldAddress.split(":")[1];
-                jsonObject.put(HTTP_ADDRESS, newAddress);
-            }
             tasks.add(jsonObject);
         }
         return tasks;
@@ -69,8 +55,10 @@ public class ESTasks {
                 final JSONObject body = Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asJson().getBody().getObject();
                 final boolean numberOfNodes = body.getInt("number_of_nodes") == numNodes;
                 final boolean green = body.getString("status").equals("green");
-                LOGGER.debug(green + " and " + numberOfNodes + ": " + body);
-                return green && numberOfNodes;
+                final boolean initializingShards = body.getInt("initializing_shards") == 0;
+                final boolean unassignedShards = body.getInt("unassigned_shards") == 0;
+                LOGGER.debug(green + " and " + numberOfNodes + " and " + initializingShards + " and " + unassignedShards + ": " + body);
+                return green && numberOfNodes && initializingShards && unassignedShards;
             } catch (Exception e) {
                 LOGGER.debug(e);
                 return false;
@@ -80,7 +68,7 @@ public class ESTasks {
 
     public Integer getDocumentCount(String httpAddress) throws UnirestException {
         JSONArray responseElements = Unirest.get("http://" + httpAddress + "/_count").asJson().getBody().getArray();
-        LOGGER.info(responseElements);
+        LOGGER.debug(responseElements);
         return responseElements.getJSONObject(0).getInt("count");
     }
 
@@ -90,7 +78,7 @@ public class ESTasks {
             for (String httpAddress : esAddresses) {
                 try {
                     Integer count = getDocumentCount(httpAddress);
-                    if (count == 0 || count % docCount != 0) { // This allows for repeated testing.
+                    if (docCount != 0 && (count == 0 || count % docCount != 0)) { // This allows for repeated testing. Only run if docCount != 0.
                         return false;
                     }
                 } catch (Exception e) {

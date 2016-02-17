@@ -112,7 +112,7 @@ public class ElasticsearchAuthSystemTest {
         SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
         cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());

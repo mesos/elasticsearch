@@ -44,7 +44,7 @@ public class FrameworkRoleSystemTest extends TestBase {
         CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 

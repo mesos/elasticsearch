@@ -108,7 +108,7 @@ public class RunAsJarSystemTest {
         cluster.start(TEST_CONFIG.getClusterTimeout());
 
         // Make sure all tasks are running before we test.
-        esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, NUMBER_OF_TEST_TASKS);
 
         nodesResponse = new ElasticsearchNodesResponse(esTasks, NUMBER_OF_TEST_TASKS);
