@@ -13,11 +13,12 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Configuration {
     public static final String MESOS_IMAGE_TAG = "0.25.0-0.2.70.ubuntu1404";
+    public static final int EXECUTOR_RAM_ESTIMATE = 50;
 
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
-    private int elasticsearchMemorySize = 200;
+    private int elasticsearchMemorySize = 500;
     private String elasticsearchJobName = "esdemo";
     private final Integer clusterTimeout = 60;
 
@@ -62,7 +63,7 @@ public class Configuration {
     public List<String> getPortRanges() {
         return getPorts().stream().map(pair -> "ports(*):" +
                 "[" + pair.client() + "-" + pair.client() + "," + pair.transport() + "-" + pair.transport() + "]; " +
-                "cpus(*):1.0; mem(*):256; disk(*):200")
+                "cpus(*):1.0; mem(*):" + (elasticsearchMemorySize + EXECUTOR_RAM_ESTIMATE) + "; disk(*):200")
                 .collect(Collectors.toList());
     }
 
