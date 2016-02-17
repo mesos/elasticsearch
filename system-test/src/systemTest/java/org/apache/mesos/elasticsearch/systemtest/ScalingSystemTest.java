@@ -1,7 +1,5 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.mesos.DockerClientFactory;
-import com.github.dockerjava.api.DockerClient;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.HttpResponse;
 import com.mashape.unirest.http.JsonNode;
@@ -13,6 +11,7 @@ import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -23,10 +22,13 @@ import static org.junit.Assert.assertEquals;
  */
 //@RunWith(Parameterized.class)
 public class ScalingSystemTest extends SchedulerTestBase {
+
     private static final Logger LOGGER = Logger.getLogger(ScalingSystemTest.class);
+
     public static final int WEBUI_PORT = 31100;
-    private static DockerClient dockerClient = DockerClientFactory.build();
+
     private String ipAddress;
+
     private ESTasks esTasks;
 
 //    @Parameterized.Parameters
@@ -35,9 +37,14 @@ public class ScalingSystemTest extends SchedulerTestBase {
 //    }
 
     @Before
-    public void before() {
+    public void before() throws UnirestException {
         ipAddress = getScheduler().getIpAddress();
         esTasks = new ESTasks(TEST_CONFIG, ipAddress, true);
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
+
+        DataPusherContainer pusher = new DataPusherContainer(CLUSTER_ARCHITECTURE.dockerClient, esAddresses.get(0));
+        CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
+        LOGGER.info("Started data push");
     }
 
     @Test
@@ -67,10 +74,6 @@ public class ScalingSystemTest extends SchedulerTestBase {
         List<String> esAddresses = esTasks.getEsHttpAddressList();
         LOGGER.info("Addresses: " + esAddresses);
 
-        DataPusherContainer pusher = new DataPusherContainer(CLUSTER_ARCHITECTURE.dockerClient, esAddresses.get(0));
-        CLUSTER.addAndStartContainer(pusher, TEST_CONFIG.getClusterTimeout());
-        LOGGER.info("Started data push");
-
         esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
 
         // Scale down to one node
@@ -79,6 +82,34 @@ public class ScalingSystemTest extends SchedulerTestBase {
 
         // Check that the data is still correct
         esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
+    }
+
+    @Test
+    public void shouldNotHaveStaleData() throws UnirestException, IOException {
+        LOGGER.info("Scaling down to 2 nodes");
+        scaleNumNodesTo(ipAddress, 2);
+        esTasks.waitForGreen();
+        esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
+
+        JsonNode body = Unirest.delete("http://" + esAddresses.get(0) + "/shakespeare-*").asJson().getBody();
+        LOGGER.info("Deleting data " + body);
+
+        LOGGER.info("Scaling back to 3 nodes");
+        scaleNumNodesTo(ipAddress, 3);
+        esTasks.waitForGreen();
+
+        Awaitility.await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(() -> { // This can take some time, somtimes.
+            try {
+                List<String> esHttpAddressList = esTasks.getEsHttpAddressList();
+                String body1 = Unirest.get("http://" + esHttpAddressList.get(0) + "/_cluster/health").asString().getBody();
+                LOGGER.debug(body1);
+                int documentCount = Unirest.get("http://" + esAddresses.get(0) + "/_count").asJson().getBody().getArray().getJSONObject(0).getInt("count");
+                return documentCount == 0;
+            } catch (Exception e) {
+                return false;
+            }
+        });
     }
 
     public void scaleNumNodesTo(String ipAddress, Integer newNumNodes) throws UnirestException {
