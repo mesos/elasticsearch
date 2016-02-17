@@ -39,10 +39,10 @@ public class DockerUtil {
     }
 
     public void killAllExecutors() {
-        getExecutorContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+        getExecutorContainers().forEach(container -> dockerClient.removeContainerCmd(container.getId()).withRemoveVolumes(true).withForce(true).exec());
     }
 
     public void killAllSchedulers() {
-        getSchedulerContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+        getSchedulerContainers().forEach(container -> dockerClient.removeContainerCmd(container.getId()).withRemoveVolumes(true).withForce(true).exec());
     }
 }

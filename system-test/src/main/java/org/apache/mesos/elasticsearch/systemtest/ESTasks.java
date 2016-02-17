@@ -60,16 +60,19 @@ public class ESTasks {
         return getTasks().stream().map(ElasticsearchParser::parseHttpAddress).collect(Collectors.toList());
     }
 
-    public void waitForGreen() {
-        LOGGER.debug("Wating for green.");
+    public void waitForGreen(Integer numNodes) {
+        LOGGER.debug("Wating for green and " + numNodes + " nodes.");
         Awaitility.await().atMost(5, TimeUnit.MINUTES).pollInterval(1, TimeUnit.SECONDS).until(() -> { // This can take some time, somtimes.
             try {
                 List<String> esAddresses = getEsHttpAddressList();
                 // This may throw a JSONException if we call before the JSON has been generated. Hence, catch exception.
-                String body = Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asString().getBody();
-                LOGGER.debug(body);
-                return body.contains("green");
+                final JSONObject body = Unirest.get("http://" + esAddresses.get(0) + "/_cluster/health").asJson().getBody().getObject();
+                final boolean numberOfNodes = body.getInt("number_of_nodes") == numNodes;
+                final boolean green = body.getString("status").equals("green");
+                LOGGER.debug(green + " and " + numberOfNodes + ": " + body);
+                return green && numberOfNodes;
             } catch (Exception e) {
+                LOGGER.debug(e);
                 return false;
             }
         });
