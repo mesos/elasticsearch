@@ -134,7 +134,9 @@ public class ReconciliationSystemTest extends TestBase {
                             Configuration.EXECUTOR_HEALTH_DELAY, "99",
                             Configuration.EXECUTOR_TIMEOUT, "100", // This timeout is valid, but will always timeout, because of delays in receiving healthchecks.
                             ElasticsearchCLIParameter.ELASTICSEARCH_NODES, "3",
-                            Configuration.ELASTICSEARCH_RAM, "256"
+                            Configuration.ELASTICSEARCH_RAM, Integer.toString(TEST_CONFIG.getElasticsearchMemorySize()),
+                            Configuration.ELASTICSEARCH_CPU, "0.1",
+                            Configuration.ELASTICSEARCH_DISK, "150"
                     );
         }
     }
