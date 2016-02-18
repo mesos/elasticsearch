@@ -11,11 +11,8 @@ import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -24,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 /**
  * Tests the scaling capabilities. To run multiple times, uncomment the code below.
  */
-@RunWith(Parameterized.class)
+//@RunWith(Parameterized.class)
 public class ScalingSystemTest extends SchedulerTestBase {
     private static final Logger LOGGER = Logger.getLogger(ScalingSystemTest.class);
     public static final int WEBUI_PORT = 31100;
@@ -33,10 +30,10 @@ public class ScalingSystemTest extends SchedulerTestBase {
     private String ipAddress;
     private ESTasks esTasks;
 
-    @Parameterized.Parameters
-    public static List<Object[]> data() {
-        return Arrays.asList(new Object[10][0]);
-    }
+//    @Parameterized.Parameters
+//    public static List<Object[]> data() {
+//        return Arrays.asList(new Object[10][0]);
+//    }
 
     @Before
     public void before() {
