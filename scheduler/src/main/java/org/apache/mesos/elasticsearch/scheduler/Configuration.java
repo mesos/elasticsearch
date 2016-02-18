@@ -3,6 +3,8 @@ package org.apache.mesos.elasticsearch.scheduler;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
@@ -11,11 +13,15 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Holder object for framework configuration.
@@ -51,6 +57,11 @@ public class Configuration {
     public static final String JAVA_HOME = "--javaHome";
     public static final String USE_IP_ADDRESS = "--useIpAddress";
     public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
+    public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
+    public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
+    public static final String HOST_SANDBOX = "./."; // Due to some protobuf weirdness. Requires './.' Not just '.'
+    public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
+    public static final String HOST_PATH_CONF = HOST_SANDBOX;
 
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
@@ -259,5 +270,66 @@ public class Configuration {
             portsList.add(Integer.parseInt(port));
         }
         return portsList;
+    }
+
+    public String nativeCommand(List<String> arguments) {
+        String folders = getDataDir() + " " + HOST_SANDBOX;
+        String mkdir = "mkdir -p " + folders + "; ";
+        String chown = "chown -R nobody:nogroup " + folders + "; ";
+        return mkdir +
+                chown +
+                " su -s /bin/sh -c \""
+                + Configuration.ES_BINARY
+                + " "
+                + arguments.stream().collect(Collectors.joining(" "))
+                + "\" nobody";
+    }
+
+    public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo) {
+        List<String> args = new ArrayList<>();
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        String hostAddress = "";
+        if (taskList.size() > 0) {
+            Protos.TaskInfo taskInfo = taskList.get(0);
+            String taskId = taskInfo.getTaskId().getValue();
+            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
+            hostAddress = NetworkUtils.addressToString(transportAddress, getIsUseIpAddress()).replace("http://", "");
+        }
+        addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);
+        args.add("--default.http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
+        args.add("--default.transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
+        args.add("--default.cluster.name=" + getElasticsearchClusterName());
+        args.add("--default.node.master=true");
+        args.add("--default.node.data=true");
+        args.add("--default.node.local=false");
+        args.add("--default.index.number_of_replicas=0");
+        args.add("--default.index.auto_expand_replicas=0-all");
+        if (!isFrameworkUseDocker()) {
+            args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
+            args.add("--default.path.data=" + getDataDir());
+            args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
+        } else {
+            args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
+        }
+        args.add("--default.bootstrap.mlockall=true");
+        args.add("--default.network.bind_host=0.0.0.0");
+        args.add("--default.network.publish_host=_non_loopback:ipv4_");
+        args.add("--default.gateway.recover_after_nodes=1");
+        args.add("--default.gateway.expected_nodes=1");
+        args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
+        args.add("--default.discovery.type=zen");
+        args.add("--default.discovery.zen.fd.ping_timeout=30s");
+        args.add("--default.discovery.zen.fd.ping_interval=1s");
+        args.add("--default.discovery.zen.fd.ping_retries=30");
+        args.add("--default.discovery.zen.ping.multicast.enabled=false");
+
+
+        return args;
+    }
+
+    private void addIfNotEmpty(List<String> args, String key, String value) {
+        if (!value.isEmpty()) {
+            args.addAll(asList(key, value));
+        }
     }
 }

@@ -4,7 +4,6 @@ import com.google.protobuf.ByteString;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
-import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
@@ -19,13 +18,9 @@ import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.stream.Collectors;
-
-import static java.util.Arrays.asList;
 
 /**
  * Factory for creating {@link Protos.TaskInfo}s
@@ -35,11 +30,6 @@ public class TaskInfoFactory {
     private static final Logger LOGGER = Logger.getLogger(TaskInfoFactory.class);
 
     public static final String TASK_DATE_FORMAT = "yyyyMMdd'T'HHmmss.SSS'Z'";
-    public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
-    public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
-    public static final String HOST_SANDBOX = "./."; // Do to some protobuf weirdness. Requires './.' Not just '.'
-    public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
-    public static final String HOST_PATH_CONF = HOST_SANDBOX;
 
     private final ClusterState clusterState;
 
@@ -78,7 +68,7 @@ public class TaskInfoFactory {
 
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        final List<String> args = getArguments(configuration, discovery);
+        final List<String> args = configuration.esArguments(clusterState, discovery);
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -101,7 +91,7 @@ public class TaskInfoFactory {
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
         final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
-        final List<String> args = getArguments(configuration, discovery);
+        final List<String> args = configuration.esArguments(clusterState, discovery);
         final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId);
 
         return Protos.TaskInfo.newBuilder()
@@ -166,7 +156,7 @@ public class TaskInfoFactory {
                 .setDocker(dockerInfo)
                 .addVolumes(Protos.Volume.newBuilder()
                         .setHostPath(configuration.getDataDir())
-                        .setContainerPath(CONTAINER_PATH_DATA)
+                        .setContainerPath(Configuration.CONTAINER_PATH_DATA)
                         .setMode(Protos.Volume.Mode.RW)
                         .build());
 
@@ -180,7 +170,7 @@ public class TaskInfoFactory {
             final String settingsFilename = fileName.toString();
             builder.addVolumes(Protos.Volume.newBuilder()
                     .setHostPath("./" + settingsFilename) // Because the file has been uploaded by the uris.
-                    .setContainerPath(CONTAINER_PATH_CONF)
+                    .setContainerPath(Configuration.CONTAINER_PATH_CONF)
                     .setMode(Protos.Volume.Mode.RO)
                     .build());
         }
@@ -205,16 +195,7 @@ public class TaskInfoFactory {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
-        String folders = configuration.getDataDir() + " " + HOST_SANDBOX;
-        String mkdir = "mkdir -p " + folders + "; ";
-        String chown = "chown -R nobody:nogroup " + folders + "; ";
-        String command = mkdir +
-                        chown +
-                " su -s /bin/sh -c \""
-                        + Configuration.ES_BINARY
-                        + " "
-                        + args.stream().collect(Collectors.joining(" "))
-                        + "\" nobody";
+        String command = configuration.nativeCommand(args);
         final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
         final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setShell(true)
@@ -227,49 +208,6 @@ public class TaskInfoFactory {
         }
         return builder
                 .build();
-    }
-
-
-    private List<String> getArguments(Configuration configuration, Protos.DiscoveryInfo discoveryInfo) {
-        List<String> args = new ArrayList<>();
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
-        String hostAddress = "";
-        if (taskList.size() > 0) {
-            Protos.TaskInfo taskInfo = taskList.get(0);
-            String taskId = taskInfo.getTaskId().getValue();
-            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
-            hostAddress = NetworkUtils.addressToString(transportAddress, configuration.getIsUseIpAddress()).replace("http://", "");
-        }
-        addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);
-        args.add("--default.http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
-        args.add("--default.transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
-        args.add("--default.cluster.name=" + configuration.getElasticsearchClusterName());
-        args.add("--default.node.master=true");
-        args.add("--default.node.data=true");
-        args.add("--default.node.local=false");
-        args.add("--default.index.number_of_replicas=0");
-        args.add("--default.index.auto_expand_replicas=0-all");
-        if (!configuration.isFrameworkUseDocker()) {
-            args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
-            args.add("--default.path.data=" + configuration.getDataDir());
-            args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
-        } else {
-            args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
-        }
-        args.add("--default.bootstrap.mlockall=true");
-        args.add("--default.network.bind_host=0.0.0.0");
-        args.add("--default.network.publish_host=_non_loopback:ipv4_");
-        args.add("--default.gateway.recover_after_nodes=1");
-        args.add("--default.gateway.expected_nodes=1");
-        args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
-        args.add("--default.discovery.type=zen");
-        args.add("--default.discovery.zen.fd.ping_timeout=30s");
-        args.add("--default.discovery.zen.fd.ping_interval=1s");
-        args.add("--default.discovery.zen.fd.ping_retries=30");
-        args.add("--default.discovery.zen.ping.multicast.enabled=false");
-
-
-        return args;
     }
 
     public ByteString toData(String hostname, String ipAddress, ZonedDateTime zonedDateTime) {
@@ -285,12 +223,6 @@ public class TaskInfoFactory {
             throw new RuntimeException("Failed to write task metadata", e);
         }
         return ByteString.copyFromUtf8(writer.getBuffer().toString());
-    }
-
-    private void addIfNotEmpty(List<String> args, String key, String value) {
-        if (!value.isEmpty()) {
-            args.addAll(asList(key, value));
-        }
     }
 
     private String taskId(Protos.Offer offer, Clock clock) {

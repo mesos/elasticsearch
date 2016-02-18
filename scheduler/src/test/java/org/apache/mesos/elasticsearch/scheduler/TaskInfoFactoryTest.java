@@ -53,7 +53,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
-        when(configuration.getElasticsearchSettingsLocation()).thenReturn(TaskInfoFactory.HOST_PATH_CONF);
+        when(configuration.getElasticsearchSettingsLocation()).thenReturn(Configuration.HOST_PATH_CONF);
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
         when(configuration.getDataDir()).thenReturn(Configuration.DEFAULT_HOST_DATA_DIR);
@@ -98,11 +98,11 @@ public class TaskInfoFactoryTest {
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
         assertEquals(2, taskInfo.getContainer().getVolumesCount());
-        assertEquals(TaskInfoFactory.CONTAINER_PATH_DATA, taskInfo.getContainer().getVolumes(0).getContainerPath());
+        assertEquals(Configuration.CONTAINER_PATH_DATA, taskInfo.getContainer().getVolumes(0).getContainerPath());
         assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getContainer().getVolumes(0).getMode());
-        assertEquals(TaskInfoFactory.CONTAINER_PATH_CONF, taskInfo.getContainer().getVolumes(1).getContainerPath());
-        assertEquals(TaskInfoFactory.HOST_PATH_CONF, taskInfo.getContainer().getVolumes(1).getHostPath());
+        assertEquals(Configuration.CONTAINER_PATH_CONF, taskInfo.getContainer().getVolumes(1).getContainerPath());
+        assertEquals(Configuration.HOST_PATH_CONF, taskInfo.getContainer().getVolumes(1).getHostPath());
         assertEquals(Protos.Volume.Mode.RO, taskInfo.getContainer().getVolumes(1).getMode());
     }
 
@@ -129,12 +129,12 @@ public class TaskInfoFactoryTest {
                                             .build();
     }
 
-    // TODO (PNW): Reinstate this test when Jar mode is added.
     @Test
     public void shouldAddJarInfoAndRemoveContainerInfo() {
         when(configuration.isFrameworkUseDocker()).thenReturn(false);
         String address = "http://localhost:1234";
         when(configuration.getFrameworkFileServerAddress()).thenReturn(address);
+        when(configuration.nativeCommand(any())).thenReturn("ls");
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
 
         Date now = new DateTime().withDayOfMonth(1).withDayOfYear(1).withYear(1970).withHourOfDay(1).withMinuteOfHour(2).withSecondOfMinute(3).withMillisOfSecond(400).toDate();
