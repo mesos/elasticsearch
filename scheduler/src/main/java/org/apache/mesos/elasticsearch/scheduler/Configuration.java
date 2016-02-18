@@ -74,7 +74,7 @@ public class Configuration {
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
-    private String version = "0.7.1";
+    private String version = "0.7.2";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)

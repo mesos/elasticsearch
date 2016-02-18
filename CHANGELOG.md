@@ -2,6 +2,20 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [0.7.2] - [18 February 2016]
+
+### Breaking changes
+- Users are now required to have a path on the end of the zk url. Previously, they were not.
+
+### Bugs
+- [Stale data when scaling nodes](https://github.com/mesos/elasticsearch/issues/487)
+- [Health check issue](https://github.com/mesos/elasticsearch/issues/486)
+- [Framework hard codes the ZK endpoint /mesos](https://github.com/mesos/elasticsearch/issues/483)
+- [With large amounts of data, when scaling, start up times out](https://github.com/mesos/elasticsearch/issues/481)
+- [elasticsearch-executor name](https://github.com/mesos/elasticsearch/issues/479)
+- [In docker mode, user has to place yml file in /tmp/config](https://github.com/mesos/elasticsearch/issues/477)
+- [Downloading yml settings file from https source](https://github.com/mesos/elasticsearch/issues/476)
+
 ## [0.7.1] - [25 January 2016]
 
 ### Bugs
