@@ -20,7 +20,7 @@ public class DataRetrievableAllNodesSystemTest extends SchedulerTestBase {
     @Test
     public void testDataConsistency() throws Exception {
         ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress(), true);
-        esTasks.waitForGreen();
+        esTasks.waitForGreen(3);
 
         List<String> esAddresses = esTasks.getEsHttpAddressList();
         pusher = new DataPusherContainer(CLUSTER_ARCHITECTURE.dockerClient, esAddresses.get(0));
