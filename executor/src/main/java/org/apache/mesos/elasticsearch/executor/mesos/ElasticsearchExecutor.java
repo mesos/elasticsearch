@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class ElasticsearchExecutor implements Executor {
     public static final long ES_TIMEOUT = 120L;
     public static final String ES_STATUS_GREEN = "green";
+    public static final String ES_STATUS_YELLOW = "yellow";
     private final Launcher launcher;
     public static final Logger LOGGER = Logger.getLogger(ElasticsearchExecutor.class.getCanonicalName());
     private final TaskStatus taskStatus;
@@ -107,8 +108,7 @@ public class ElasticsearchExecutor implements Executor {
                 Awaitility.await()
                         .atMost(ES_TIMEOUT, TimeUnit.SECONDS)
                         .pollInterval(1L, TimeUnit.SECONDS)
-                        .until(() -> nodeUtil.getNodeStatus(node).equals(ES_STATUS_GREEN));
-
+                        .until(() -> nodeUtil.getNodeStatus(node).equals(ES_STATUS_GREEN) || nodeUtil.getNodeStatus(node).equals(ES_STATUS_YELLOW));
                 // Send status update, running
                 driver.sendStatusUpdate(taskStatus.running());
             } catch (ConditionTimeoutException e) {
