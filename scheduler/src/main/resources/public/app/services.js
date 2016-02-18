@@ -30,3 +30,8 @@ services.factory('Stats', function($resource, config) {
     var URL = baseURL + 'v1/es/_cluster/stats';
     return $resource(URL);
 });
+
+services.factory('State', function($resource, config) {
+    var URL = baseURL + 'v1/es/_cluster/state';
+    return $resource(URL);
+});

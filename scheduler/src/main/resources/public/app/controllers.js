@@ -106,7 +106,7 @@ controllers.controller('ClusterController', function($scope) {
 
 });
 
-controllers.controller('ScalingController', function($scope, config, Scaling) {
+controllers.controller('ScalingController', function($scope, $interval, $window, config, Scaling, State) {
     $scope.scaling = {
         nodes: $scope.$parent.configuration.ElasticsearchNodes,
         result: null
@@ -116,6 +116,40 @@ controllers.controller('ScalingController', function($scope, config, Scaling) {
             Scaling.save({}, {value: $scope.scaling.nodes});
         }
     };
+    var updateShardsDistribution = function(data) {
+        $scope.nodes = data.nodes;
+        $scope.shardsByNodes = data.routing_nodes.nodes;
+        $scope.shardsColors = {};
+        var shardKeys = [];
+        angular.forEach($scope.shardsByNodes, function(shards) {
+            angular.forEach(shards, function(shard) {
+                var key = shard.index + "-" + shard.shard;
+                if (shardKeys.indexOf(key) == -1) {
+                    shardKeys.push(key);
+                }
+            });
+        });
+        var palette = $window.palette('rainbow', shardKeys.length);
+        $scope.shardsColors = (function(keys, vals) {
+            return keys.reduce (
+              function(prev, val, i) {
+                  prev[val] = vals[i];
+                  return prev;
+              },{}
+            );
+        })(shardKeys, palette);
+    };
+    var fetchState = function() {
+        State.get(function(data) {
+            if (!angular.equals($scope.shardsByNodes, data.routing_nodes.nodes)) {
+                updateShardsDistribution(data);
+            }
+        });
+    };
+    fetchState();
+    // @todo move to config too
+    var fetchInterval = 1000; // ms
+    $interval(fetchState, fetchInterval);
 });
 
 controllers.controller('StatsController', function ($scope, $interval, config, Stats) {
