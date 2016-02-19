@@ -13,6 +13,7 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 /**
@@ -30,9 +31,30 @@ public class ESTasks {
         return Unirest.get(tasksEndPoint).asJson();
     }
 
-    public List<JSONObject> getTasks() throws UnirestException {
+    public List<JSONObject> getTasks() {
         List<JSONObject> tasks = new ArrayList<>();
         LOGGER.debug("Fetching tasks on " + tasksEndPoint);
+        final AtomicReference<HttpResponse<JsonNode>> response = new AtomicReference<>();
+        Awaitility.await().atMost(30, TimeUnit.SECONDS).pollInterval(1, TimeUnit.SECONDS).until(() -> { // This can take some time, somtimes.
+            try {
+                response.set(Unirest.get(tasksEndPoint).asJson());
+                return true;
+            } catch (UnirestException e) {
+                LOGGER.debug(e);
+                return false;
+            }
+        });
+        for (int i = 0; i < response.get().getBody().getArray().length(); i++) {
+            JSONObject jsonObject = response.get().getBody().getArray().getJSONObject(i);
+            // If the ports are exposed on the docker adaptor, then force the http_address's to point to the docker adaptor IP address.
+            // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
+            // real-life network setup.
+            if (portsExposed) {
+                String oldAddress = (String) jsonObject.remove(HTTP_ADDRESS);
+                String newAddress = dockerHostAddress
+                        + ":" + oldAddress.split(":")[1];
+                jsonObject.put(HTTP_ADDRESS, newAddress);
+            }
         HttpResponse<JsonNode> response = Unirest.get(tasksEndPoint).asJson();
         for (int i = 0; i < response.getBody().getArray().length(); i++) {
             JSONObject jsonObject = response.getBody().getArray().getJSONObject(i);
@@ -42,7 +64,7 @@ public class ESTasks {
     }
 
     // TODO (pnw): I shouldn't have to prepend http everywhere. Add here instead.
-    public List<String> getEsHttpAddressList() throws UnirestException {
+    public List<String> getEsHttpAddressList() {
         return getTasks().stream().map(ElasticsearchParser::parseHttpAddress).collect(Collectors.toList());
     }
 

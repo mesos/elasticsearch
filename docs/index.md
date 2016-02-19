@@ -145,8 +145,8 @@ Usage: (Options preceded by an asterisk are required) [options]
        (MB).
        Default: 256.0
     --elasticsearchSettingsLocation
-       Path or URL to ES yml settings file. E.g. '/tmp/config/elasticsearch.yml'
-       or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'
+       Path or URL to ES yml settings file. [In docker mode file must be in
+       /tmp/config] E.g. '/tmp/config/elasticsearch.yml' or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'
        Default: <empty string>
     --executorForcePullImage
        Option to force pull the executor image. [DOCKER MODE ONLY]

@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 import com.containersol.minimesos.mesos.DockerClientFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.jayway.awaitility.Awaitility;
+import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
@@ -40,7 +41,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     }
 
     @Test
-    public void shouldScaleDown() throws UnirestException {
+    public void shouldScaleDown() {
         scaleNumNodesTo(ipAddress, 3); // Reset to 3 nodes
         esTasks.waitForGreen(3);
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
@@ -49,7 +50,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     }
 
     @Test
-    public void shouldScaleUp() throws UnirestException {
+    public void shouldScaleUp() {
         scaleNumNodesTo(ipAddress, 2); // Reset to 2 nodes
         esTasks.waitForGreen(2);
         LOGGER.debug("Number of nodes: " + getNumberOfNodes(ipAddress));
@@ -81,6 +82,41 @@ public class ScalingSystemTest extends SchedulerTestBase {
         esTasks.waitForCorrectDocumentCount(NUM_TEST_DOCS);
     }
 
+    @Test
+    public void shouldNotHaveStaleData() throws UnirestException {
+        // Make sure we have three nodes
+        scaleNumNodesTo(ipAddress, 3);
+        esTasks.waitForGreen(3);
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
+
+        Unirest.delete("http://" + esAddresses.get(0) + "/*").asJson();
+
+        esTasks.waitForCorrectDocumentCount(0); // Make sure we can actually connect.
+
+        LOGGER.info("Addresses: " + esAddresses);
+
+        seedData("http://" + esAddresses.get(0));
+        LOGGER.info("Started data push");
+
+        LOGGER.info("Scaling down to 2 nodes");
+        scaleNumNodesTo(ipAddress, 2);
+        esTasks.waitForGreen(2);
+        esTasks.waitForCorrectDocumentCount(NUM_TEST_DOCS);
+        esAddresses = esTasks.getEsHttpAddressList();
+
+        // Do the delete on two nodes
+        JsonNode body = Unirest.delete("http://" + esAddresses.get(0) + "/shakespeare-*").asJson().getBody();
+        LOGGER.info("Deleting data " + body);
+
+        // Scale up to three nodes, there should still be zero docs.
+        LOGGER.info("Scaling back to 3 nodes");
+        scaleNumNodesTo(ipAddress, 3);
+        esTasks.waitForGreen(3);
+
+        esTasks.waitForCorrectDocumentCount(0); // Ensure there are zero docs.
+    }
+
+    
     private void seedData(String esAddresses) {
         try {
             for (int i = 0; i < NUM_TEST_DOCS; i++) {
@@ -102,7 +138,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         });
     }
 
-    public String getNumberOfNodes(String ipAddress) throws UnirestException {
+    public String getNumberOfNodes(String ipAddress) {
         final AtomicReference<String> numNodes = new AtomicReference<>();
         Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(30L, TimeUnit.SECONDS).until(() -> {
             try {

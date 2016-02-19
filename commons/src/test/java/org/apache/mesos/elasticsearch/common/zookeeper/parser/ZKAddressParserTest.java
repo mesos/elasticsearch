@@ -46,15 +46,13 @@ public class ZKAddressParserTest {
     }
 
     @Test(expected = ZKAddressException.class)
-    public void shouldExceptionWithMalformedPortOnSecond() {
-        new ZKAddressParser().validateZkUrl("zk://master:2130,slave:in");
+    public void shouldExceptionWithoutPath() {
+        new ZKAddressParser().validateZkUrl("zk://master:2181");
     }
 
-    @Test
-    public void shouldAcceptIfSingleZKAddress() {
-        String add = "zk://192.168.0.1:2182";
-        List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
-        assertZKEquals(zk.get(0), "", "", "192.168.0.1", "2182", "");
+    @Test(expected = ZKAddressException.class)
+    public void shouldExceptionWithMalformedPortOnSecond() {
+        new ZKAddressParser().validateZkUrl("zk://master:2130,slave:in");
     }
 
     @Test
@@ -81,13 +79,6 @@ public class ZKAddressParserTest {
     }
 
     @Test
-    public void shouldAcceptIfSpacesAtEnd() {
-        String add = "zk://192.168.0.1:2182 ";
-        List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
-        assertZKEquals(zk.get(0), "", "", "192.168.0.1", "2182", "");
-    }
-
-    @Test
     public void shouldAcceptIfMultiZKAddressWithMultiPath() {
         String add = "zk://192.168.0.1:2182/somePath,10.4.52.3:1234/mesos";
         List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
@@ -101,7 +92,6 @@ public class ZKAddressParserTest {
         List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
         assertZKEquals(zk.get(0), "bob", "pass", "192.168.0.1", "2182", "mesos");
     }
-
 
     @Test
     public void shouldAcceptIfMultiUserPassSpaces() {
