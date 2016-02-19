@@ -75,8 +75,8 @@ public class Resources {
     }
 
     public static ArrayList<Protos.Resource> buildFrameworkResources(Configuration configuration) {
-        Protos.Resource cpus = Resources.cpus(configuration.getCpus() - configuration.getExecutorCpus(), configuration.getFrameworkRole());
-        Protos.Resource mem = Resources.mem(configuration.getMem() - configuration.getExecutorMem(), configuration.getFrameworkRole());
+        Protos.Resource cpus = Resources.cpus(configuration.getCpus(), configuration.getFrameworkRole());
+        Protos.Resource mem = Resources.mem(configuration.getMem(), configuration.getFrameworkRole());
         Protos.Resource disk = Resources.disk(configuration.getDisk(), configuration.getFrameworkRole());
         return new ArrayList<>(Arrays.asList(cpus, mem, disk));
     }

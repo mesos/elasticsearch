@@ -5,19 +5,24 @@ import com.containersol.minimesos.mesos.ClusterArchitecture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Base test class which launches Mesos CLUSTER
  */
 @SuppressFBWarnings({"URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD", "MS_PKGPROTECT", "MS_CANNOT_BE_FINAL"})
 public abstract class TestBase {
-
+    private static final Logger LOGGER = LoggerFactory.getLogger(TestBase.class);
     protected static final Configuration TEST_CONFIG = new Configuration();
 
     protected static ClusterArchitecture CLUSTER_ARCHITECTURE;
@@ -36,13 +41,14 @@ public abstract class TestBase {
     public static void reinitialiseCluster() {
         CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster()
-                .withSlave(TEST_CONFIG.getPortRanges()[0])
-                .withSlave(TEST_CONFIG.getPortRanges()[1])
-                .withSlave(TEST_CONFIG.getPortRanges()[2])
+                .withMaster(MesosMasterTagged::new)
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
+                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
         CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
-        CLUSTER.start(60);
+        CLUSTER.start(TEST_CONFIG.getClusterTimeout());
+        IpTables.apply(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER, TEST_CONFIG);
     }
 
     @BeforeClass
@@ -66,4 +72,6 @@ public abstract class TestBase {
     public static Configuration getTestConfig() {
         return TEST_CONFIG;
     }
+
+
 }

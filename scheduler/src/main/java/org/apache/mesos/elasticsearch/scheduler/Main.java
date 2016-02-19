@@ -3,7 +3,6 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterMonitor;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
@@ -37,7 +36,7 @@ public class Main {
         configuration = new Configuration(args);
 
         if (!configuration.isFrameworkUseDocker()) {
-            final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_EXECUTOR_JAR);
+            final SimpleFileServer simpleFileServer = new SimpleFileServer(Configuration.ES_TAR);
             simpleFileServer.run();
             configuration.setFrameworkFileServerAddress(simpleFileServer.getAddress());
         }
@@ -58,8 +57,6 @@ public class Main {
                 taskInfoFactory,
                 new OfferStrategy(configuration, clusterState),
                 zookeeperStateDriver);
-        new ClusterMonitor(configuration, frameworkState, zookeeperStateDriver, scheduler);
-
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();

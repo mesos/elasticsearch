@@ -2,8 +2,9 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.ParameterException;
 import org.apache.log4j.Logger;
+import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.Discovery;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.validators.CLIValidators;
@@ -12,11 +13,15 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.Arrays.asList;
 
 /**
  * Holder object for framework configuration.
@@ -39,22 +44,25 @@ public class Configuration {
     public static final String FRAMEWORK_FAILOVER_TIMEOUT = "--frameworkFailoverTimeout";
     // DCOS Certification requirement 13
     public static final String FRAMEWORK_ROLE = "--frameworkRole";
-    public static final String EXECUTOR_HEALTH_DELAY = "--executorHealthDelay";
     public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
     public static final String EXECUTOR_IMAGE = "--executorImage";
-    public static final String DEFAULT_EXECUTOR_IMAGE = "mesos/elasticsearch-executor";
+    public static final String DEFAULT_EXECUTOR_IMAGE = "elasticsearch:latest";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
-    public static final String ES_EXECUTOR_JAR = "elasticsearch-mesos-executor.jar";
+    public static final String ES_TAR = "public/elasticsearch.tar.gz";
+    public static final String ES_BINARY = "./elasticsearch-*/bin/elasticsearch";
     private static final Logger LOGGER = Logger.getLogger(Configuration.class);
     public static final String FRAMEWORK_USE_DOCKER = "--frameworkUseDocker";
     public static final String JAVA_HOME = "--javaHome";
     public static final String USE_IP_ADDRESS = "--useIpAddress";
     public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
+    public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
+    public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
+    public static final String HOST_SANDBOX = "./."; // Due to some protobuf weirdness. Requires './.' Not just '.'
+    public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
+    public static final String HOST_PATH_CONF = HOST_SANDBOX;
 
-    @Parameter(names = {EXECUTOR_HEALTH_DELAY}, description = "The delay between executor healthcheck requests (ms).", validateValueWith = CLIValidators.PositiveLong.class)
-    private static Long executorHealthDelay = 30000L;
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
     private final ElasticsearchCLIParameter elasticsearchCLI = new ElasticsearchCLIParameter();
@@ -74,7 +82,7 @@ public class Configuration {
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
-    private String version = "0.7.1";
+    private String version = "0.7.2";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
@@ -85,11 +93,7 @@ public class Configuration {
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkRole = "*"; // This is the default if none is passed to Mesos
-    @Parameter(names = {EXECUTOR_TIMEOUT},
-            description = "The maximum executor healthcheck timeout (ms). Must be greater than " + EXECUTOR_HEALTH_DELAY + ". Will start new executor after this length of time.",
-            validateValueWith = GreaterThanHealthDelay.class)
-    private Long executorTimeout = 60000L;
-    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. E.g. 'elasticsearch:latest' [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image. [DOCKER MODE ONLY]")
     private Boolean executorForcePullImage = false;
@@ -185,14 +189,6 @@ public class Configuration {
         return frameworkRole;
     }
 
-    public Long getExecutorHealthDelay() {
-        return executorHealthDelay;
-    }
-
-    public Long getExecutorTimeout() {
-        return executorTimeout;
-    }
-
     public String getExecutorImage() {
         return executorImage;
     }
@@ -276,15 +272,64 @@ public class Configuration {
         return portsList;
     }
 
-    /**
-     * Ensures that the number is > than the EXECUTOR_HEALTH_DELAY
-     */
-    public static class GreaterThanHealthDelay extends CLIValidators.PositiveLong {
-        @Override
-        public void validate(String name, Long value) throws ParameterException {
-            if (notValid(value) || value <= Configuration.executorHealthDelay) {
-                throw new ParameterException("Parameter " + name + " should be greater than " + EXECUTOR_HEALTH_DELAY + " (found " + value + ")");
-            }
+    public String nativeCommand(List<String> arguments) {
+        String folders = getDataDir() + " " + HOST_SANDBOX;
+        String mkdir = "mkdir -p " + folders + "; ";
+        String chown = "chown -R nobody:nogroup " + folders + "; ";
+        return mkdir +
+                chown +
+                " su -s /bin/sh -c \""
+                + Configuration.ES_BINARY
+                + " "
+                + arguments.stream().collect(Collectors.joining(" "))
+                + "\" nobody";
+    }
+
+    public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo) {
+        List<String> args = new ArrayList<>();
+        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        String hostAddress = "";
+        if (taskList.size() > 0) {
+            Protos.TaskInfo taskInfo = taskList.get(0);
+            String taskId = taskInfo.getTaskId().getValue();
+            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
+            hostAddress = NetworkUtils.addressToString(transportAddress, getIsUseIpAddress()).replace("http://", "");
+        }
+        addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);
+        args.add("--default.http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
+        args.add("--default.transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
+        args.add("--default.cluster.name=" + getElasticsearchClusterName());
+        args.add("--default.node.master=true");
+        args.add("--default.node.data=true");
+        args.add("--default.node.local=false");
+        args.add("--default.index.number_of_replicas=0");
+        args.add("--default.index.auto_expand_replicas=0-all");
+        if (!isFrameworkUseDocker()) {
+            args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
+            args.add("--default.path.data=" + getDataDir());
+            args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
+        } else {
+            args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
+        }
+        args.add("--default.bootstrap.mlockall=true");
+        args.add("--default.network.bind_host=0.0.0.0");
+        args.add("--default.network.publish_host=_non_loopback:ipv4_");
+        args.add("--default.gateway.recover_after_nodes=1");
+        args.add("--default.gateway.expected_nodes=1");
+        args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
+        args.add("--default.discovery.type=zen");
+        args.add("--default.discovery.zen.fd.ping_timeout=30s");
+        args.add("--default.discovery.zen.fd.ping_interval=1s");
+        args.add("--default.discovery.zen.fd.ping_retries=30");
+        args.add("--default.discovery.zen.ping.multicast.enabled=false");
+
+
+        return args;
+    }
+
+    private void addIfNotEmpty(List<String> args, String key, String value) {
+        if (!value.isEmpty()) {
+            args.addAll(asList(key, value));
         }
     }
 }

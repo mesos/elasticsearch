@@ -9,6 +9,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -43,7 +44,7 @@ public class FrameworkRoleSystemTest extends TestBase {
         CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
         new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 

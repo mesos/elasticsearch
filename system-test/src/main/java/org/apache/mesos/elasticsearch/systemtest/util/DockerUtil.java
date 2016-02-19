@@ -22,7 +22,7 @@ public class DockerUtil {
     }
 
     public List<Container> getExecutorContainers() {
-        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch-executor") && container.getStatus().contains("Up")).collect(Collectors.toList());
+        return getContainers(false).stream().filter(container -> container.getImage().contains("elasticsearch:") && container.getStatus().contains("Up")).collect(Collectors.toList());
     }
 
     public List<Container> getSchedulerContainers() {
@@ -39,10 +39,10 @@ public class DockerUtil {
     }
 
     public void killAllExecutors() {
-        getExecutorContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+        getExecutorContainers().forEach(container -> dockerClient.removeContainerCmd(container.getId()).withRemoveVolumes(true).withForce(true).exec());
     }
 
     public void killAllSchedulers() {
-        getSchedulerContainers().forEach(container -> dockerClient.killContainerCmd(container.getId()).exec());
+        getSchedulerContainers().forEach(container -> dockerClient.removeContainerCmd(container.getId()).withRemoveVolumes(true).withForce(true).exec());
     }
 }

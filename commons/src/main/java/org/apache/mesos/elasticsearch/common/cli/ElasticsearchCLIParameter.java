@@ -22,9 +22,6 @@ public class ElasticsearchCLIParameter {
             validateWith = CLIValidators.NotEmptyString.class)
     private String elasticsearchSettingsLocation = "";
     public String getElasticsearchSettingsLocation() {
-        if (elasticsearchSettingsLocation.equals("DEFAULT")) {
-            elasticsearchSettingsLocation = "";
-        }
         return elasticsearchSettingsLocation;
     }
 

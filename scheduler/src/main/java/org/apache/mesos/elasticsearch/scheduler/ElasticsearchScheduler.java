@@ -118,7 +118,14 @@ public class ElasticsearchScheduler implements Scheduler {
 
     @Override
     public void statusUpdate(SchedulerDriver driver, Protos.TaskStatus status) {
-        LOGGER.info("Status update - Task with ID '" + status.getTaskId().getValue() + "' is now in state '" + status.getState() + "'. Message: " + status.getMessage());
+        LOGGER.info("Status update:" +
+                " " + status.getSlaveId() +
+                " " + status.getExecutorId() +
+                " " + status.getHealthy() +
+                " " + status.getState() +
+                " " + status.getReason() +
+                " " +
+                " ");
         frameworkState.announceStatusUpdate(status);
     }
 
