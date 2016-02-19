@@ -16,19 +16,14 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser.HTTP_ADDRESS;
-
 /**
  * Get Array of tasks from the API
  */
 public class ESTasks {
     private static final Logger LOGGER = Logger.getLogger(ESTasks.class);
     private final String tasksEndPoint;
-    private final Boolean portsExposed;
-    private String dockerHostAddress = Configuration.getDocker0AdaptorIpAddress();
 
-    public ESTasks(Configuration config, String schedulerIpAddress, Boolean portsExposed) {
-        this.portsExposed = portsExposed;
+    public ESTasks(Configuration config, String schedulerIpAddress) {
         tasksEndPoint = "http://" + schedulerIpAddress + ":" + config.getSchedulerGuiPort() + "/v1/tasks";
     }
 
@@ -51,15 +46,6 @@ public class ESTasks {
         });
         for (int i = 0; i < response.get().getBody().getArray().length(); i++) {
             JSONObject jsonObject = response.get().getBody().getArray().getJSONObject(i);
-            // If the ports are exposed on the docker adaptor, then force the http_address's to point to the docker adaptor IP address.
-            // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
-            // real-life network setup.
-            if (portsExposed) {
-                String oldAddress = (String) jsonObject.remove(HTTP_ADDRESS);
-                String newAddress = dockerHostAddress
-                        + ":" + oldAddress.split(":")[1];
-                jsonObject.put(HTTP_ADDRESS, newAddress);
-            }
             tasks.add(jsonObject);
         }
         return tasks;

@@ -12,6 +12,7 @@ buildscript {
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+        classpath 'de.undercouch:gradle-download-task:2.1.0'
     }
 }
 repositories {
@@ -48,6 +49,7 @@ dependencies {
     compile 'org.webjars.bower:hightcharts:4.1.5'
     compile "org.webjars.bower:highcharts-ng:0.0.8"
     compile 'com.jayway.awaitility:awaitility:1.6.3'
+    compile 'com.mashape.unirest:unirest-java:1.4.5'
 
     testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
     testCompile 'org.hamcrest:hamcrest-core:1.3'
@@ -57,10 +59,9 @@ dependencies {
 }
 
 jar {
-    dependsOn ":executor:copyJar"
+    dependsOn 'getElasticsearchTarball'
     baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
-    from { project(":executor").getTasksByName("copyJar", false)[0].outputs.files[0] } // Include executor
     manifest {
         attributes(
             'Main-Class'                : mainClassName,
@@ -99,4 +100,11 @@ task copyJar(type: Copy) {
 task copyShellScript(type: Copy) {
     from        "start-scheduler.sh"
     into        'build/docker'
+}
+
+import de.undercouch.gradle.tasks.download.Download
+task getElasticsearchTarball(type: Download) {
+    src "https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/" + "$elasticsearchVersion" + "/elasticsearch-"  + "$elasticsearchVersion" + ".tar.gz"
+    dest new File(buildDir, './resources/main/public/elasticsearch.tar.gz')
+    onlyIfNewer true
 }

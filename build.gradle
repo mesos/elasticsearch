@@ -4,10 +4,11 @@ import com.bmuschko.gradle.docker.tasks.image.DockerTagImage
 import com.github.zafarkhaja.semver.UnexpectedCharacterException
 import com.github.zafarkhaja.semver.Version
 import org.ajoberstar.grgit.Grgit
+import org.ajoberstar.grgit.Tag
 
 ext {
     mesosVer = "0.25.0"
-    elasticsearchVersion="2.1.1"
+    elasticsearchVersion="2.2.0"
     imagePrefix = 'mesos'
     springBootVersion = "1.2.5.RELEASE"
 }
@@ -35,8 +36,6 @@ buildscript {
     classpath 'org.springframework.boot:spring-boot:1.2.5.RELEASE' 
   }
 }
-
-import org.ajoberstar.grgit.Tag
 
 def grgit = Grgit.open(project.file('.'))
 def tags = grgit.tag.list()

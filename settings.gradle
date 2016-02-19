@@ -3,5 +3,4 @@ rootProject.name = 'elastic-search'
 
 include "commons"
 include "scheduler"
-include "executor"
 include "system-test"

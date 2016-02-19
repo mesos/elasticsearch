@@ -1,7 +1,9 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.containersol.minimesos.MesosCluster;
-import com.containersol.minimesos.mesos.*;
+import com.containersol.minimesos.mesos.ClusterArchitecture;
+import com.containersol.minimesos.mesos.DockerClientFactory;
+import com.containersol.minimesos.mesos.ZooKeeper;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
@@ -11,7 +13,11 @@ import com.github.dockerjava.api.model.Volume;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
+import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.*;
 import org.junit.rules.TestWatcher;
 import org.junit.runner.Description;
@@ -51,14 +57,16 @@ public class ElasticsearchAuthSystemTest {
     @Before
     public void before() throws FileNotFoundException {
         writePasswordFileToVM();
-        ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
+        ClusterArchitecture architecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
-                .withMaster(zooKeeper -> new SimpleAuthMaster(dockerClient, zooKeeper))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(dockerClient, zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"));
-        cluster = new MesosCluster(builder.build());
+                .withMaster(SimpleAuthMaster::new)
+                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .build();
+        cluster = new MesosCluster(architecture);
         cluster.start(TEST_CONFIG.getClusterTimeout());
+        IpTables.apply(architecture.dockerClient, cluster, TEST_CONFIG);
     }
 
     /**
@@ -104,7 +112,7 @@ public class ElasticsearchAuthSystemTest {
         SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
         cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
@@ -114,15 +122,13 @@ public class ElasticsearchAuthSystemTest {
     /**
      * Only the role "testRole" can start frameworks.
      */
-    private static class SimpleAuthMaster extends MesosMaster {
-
-        protected SimpleAuthMaster(DockerClient dockerClient, ZooKeeper zooKeeperContainer) {
-            super(dockerClient, zooKeeperContainer);
+    private static class SimpleAuthMaster extends MesosMasterTagged {
+        protected SimpleAuthMaster(ZooKeeper zooKeeperContainer) {
+            super(zooKeeperContainer, envVars());
         }
 
-        @Override
-        public TreeMap<String, String> getDefaultEnvVars() {
-            TreeMap<String, String> envVars = super.getDefaultEnvVars();
+        private static TreeMap<String, String> envVars() {
+            TreeMap<String, String> envVars = new TreeMap<>();
             envVars.put("MESOS_ROLES", "testRole");
             envVars.put("MESOS_CREDENTIALS",  SECRET_FOLDER + SECRET);
             envVars.put("MESOS_AUTHENTICATE", "true");
@@ -137,20 +143,10 @@ public class ElasticsearchAuthSystemTest {
         }
     }
 
-    private static class SimpleAuthSlave extends MesosSlave {
-        private final String resources;
+    private static class SimpleAuthSlave extends MesosSlaveTagged {
 
-        protected SimpleAuthSlave(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String resources) {
-            super(dockerClient, zooKeeperContainer);
-            this.resources = resources;
-        }
-
-        @Override
-        public TreeMap<String, String> getDefaultEnvVars() {
-            TreeMap<String, String> envVars = super.getDefaultEnvVars();
-            envVars.remove("MESOS_RESOURCES");
-            envVars.put("MESOS_RESOURCES", resources);
-            return envVars;
+        protected SimpleAuthSlave(ZooKeeper zooKeeperContainer, String resources) {
+            super(zooKeeperContainer, resources);
         }
     }
 

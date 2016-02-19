@@ -19,7 +19,7 @@ public class DiscoverySystemTest extends SchedulerTestBase {
 
     @Test
     public void shouldDiscoverInDockerMode() {
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, getScheduler().getIpAddress());
         Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(2L, TimeUnit.MINUTES).until(() -> clusterIsGreen(esTasks));
         Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(2L, TimeUnit.MINUTES).until(() -> thereAreThreeNodes(esTasks));
     }

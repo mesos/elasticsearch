@@ -1,16 +1,23 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * SystemTest configuration object
  */
 @SuppressWarnings({"PMD.AvoidUsingHardCodedIP"})
 public class Configuration {
+    public static final String MESOS_IMAGE_TAG = "0.25.0-0.2.70.ubuntu1404";
+    public static final int EXECUTOR_RAM_ESTIMATE = 50;
+
     private String schedulerImageName = "mesos/elasticsearch-scheduler";
     private String schedulerName = "elasticsearch-scheduler";
     private int schedulerGuiPort = 31100;
-    private int elasticsearchNodesCount = getPortRanges().length;
     private int elasticsearchMemorySize = 500;
     private String elasticsearchJobName = "esdemo";
     private final Integer clusterTimeout = 60;
@@ -32,7 +39,7 @@ public class Configuration {
     }
 
     public int getElasticsearchNodesCount() {
-        return elasticsearchNodesCount;
+        return getPortRanges().size();
     }
 
     public int getElasticsearchMemorySize() {
@@ -43,15 +50,43 @@ public class Configuration {
         return elasticsearchJobName;
     }
 
-    public String[] getPortRanges() {
-        return new String[]{
-                "ports(*):[9200-9200,9300-9300]; cpus(*):1.0; mem(*):550; disk(*):200",
-                "ports(*):[9201-9201,9301-9301]; cpus(*):1.0; mem(*):550; disk(*):200",
-                "ports(*):[9202-9202,9302-9302]; cpus(*):1.0; mem(*):550; disk(*):200"
-        };
+    private final List<ESPorts> ports = Arrays.asList(
+            new ESPorts(9200, 9300),
+            new ESPorts(9201, 9301),
+            new ESPorts(9202, 9302)
+    );
+
+    public List<ESPorts> getPorts() {
+        return ports;
+    }
+
+    public List<String> getPortRanges() {
+        return getPorts().stream().map(pair -> "ports(*):" +
+                "[" + pair.client() + "-" + pair.client() + "," + pair.transport() + "-" + pair.transport() + "]; " +
+                "cpus(*):1.0; mem(*):" + (elasticsearchMemorySize + EXECUTOR_RAM_ESTIMATE) + "; disk(*):200")
+                .collect(Collectors.toList());
     }
 
     public Integer getClusterTimeout() {
         return clusterTimeout;
+    }
+
+    /**
+     * Represents ES ports.
+     */
+    public static class ESPorts {
+        private final Pair<Integer, Integer> ports;
+
+        public ESPorts(final Integer client, final Integer transport) {
+            ports = Pair.of(client, transport);
+        }
+
+        public Integer client() {
+            return ports.getLeft();
+        }
+
+        public Integer transport() {
+            return ports.getRight();
+        }
     }
 }

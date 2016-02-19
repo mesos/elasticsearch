@@ -23,8 +23,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_DATA_VOLUME;
-import static org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchSettings.CONTAINER_PATH_SETTINGS;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -55,10 +53,10 @@ public class TaskInfoFactoryTest {
         when(configuration.getTaskName()).thenReturn("esdemo");
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
-        when(configuration.getElasticsearchSettingsLocation()).thenReturn("/var/elasticsearch.yml");
+        when(configuration.getElasticsearchSettingsLocation()).thenReturn(Configuration.HOST_PATH_CONF);
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchClusterName()).thenReturn("cluster-name");
-        when(configuration.getDataDir()).thenReturn("/var/lib/mesos/slave/elasticsearch");
+        when(configuration.getDataDir()).thenReturn(Configuration.DEFAULT_HOST_DATA_DIR);
         when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
         when(configuration.isFrameworkUseDocker()).thenReturn(true);
         when(configuration.getElasticsearchPorts()).thenReturn(Collections.emptyList());
@@ -99,17 +97,13 @@ public class TaskInfoFactoryTest {
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
 
-        assertEquals(frameworkState.getFrameworkID(), taskInfo.getExecutor().getFrameworkId());
-        assertEquals(Configuration.DEFAULT_EXECUTOR_IMAGE, taskInfo.getExecutor().getContainer().getDocker().getImage());
-        assertEquals("elasticsearch-executor-" + taskInfo.getExecutor().getExecutorId().getValue(), taskInfo.getExecutor().getName());
-
-        assertEquals(2, taskInfo.getExecutor().getContainer().getVolumesCount());
-        assertEquals(CONTAINER_PATH_SETTINGS, taskInfo.getExecutor().getContainer().getVolumes(0).getContainerPath());
-        assertEquals("/var", taskInfo.getExecutor().getContainer().getVolumes(0).getHostPath());
-        assertEquals(Protos.Volume.Mode.RO, taskInfo.getExecutor().getContainer().getVolumes(0).getMode());
-        assertEquals(CONTAINER_DATA_VOLUME, taskInfo.getExecutor().getContainer().getVolumes(1).getContainerPath());
-        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getExecutor().getContainer().getVolumes(1).getHostPath());
-        assertEquals(Protos.Volume.Mode.RW, taskInfo.getExecutor().getContainer().getVolumes(1).getMode());
+        assertEquals(2, taskInfo.getContainer().getVolumesCount());
+        assertEquals(Configuration.CONTAINER_PATH_DATA, taskInfo.getContainer().getVolumes(0).getContainerPath());
+        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getContainer().getVolumes(0).getHostPath());
+        assertEquals(Protos.Volume.Mode.RW, taskInfo.getContainer().getVolumes(0).getMode());
+        assertEquals(Configuration.CONTAINER_PATH_CONF, taskInfo.getContainer().getVolumes(1).getContainerPath());
+        assertEquals(Configuration.HOST_PATH_CONF, taskInfo.getContainer().getVolumes(1).getHostPath());
+        assertEquals(Protos.Volume.Mode.RO, taskInfo.getContainer().getVolumes(1).getMode());
     }
 
     private Protos.Resource getResourceByName(List<Protos.Resource> resourceList, String name) {
@@ -140,6 +134,7 @@ public class TaskInfoFactoryTest {
         when(configuration.isFrameworkUseDocker()).thenReturn(false);
         String address = "http://localhost:1234";
         when(configuration.getFrameworkFileServerAddress()).thenReturn(address);
+        when(configuration.nativeCommand(any())).thenReturn("ls");
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
 
         Date now = new DateTime().withDayOfMonth(1).withDayOfYear(1).withYear(1970).withHourOfDay(1).withMinuteOfHour(2).withSecondOfMinute(3).withMillisOfSecond(400).toDate();
@@ -149,8 +144,8 @@ public class TaskInfoFactoryTest {
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), clock);
         assertFalse(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.getExecutor().getCommand().isInitialized());
-        assertEquals(1, taskInfo.getExecutor().getCommand().getUrisCount());
-        assertTrue(taskInfo.getExecutor().getCommand().getUris(0).getValue().contains(address));
+        assertEquals(2, taskInfo.getCommand().getUrisCount());
+        assertTrue(taskInfo.getCommand().getUris(0).getValue().contains(address));
     }
 
     @Test
@@ -230,7 +225,7 @@ public class TaskInfoFactoryTest {
     public void shouldUseMesosProvidedPorts() {
         TaskInfoFactory factory = new TaskInfoFactory(clusterState);
         Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
-        assertFalse(taskInfo.getContainer().isInitialized());
+        assertTrue(taskInfo.getContainer().isInitialized());
         assertTrue(taskInfo.isInitialized());
         assertTrue(taskInfo.toString().contains("9200"));
         assertTrue(taskInfo.toString().contains("9300"));

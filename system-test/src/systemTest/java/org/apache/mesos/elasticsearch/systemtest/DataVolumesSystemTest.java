@@ -8,6 +8,7 @@ import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
+import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Test;
 
@@ -58,7 +59,7 @@ public class DataVolumesSystemTest extends TestBase {
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
-        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress(), true);
+        ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
 
         ElasticsearchNodesResponse nodesResponse = new ElasticsearchNodesResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());

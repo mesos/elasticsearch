@@ -8,15 +8,13 @@ import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
-import org.apache.mesos.elasticsearch.systemtest.containers.DataPusherContainer;
+import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-
 
 /**
  * Tests the scaling capabilities. To run multiple times, uncomment the code below.
@@ -27,6 +25,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     public static final int WEBUI_PORT = 31100;
     public static final int NUM_TEST_DOCS = 10;
     private static DockerClient dockerClient = DockerClientFactory.build();
+    private DockerUtil dockerUtil = new DockerUtil(dockerClient);
     private String ipAddress;
     private ESTasks esTasks;
 
@@ -38,7 +37,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     @Before
     public void before() {
         ipAddress = getScheduler().getIpAddress();
-        esTasks = new ESTasks(TEST_CONFIG, ipAddress, true);
+        esTasks = new ESTasks(TEST_CONFIG, ipAddress);
     }
 
     @Test
@@ -64,12 +63,10 @@ public class ScalingSystemTest extends SchedulerTestBase {
         // Make sure we have three nodes
         scaleNumNodesTo(ipAddress, 3);
         esTasks.waitForGreen(3);
-        List<String> esAddresses = esTasks.getEsHttpAddressList();
-
-        Unirest.delete("http://" + esAddresses.get(0) + "/*").asJson();
 
         esTasks.waitForCorrectDocumentCount(0); // Make sure we can actually connect.
 
+        List<String> esAddresses = esTasks.getEsHttpAddressList();
         LOGGER.info("Addresses: " + esAddresses);
 
         seedData("http://" + esAddresses.get(0));
@@ -86,7 +83,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
     }
 
     @Test
-    public void shouldNotHaveStaleData() throws UnirestException, IOException {
+    public void shouldNotHaveStaleData() throws UnirestException {
         // Make sure we have three nodes
         scaleNumNodesTo(ipAddress, 3);
         esTasks.waitForGreen(3);
@@ -104,7 +101,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         LOGGER.info("Scaling down to 2 nodes");
         scaleNumNodesTo(ipAddress, 2);
         esTasks.waitForGreen(2);
-        esTasks.waitForCorrectDocumentCount(DataPusherContainer.CORRECT_NUM_DOCS);
+        esTasks.waitForCorrectDocumentCount(NUM_TEST_DOCS);
         esAddresses = esTasks.getEsHttpAddressList();
 
         // Do the delete on two nodes
@@ -119,6 +116,7 @@ public class ScalingSystemTest extends SchedulerTestBase {
         esTasks.waitForCorrectDocumentCount(0); // Ensure there are zero docs.
     }
 
+    
     private void seedData(String esAddresses) {
         try {
             for (int i = 0; i < NUM_TEST_DOCS; i++) {

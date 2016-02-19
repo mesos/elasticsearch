@@ -1,11 +1,15 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import com.mashape.unirest.http.Unirest;
+import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Arrays.asList;
@@ -39,11 +43,18 @@ public class OfferStrategy {
 
     private boolean isAtLeastOneESNodeRunning() {
         // If this is the first, do not check
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        final Map<String, Task> taskList = clusterState.getGuiTaskList();
         if (taskList.size() == 0) {
             return true;
         } else {
-            return clusterState.getStatus(taskList.get(0).getTaskId()).getStatus().getState().equals(Protos.TaskState.TASK_RUNNING);
+            try {
+                // TODO (PNW): Better get HTTP address method. We do this everywhere.
+                InetSocketAddress clientAddress = taskList.get(clusterState.getTaskList().get(0).getTaskId().getValue()).getClientAddress();
+                String hostAddress = NetworkUtils.addressToString(clientAddress, configuration.getIsUseIpAddress());
+                return Unirest.get(hostAddress).asString().getStatus() == 200;
+            } catch (UnirestException e) {
+                return false;
+            }
         }
     }
 

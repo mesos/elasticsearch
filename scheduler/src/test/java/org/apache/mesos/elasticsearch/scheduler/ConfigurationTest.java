@@ -1,16 +1,18 @@
 package org.apache.mesos.elasticsearch.scheduler;
 
+import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
+import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
-import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests
@@ -41,5 +43,32 @@ public class ConfigurationTest {
         assertEquals("/usr/bin/", configuration.getJavaHome());
         configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.JAVA_HOME, "/usr/bin");
         assertEquals("/usr/bin/", configuration.getJavaHome());
+    }
+
+    @Test
+    public void shouldGenerateValidNativeCommand() {
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa");
+        final List<String> arguments = Arrays.asList("test1", "test2");
+
+        final String nativeCommand = configuration.nativeCommand(arguments);
+        assertTrue(nativeCommand.contains(arguments.get(0)));
+        assertTrue(nativeCommand.contains(arguments.get(1)));
+        assertTrue(nativeCommand.contains("bin/elasticsearch"));
+        assertTrue(nativeCommand.contains("chown"));
+    }
+
+    @Test
+    public void shouldCreateArguments() {
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa");
+        final ClusterState clusterState = Mockito.mock(ClusterState.class);
+        final int port = 1234;
+        final Protos.DiscoveryInfo discoveryInfo = Protos.DiscoveryInfo.newBuilder().setPorts(Protos.Ports.newBuilder()
+                .addPorts(Protos.Port.newBuilder().setNumber(port))
+                .addPorts(Protos.Port.newBuilder().setNumber(port)))
+                .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
+                .build();
+        final List<String> arguments = configuration.esArguments(clusterState, discoveryInfo);
+        String allArgs = arguments.toString();
+        assertTrue(allArgs.contains(Integer.toString(port)));
     }
 }
