@@ -31,7 +31,7 @@ dependencies {
     compile("org.springframework.boot:spring-boot-starter-log4j:${springBootVersion}")
     compile "commons-io:commons-io:${commonsIOVersion}"
     compile "org.apache.commons:commons-collections4:${commonsCollectionsVersion}"
-    compile "commons-lang:commons-lang:${commonsLangVersion}"
+    compile "org.apache.commons:commons-lang3:${commonsLangVersion}"
     compile "log4j:log4j:${log4jVersion}"
     compile "org.apache.httpcomponents:httpclient:${httpClientVersion}"
     compile "com.beust:jcommander:${jcommanderVersion}"
@@ -60,9 +60,9 @@ dependencies {
 }
 
 jar {
-    dependsOn "getElasticsearchTarball"
+    dependsOn "getElasticsearchTarball", "packageDependencies"
     baseName = "elasticsearch-mesos-scheduler"
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
+    from files("build/internalClasses")
     manifest {
         attributes(
                 "Main-Class": mainClassName,
@@ -71,10 +71,14 @@ jar {
     }
 }
 
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
+task packageDependencies {
+    dependsOn "classes"
+    inputs.files configurations.compile
+    outputs.dir "build/internalClasses"
+    doLast {
+        copy {
+            from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
+            into "build/internalClasses"
         }
     }
 }
@@ -109,3 +113,6 @@ task getElasticsearchTarball(type: Download) {
     dest new File(buildDir, "./resources/main/public/elasticsearch.tar.gz")
     onlyIfNewer true
 }
+
+distTar.enabled = false
+distZip.enabled = false

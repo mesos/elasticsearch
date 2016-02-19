@@ -14,7 +14,7 @@ dependencies {
     compile "log4j:log4j:${log4jVersion}"
     compile "org.apache.commons:commons-exec:${commonsExecVersion}"
     compile "org.apache.commons:commons-lang3:${commonsLangVersion}"
-    compile "org.json:json:20151123"
+    compile "org.json:json:${jsonVersion}"
 
     testCompile "commons-validator:commons-validator:${commonsValidatorVersion}"
 }
