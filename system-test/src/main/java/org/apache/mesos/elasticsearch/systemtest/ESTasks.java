@@ -46,18 +46,6 @@ public class ESTasks {
         });
         for (int i = 0; i < response.get().getBody().getArray().length(); i++) {
             JSONObject jsonObject = response.get().getBody().getArray().getJSONObject(i);
-            // If the ports are exposed on the docker adaptor, then force the http_address's to point to the docker adaptor IP address.
-            // This is a nasty hack, much like `if (testing) doSomething();`. This means we are no longer testing a
-            // real-life network setup.
-            if (portsExposed) {
-                String oldAddress = (String) jsonObject.remove(HTTP_ADDRESS);
-                String newAddress = dockerHostAddress
-                        + ":" + oldAddress.split(":")[1];
-                jsonObject.put(HTTP_ADDRESS, newAddress);
-            }
-        HttpResponse<JsonNode> response = Unirest.get(tasksEndPoint).asJson();
-        for (int i = 0; i < response.getBody().getArray().length(); i++) {
-            JSONObject jsonObject = response.getBody().getArray().getJSONObject(i);
             tasks.add(jsonObject);
         }
         return tasks;
