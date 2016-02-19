@@ -116,3 +116,7 @@ task getElasticsearchTarball(type: Download) {
 
 distTar.enabled = false
 distZip.enabled = false
+
+bootRepackage {
+    classifier = "withDependencies"
+}
