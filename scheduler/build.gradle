@@ -1,9 +1,9 @@
-apply plugin: 'application'
-apply plugin: 'spring-boot'
+apply plugin: "application"
+apply plugin: "spring-boot"
 
 mainClassName = "org.apache.mesos.elasticsearch.scheduler.Main"
 ext {
-    imageName = imagePrefix + '/elasticsearch-scheduler'
+    imageName = imagePrefix + "/elasticsearch-scheduler"
 }
 
 buildscript {
@@ -12,7 +12,7 @@ buildscript {
     }
     dependencies {
         classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
-        classpath 'de.undercouch:gradle-download-task:2.1.0'
+        classpath "de.undercouch:gradle-download-task:${gradleDownloadTaskVersion}"
     }
 }
 repositories {
@@ -25,47 +25,48 @@ configurations {
 }
 dependencies {
 
-    compile project(':commons')
+    compile project(":commons")
 
     compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
     compile("org.springframework.boot:spring-boot-starter-log4j:${springBootVersion}")
-    compile "commons-io:commons-io:2.4"
-    compile 'org.apache.commons:commons-collections4:4.0'
-    compile 'commons-lang:commons-lang:2.6'
-    compile "log4j:log4j:1.2.17"
-    compile 'org.apache.httpcomponents:httpclient:4.5'
-    compile "com.beust:jcommander:1.48"
+    compile "commons-io:commons-io:${commonsIOVersion}"
+    compile "org.apache.commons:commons-collections4:${commonsCollectionsVersion}"
+    compile "commons-lang:commons-lang:${commonsLangVersion}"
+    compile "log4j:log4j:${log4jVersion}"
+    compile "org.apache.httpcomponents:httpclient:${httpClientVersion}"
+    compile "com.beust:jcommander:${jcommanderVersion}"
+    compile "com.jayway.awaitility:awaitility:${awaitilityVersion}"
+    compile "com.mashape.unirest:unirest-java:${unirestVersion}"
 
-    compile 'org.webjars:angularjs:1.4.1'
-    compile 'org.webjars.bower:angular-route:1.4.1'
-    compile 'org.webjars.bower:angular-resource:1.4.1'
-    compile 'org.webjars.bower:angular-bootstrap:0.13.0'
-    compile 'org.webjars:bootstrap:3.3.5'
-    compile 'org.webjars:font-awesome:4.3.0'
-    compile 'org.webjars.bower:rdash-ui:1.0.1'
-    compile 'org.webjars:momentjs:2.10.3'
-    compile 'org.webjars:angular-moment:0.10.1'
-    compile 'org.webjars.bower:json-formatter:0.2.7'
-    compile 'org.webjars.bower:hightcharts:4.1.5'
-    compile "org.webjars.bower:highcharts-ng:0.0.8"
-    compile 'com.jayway.awaitility:awaitility:1.6.3'
-    compile 'com.mashape.unirest:unirest-java:1.4.5'
+    compile "org.webjars:angularjs:${webAngularVersion}"
+    compile "org.webjars.bower:angular-route:${webAngularVersion}"
+    compile "org.webjars.bower:angular-resource:${webAngularVersion}"
+    compile "org.webjars.bower:angular-bootstrap:${webAngularBootstrapVersion}"
+    compile "org.webjars:bootstrap:${webBootstrapVersion}"
+    compile "org.webjars:font-awesome:${webFontAwesomeVersion}"
+    compile "org.webjars.bower:rdash-ui:${webRdashUiVersion}"
+    compile "org.webjars:momentjs:${webMomentJsVersion}"
+    compile "org.webjars:angular-moment:${webAngularMomentVersion}"
+    compile "org.webjars.bower:json-formatter:${webJsonFormatterVersion}"
+    compile "org.webjars.bower:hightcharts:${webHighChartsVersion}"
+    compile "org.webjars.bower:highcharts-ng:${webHighChartsNgVersion}"
+
 
     testCompile("org.springframework.boot:spring-boot-starter-test:${springBootVersion}")
-    testCompile 'org.hamcrest:hamcrest-core:1.3'
-    testCompile 'joda-time:joda-time:2.3'
-    testCompile 'com.mashape.unirest:unirest-java:1.4.5'
+    testCompile "org.hamcrest:hamcrest-core:${hamcrestVersion}"
+    testCompile "joda-time:joda-time:${jodaTimeVersion}"
+    testCompile "com.mashape.unirest:unirest-java:${unirestVersion}"
 
 }
 
 jar {
-    dependsOn 'getElasticsearchTarball'
+    dependsOn "getElasticsearchTarball"
     baseName = "elasticsearch-mesos-scheduler"
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } } // Include dependencies
     manifest {
         attributes(
-            'Main-Class'                : mainClassName,
-            'Implementation-Version'    : project.version
+                "Main-Class": mainClassName,
+                "Implementation-Version": project.version
         )
     }
 }
@@ -89,9 +90,9 @@ task taskCopyFilesForDocker(type: Copy) {
 }
 
 task copyJar(type: Copy) {
-    dependsOn   'bootRepackage'
+    dependsOn "bootRepackage"
     from        "build/libs/elasticsearch-mesos-scheduler-${project.version}.jar"
-    into        'build/docker'
+    into "build/docker"
     rename { String fileName ->
         fileName.replace("-${project.version}", "")
     }
@@ -99,12 +100,12 @@ task copyJar(type: Copy) {
 
 task copyShellScript(type: Copy) {
     from        "start-scheduler.sh"
-    into        'build/docker'
+    into "build/docker"
 }
 
 import de.undercouch.gradle.tasks.download.Download
 task getElasticsearchTarball(type: Download) {
     src "https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/" + "$elasticsearchVersion" + "/elasticsearch-"  + "$elasticsearchVersion" + ".tar.gz"
-    dest new File(buildDir, './resources/main/public/elasticsearch.tar.gz')
+    dest new File(buildDir, "./resources/main/public/elasticsearch.tar.gz")
     onlyIfNewer true
 }

@@ -10,11 +10,11 @@ task taskCopyFilesForDocker(type: Copy) {
 
 
 dependencies {
-    compile "com.beust:jcommander:1.48"
-    compile "log4j:log4j:1.2.16"
-    compile "org.apache.commons:commons-exec:1.3"
-    compile "org.apache.commons:commons-lang3:3.4"
+    compile "com.beust:jcommander:${jcommanderVersion}"
+    compile "log4j:log4j:${log4jVersion}"
+    compile "org.apache.commons:commons-exec:${commonsExecVersion}"
+    compile "org.apache.commons:commons-lang3:${commonsLangVersion}"
     compile "org.json:json:20151123"
 
-    testCompile "commons-validator:commons-validator:1.5.0"
+    testCompile "commons-validator:commons-validator:${commonsValidatorVersion}"
 }
