@@ -7,10 +7,38 @@ import org.ajoberstar.grgit.Grgit
 import org.ajoberstar.grgit.Tag
 
 ext {
-    mesosVer = "0.25.0"
+    awaitilityVersion = "1.7.0"
+    commonsCollectionsVersion = "4.1"
+    commonsExecVersion = "1.3"
+    commonsIOVersion = "2.4"
+    commonsLangVersion = "3.4"
+    commonsValidatorVersion = "1.5.0"
+    dockerJavaVersion = "1.4.0"
     elasticsearchVersion="2.2.0"
+    gradleDownloadTaskVersion = "2.1.0"
+    hamcrestVersion = "1.3"
+    httpClientVersion = "4.5.1"
     imagePrefix = 'mesos'
-    springBootVersion = "1.2.5.RELEASE"
+    jcommanderVersion = "1.48"
+    jodaTimeVersion = "2.9.2"
+    jsonVersion = "20160212"
+    junitVersion = "4.12"
+    log4jVersion = "1.2.17"
+    mesosVer = "0.25.0"
+    minimesosVersion = "429943bff3e8af1328acf4c8d487fc63d2e19a48"
+    springBootVersion = "1.2.5.RELEASE" // Bumping SB version causes Jackson incompatabilities with Docker-Java
+    unirestVersion = "1.4.8"
+
+    webAngularBootstrapVersion = "1.1.2"
+    webAngularMomentVersion = "0.10.3"
+    webAngularVersion = "1.5.0"
+    webBootstrapVersion = "3.3.6"
+    webFontAwesomeVersion = "4.5.0"
+    webHighChartsNgVersion = "0.0.11"
+    webHighChartsVersion = "4.1.5"
+    webJsonFormatterVersion = "0.4.2"
+    webMomentJsVersion = "2.11.1"
+    webRdashUiVersion = "1.0.1"
 }
 
 allprojects {
@@ -99,7 +127,6 @@ subprojects {
         options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
     }
 
-    apply plugin: 'maven-publish'
     apply plugin: 'sonar-runner'
     apply plugin: 'java'
     apply plugin: 'jacoco'
@@ -196,7 +223,6 @@ subprojects {
                             }
                         }
                     }
-                    project.publish.dependsOn "publishDockerImageWith$uppercasedName"
                 }
             }
         }

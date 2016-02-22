@@ -46,18 +46,21 @@ public class SerializableZookeeperStateTest {
         verify(state, times(1)).store(any(Variable.class));
     }
 
+    @SuppressWarnings("unchecked")
     @Test(expected = IOException.class)
     public void interrupted() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(InterruptedException.class);
         serializableState.set("test", "Serializable object");
     }
 
+    @SuppressWarnings("unchecked")
     @Test(expected = IOException.class)
     public void executionException() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(ExecutionException.class);
         serializableState.set("test", "Serializable object");
     }
 
+    @SuppressWarnings("unchecked")
     @Test(expected = IOException.class)
     public void ioException() throws IOException {
         when(state.store(any(Variable.class))).thenThrow(IOException.class);

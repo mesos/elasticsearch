@@ -136,7 +136,7 @@ public class RunAsJarSystemTest {
     public void shouldHaveCustomSettingsBasedOnPath() throws UnirestException {
         final JSONObject root = Unirest.get("http://" + esTasks.getEsHttpAddressList().get(0) + "/_nodes").asJson().getBody().getObject();
         final JSONObject nodes = root.getJSONObject("nodes");
-        final String firstNode = nodes.keys().next();
+        final String firstNode = nodes.keys().next().toString();
 
         // Test a setting that is not specified by the framework (to test that it is written correctly)
         final String pathPlugins = nodes.getJSONObject(firstNode).getJSONObject("settings").getJSONObject("path").getString("plugins");
