@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest.util;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.mesos.MesosSlave;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
