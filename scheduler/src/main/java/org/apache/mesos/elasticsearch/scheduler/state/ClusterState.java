@@ -154,6 +154,21 @@ public class ClusterState {
     }
 
     /**
+     * Deletes all tasks and state.
+     */
+    public void destroy() {
+        try {
+            getTaskList().stream().forEach(taskInfo -> getStatus(taskInfo).destroy());
+            // Todo (pnw): Refactor. This shouldn't be mopping up the ESTaskStatus stuff
+            zooKeeperStateDriver.delete(getKey());
+            zooKeeperStateDriver.delete(frameworkState.getFrameworkID().getValue() + "/" + ESTaskStatus.STATE_KEY);
+            zooKeeperStateDriver.delete(frameworkState.getFrameworkID().getValue());
+        } catch (IOException e) {
+            LOGGER.error("Unable to delete state from ZooKeeper", e);
+        }
+    }
+
+    /**
      * Updates a task with the given status. Status is written to zookeeper.
      * If the task is in error, then the healthchecks are stopped and state is removed from ZK
      * @param status A received task status

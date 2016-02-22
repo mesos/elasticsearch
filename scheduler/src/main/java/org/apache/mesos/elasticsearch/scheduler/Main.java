@@ -69,6 +69,14 @@ public class Main {
             schedulerDriver = new MesosSchedulerDriver(scheduler, frameworkBuilder.build(), configuration.getMesosZKURL());
         }
 
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                LOGGER.info("Performing graceful shutdown");
+                scheduler.shutdown(schedulerDriver);
+            }
+        });
+
         HashMap<String, Object> properties = new HashMap<>();
         properties.put("server.port", String.valueOf(configuration.getWebUiPort()));
         new SpringApplicationBuilder(WebApplication.class)

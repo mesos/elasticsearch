@@ -43,4 +43,9 @@ public class StatePath {
         }
         return exists;
     }
+
+    public void rm(String key) throws IOException {
+        key = key.replace(" ", "");
+        zkState.delete(key);
+    }
 }
