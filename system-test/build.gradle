@@ -1,4 +1,4 @@
-apply plugin: 'java'
+apply plugin: "java"
 
 repositories {
     maven {
@@ -8,29 +8,29 @@ repositories {
 
 sourceSets {
     systemTest {
-        java.srcDir file('src/main/java')
-        java.srcDir file('src/systemTest/java')
-        resources.srcDir file('src/systemTest/resources')
+        java.srcDir file("src/main/java")
+        java.srcDir file("src/systemTest/java")
+        resources.srcDir file("src/systemTest/resources")
     }
 }
 
 dependencies {
 
-    compile project(':scheduler')
-    compile 'com.github.docker-java:docker-java:1.3.0'
-    compile 'com.mashape.unirest:unirest-java:1.4.5'
-    compile 'com.jayway.awaitility:awaitility:1.6.3'
-    compile 'com.github.ContainerSolutions:minimesos:0.6.1'
+    compile project(":scheduler")
+    compile "com.github.docker-java:docker-java:${dockerJavaVersion}"
+    compile "com.mashape.unirest:unirest-java:${unirestVersion}"
+    compile "com.jayway.awaitility:awaitility:${awaitilityVersion}"
+    compile "com.github.ContainerSolutions:minimesos:${minimesosVersion}"
 
-    systemTestCompile project(':scheduler')
-    systemTestCompile 'junit:junit:4.12'
-    systemTestCompile 'com.github.docker-java:docker-java:1.3.0'
-    systemTestCompile 'com.mashape.unirest:unirest-java:1.4.5'
-    systemTestCompile 'com.jayway.awaitility:awaitility:1.6.3'
-    systemTestCompile 'com.github.ContainerSolutions:minimesos:0.6.1'
+    systemTestCompile project(":scheduler")
+    systemTestCompile "junit:junit:${junitVersion}"
+    systemTestCompile "com.github.docker-java:docker-java:${dockerJavaVersion}"
+    systemTestCompile "com.mashape.unirest:unirest-java:${unirestVersion}"
+    systemTestCompile "com.jayway.awaitility:awaitility:${awaitilityVersion}"
+    systemTestCompile "com.github.ContainerSolutions:minimesos:${minimesosVersion}"
 }
 
-task main(type:JavaExec, dependsOn: 'compileJava') {
+task main(type: JavaExec, dependsOn: "compileJava") {
     main = "org.apache.mesos.elasticsearch.systemtest.Main"
     classpath = sourceSets.main.runtimeClasspath
 }
@@ -43,7 +43,7 @@ task systemTest(type: Test) {
     dependsOn processTestResources  // Copy files to resources
     testClassesDir = sourceSets.systemTest.output.classesDir
     classpath = sourceSets.systemTest.runtimeClasspath
-    include '**/*SystemTest*'
+    include "**/*SystemTest*"
     testLogging {
         showStandardStreams = true
     }
@@ -58,6 +58,6 @@ task copyTestResources(type: Copy) {
 processTestResources.dependsOn copyTestResources
 
 findbugsSystemTest {
-    excludeFilter file('config/findbugs/excludeFilter.xml')
+    excludeFilter file("config/findbugs/excludeFilter.xml")
 }
 
