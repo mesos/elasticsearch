@@ -24,9 +24,9 @@ public class ExecutorEnvironmentalVariablesTest {
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
         for (Protos.Environment.Variable var : env.getList()) {
-            if (var.getName().equals(ExecutorEnvironmentalVariables.JAVA_OPTS)) {
+            if (var.getName().equals(ExecutorEnvironmentalVariables.ES_HEAP)) {
                 String val = var.getValue();
-                Pattern pattern = Pattern.compile(".*-Xmx(\\d*)m");
+                Pattern pattern = Pattern.compile("(\\d*)m");
                 Matcher matcher = pattern.matcher(val);
                 assertTrue(matcher.matches());
                 assertEquals(Integer.toString(ram - 256), matcher.group(1));
@@ -41,9 +41,9 @@ public class ExecutorEnvironmentalVariablesTest {
         ExecutorEnvironmentalVariables env = new ExecutorEnvironmentalVariables(configuration);
 
         for (Protos.Environment.Variable var : env.getList()) {
-            if (var.getName().equals(ExecutorEnvironmentalVariables.JAVA_OPTS)) {
+            if (var.getName().equals(ExecutorEnvironmentalVariables.ES_HEAP)) {
                 String val = var.getValue();
-                Pattern pattern = Pattern.compile(".*-Xmx(\\d*)m");
+                Pattern pattern = Pattern.compile("(\\d*)m");
                 Matcher matcher = pattern.matcher(val);
                 assertTrue(matcher.matches());
                 assertEquals(Integer.toString(ram - ram / 4), matcher.group(1));

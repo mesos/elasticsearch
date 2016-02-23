@@ -67,7 +67,6 @@ public class ExecutorEnvironmentalVariables {
         if (configuration.isFrameworkUseDocker()) {
             addToList(native_mesos_library_key, native_mesos_library_path);
         }
-        addToList(JAVA_OPTS, getHeapSpaceString(configuration));
     }
 
     private void populateEnvMapForMesos(Configuration configuration, long lNodeId) {
