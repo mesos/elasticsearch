@@ -33,6 +33,7 @@ import static org.mockito.Mockito.*;
 public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
+    public static final String SLAVEID = "SLAVEID";
 
     @Mock
     private FrameworkState frameworkState;
@@ -60,6 +61,7 @@ public class TaskInfoFactoryTest {
         when(configuration.getFrameworkRole()).thenReturn("some-framework-role");
         when(configuration.isFrameworkUseDocker()).thenReturn(true);
         when(configuration.getElasticsearchPorts()).thenReturn(Collections.emptyList());
+        when(configuration.taskSpecificHostDir(any())).thenReturn("/var/lib/mesos/slave/elasticsearch/cluster-name/" + SLAVEID);
     }
 
     @Test
@@ -99,7 +101,7 @@ public class TaskInfoFactoryTest {
 
         assertEquals(2, taskInfo.getContainer().getVolumesCount());
         assertEquals(Configuration.CONTAINER_PATH_DATA, taskInfo.getContainer().getVolumes(0).getContainerPath());
-        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getContainer().getVolumes(0).getHostPath());
+        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR + "/" + configuration.getElasticsearchClusterName() + "/" + offer.getSlaveId().getValue(), taskInfo.getContainer().getVolumes(0).getHostPath());
         assertEquals(Protos.Volume.Mode.RW, taskInfo.getContainer().getVolumes(0).getMode());
         assertEquals(Configuration.CONTAINER_PATH_CONF, taskInfo.getContainer().getVolumes(1).getContainerPath());
         assertEquals(Configuration.HOST_PATH_CONF, taskInfo.getContainer().getVolumes(1).getHostPath());
@@ -117,7 +119,7 @@ public class TaskInfoFactoryTest {
     private Protos.Offer getOffer(Protos.FrameworkID frameworkId) {
         return Protos.Offer.newBuilder()
                                                 .setId(Protos.OfferID.newBuilder().setValue(UUID.randomUUID().toString()))
-                                                .setSlaveId(Protos.SlaveID.newBuilder().setValue(UUID.randomUUID().toString()))
+                .setSlaveId(Protos.SlaveID.newBuilder().setValue(SLAVEID))
                                                 .setFrameworkId(frameworkId)
                                                 .setHostname("localhost")
                                                 .addAllResources(asList(
