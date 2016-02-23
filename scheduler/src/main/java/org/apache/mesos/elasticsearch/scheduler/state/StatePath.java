@@ -1,7 +1,5 @@
 package org.apache.mesos.elasticsearch.scheduler.state;
 
-import org.apache.log4j.Logger;
-
 import java.io.IOException;
 import java.security.InvalidParameterException;
 
@@ -9,7 +7,6 @@ import java.security.InvalidParameterException;
  * Path utilities
  */
 public class StatePath {
-    private static final Logger LOGGER = Logger.getLogger(StatePath.class);
     private SerializableState zkState;
     public StatePath(SerializableState zkState) {
         this.zkState = zkState;
@@ -44,8 +41,13 @@ public class StatePath {
         return exists;
     }
 
+    /**
+     * Remove a zNode or zFolder.
+     *
+     * @param key the path to remove.
+     * @throws IOException If unable to remove
+     */
     public void rm(String key) throws IOException {
-        key = key.replace(" ", "");
         zkState.delete(key);
     }
 }
