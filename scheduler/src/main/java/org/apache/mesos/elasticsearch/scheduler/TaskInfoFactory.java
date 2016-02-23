@@ -68,7 +68,7 @@ public class TaskInfoFactory {
 
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        final List<String> args = configuration.esArguments(clusterState, discovery);
+        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -91,8 +91,8 @@ public class TaskInfoFactory {
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
         final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
-        final List<String> args = configuration.esArguments(clusterState, discovery);
-        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId);
+        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
+        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId, offer.getSlaveId());
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -140,7 +140,7 @@ public class TaskInfoFactory {
         return discovery.build();
     }
 
-    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID) {
+    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Protos.SlaveID slaveID) {
         final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
         final Protos.ContainerInfo.DockerInfo.Builder dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder()
                 .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
@@ -151,11 +151,12 @@ public class TaskInfoFactory {
         for (Protos.Environment.Variable variable : environment.getVariablesList()) {
             dockerInfo.addParameters(Protos.Parameter.newBuilder().setKey("env").setValue(variable.getName() + "=" + variable.getValue()));
         }
+        String taskSpecificDataDir = configuration.taskSpecificHostDir(slaveID);
         final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
                 .setDocker(dockerInfo)
                 .addVolumes(Protos.Volume.newBuilder()
-                        .setHostPath(configuration.getDataDir())
+                        .setHostPath(taskSpecificDataDir)
                         .setContainerPath(Configuration.CONTAINER_PATH_DATA)
                         .setMode(Protos.Volume.Mode.RW)
                         .build());

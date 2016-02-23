@@ -252,6 +252,13 @@ It is strongly recommended that you use the containerized version of Mesos Elast
 
 Jars are available under the (releases section of github)[https://github.com/mesos/elasticsearch/releases].
 
+### Data directory
+The ES node data can be written to a specific directory. If in docker mode, use the `--dataDir` option. If in jar mode, set the `path.data` option in your custom ES settings file.
+
+The cluster name and slaveID will be appended to the end of the data directory option. This allows users with a shared network drive to write node specific data to their own seperate location.
+
+For example, if the user specifies a data directory of `/var/lib/data`, then the data for the agent with a Slave ID of S1 will be written to `/var/lib/data/mesos-ha/S1`.
+
 ### User Interface
 
 The web based user interface is available on port 31100 of the scheduler by default. It displays real time information about the tasks running in the cluster and a basic configuration overview of the cluster. 

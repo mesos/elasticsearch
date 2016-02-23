@@ -285,7 +285,7 @@ public class Configuration {
                 + "\" nobody";
     }
 
-    public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo) {
+    public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo, Protos.SlaveID slaveID) {
         List<String> args = new ArrayList<>();
         List<Protos.TaskInfo> taskList = clusterState.getTaskList();
         String hostAddress = "";
@@ -305,8 +305,9 @@ public class Configuration {
         args.add("--default.index.number_of_replicas=0");
         args.add("--default.index.auto_expand_replicas=0-all");
         if (!isFrameworkUseDocker()) {
+            String taskSpecificDataDir = taskSpecificHostDir(slaveID);
             args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
-            args.add("--default.path.data=" + getDataDir());
+            args.add("--default.path.data=" + taskSpecificDataDir);
             args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
         } else {
             args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
@@ -325,6 +326,10 @@ public class Configuration {
 
 
         return args;
+    }
+
+    public String taskSpecificHostDir(Protos.SlaveID slaveID) {
+        return getDataDir() + "/" + getElasticsearchClusterName() + "/" + slaveID.getValue();
     }
 
     private void addIfNotEmpty(List<String> args, String key, String value) {
