@@ -46,9 +46,14 @@ public class TaskInfoFactory {
      * @return TaskInfo
      */
     public Protos.TaskInfo createTask(Configuration configuration, FrameworkState frameworkState, Protos.Offer offer, Clock clock) {
+        //this creates and assigns a unique id to an elastic search node
+        long lElasticSearchNodeId = configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0 ?
+                clusterState.getElasticNodeId() : ExecutorEnvironmentalVariables.EXTERNAL_VOLUME_NOT_CONFIGURED;
+
+        LOGGER.debug("Elastic Search Node Id: " + lElasticSearchNodeId);
         if (configuration.isFrameworkUseDocker()) {
             LOGGER.debug("Building Docker task");
-            Protos.TaskInfo taskInfo = buildDockerTask(offer, configuration, clock);
+            Protos.TaskInfo taskInfo = buildDockerTask(offer, configuration, clock, lElasticSearchNodeId);
             LOGGER.debug(taskInfo.toString());
             return taskInfo;
         } else {
@@ -81,7 +86,7 @@ public class TaskInfoFactory {
                 .build();
     }
 
-    private Protos.TaskInfo buildDockerTask(Protos.Offer offer, Configuration configuration, Clock clock) {
+    private Protos.TaskInfo buildDockerTask(Protos.Offer offer, Configuration configuration, Clock clock, Long lElasticSearchNodeId) {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports);
@@ -92,7 +97,7 @@ public class TaskInfoFactory {
 
         final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
         final List<String> args = configuration.esArguments(clusterState, discovery);
-        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId);
+        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId, lElasticSearchNodeId);
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -140,8 +145,8 @@ public class TaskInfoFactory {
         return discovery.build();
     }
 
-    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID) {
-        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
+    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Long lElasticSearchNodeId) {
+        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration, lElasticSearchNodeId).getList()).build();
         final Protos.ContainerInfo.DockerInfo.Builder dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder()
                 .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
                 .setImage(configuration.getExecutorImage())
@@ -151,6 +156,41 @@ public class TaskInfoFactory {
         for (Protos.Environment.Variable variable : environment.getVariablesList()) {
             dockerInfo.addParameters(Protos.Parameter.newBuilder().setKey("env").setValue(variable.getName() + "=" + variable.getValue()));
         }
+
+        if (configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0) {
+
+            LOGGER.debug("Is Docker Container and External Driver enabled");
+
+            //docker external volume driver
+            LOGGER.debug("Docker Driver: " + configuration.getExternalVolumeDriver());
+
+            //note: this makes a unique configuration volume name per elastic search node
+            StringBuffer sbConfig = new StringBuffer(configuration.getFrameworkName());
+            sbConfig.append(Long.toString(lElasticSearchNodeId));
+            sbConfig.append("config:");
+            sbConfig.append(Configuration.CONTAINER_PATH_CONF);
+            String sHostPathOrExternalVolumeForConfig = sbConfig.toString();
+            LOGGER.debug("Config Volume Name: " + sHostPathOrExternalVolumeForConfig);
+
+            //note: this makes a unique data volume name per elastic search node
+            StringBuffer sbData = new StringBuffer(configuration.getFrameworkName());
+            sbData.append(Long.toString(lElasticSearchNodeId));
+            sbData.append("data:");
+            sbData.append(Configuration.CONTAINER_PATH_DATA);
+            String sHostPathOrExternalVolumeForData = sbData.toString();
+            LOGGER.debug("Data Volume Name: " + sHostPathOrExternalVolumeForData);
+
+            dockerInfo.addParameters(Protos.Parameter.newBuilder()
+                    .setKey("volume-driver")
+                    .setValue(configuration.getExternalVolumeDriver()));
+            dockerInfo.addParameters(Protos.Parameter.newBuilder()
+                    .setKey("volume")
+                    .setValue(sHostPathOrExternalVolumeForConfig));
+            dockerInfo.addParameters(Protos.Parameter.newBuilder()
+                    .setKey("volume")
+                    .setValue(sHostPathOrExternalVolumeForData));
+        }
+
         final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
                 .setDocker(dockerInfo)
@@ -159,7 +199,6 @@ public class TaskInfoFactory {
                         .setContainerPath(Configuration.CONTAINER_PATH_DATA)
                         .setMode(Protos.Volume.Mode.RW)
                         .build());
-
 
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());

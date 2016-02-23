@@ -55,7 +55,7 @@ public class Main {
                 frameworkState,
                 clusterState,
                 taskInfoFactory,
-                new OfferStrategy(configuration, clusterState),
+                configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0 ? new OfferStrategyExternalStorage(configuration, clusterState) : new OfferStrategyNormal(configuration, clusterState),
                 zookeeperStateDriver);
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
