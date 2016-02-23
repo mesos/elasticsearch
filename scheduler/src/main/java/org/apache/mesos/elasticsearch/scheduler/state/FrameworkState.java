@@ -65,7 +65,7 @@ public class FrameworkState {
         try {
             statePath.rm(FRAMEWORKID_KEY);
         } catch (IOException e) {
-            LOGGER.error("Unable to delete framework ID from zookeeper", e);
+            LOGGER.error("Unable to delete " + FRAMEWORKID_KEY + " from zookeeper", e);
         }
     }
 
