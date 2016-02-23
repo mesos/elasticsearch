@@ -61,6 +61,14 @@ public class FrameworkState {
         registeredListeners.forEach(listener -> listener.accept(clusterState));
     }
 
+    public void destroy() {
+        try {
+            statePath.rm(FRAMEWORKID_KEY);
+        } catch (IOException e) {
+            LOGGER.error("Unable to delete " + FRAMEWORKID_KEY + " from zookeeper", e);
+        }
+    }
+
     public SchedulerDriver getDriver() {
         return driver;
     }

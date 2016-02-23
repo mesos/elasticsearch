@@ -164,4 +164,10 @@ public class ElasticsearchScheduler implements Scheduler {
     public void error(SchedulerDriver driver, String message) {
         LOGGER.error("Error: " + message);
     }
+
+    public void shutdown(SchedulerDriver driver) {
+        clusterState.getTaskList().stream().forEach(taskInfo -> driver.killTask(taskInfo.getTaskId())); // Kill tasks.
+        clusterState.destroy(); // Remove tasks from zk
+        frameworkState.destroy(); // Remove framework state from zk.
+    }
 }
