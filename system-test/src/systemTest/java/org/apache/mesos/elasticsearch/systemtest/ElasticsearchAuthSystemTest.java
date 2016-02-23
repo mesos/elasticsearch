@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.mesos.ClusterArchitecture;
 import com.containersol.minimesos.mesos.DockerClientFactory;
 import com.containersol.minimesos.mesos.ZooKeeper;

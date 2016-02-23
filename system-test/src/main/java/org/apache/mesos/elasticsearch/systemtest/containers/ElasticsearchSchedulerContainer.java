@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest.containers;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
@@ -72,4 +72,10 @@ public class ElasticsearchSchedulerContainer extends AbstractContainer {
     public String getZookeeperMesosUrl() {
         return "zk://" + zkIp + ":2181/mesos";
     }
+
+    @Override
+    public String getRole() {
+        return TEST_CONFIG.getSchedulerName();
+    }
+
 }

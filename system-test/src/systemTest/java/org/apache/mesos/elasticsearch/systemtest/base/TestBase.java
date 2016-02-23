@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest.base;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.mesos.ClusterArchitecture;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;

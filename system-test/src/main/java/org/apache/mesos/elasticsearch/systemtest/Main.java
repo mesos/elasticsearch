@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.MesosCluster;
+import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.mesos.ClusterArchitecture;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
