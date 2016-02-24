@@ -96,14 +96,6 @@ public class TaskInfoFactoryTest {
         assertEquals(9200, taskInfo.getDiscovery().getPorts().getPorts(0).getNumber());
         assertEquals(9300, taskInfo.getDiscovery().getPorts().getPorts(1).getNumber());
         assertEquals(Protos.DiscoveryInfo.Visibility.EXTERNAL, taskInfo.getDiscovery().getVisibility());
-
-        assertEquals(2, taskInfo.getContainer().getVolumesCount());
-        assertEquals(Configuration.CONTAINER_PATH_DATA, taskInfo.getContainer().getVolumes(0).getContainerPath());
-        assertEquals(Configuration.DEFAULT_HOST_DATA_DIR, taskInfo.getContainer().getVolumes(0).getHostPath());
-        assertEquals(Protos.Volume.Mode.RW, taskInfo.getContainer().getVolumes(0).getMode());
-        assertEquals(Configuration.CONTAINER_PATH_CONF, taskInfo.getContainer().getVolumes(1).getContainerPath());
-        assertEquals(Configuration.HOST_PATH_CONF, taskInfo.getContainer().getVolumes(1).getHostPath());
-        assertEquals(Protos.Volume.Mode.RO, taskInfo.getContainer().getVolumes(1).getMode());
     }
 
     private Protos.Resource getResourceByName(List<Protos.Resource> resourceList, String name) {

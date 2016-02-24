@@ -2,6 +2,7 @@ package org.apache.mesos.elasticsearch.scheduler.util;
 
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.Discovery;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 
 /**
  * Proto file helpers for tests.
@@ -29,6 +30,18 @@ public class ProtoTestUtil {
                                                 .addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(9300))
                                 )
                 )
+                .build();
+    }
+
+    public static Protos.TaskInfo getTaskInfoExternalVolume(Integer esNodeId) {
+        return Protos.TaskInfo.newBuilder(getDefaultTaskInfo())
+                .setCommand(Protos.CommandInfo.newBuilder()
+                        .setValue("")
+                        .setEnvironment(Protos.Environment.newBuilder()
+                                .addVariables(Protos.Environment.Variable.newBuilder()
+                                        .setName(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID)
+                                        .setValue(esNodeId.toString())))
+                        .build())
                 .build();
     }
 

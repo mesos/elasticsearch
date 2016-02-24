@@ -2,7 +2,6 @@ package org.apache.mesos.elasticsearch.scheduler.state;
 
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
-import org.apache.mesos.Protos.Environment.Variable;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
@@ -13,6 +12,8 @@ import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.apache.mesos.Protos.TaskID;
 
@@ -51,36 +52,27 @@ public class ClusterState {
     /**
      * When using external volumes, retrieve the next available elasticsearch node id
      *
-     * @return long (node id)
+     * @return Integer (node id)
      */
-    public long getElasticNodeId() {
-        List<TaskInfo> taskList = getTaskList();
+    public Integer getElasticNodeId() {
+        final List<Integer> idList = getElasticNodeIdList();
+        return IntStream.range(0, idList.size() + 1).filter(value -> !idList.contains(value)).findFirst().getAsInt();
+    }
 
-        //create a bitmask of all the node ids currently being used
-        long bitmask = 0;
-        for (TaskInfo info : taskList) {
-            LOGGER.debug("getElasticNodeId - Task:");
-            LOGGER.debug(info.toString());
-            for (Variable var : info.getExecutor().getCommand().getEnvironment().getVariablesList()) {
-                if (var.getName().equalsIgnoreCase(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID)) {
-                    bitmask |= 1 << Integer.parseInt(var.getValue()) - 1;
-                    break;
-                }
-            }
-        }
-        LOGGER.debug("Bitmask: " + bitmask);
+    private List<Integer> getElasticNodeIdList() {
+        return getTaskList().stream()
+                .filter(this::containsElasticNodeId)
+                .map(this::getElasticNodeId)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+    }
 
-        //the find out which node ids are not being used
-        long lNodeId = 0;
-        for (int i = 0; i < 31; i++) {
-            if ((bitmask & (1 << i)) == 0) {
-                lNodeId = i + 1;
-                LOGGER.debug("Found Free: " + lNodeId);
-                break;
-            }
-        }
+    private String getElasticNodeId(TaskInfo taskInfo2) {
+        return taskInfo2.getCommand().getEnvironment().getVariablesList().stream().filter(variable1 -> variable1.getName().equals(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID)).findFirst().get().getValue();
+    }
 
-        return lNodeId;
+    private boolean containsElasticNodeId(TaskInfo taskInfo) {
+        return taskInfo.getCommand().getEnvironment().getVariablesList().stream().anyMatch(variable -> variable.getName().equals(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID));
     }
 
     /**

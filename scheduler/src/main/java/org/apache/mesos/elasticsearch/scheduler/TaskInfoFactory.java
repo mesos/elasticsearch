@@ -106,7 +106,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(dockerCommand(configuration, args))
+                .setCommand(dockerCommand(configuration, args, lElasticSearchNodeId))
                 .setContainer(containerInfo)
                 .build();
     }
@@ -189,16 +189,15 @@ public class TaskInfoFactory {
             dockerInfo.addParameters(Protos.Parameter.newBuilder()
                     .setKey("volume")
                     .setValue(sHostPathOrExternalVolumeForData));
+        } else {
+            dockerInfo.addParameters(Protos.Parameter.newBuilder()
+                    .setKey("volume")
+                    .setValue(configuration.getDataDir() + ":" + Configuration.CONTAINER_PATH_DATA));
         }
 
         final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
                 .setType(Protos.ContainerInfo.Type.DOCKER)
-                .setDocker(dockerInfo)
-                .addVolumes(Protos.Volume.newBuilder()
-                        .setHostPath(configuration.getDataDir())
-                        .setContainerPath(Configuration.CONTAINER_PATH_DATA)
-                        .setMode(Protos.Volume.Mode.RW)
-                        .build());
+                .setDocker(dockerInfo);
 
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());
@@ -217,9 +216,11 @@ public class TaskInfoFactory {
                 .build();
     }
 
-    private Protos.CommandInfo dockerCommand(Configuration configuration, List<String> args) {
+    private Protos.CommandInfo dockerCommand(Configuration configuration, List<String> args, Long lElasticSearchNodeId) {
+        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration, lElasticSearchNodeId).getList()).build();
         final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setShell(false)
+                .mergeEnvironment(environment)
                 .addAllArguments(args);
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchSettingsLocation()));
