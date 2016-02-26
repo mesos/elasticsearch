@@ -58,13 +58,13 @@ public class TaskInfoFactory {
             return taskInfo;
         } else {
             LOGGER.debug("Building native task");
-            Protos.TaskInfo taskInfo = buildNativeTask(offer, configuration, clock);
+            Protos.TaskInfo taskInfo = buildNativeTask(offer, configuration, clock, lElasticSearchNodeId);
             LOGGER.debug(taskInfo.toString());
             return taskInfo;
         }
     }
 
-    private Protos.TaskInfo buildNativeTask(Protos.Offer offer, Configuration configuration, Clock clock) {
+    private Protos.TaskInfo buildNativeTask(Protos.Offer offer, Configuration configuration, Clock clock, Long lElasticSearchNodeId) {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports);
@@ -82,7 +82,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(nativeCommand(configuration, args))
+                .setCommand(nativeCommand(configuration, args, lElasticSearchNodeId))
                 .build();
     }
 
@@ -229,14 +229,14 @@ public class TaskInfoFactory {
                 .build();
     }
 
-    private Protos.CommandInfo nativeCommand(Configuration configuration, List<String> args) {
+    private Protos.CommandInfo nativeCommand(Configuration configuration, List<String> args, Long lElasticSearchNodeId) {
         String address = configuration.getFrameworkFileServerAddress();
         if (address == null) {
             throw new NullPointerException("Webserver address is null");
         }
         String httpPath = address + "/get/" + Configuration.ES_TAR;
         String command = configuration.nativeCommand(args);
-        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration).getList()).build();
+        final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration, lElasticSearchNodeId).getList()).build();
         final Protos.CommandInfo.Builder builder = Protos.CommandInfo.newBuilder()
                 .setShell(true)
                 .setValue(command)
