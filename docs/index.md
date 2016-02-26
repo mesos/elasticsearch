@@ -145,8 +145,10 @@ Usage: (Options preceded by an asterisk are required) [options]
        (MB).
        Default: 256.0
     --elasticsearchSettingsLocation
-       Path or URL to ES yml settings file. [In docker mode file must be in
-       /tmp/config] E.g. '/tmp/config/elasticsearch.yml' or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'
+       Path or URL to ES yml settings file. Path example:
+       '/var/lib/mesos/config/elasticsearch.yml'. URL example: 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'.
+       In Docker mode a volume will be created from /tmp/config in the container to
+       the directory that contains elasticsearch.yml.
        Default: <empty string>
     --executorForcePullImage
        Option to force pull the executor image. [DOCKER MODE ONLY]
@@ -158,6 +160,14 @@ Usage: (Options preceded by an asterisk are required) [options]
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
+    --externalVolumeDriver
+       This defines the use of an external storage drivers to be used. By
+       default, elastic serch nodes will not be created with external volumes but rather
+       direct attached storage.
+       Default: <empty string>
+    --externalVolumeOptions
+       This describes how volumes are to be created.
+       Default: <empty string>
     --frameworkFailoverTimeout
        The time before Mesos kills a scheduler and tasks if it has not recovered
        (ms).
@@ -251,6 +261,117 @@ It is strongly recommended that you use the containerized version of Mesos Elast
 ```
 
 Jars are available under the (releases section of github)[https://github.com/mesos/elasticsearch/releases].
+
+### External volumes
+The elasticsearch database can be given a third layer of data resiliency (in addition to sharding, and replication) by using exernal volumes. External volumes are storage devices that are mounted externally to the application. For example, AWS's EBS volumes. To enable this feature, simply specify the docker volume plugin that you wish to use. For example: `--externalVolumeDriver rexray`. This will create volumes prefixed with the framework name and a numeric ID of the node, e.g. `elasticsearch0data`, `elasticsearch0config`. Volume options can be passed using the `--externalVolumeOptions` parameter.
+
+The most difficult part is setting up a docker volume plugin. The next few sections will describe how to setup the "rexray" docker volume plugin.
+
+#### Docker mode installation of the rexray docker volume plugin
+In docker mode, the applications rexray and dvdcli:
+https://github.com/emccode/rexray
+https://github.com/emccode/dvdcli
+
+Below is a script that will install these applications for you on AWS. Ensure the following AWS credentials are exported on your host: `$TF_VAR_access_key`, `$TF_VAR_access_key`. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexray.sh url.or.ip.to.agent`.
+
+```
+#!/bin/bash
+
+if [ -z "$TF_VAR_access_key" ]; then
+    echo "TF_VAR_access_key is empty"
+    exit 1
+fi
+
+if [ -z "$TF_VAR_secret_key" ]; then
+    echo "TF_VAR_secret_key is empty"
+    exit 1
+fi
+
+# Install rexray
+# ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -'
+ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -s staged'
+
+# Copy config to remote
+scp -i $KEY scripts/config.yml ubuntu@$1:~
+
+# Add AWS credentials. Guard against forward slashes in secret
+ssh -i $KEY ubuntu@$1 'export MYVAR='"'$(echo $TF_VAR_access_key | sed -e 's/[\/&]/\\&/g')'"'; sed -i s/TF_VAR_access_key/$MYVAR/ config.yml'
+ssh -i $KEY ubuntu@$1 'export MYVAR='"'$(echo $TF_VAR_secret_key | sed -e 's/[\/&]/\\&/g')'"'; sed -i s/TF_VAR_secret_key/$MYVAR/ config.yml'
+
+# Move to correct directory
+ssh -i $KEY ubuntu@$1 'sudo mv ~/config.yml /etc/rexray'
+
+# Start rexray
+ssh -i $KEY ubuntu@$1 'sudo rexray restart'
+
+# Install dvdcli
+ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/dvdcli/install | sh -'
+```
+Then to use external volumes, simply pass the required argument. Below is an example marathon json:
+```
+{
+  "id": "es-rexray",
+  "cpus": 1.0,
+  "mem": 512,
+  "instances": 1,
+  "args": [
+    "--zookeeperMesosUrl", "zk://$MASTER:2181/mesos",
+    "--elasticsearchCpu", "0.5",
+    "--elasticsearchRam", "1024",
+    "--elasticsearchDisk", "1024",
+    "--externalVolumeDriver", "rexray"
+  ],
+  "env": {
+    "JAVA_OPTS": "-Xms32m -Xmx256m"
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler:latest",
+      "network": "HOST",
+      "forcePullImage": true
+    }
+  },
+  "ports": [31100],
+  "requirePorts": true
+}
+```
+
+#### Jar mode installation of the rexray docker volume plugin
+It is possible to use in jar mode using the mesos-module-dvdi project, or the mesos-flocker project. Testing has been performed with the mesos-module-dvdi project.
+https://github.com/emccode/mesos-module-dvdi
+https://github.com/ClusterHQ/mesos-module-flocker
+
+The following script (in addition to the previous docker script) will install the required software. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexrayMesos.sh url.or.ip.to.agent`.
+```
+$ cat ./scripts/installRexrayLib.sh 
+#!/bin/bash
+set -x
+
+if [ -z "$TF_VAR_access_key" ]; then
+    echo "TF_VAR_access_key is empty"
+    exit 1
+fi
+
+if [ -z "$TF_VAR_secret_key" ]; then
+    echo "TF_VAR_secret_key is empty"
+    exit 1
+fi
+
+# Install rexray and dvdcli
+./scripts/installRexray.sh $1
+
+# Download dvdi isolator
+ssh -i $KEY ubuntu@$1 'sudo wget -P /usr/lib https://github.com/emccode/mesos-module-dvdi/releases/download/v0.4.1/libmesos_dvdi_isolator-0.25.0.so'
+
+# Copy across module configuration settings
+ssh -i $KEY ubuntu@$1 'echo { \"libraries\": [ { \"file\": \"/usr/lib/libmesos_dvdi_isolator-0.25.0.so\", \"modules\": [ { \"name\": \"com_emccode_mesos_DockerVolumeDriverIsolator\" } ] } ] } | sudo tee /usr/lib/dvdi-mod.json'
+ssh -i $KEY ubuntu@$1 'echo file:///usr/lib/dvdi-mod.json | sudo tee /etc/mesos-slave/modules'
+ssh -i $KEY ubuntu@$1 'echo com_emccode_mesos_DockerVolumeDriverIsolator | sudo tee /etc/mesos-slave/isolation'
+
+# Restart mesos slave to load new module
+ssh -i $KEY ubuntu@$1 'sudo service mesos-slave restart'
+```
 
 ### User Interface
 
