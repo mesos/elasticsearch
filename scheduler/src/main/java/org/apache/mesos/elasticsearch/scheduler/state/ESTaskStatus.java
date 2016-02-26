@@ -14,6 +14,7 @@ import java.security.InvalidParameterException;
  * the respective TaskStatus packet.
  */
 public class ESTaskStatus {
+    // Todo (pnw): Refactor: This is part of the cluster state, but is often accessed without cluster state.
     private static final Logger LOGGER = Logger.getLogger(TaskStatus.class);
     public static final String STATE_KEY = "state";
     public static final String DEFAULT_STATUS_NO_MESSAGE_SET = "Default status. No message set.";

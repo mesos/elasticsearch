@@ -67,7 +67,8 @@ public class ConfigurationTest {
                 .addPorts(Protos.Port.newBuilder().setNumber(port)))
                 .setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL)
                 .build();
-        final List<String> arguments = configuration.esArguments(clusterState, discoveryInfo);
+        Protos.SlaveID slaveID = Protos.SlaveID.newBuilder().setValue("SLAVE").build();
+        final List<String> arguments = configuration.esArguments(clusterState, discoveryInfo, slaveID);
         String allArgs = arguments.toString();
         assertTrue(allArgs.contains(Integer.toString(port)));
     }

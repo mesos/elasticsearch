@@ -73,7 +73,7 @@ public class TaskInfoFactory {
 
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        final List<String> args = configuration.esArguments(clusterState, discovery);
+        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
