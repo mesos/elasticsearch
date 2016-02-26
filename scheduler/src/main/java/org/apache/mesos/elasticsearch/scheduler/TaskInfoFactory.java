@@ -96,8 +96,8 @@ public class TaskInfoFactory {
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
         final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
-        final List<String> args = configuration.esArguments(clusterState, discovery);
-        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId, lElasticSearchNodeId);
+        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
+        final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId, lElasticSearchNodeId, offer.getSlaveId());
 
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
@@ -145,7 +145,7 @@ public class TaskInfoFactory {
         return discovery.build();
     }
 
-    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Long lElasticSearchNodeId) {
+    private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Long lElasticSearchNodeId, Protos.SlaveID slaveID) {
         final Protos.Environment environment = Protos.Environment.newBuilder().addAllVariables(new ExecutorEnvironmentalVariables(configuration, lElasticSearchNodeId).getList()).build();
         final Protos.ContainerInfo.DockerInfo.Builder dockerInfo = Protos.ContainerInfo.DockerInfo.newBuilder()
                 .addParameters(Protos.Parameter.newBuilder().setKey("env").setValue("MESOS_TASK_ID=" + taskID.getValue()))
@@ -157,20 +157,15 @@ public class TaskInfoFactory {
             dockerInfo.addParameters(Protos.Parameter.newBuilder().setKey("env").setValue(variable.getName() + "=" + variable.getValue()));
         }
 
+        final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
+                .setType(Protos.ContainerInfo.Type.DOCKER);
+
         if (configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0) {
 
             LOGGER.debug("Is Docker Container and External Driver enabled");
 
             //docker external volume driver
             LOGGER.debug("Docker Driver: " + configuration.getExternalVolumeDriver());
-
-            //note: this makes a unique configuration volume name per elastic search node
-            StringBuffer sbConfig = new StringBuffer(configuration.getFrameworkName());
-            sbConfig.append(Long.toString(lElasticSearchNodeId));
-            sbConfig.append("config:");
-            sbConfig.append(Configuration.CONTAINER_PATH_CONF);
-            String sHostPathOrExternalVolumeForConfig = sbConfig.toString();
-            LOGGER.debug("Config Volume Name: " + sHostPathOrExternalVolumeForConfig);
 
             //note: this makes a unique data volume name per elastic search node
             StringBuffer sbData = new StringBuffer(configuration.getFrameworkName());
@@ -185,19 +180,18 @@ public class TaskInfoFactory {
                     .setValue(configuration.getExternalVolumeDriver()));
             dockerInfo.addParameters(Protos.Parameter.newBuilder()
                     .setKey("volume")
-                    .setValue(sHostPathOrExternalVolumeForConfig));
-            dockerInfo.addParameters(Protos.Parameter.newBuilder()
-                    .setKey("volume")
                     .setValue(sHostPathOrExternalVolumeForData));
         } else {
-            dockerInfo.addParameters(Protos.Parameter.newBuilder()
-                    .setKey("volume")
-                    .setValue(configuration.getDataDir() + ":" + Configuration.CONTAINER_PATH_DATA));
+            if (!configuration.getDataDir().isEmpty()) {
+                builder.addVolumes(Protos.Volume.newBuilder()
+                        .setHostPath(configuration.taskSpecificHostDir(slaveID))
+                        .setContainerPath(Configuration.CONTAINER_PATH_DATA)
+                        .setMode(Protos.Volume.Mode.RW)
+                        .build());
+            }
         }
 
-        final Protos.ContainerInfo.Builder builder = Protos.ContainerInfo.newBuilder()
-                .setType(Protos.ContainerInfo.Type.DOCKER)
-                .setDocker(dockerInfo);
+        builder.setDocker(dockerInfo);
 
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             final Path path = Paths.get(configuration.getElasticsearchSettingsLocation());
@@ -212,6 +206,7 @@ public class TaskInfoFactory {
                     .setMode(Protos.Volume.Mode.RO)
                     .build());
         }
+
         return builder
                 .build();
     }

@@ -263,7 +263,7 @@ It is strongly recommended that you use the containerized version of Mesos Elast
 Jars are available under the (releases section of github)[https://github.com/mesos/elasticsearch/releases].
 
 ### External volumes
-The elasticsearch database can be given a third layer of data resiliency (in addition to sharding, and replication) by using exernal volumes. External volumes are storage devices that are mounted externally to the application. For example, AWS's EBS volumes. To enable this feature, simply specify the docker volume plugin that you wish to use. For example: `--externalVolumeDriver rexray`. This will create volumes prefixed with the framework name and a numeric ID of the node, e.g. `elasticsearch0data`, `elasticsearch0config`. Volume options can be passed using the `--externalVolumeOptions` parameter.
+The elasticsearch database can be given a third layer of data resiliency (in addition to sharding, and replication) by using exernal volumes. External volumes are storage devices that are mounted externally to the application. For example, AWS's EBS volumes. To enable this feature, simply specify the docker volume plugin that you wish to use. For example: `--externalVolumeDriver rexray`. This will create volumes prefixed with the framework name and a numeric ID of the node, e.g. `elasticsearch0data`. Volume options can be passed using the `--externalVolumeOptions` parameter.
 
 The most difficult part is setting up a docker volume plugin. The next few sections will describe how to setup the "rexray" docker volume plugin.
 
