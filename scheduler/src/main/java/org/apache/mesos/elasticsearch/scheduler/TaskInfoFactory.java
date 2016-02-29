@@ -202,8 +202,12 @@ public class TaskInfoFactory {
                 .setShell(true)
                 .setValue(command)
                 .setUser("root")
-                .mergeEnvironment(environment)
-                .addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
+                .mergeEnvironment(environment);
+        if (configuration.getElasticsearchBinary().isEmpty()) {
+            builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(httpPath));
+        } else {
+            builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchBinary()));
+        }
         if (!configuration.getElasticsearchSettingsLocation().isEmpty()) {
             builder.addUris(Protos.CommandInfo.URI.newBuilder().setValue(configuration.getElasticsearchSettingsLocation()));
         }

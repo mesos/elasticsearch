@@ -45,7 +45,8 @@ public class Configuration {
     // DCOS Certification requirement 13
     public static final String FRAMEWORK_ROLE = "--frameworkRole";
     public static final String EXECUTOR_TIMEOUT = "--executorTimeout";
-    public static final String EXECUTOR_IMAGE = "--executorImage";
+    public static final String EXECUTOR_IMAGE = "--elasticsearchDockerImage";
+    public static final String EXECUTOR_BINARY = "--elasticsearchBinaryUrl";
     public static final String DEFAULT_EXECUTOR_IMAGE = "elasticsearch:latest";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
@@ -93,8 +94,11 @@ public class Configuration {
     private double frameworkFailoverTimeout = 2592000; // Mesos will kill framework after 1 month if marathon does not restart.
     @Parameter(names = {FRAMEWORK_ROLE}, description = "Used to group frameworks for allocation decisions, depending on the allocation policy being used.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkRole = "*"; // This is the default if none is passed to Mesos
-    @Parameter(names = {EXECUTOR_IMAGE}, description = "The docker executor image to use. E.g. 'elasticsearch:latest' [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
+    @Parameter(names = {EXECUTOR_IMAGE}, description = "The elasticsearch docker image to use. E.g. 'elasticsearch:latest' [DOCKER MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
     private String executorImage = DEFAULT_EXECUTOR_IMAGE;
+    @Parameter(names = {EXECUTOR_BINARY}, description = "The elasticsearch binary to use (Must be tar.gz format). " +
+            "E.g. 'https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.2.0/elasticsearch-2.2.0.tar.gz' [JAR MODE ONLY]", validateWith = CLIValidators.NotEmptyString.class)
+    private String executorBinary = "";
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image. [DOCKER MODE ONLY]")
     private Boolean executorForcePullImage = false;
     @Parameter(names = {FRAMEWORK_PRINCIPAL}, description = "The principal to use when registering the framework (username).")
@@ -199,6 +203,10 @@ public class Configuration {
 
     public Boolean getIsUseIpAddress() {
         return isUseIpAddress;
+    }
+
+    public String getElasticsearchBinary() {
+        return executorBinary;
     }
 
     // ******* Helper methods

@@ -117,6 +117,10 @@ Usage: (Options preceded by an asterisk are required) [options]
        The host data directory used by Docker volumes in the executors. [DOCKER
        MODE ONLY]
        Default: /var/lib/mesos/slave/elasticsearch
+    --elasticsearchBinaryUrl
+       The elasticsearch binary to use (Must be tar.gz format). E.g. 'https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/2.2.0/elasticsearch-2.2.0.tar.gz'
+       [JAR MODE ONLY]
+       Default: <empty string>
     --elasticsearchClusterName
        Name of the elasticsearch cluster
        Default: mesos-ha
@@ -127,6 +131,10 @@ Usage: (Options preceded by an asterisk are required) [options]
        The amount of Disk resource to allocate to the elasticsearch instance
        (MB).
        Default: 1024.0
+    --elasticsearchDockerImage
+       The elasticsearch docker image to use. E.g. 'elasticsearch:latest'
+       [DOCKER MODE ONLY]
+       Default: elasticsearch:latest
     --elasticsearchExecutorCpu
        The amount of CPU resource to allocate to the elasticsearch executor.
        Default: 0.1
@@ -145,16 +153,14 @@ Usage: (Options preceded by an asterisk are required) [options]
        (MB).
        Default: 256.0
     --elasticsearchSettingsLocation
-       Path or URL to ES yml settings file. [In docker mode file must be in
-       /tmp/config] E.g. '/tmp/config/elasticsearch.yml' or 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'
+       Path or URL to ES yml settings file. Path example:
+       '/var/lib/mesos/config/elasticsearch.yml'. URL example: 'https://gist.githubusercontent.com/mmaloney/5e1da5daa58b70a3a671/raw/elasticsearch.yml'.
+       In Docker mode a volume will be created from /tmp/config in the container to
+       the directory that contains elasticsearch.yml.
        Default: <empty string>
     --executorForcePullImage
        Option to force pull the executor image. [DOCKER MODE ONLY]
        Default: false
-    --executorImage
-       The docker executor image to use. E.g. 'elasticsearch:latest' [DOCKER
-       MODE ONLY]
-       Default: elasticsearch:latest
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
