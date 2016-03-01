@@ -278,7 +278,7 @@ https://github.com/emccode/dvdcli
 
 Below is a script that will install these applications for you on AWS. Ensure the following AWS credentials are exported on your host: `$TF_VAR_access_key`, `$TF_VAR_access_key`. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexray.sh url.or.ip.to.agent`.
 
-![Install Rexray](installRexray.sh)
+[Install Rexray](installRexray.sh?raw=true)
 
 Then to use external volumes, simply pass the required argument. Below is an example marathon json:
 ```
@@ -315,9 +315,9 @@ It is possible to use in jar mode using the mesos-module-dvdi project, or the me
 https://github.com/emccode/mesos-module-dvdi
 https://github.com/ClusterHQ/mesos-module-flocker
 
-The following script (in addition to the previous docker script) will install the required software. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexrayMesos.sh url.or.ip.to.agent`.
+The following script (in addition to the previous docker script) will install the required software. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexrayLib.sh url.or.ip.to.agent`.
 
-![Install Rexray Lib](installRexrayLib.sh)
+[Install Rexray Lib](installRexrayLib.sh)
 
 ### Data directory
 The ES node data can be written to a specific directory. If in docker mode, use the `--dataDir` option. If in jar mode, set the `path.data` option in your custom ES settings file.
