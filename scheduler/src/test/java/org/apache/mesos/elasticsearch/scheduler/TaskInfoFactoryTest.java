@@ -62,6 +62,7 @@ public class TaskInfoFactoryTest {
         when(configuration.isFrameworkUseDocker()).thenReturn(true);
         when(configuration.getElasticsearchPorts()).thenReturn(Collections.emptyList());
         when(configuration.taskSpecificHostDir(any())).thenReturn("/var/lib/mesos/slave/elasticsearch/cluster-name/" + SLAVEID);
+        when(configuration.getElasticsearchBinary()).thenReturn("");
     }
 
     @Test
