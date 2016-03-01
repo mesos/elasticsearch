@@ -56,9 +56,6 @@ public class FrameworkState {
             LOGGER.error("Unable to store framework ID in zookeeper", e);
         }
         this.driver = driver;
-
-        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, this);
-        registeredListeners.forEach(listener -> listener.accept(clusterState));
     }
 
     public void destroy() {

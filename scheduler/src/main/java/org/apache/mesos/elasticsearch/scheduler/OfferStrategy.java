@@ -5,6 +5,8 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.elasticsearch.common.util.NetworkUtils;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterStateUtil;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ESTask;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
@@ -31,13 +33,13 @@ public class OfferStrategy {
 
     protected boolean isAtLeastOneESNodeRunning() {
         // If this is the first, do not check
-        final Map<String, Task> taskList = clusterState.getGuiTaskList();
+        final Map<String, Task> taskList = ClusterStateUtil.getGuiTaskList(clusterState);
         if (taskList.size() == 0) {
             return true;
         } else {
             try {
                 // TODO (PNW): Better get HTTP address method. We do this everywhere.
-                InetSocketAddress clientAddress = taskList.get(clusterState.getTaskList().get(0).getTaskId().getValue()).getClientAddress();
+                InetSocketAddress clientAddress = taskList.get(clusterState.get().get(0).getTask().getTaskId().getValue()).getClientAddress();
                 String hostAddress = NetworkUtils.addressToString(clientAddress, configuration.getIsUseIpAddress());
                 return Unirest.get(hostAddress).asString().getStatus() == 200;
             } catch (UnirestException e) {
@@ -84,9 +86,9 @@ public class OfferStrategy {
 
     protected boolean isHostAlreadyRunningTask(Protos.Offer offer) {
         Boolean result = false;
-        List<Protos.TaskInfo> stateList = clusterState.getTaskList();
-        for (Protos.TaskInfo t : stateList) {
-            if (t.getSlaveId().equals(offer.getSlaveId())) {
+        final List<ESTask> taskList = clusterState.get();
+        for (ESTask t : taskList) {
+            if (t.getTask().getSlaveId().equals(offer.getSlaveId())) {
                 result = true;
             }
         }

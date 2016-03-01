@@ -2,8 +2,10 @@ package org.apache.mesos.elasticsearch.scheduler;
 
 import com.google.protobuf.InvalidProtocolBufferException;
 import org.apache.mesos.Protos;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ESTask;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.ESTaskStatus;
+import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,13 +15,10 @@ import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Arrays;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.scheduler.Resources.*;
 import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 /**
  * Test offer strategy
@@ -42,31 +41,36 @@ public class OfferStrategyTest {
         when(configuration.getFrameworkRole()).thenReturn("testRole");
         ESTaskStatus esTaskStatus = mock(ESTaskStatus.class);
         when(esTaskStatus.getStatus()).thenReturn(taskStatus());
-        when(clusterState.getStatus(any(Protos.TaskID.class))).thenReturn(esTaskStatus);
     }
     
     @Test
     public void willDeclineIfHostIsAlreadyRunningTask() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(singletonList(createTask("host1")));
+        final ESTask esTask = mock(ESTask.class, RETURNS_DEEP_STUBS);
+        when(esTask.getTask()).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
+        when(clusterState.get()).thenReturn(singletonList(esTask));
 
-        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(validOffer("host1"));
+        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(validOffer(ProtoTestUtil.getSlaveId().getValue()));
         assertFalse(result.acceptable);
         assertEquals("Host already running task", result.reason.get());
     }
 
     @Test
     public void willDeclineIfClusterSizeIsFulfilled() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2"), createTask("host3")));
-        when(configuration.getElasticsearchNodes()).thenReturn(3);
+        when(configuration.getElasticsearchNodes()).thenReturn(0);
 
-        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(validOffer("host4"));
+        final OfferStrategyNormal.OfferResult result = offerStrategy.evaluate(baseOfferBuilder("host4")
+                .addResources(portRange(31000, 32000, configuration.getFrameworkRole()))
+                .addResources(portRange(9200, 9300, configuration.getFrameworkRole()))
+                .addResources(cpus(configuration.getCpus(), configuration.getFrameworkRole()))
+                .addResources(mem(configuration.getMem(), configuration.getFrameworkRole()))
+                .addResources(disk(configuration.getDisk(), configuration.getFrameworkRole()))
+                .build());
         assertFalse(result.acceptable);
         assertEquals("Cluster size already fulfilled", result.reason.get());
     }
 
     @Test
     public void willDeclineIfOfferDoesNotHaveTwoPorts() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
         final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
@@ -78,7 +82,6 @@ public class OfferStrategyTest {
 
     @Test
     public void shouldDeclineIfUserPortsNotAvailable() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
 
@@ -91,7 +94,6 @@ public class OfferStrategyTest {
 
     @Test
     public void shouldDeclineIfOneOfUserPortsNotAvailable() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(31000, 9300));
 
@@ -104,7 +106,6 @@ public class OfferStrategyTest {
 
     @Test
     public void shouldAcceptIfUserPortsAreAvailable() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(9200, 9300));
 
@@ -120,7 +121,6 @@ public class OfferStrategyTest {
 
     @Test
     public void willDeclineIfOfferDoesNotEnoughCpu() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getCpus()).thenReturn(1.0);
 
@@ -134,7 +134,6 @@ public class OfferStrategyTest {
     }
     @Test
     public void willDeclineIfOfferDoesNotEnoughMem() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getMem()).thenReturn(100.0);
 
@@ -150,7 +149,6 @@ public class OfferStrategyTest {
 
     @Test
     public void willDeclineIfOfferDoesNotEnoughDisk() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         when(configuration.getDisk()).thenReturn(100.0);
 
@@ -167,7 +165,6 @@ public class OfferStrategyTest {
 
     @Test
     public void willAcceptValidOffer() throws Exception {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
 
         final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
@@ -183,7 +180,6 @@ public class OfferStrategyTest {
 
     @Test
     public void shouldDeclineWhenHostIsUnresolveable() throws InvalidProtocolBufferException {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))
@@ -198,7 +194,6 @@ public class OfferStrategyTest {
 
     @Test
     public void shouldAcceptWhenHostIsResolveable() throws InvalidProtocolBufferException {
-        when(clusterState.getTaskList()).thenReturn(asList(createTask("host1"), createTask("host2")));
         when(configuration.getElasticsearchNodes()).thenReturn(3);
         final OfferStrategyNormal.OfferResult offerResult = offerStrategy.evaluate(baseOfferBuilder("host3")
                 .addResources(portRange(9200, 9200, configuration.getFrameworkRole()))

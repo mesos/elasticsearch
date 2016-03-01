@@ -13,6 +13,8 @@ import org.apache.mesos.elasticsearch.common.zookeeper.formatter.IpPortsListZKFo
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.MesosZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.formatter.ZKFormatter;
 import org.apache.mesos.elasticsearch.common.zookeeper.parser.ZKAddressParser;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterStateUtil;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ESTask;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 
 import java.net.InetSocketAddress;
@@ -312,12 +314,12 @@ public class Configuration {
 
     public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo, Protos.SlaveID slaveID) {
         List<String> args = new ArrayList<>();
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
+        final List<ESTask> taskList = clusterState.get();
         String hostAddress = "";
         if (taskList.size() > 0) {
-            Protos.TaskInfo taskInfo = taskList.get(0);
+            Protos.TaskInfo taskInfo = taskList.get(0).getTask();
             String taskId = taskInfo.getTaskId().getValue();
-            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
+            InetSocketAddress transportAddress = ClusterStateUtil.getGuiTaskList(clusterState).get(taskId).getTransportAddress();
             hostAddress = NetworkUtils.addressToString(transportAddress, getIsUseIpAddress()).replace("http://", "");
         }
         addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);

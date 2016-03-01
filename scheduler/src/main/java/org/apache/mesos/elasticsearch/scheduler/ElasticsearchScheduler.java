@@ -4,12 +4,13 @@ import org.apache.log4j.Logger;
 import org.apache.mesos.Protos;
 import org.apache.mesos.Scheduler;
 import org.apache.mesos.SchedulerDriver;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ClusterStateUtil;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ESTask;
 import org.apache.mesos.elasticsearch.scheduler.cluster.TaskReaper;
 import org.apache.mesos.elasticsearch.scheduler.state.*;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,23 +28,21 @@ public class ElasticsearchScheduler implements Scheduler {
     private FrameworkState frameworkState;
     private OfferStrategy offerStrategy;
     private SerializableState zookeeperStateDriver;
+    private final StatePath statePath;
     private TaskReaper taskReaper;
 
-    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver) {
+    public ElasticsearchScheduler(Configuration configuration, FrameworkState frameworkState, ClusterState clusterState, TaskInfoFactory taskInfoFactory, OfferStrategy offerStrategy, SerializableState zookeeperStateDriver, StatePath statePath) {
         this.configuration = configuration;
         this.frameworkState = frameworkState;
         this.clusterState = clusterState;
         this.taskInfoFactory = taskInfoFactory;
         this.offerStrategy = offerStrategy;
         this.zookeeperStateDriver = zookeeperStateDriver;
+        this.statePath = statePath;
     }
 
     public Map<String, Task> getTasks() {
-        if (clusterState == null) {
-            return new HashMap<>();
-        } else {
-            return clusterState.getGuiTaskList();
-        }
+        return ClusterStateUtil.getGuiTaskList(clusterState);
     }
 
     public void run(SchedulerDriver schedulerDriver) {
@@ -100,9 +99,11 @@ public class ElasticsearchScheduler implements Scheduler {
                 Protos.TaskInfo taskInfo = taskInfoFactory.createTask(configuration, frameworkState, offer, new Clock());
                 LOGGER.debug(taskInfo.toString());
                 driver.launchTasks(Collections.singleton(offer.getId()), Collections.singleton(taskInfo));
-                ESTaskStatus esTask = new ESTaskStatus(zookeeperStateDriver, frameworkState.getFrameworkID(), taskInfo, new StatePath(zookeeperStateDriver)); // Write staging state to zk
-                clusterState.addTask(esTask); // Add tasks to cluster state and write to zk
-                frameworkState.announceNewTask(esTask);
+                final ESState<Protos.TaskInfo> taskInfoESState = new ESState<Protos.TaskInfo>(zookeeperStateDriver, statePath, ESTask.getTaskKey(frameworkState, taskInfo));
+                final ESState<Protos.TaskStatus> taskStatusESState = new ESState<Protos.TaskStatus>(zookeeperStateDriver, statePath, ESTask.getStatusKey(frameworkState, taskInfo));
+                final ESTask esTask = new ESTask(taskInfoESState, taskStatusESState, taskInfo);
+                clusterState.add(esTask); // Add tasks to cluster state and write to zk
+//                frameworkState.announceNewTask(esTask);
             }
         }
     }
@@ -126,7 +127,9 @@ public class ElasticsearchScheduler implements Scheduler {
                 " " + status.getReason() +
                 " " +
                 " ");
-        frameworkState.announceStatusUpdate(status);
+        final ESTask esTask = ClusterStateUtil.getESTaskForStatus(clusterState, status);
+        esTask.updateStatus(status);
+        clusterState.update(esTask);
     }
 
     @Override
@@ -151,10 +154,11 @@ public class ElasticsearchScheduler implements Scheduler {
         LOGGER.info("Executor lost: " + executorId.getValue() +
                 " on slave " + slaveId.getValue() +
                 " with status " + status);
+        final ESTask esTask = ClusterStateUtil.getESTaskForExecutorId(clusterState, executorId);
         try {
-            Protos.TaskInfo taskInfo = clusterState.getTask(executorId);
-            statusUpdate(driver, Protos.TaskStatus.newBuilder().setExecutorId(executorId).setSlaveId(slaveId).setTaskId(taskInfo.getTaskId()).setState(Protos.TaskState.TASK_LOST).build());
-            driver.killTask(taskInfo.getTaskId()); // It may not actually be lost, it may just have hanged. So Kill, just in case.
+            driver.killTask(esTask.getTask().getTaskId());
+            clusterState.remove(esTask);
+            esTask.destroy();
         } catch (IllegalArgumentException e) {
             LOGGER.warn("Unable to find TaskInfo with the given Executor ID", e);
         }
@@ -166,7 +170,7 @@ public class ElasticsearchScheduler implements Scheduler {
     }
 
     public void shutdown(SchedulerDriver driver) {
-        clusterState.getTaskList().stream().forEach(taskInfo -> driver.killTask(taskInfo.getTaskId())); // Kill tasks.
+        clusterState.get().stream().forEach(esTask -> driver.killTask(esTask.getTask().getTaskId())); // Kill tasks.
         clusterState.destroy(); // Remove tasks from zk
         frameworkState.destroy(); // Remove framework state from zk.
     }

@@ -7,10 +7,10 @@ import org.apache.mesos.elasticsearch.scheduler.matcher.RequestMatcher;
 import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
 import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
 import org.apache.mesos.elasticsearch.scheduler.state.SerializableState;
+import org.apache.mesos.elasticsearch.scheduler.state.StatePath;
 import org.apache.mesos.elasticsearch.scheduler.util.ProtoTestUtil;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatcher;
 import org.mockito.Mockito;
 
 import java.util.UUID;
@@ -18,7 +18,6 @@ import java.util.UUID;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.apache.mesos.elasticsearch.common.Offers.newOfferBuilder;
-import static org.mockito.Matchers.argThat;
 import static org.mockito.Mockito.*;
 
 /**
@@ -38,6 +37,8 @@ public class ElasticsearchSchedulerTest {
     private Protos.MasterInfo masterInfo;
 
     private TaskInfoFactory taskInfoFactory;
+
+    private StatePath statePath = mock(StatePath.class);
 
     private FrameworkState frameworkState = mock(FrameworkState.class);
     private ClusterState clusterState = mock(ClusterState.class);
@@ -59,7 +60,8 @@ public class ElasticsearchSchedulerTest {
 
         taskInfoFactory = mock(TaskInfoFactory.class);
 
-        scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, taskInfoFactory, offerStrategy, serializableState);
+
+        scheduler = new ElasticsearchScheduler(configuration, frameworkState, clusterState, taskInfoFactory, offerStrategy, serializableState, statePath);
 
         masterInfo = newMasterInfo();
         scheduler.registered(driver, frameworkID, masterInfo);
@@ -69,22 +71,6 @@ public class ElasticsearchSchedulerTest {
     public void willRunDriver() throws Exception {
         scheduler.run(driver);
         verify(driver).run();
-    }
-
-    @Test
-    public void shouldCallObserversWhenExecutorLost() {
-        Protos.ExecutorID executorID = ProtoTestUtil.getExecutorId();
-        Protos.SlaveID slaveID = ProtoTestUtil.getSlaveId();
-
-        when(clusterState.getTask(executorID)).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
-        scheduler.executorLost(driver, executorID, slaveID, 1);
-
-        verify(frameworkState).announceStatusUpdate(argThat(new ArgumentMatcher<Protos.TaskStatus>() {
-            @Override
-            public boolean matches(Object argument) {
-                return ((Protos.TaskStatus) argument).getState().equals(Protos.TaskState.TASK_LOST);
-            }
-        }));
     }
 
     @Test

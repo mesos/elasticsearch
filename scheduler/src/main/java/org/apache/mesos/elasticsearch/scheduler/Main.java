@@ -3,13 +3,13 @@ package org.apache.mesos.elasticsearch.scheduler;
 import org.apache.log4j.Logger;
 import org.apache.mesos.MesosSchedulerDriver;
 import org.apache.mesos.Protos;
-import org.apache.mesos.elasticsearch.scheduler.state.ClusterState;
-import org.apache.mesos.elasticsearch.scheduler.state.FrameworkState;
-import org.apache.mesos.elasticsearch.scheduler.state.SerializableZookeeperState;
+import org.apache.mesos.elasticsearch.scheduler.cluster.ESTask;
+import org.apache.mesos.elasticsearch.scheduler.state.*;
 import org.apache.mesos.state.ZooKeeperState;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,8 +46,10 @@ public class Main {
                 configuration.getZookeeperCLI().getZookeeperMesosTimeout(),
                 TimeUnit.MILLISECONDS,
                 "/" + configuration.getFrameworkName() + "/" + configuration.getElasticsearchCLI().getElasticsearchClusterName()));
+        final StatePath statePath = new StatePath(zookeeperStateDriver);
         final FrameworkState frameworkState = new FrameworkState(zookeeperStateDriver);
-        final ClusterState clusterState = new ClusterState(zookeeperStateDriver, frameworkState);
+        final ESState<List<ESTask>> clusterStateDriver = new ESState<>(zookeeperStateDriver, statePath, ClusterState.getKey(frameworkState));
+        final ClusterState clusterState = new ClusterState(clusterStateDriver);
         final TaskInfoFactory taskInfoFactory = new TaskInfoFactory(clusterState);
 
         final ElasticsearchScheduler scheduler = new ElasticsearchScheduler(
@@ -56,7 +58,8 @@ public class Main {
                 clusterState,
                 taskInfoFactory,
                 configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0 ? new OfferStrategyExternalStorage(configuration, clusterState) : new OfferStrategyNormal(configuration, clusterState),
-                zookeeperStateDriver);
+                zookeeperStateDriver,
+                statePath);
 
         FrameworkInfoFactory frameworkInfoFactory = new FrameworkInfoFactory(configuration, frameworkState);
         final Protos.FrameworkInfo.Builder frameworkBuilder = frameworkInfoFactory.getBuilder();

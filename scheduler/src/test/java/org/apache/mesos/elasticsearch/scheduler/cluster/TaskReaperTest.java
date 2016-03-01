@@ -31,9 +31,11 @@ public class TaskReaperTest {
         config = mock(Configuration.class);
         when(config.getElasticsearchNodes()).thenReturn(2);
 
-        state = mock(ClusterState.class);
-        List<Protos.TaskInfo> list = Arrays.asList(ProtoTestUtil.getDefaultTaskInfo(), ProtoTestUtil.getDefaultTaskInfo(), ProtoTestUtil.getDefaultTaskInfo());
-        when(state.getTaskList()).thenReturn(list);
+        state = mock(ClusterState.class, RETURNS_DEEP_STUBS);
+        final ESTask esTask = mock(ESTask.class);
+        when(esTask.getTask()).thenReturn(ProtoTestUtil.getDefaultTaskInfo());
+        final List<ESTask> esTasks = Arrays.asList(esTask, esTask, esTask);
+        when(state.get()).thenReturn(esTasks);
     }
 
     @Test

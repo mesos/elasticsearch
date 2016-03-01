@@ -29,16 +29,16 @@ public class TaskReaper {
 
     public void run() {
         try {
-            int numToKill = clusterState.getTaskList().size() - configuration.getElasticsearchNodes();
+            final List<ESTask> esTasks = clusterState.get();
+            int numToKill = esTasks.size() - configuration.getElasticsearchNodes();
             if (numToKill > 0) {
                 LOGGER.debug("Task reaper. There are " + numToKill + " tasks to kill");
-                List<Protos.TaskInfo> taskList = clusterState.getTaskList();
-                int size = taskList.size();
+                int size = esTasks.size();
                 numToKill = Math.min(numToKill, size);
                 for (int x = 0; x < numToKill; x++) {
                     int taskIndex = size - 1 - x;
                     LOGGER.debug("Killing task index " + taskIndex);
-                    Protos.TaskInfo killTaskInfo = taskList.get(taskIndex);
+                    Protos.TaskInfo killTaskInfo = esTasks.get(taskIndex).getTask();
                     Protos.TaskID killTaskId = killTaskInfo.getTaskId();
                     LOGGER.debug("Killing task: " + killTaskId);
                     Protos.Status status = schedulerDriver.killTask(killTaskId);
