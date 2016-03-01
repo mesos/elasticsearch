@@ -162,7 +162,7 @@ Usage: (Options preceded by an asterisk are required) [options]
        Default: elasticsearch-executor
     --externalVolumeDriver
        This defines the use of an external storage drivers to be used. By
-       default, elastic serch nodes will not be created with external volumes but rather
+       default, elasticsearch nodes will not be created with external volumes but rather
        direct attached storage.
        Default: <empty string>
     --externalVolumeOptions
@@ -274,39 +274,8 @@ https://github.com/emccode/dvdcli
 
 Below is a script that will install these applications for you on AWS. Ensure the following AWS credentials are exported on your host: `$TF_VAR_access_key`, `$TF_VAR_access_key`. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexray.sh url.or.ip.to.agent`.
 
-```
-#!/bin/bash
+![Install Rexray](installRexray.sh)
 
-if [ -z "$TF_VAR_access_key" ]; then
-    echo "TF_VAR_access_key is empty"
-    exit 1
-fi
-
-if [ -z "$TF_VAR_secret_key" ]; then
-    echo "TF_VAR_secret_key is empty"
-    exit 1
-fi
-
-# Install rexray
-# ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -'
-ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/rexray/install | sh -s staged'
-
-# Copy config to remote
-scp -i $KEY scripts/config.yml ubuntu@$1:~
-
-# Add AWS credentials. Guard against forward slashes in secret
-ssh -i $KEY ubuntu@$1 'export MYVAR='"'$(echo $TF_VAR_access_key | sed -e 's/[\/&]/\\&/g')'"'; sed -i s/TF_VAR_access_key/$MYVAR/ config.yml'
-ssh -i $KEY ubuntu@$1 'export MYVAR='"'$(echo $TF_VAR_secret_key | sed -e 's/[\/&]/\\&/g')'"'; sed -i s/TF_VAR_secret_key/$MYVAR/ config.yml'
-
-# Move to correct directory
-ssh -i $KEY ubuntu@$1 'sudo mv ~/config.yml /etc/rexray'
-
-# Start rexray
-ssh -i $KEY ubuntu@$1 'sudo rexray restart'
-
-# Install dvdcli
-ssh -i $KEY ubuntu@$1 'curl -sSL https://dl.bintray.com/emccode/dvdcli/install | sh -'
-```
 Then to use external volumes, simply pass the required argument. Below is an example marathon json:
 ```
 {
@@ -343,35 +312,8 @@ https://github.com/emccode/mesos-module-dvdi
 https://github.com/ClusterHQ/mesos-module-flocker
 
 The following script (in addition to the previous docker script) will install the required software. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexrayMesos.sh url.or.ip.to.agent`.
-```
-$ cat ./scripts/installRexrayLib.sh 
-#!/bin/bash
-set -x
 
-if [ -z "$TF_VAR_access_key" ]; then
-    echo "TF_VAR_access_key is empty"
-    exit 1
-fi
-
-if [ -z "$TF_VAR_secret_key" ]; then
-    echo "TF_VAR_secret_key is empty"
-    exit 1
-fi
-
-# Install rexray and dvdcli
-./scripts/installRexray.sh $1
-
-# Download dvdi isolator
-ssh -i $KEY ubuntu@$1 'sudo wget -P /usr/lib https://github.com/emccode/mesos-module-dvdi/releases/download/v0.4.1/libmesos_dvdi_isolator-0.25.0.so'
-
-# Copy across module configuration settings
-ssh -i $KEY ubuntu@$1 'echo { \"libraries\": [ { \"file\": \"/usr/lib/libmesos_dvdi_isolator-0.25.0.so\", \"modules\": [ { \"name\": \"com_emccode_mesos_DockerVolumeDriverIsolator\" } ] } ] } | sudo tee /usr/lib/dvdi-mod.json'
-ssh -i $KEY ubuntu@$1 'echo file:///usr/lib/dvdi-mod.json | sudo tee /etc/mesos-slave/modules'
-ssh -i $KEY ubuntu@$1 'echo com_emccode_mesos_DockerVolumeDriverIsolator | sudo tee /etc/mesos-slave/isolation'
-
-# Restart mesos slave to load new module
-ssh -i $KEY ubuntu@$1 'sudo service mesos-slave restart'
-```
+![Install Rexray Lib](installRexrayLib.sh)
 
 ### Data directory
 The ES node data can be written to a specific directory. If in docker mode, use the `--dataDir` option. If in jar mode, set the `path.data` option in your custom ES settings file.

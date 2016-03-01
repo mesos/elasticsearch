@@ -354,4 +354,8 @@ public class Configuration {
             args.addAll(asList(key, value));
         }
     }
+
+    public String getDataVolumeName(Long nodeId) {
+        return getFrameworkName() + nodeId + "data";
+    }
 }

@@ -72,4 +72,10 @@ public class ConfigurationTest {
         String allArgs = arguments.toString();
         assertTrue(allArgs.contains(Integer.toString(port)));
     }
+
+    @Test
+    public void shouldCreateVolumeName() {
+        Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.FRAMEWORK_NAME, "test");
+        assertEquals("test0data", configuration.getDataVolumeName(0L));
+    }
 }
