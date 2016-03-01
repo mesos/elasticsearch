@@ -164,6 +164,14 @@ Usage: (Options preceded by an asterisk are required) [options]
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
+    --externalVolumeDriver
+       This defines the use of an external storage drivers to be used. By
+       default, elasticsearch nodes will not be created with external volumes but rather
+       direct attached storage.
+       Default: <empty string>
+    --externalVolumeOptions
+       This describes how volumes are to be created.
+       Default: <empty string>
     --frameworkFailoverTimeout
        The time before Mesos kills a scheduler and tasks if it has not recovered
        (ms).
@@ -257,6 +265,59 @@ It is strongly recommended that you use the containerized version of Mesos Elast
 ```
 
 Jars are available under the (releases section of github)[https://github.com/mesos/elasticsearch/releases].
+
+### External volumes
+The elasticsearch database can be given a third layer of data resiliency (in addition to sharding, and replication) by using exernal volumes. External volumes are storage devices that are mounted externally to the application. For example, AWS's EBS volumes. To enable this feature, simply specify the docker volume plugin that you wish to use. For example: `--externalVolumeDriver rexray`. This will create volumes prefixed with the framework name and a numeric ID of the node, e.g. `elasticsearch0data`. Volume options can be passed using the `--externalVolumeOptions` parameter.
+
+The most difficult part is setting up a docker volume plugin. The next few sections will describe how to setup the "rexray" docker volume plugin.
+
+#### Docker mode installation of the rexray docker volume plugin
+In docker mode, the applications rexray and dvdcli:
+https://github.com/emccode/rexray
+https://github.com/emccode/dvdcli
+
+Below is a script that will install these applications for you on AWS. Ensure the following AWS credentials are exported on your host: `$TF_VAR_access_key`, `$TF_VAR_access_key`. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexray.sh url.or.ip.to.agent`.
+
+![Install Rexray](installRexray.sh)
+
+Then to use external volumes, simply pass the required argument. Below is an example marathon json:
+```
+{
+  "id": "es-rexray",
+  "cpus": 1.0,
+  "mem": 512,
+  "instances": 1,
+  "args": [
+    "--zookeeperMesosUrl", "zk://$MASTER:2181/mesos",
+    "--elasticsearchCpu", "0.5",
+    "--elasticsearchRam", "1024",
+    "--elasticsearchDisk", "1024",
+    "--externalVolumeDriver", "rexray"
+  ],
+  "env": {
+    "JAVA_OPTS": "-Xms32m -Xmx256m"
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler:latest",
+      "network": "HOST",
+      "forcePullImage": true
+    }
+  },
+  "ports": [31100],
+  "requirePorts": true
+}
+```
+
+#### Jar mode installation of the rexray docker volume plugin
+It is possible to use in jar mode using the mesos-module-dvdi project, or the mesos-flocker project. Testing has been performed with the mesos-module-dvdi project.
+https://github.com/emccode/mesos-module-dvdi
+https://github.com/ClusterHQ/mesos-module-flocker
+
+The following script (in addition to the previous docker script) will install the required software. To use, simply run the script with an argument pointing to an agent. E.g. `./installRexrayMesos.sh url.or.ip.to.agent`.
+
+![Install Rexray Lib](installRexrayLib.sh)
 
 ### Data directory
 The ES node data can be written to a specific directory. If in docker mode, use the `--dataDir` option. If in jar mode, set the `path.data` option in your custom ES settings file.

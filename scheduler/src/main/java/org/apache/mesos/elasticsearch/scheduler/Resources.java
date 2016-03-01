@@ -78,6 +78,12 @@ public class Resources {
         Protos.Resource cpus = Resources.cpus(configuration.getCpus(), configuration.getFrameworkRole());
         Protos.Resource mem = Resources.mem(configuration.getMem(), configuration.getFrameworkRole());
         Protos.Resource disk = Resources.disk(configuration.getDisk(), configuration.getFrameworkRole());
+
+        //if we are using external storage, then we dont need to take disk into account
+        if (configuration.getExternalVolumeDriver() != null && configuration.getExternalVolumeDriver().length() > 0) {
+            return new ArrayList<>(Arrays.asList(cpus, mem));
+        }
+        
         return new ArrayList<>(Arrays.asList(cpus, mem, disk));
     }
 

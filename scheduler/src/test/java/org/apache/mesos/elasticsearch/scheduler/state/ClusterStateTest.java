@@ -8,6 +8,8 @@ import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.*;
@@ -128,5 +130,22 @@ public class ClusterStateTest {
         assertEquals(2, clusterState.getGuiTaskList().size());
         clusterState.removeTask(defaultTaskInfo);
         assertEquals(1, clusterState.getGuiTaskList().size());
+    }
+
+    // TODO (pnw): Add test for get ES node Id. Hard to test because of protobuf. Need to add to default protobuf.
+    @Test
+    public void shouldIncrementEsNodeId() throws IOException {
+        assertEquals(0, clusterState.getElasticNodeId().intValue());
+        when(state.get(any())).thenReturn(Collections.singletonList(ProtoTestUtil.getTaskInfoExternalVolume(0)));
+        assertEquals(1, clusterState.getElasticNodeId().intValue());
+    }
+
+    @Test
+    public void shouldReplaceNodeId() throws IOException {
+        when(state.get(any())).thenReturn(Collections.singletonList(ProtoTestUtil.getTaskInfoExternalVolume(1)));
+        assertEquals(0, clusterState.getElasticNodeId().intValue());
+        when(state.get(any())).thenReturn(Arrays.asList(ProtoTestUtil.getTaskInfoExternalVolume(0), ProtoTestUtil.getTaskInfoExternalVolume(1)));
+        assertEquals(2, clusterState.getElasticNodeId().intValue());
+
     }
 }

@@ -63,6 +63,9 @@ public class Configuration {
     public static final String HOST_SANDBOX = "./."; // Due to some protobuf weirdness. Requires './.' Not just '.'
     public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
     public static final String HOST_PATH_CONF = HOST_SANDBOX;
+    // **** External Volumes
+    public static final String EXTERNAL_VOLUME_DRIVER = "--externalVolumeDriver";
+    public static final String EXTERNAL_VOLUME_OPTIONS = "--externalVolumeOptions";
 
     // **** ZOOKEEPER
     private final ZookeeperCLIParameter zookeeperCLI = new ZookeeperCLIParameter();
@@ -112,6 +115,12 @@ public class Configuration {
     private String javaHome = "";
     @Parameter(names = {USE_IP_ADDRESS}, arity = 1, description = "If true, the framework will resolve the local ip address. If false, it uses the hostname.")
     private Boolean isUseIpAddress = false;
+
+    // **** External Volumes
+    @Parameter(names = {EXTERNAL_VOLUME_DRIVER}, description = "This defines the use of an external storage drivers to be used. By default, elastic serch nodes will not be created with external volumes but rather direct attached storage.")
+    private String externalVolumeDriver = "";
+    @Parameter(names = {EXTERNAL_VOLUME_OPTIONS}, description = "This describes how volumes are to be created.")
+    private String externalVolumeOption = "";
 
     // ****************** Runtime configuration **********************
     public Configuration(String... args) {
@@ -280,6 +289,14 @@ public class Configuration {
         return portsList;
     }
 
+    public String getExternalVolumeDriver() {
+        return externalVolumeDriver;
+    }
+
+    public String getExternalVolumeOption() {
+        return externalVolumeOption;
+    }
+
     public String nativeCommand(List<String> arguments) {
         String folders = getDataDir() + " " + HOST_SANDBOX;
         String mkdir = "mkdir -p " + folders + "; ";
@@ -344,5 +361,9 @@ public class Configuration {
         if (!value.isEmpty()) {
             args.addAll(asList(key, value));
         }
+    }
+
+    public String dataVolumeName(Long nodeId) {
+        return getFrameworkName() + nodeId + "data";
     }
 }

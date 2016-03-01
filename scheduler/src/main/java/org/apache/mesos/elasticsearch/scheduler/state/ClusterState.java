@@ -5,12 +5,15 @@ import org.apache.mesos.Protos;
 import org.apache.mesos.Protos.TaskInfo;
 import org.apache.mesos.elasticsearch.scheduler.Task;
 import org.apache.mesos.elasticsearch.scheduler.TaskInfoFactory;
+import org.apache.mesos.elasticsearch.scheduler.configuration.ExecutorEnvironmentalVariables;
 import org.apache.mesos.elasticsearch.scheduler.util.Clock;
 
 import javax.validation.constraints.NotNull;
 import java.io.IOException;
 import java.security.InvalidParameterException;
 import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.apache.mesos.Protos.TaskID;
 
@@ -44,6 +47,32 @@ public class ClusterState {
             LOGGER.info("Unable to get key for cluster state due to invalid frameworkID.", e);
         }
         return taskInfoList == null ? new ArrayList<>(0) : taskInfoList;
+    }
+
+    /**
+     * When using external volumes, retrieve the next available elasticsearch node id
+     *
+     * @return Integer (node id)
+     */
+    public Integer getElasticNodeId() {
+        final List<Integer> idList = getElasticNodeIdList();
+        return IntStream.range(0, idList.size() + 1).filter(value -> !idList.contains(value)).findFirst().getAsInt();
+    }
+
+    private List<Integer> getElasticNodeIdList() {
+        return getTaskList().stream()
+                .filter(this::containsElasticNodeId)
+                .map(this::getElasticNodeId)
+                .map(Integer::parseInt)
+                .collect(Collectors.toList());
+    }
+
+    private String getElasticNodeId(TaskInfo taskInfo2) {
+        return taskInfo2.getCommand().getEnvironment().getVariablesList().stream().filter(variable1 -> variable1.getName().equals(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID)).findFirst().get().getValue();
+    }
+
+    private boolean containsElasticNodeId(TaskInfo taskInfo) {
+        return taskInfo.getCommand().getEnvironment().getVariablesList().stream().anyMatch(variable -> variable.getName().equals(ExecutorEnvironmentalVariables.ELASTICSEARCH_NODE_ID));
     }
 
     /**

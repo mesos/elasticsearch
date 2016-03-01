@@ -44,7 +44,7 @@ public class ElasticsearchSchedulerTest {
 
     private org.apache.mesos.elasticsearch.scheduler.Configuration configuration;
     private SerializableState serializableState = mock(SerializableState.class);
-    private OfferStrategy offerStrategy = mock(OfferStrategy.class);
+    private OfferStrategyNormal offerStrategy = mock(OfferStrategyNormal.class);
 
     @Before
     public void before() {
