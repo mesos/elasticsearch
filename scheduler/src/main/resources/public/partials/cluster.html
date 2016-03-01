@@ -58,7 +58,16 @@
     <div class="col-md-12">
         <div class="cell">
             <h3>Nodes State</h3>
-            <progress><bar ng-repeat="state in statesPercentage track by $index" value="state.percentage" type="{{state.type}}">{{state.percentage}}% {{state.state}}</bar></progress>
+
+            <div class="progress">
+                <div ng-repeat="state in statesPercentage track by $index">
+                    <div class="progress-bar progress-bar-striped active"
+                         ng-class="state.type && 'progress-bar-' + state.type" style="width: {{state.percentage}}%"
+                         aria-valuenow="{{state.percentage}}" aria-valuemin="0" aria-valuemax="100">
+                        {{state.percentage}}% {{state.state}}
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
