@@ -1,0 +1,36 @@
+{
+  "id": "elasticsearch-role",
+  "cpus": 0.2,
+  "mem": 256,
+  "instances": 1,
+  "args": [
+    "--zookeeperMesosUrl",
+    "zk://$MASTER:2181",
+    "--elasticsearchCpu",
+    "1",
+    "--elasticsearchRam",
+    "2048",
+    "--elasticsearchDisk",
+    "2048",
+    "--frameworkRole",
+    "testRole"
+  ],
+  "env": {
+    "JAVA_OPTS": "-Xms32m -Xmx64m"
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler:snapshot",
+      "network": "HOST",
+      "forcePullImage": false
+    }
+  },
+  "acceptedResourceRoles": [
+    "testRole"
+  ],
+  "ports": [
+    31100
+  ],
+  "requirePorts": true
+}

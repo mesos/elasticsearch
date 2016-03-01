@@ -1,0 +1,17 @@
+{
+  "id": "elasticsearch",
+  "cpus": 0.2,
+  "mem": 512,
+  "instances": 1,
+  "cmd": "mv *.jar scheduler.jar ; java -jar scheduler.jar --frameworkUseDocker false --zookeeperMesosUrl zk://$MASTER:2181/mesos --elasticsearchCpu 1 --elasticsearchRam 1024 --elasticsearchDisk 1024 --elasticsearchNodes 3",
+  "uris": [
+    "https://download.wetransfer.com/wetransfer-eu1/94692a42d063fe8abc6de752388c595d20160218120944/elasticsearch-mesos-scheduler-0.7.1.jar?expiration=1455798731&escaped=false&signature=77366f0ae4d8ebd7a5218c41a414b8f9ad20e73a313f38a15fd6bf0518b07036&filename=elasticsearch-mesos-scheduler-0.7.1.jar"
+  ],
+  "env": {
+    "JAVA_OPTS": "-Xms256m -Xmx512m"
+  },
+  "ports": [
+    31100
+  ],
+  "requirePorts": true
+}

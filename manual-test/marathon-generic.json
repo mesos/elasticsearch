@@ -1,0 +1,30 @@
+{
+  "id": "elasticsearch-generic",
+  "cpus": 1.0,
+  "mem": 512,
+  "instances": 1,
+  "args": [
+    "--zookeeperMesosUrl",
+    "zk://$MASTER:2181/mesos",
+    "--elasticsearchCpu",
+    "1",
+    "--elasticsearchRam",
+    "2048",
+    "--elasticsearchDisk",
+    "2048"
+  ],
+  "env": {
+    "JAVA_OPTS": "-Xms32m -Xmx256m"
+  },
+  "container": {
+    "type": "DOCKER",
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler:snapshot",
+      "network": "HOST"
+    }
+  },
+  "ports": [
+    31100
+  ],
+  "requirePorts": true
+}

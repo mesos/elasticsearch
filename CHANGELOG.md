@@ -2,6 +2,24 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.0] - [01 March 2016]
+
+### Breaking changes
+- Framework uses official Elasticsearch image or binaries. Users are able to upgrade ES without framework upgrade.
+- CLI: Executor image names have been renamed to Elasticsearch image names.
+- Executors will quit when scheduler is killed with SIGTERM.
+
+### Enhancements
+- [Upgrade minimesos to 0.6.1](https://github.com/mesos/elasticsearch/issues/506)
+- [Add option to specify exact ES image](https://github.com/mesos/elasticsearch/issues/499)
+- [External Volumes support](https://github.com/mesos/elasticsearch/issues/490)
+- [Remove executor. Use official binaries](https://github.com/mesos/elasticsearch/issues/475)
+- [Use official binaries](https://github.com/mesos/elasticsearch/issues/225)
+- [Shut down executors when scheduler receives SIGTERM](https://github.com/mesos/elasticsearch/issues/462)
+- [Upgrade and refactor dependencies](https://github.com/mesos/elasticsearch/issues/402)
+- [Links to published jars](https://github.com/mesos/elasticsearch/issues/414)
+- [Node specific data directory for shared network drives](https://github.com/mesos/elasticsearch/issues/372)
+
 ## [0.7.2] - [18 February 2016]
 
 ### Breaking changes

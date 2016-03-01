@@ -87,7 +87,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
 
 ```
 {
-  "id": "elasticsearch-mesos-scheduler",
+  "id": "elasticsearch,
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
@@ -218,7 +218,7 @@ To use framework Auth, and if you are using docker, you must mount a docker volu
 ...
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
-      "network": "BRIDGE"
+      "network": "HOST"
     },
     "volumes": [
       {
@@ -243,8 +243,8 @@ It is strongly recommended that you use the containerized version of Mesos Elast
   "cpus": 0.2,
   "mem": 512,
   "instances": 1,
-  "cmd": "java -jar scheduler-0.7.0.jar --frameworkUseDocker false --zookeeperMesosUrl zk://10.0.0.254:2181 --frameworkName elasticsearch --elasticsearchClusterName mesos-elasticsearch --elasticsearchCpu 1 --elasticsearchRam 1024 --elasticsearchDisk 1024 --elasticsearchNodes 3 --elasticsearchSettingsLocation /home/ubuntu/elasticsearch.yml",
-  "uris": [ "https://github.com/mesos/elasticsearch/releases/download/0.7.0/scheduler-0.7.0.jar" ],
+  "cmd": "java -jar scheduler-1.0.0.jar --frameworkUseDocker false --zookeeperMesosUrl zk://10.0.0.254:2181 --frameworkName elasticsearch --elasticsearchClusterName mesos-elasticsearch --elasticsearchCpu 1 --elasticsearchRam 1024 --elasticsearchDisk 1024 --elasticsearchNodes 3 --elasticsearchSettingsLocation /home/ubuntu/elasticsearch.yml",
+  "uris": [ "https://github.com/mesos/elasticsearch/releases/download/1.0.0/scheduler-1.0.0.jar" ],
   "env": {
     "JAVA_OPTS": "-Xms256m -Xmx512m"
   },
