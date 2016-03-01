@@ -76,6 +76,6 @@ public class ConfigurationTest {
     @Test
     public void shouldCreateVolumeName() {
         Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.FRAMEWORK_NAME, "test");
-        assertEquals("test0data", configuration.getDataVolumeName(0L));
+        assertEquals("test0data", configuration.dataVolumeName(0L));
     }
 }

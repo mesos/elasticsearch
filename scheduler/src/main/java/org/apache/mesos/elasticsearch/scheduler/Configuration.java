@@ -355,7 +355,7 @@ public class Configuration {
         }
     }
 
-    public String getDataVolumeName(Long nodeId) {
+    public String dataVolumeName(Long nodeId) {
         return getFrameworkName() + nodeId + "data";
     }
 }

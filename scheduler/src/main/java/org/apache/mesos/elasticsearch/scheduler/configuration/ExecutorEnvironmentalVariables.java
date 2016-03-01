@@ -79,7 +79,7 @@ public class ExecutorEnvironmentalVariables {
 
         LOGGER.debug("Docker Driver: " + configuration.getExternalVolumeDriver());
 
-        String externalDataVolume = configuration.getDataVolumeName(nodeId);
+        String externalDataVolume = configuration.dataVolumeName(nodeId);
         LOGGER.debug("Config Volume Name: " + externalDataVolume);
 
         //sets the environment variables for to create and/or attach the data volume
