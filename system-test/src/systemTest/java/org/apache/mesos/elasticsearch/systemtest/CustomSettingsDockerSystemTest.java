@@ -94,7 +94,7 @@ public class CustomSettingsDockerSystemTest {
     public void shouldHaveCustomSettingsBasedOnPath() throws UnirestException {
         final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH,
                 "sh", "-c", "echo \"index.auto_expand_replicas: " + TEST_AUTO_EXPAND_REPLICAS + "\npath.plugins: " + TEST_PATH_PLUGINS + "\" > " + CUSTOM_CONFIG_FILE);
-        ymlWrite.start(10);
+        ymlWrite.start(TEST_CONFIG.getClusterTimeout());
         ymlWrite.remove();
 
         LOGGER.info("Starting Elasticsearch scheduler");
@@ -179,8 +179,8 @@ public class CustomSettingsDockerSystemTest {
                     .withCmd(
                             ElasticsearchCLIParameter.ELASTICSEARCH_SETTINGS_LOCATION, configPath,
                             ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, getZookeeperMesosUrl(),
-                            ELASTICSEARCH_CPU, "0.1",
-                            ELASTICSEARCH_RAM, "128",
+                            ELASTICSEARCH_CPU, "0.25",
+                            ELASTICSEARCH_RAM, "256",
                             ELASTICSEARCH_DISK, "10",
                             USE_IP_ADDRESS, "true"
                     );
