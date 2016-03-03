@@ -200,9 +200,10 @@ public class TaskInfoFactory {
                 throw new IllegalArgumentException("Cannot parse filename from settings location. Please include the /elasticsearch.yml in the settings location.");
             }
             final String settingsFilename = fileName.toString();
+            // Mount the custom yml file over the top of the standard elasticsearch.yml file.
             builder.addVolumes(Protos.Volume.newBuilder()
                     .setHostPath("./" + settingsFilename) // Because the file has been uploaded by the uris.
-                    .setContainerPath(Configuration.CONTAINER_PATH_CONF)
+                    .setContainerPath(Configuration.CONTAINER_PATH_CONF_YML)
                     .setMode(Protos.Volume.Mode.RO)
                     .build());
         }

@@ -60,6 +60,7 @@ public class Configuration {
     public static final String ELASTICSEARCH_PORTS = "--elasticsearchPorts";
     public static final String CONTAINER_PATH_DATA = "/usr/share/elasticsearch/data";
     public static final String CONTAINER_PATH_CONF = "/usr/share/elasticsearch/config";
+    public static final String CONTAINER_PATH_CONF_YML = CONTAINER_PATH_CONF + "/elasticsearch.yml";
     public static final String HOST_SANDBOX = "./."; // Due to some protobuf weirdness. Requires './.' Not just '.'
     public static final String HOST_PATH_HOME = HOST_SANDBOX + "/es_home";
     public static final String HOST_PATH_CONF = HOST_SANDBOX;
