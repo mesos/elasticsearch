@@ -92,7 +92,7 @@ public class RunAsJarSystemTest {
 
         final AlpineContainer ymlWrite = new AlpineContainer(dockerClient, CUSTOM_CONFIG_PATH, CUSTOM_CONFIG_PATH,
                 "sh", "-c", "echo \"index.auto_expand_replicas: " + TEST_AUTO_EXPAND_REPLICAS + "\npath.plugins: " + TEST_PATH_PLUGINS + "\" > " + CUSTOM_CONFIG_FILE);
-        ymlWrite.start(10);
+        ymlWrite.start(TEST_CONFIG.getClusterTimeout());
         ymlWrite.remove();
 
         ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
