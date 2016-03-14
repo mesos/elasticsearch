@@ -60,11 +60,12 @@ public class ElasticsearchAuthSystemTest {
         ClusterArchitecture architecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(SimpleAuthMaster::new)
-                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withSlave(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
+                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
                 .build();
         cluster = new MesosCluster(architecture);
+        cluster.setExposedHostPorts(true);
         cluster.start(TEST_CONFIG.getClusterTimeout());
         IpTables.apply(architecture.dockerClient, cluster, TEST_CONFIG);
     }

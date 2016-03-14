@@ -42,11 +42,12 @@ public abstract class TestBase {
         CLUSTER_ARCHITECTURE = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(MesosMasterTagged::new)
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
         CLUSTER = new MesosCluster(CLUSTER_ARCHITECTURE);
+        CLUSTER.setExposedHostPorts(true);
         CLUSTER.start(TEST_CONFIG.getClusterTimeout());
         IpTables.apply(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER, TEST_CONFIG);
     }

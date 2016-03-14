@@ -1,7 +1,7 @@
 package org.apache.mesos.elasticsearch.systemtest.util;
 
 import com.containersol.minimesos.cluster.MesosCluster;
-import com.containersol.minimesos.mesos.MesosSlave;
+import com.containersol.minimesos.mesos.MesosAgent;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.jayway.awaitility.Awaitility;
@@ -28,7 +28,7 @@ public class IpTables implements Callable<Boolean> {
 
     public static void apply(DockerClient client, MesosCluster cluster, Configuration config) {
         // Install IP tables and reroute traffic from slaves to ports exposed on host.
-        for (MesosSlave slave : cluster.getSlaves()) {
+        for (MesosAgent slave : cluster.getAgents()) {
             LOGGER.debug("Applying iptable redirect to " + slave.getIpAddress());
             Awaitility.await().pollInterval(1L, TimeUnit.SECONDS).atMost(30, TimeUnit.SECONDS).until(new IpTables(client, config, slave.getContainerId()));
         }

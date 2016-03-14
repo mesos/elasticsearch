@@ -67,11 +67,12 @@ public class CustomSettingsDockerSystemTest {
         final ClusterArchitecture clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(MesosMasterTagged::new)
-                .withSlave(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
-                .withSlave(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
-                .withSlave(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
+                .withAgent(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
+                .withAgent(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
+                .withAgent(zooKeeper -> new MesosSlaveWithVolume(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
         cluster = new MesosCluster(clusterArchitecture);
+        cluster.setExposedHostPorts(true);
         cluster.start(TEST_CONFIG.getClusterTimeout());
         IpTables.apply(clusterArchitecture.dockerClient, cluster, TEST_CONFIG);
     }

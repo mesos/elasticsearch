@@ -101,9 +101,10 @@ public class RunAsJarSystemTest {
                 .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer, zkContainer.getClusterId()), ClusterContainers.Filter.zooKeeper());
         scheduler = (JarScheduler) builder.getContainers().getOne(container -> container instanceof JarScheduler).get();
         IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(number ->
-                        builder.withSlave(zooKeeper -> new MesosSlaveWithSchedulerLink(zooKeeper, scheduler, number))
+                        builder.withAgent(zooKeeper -> new MesosSlaveWithSchedulerLink(zooKeeper, scheduler, number))
         );
         cluster = new MesosCluster(builder.build());
+        cluster.setExposedHostPorts(true);
 
         cluster.start(TEST_CONFIG.getClusterTimeout());
 
