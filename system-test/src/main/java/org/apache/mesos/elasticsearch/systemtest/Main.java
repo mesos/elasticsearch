@@ -22,14 +22,18 @@ public class Main {
     private static ClusterArchitecture clusterArchitecture;
 
     public static void main(String[] args) throws InterruptedException {
+
         clusterArchitecture = new ClusterArchitecture.Builder()
                 .withZooKeeper()
                 .withMaster(MesosMasterTagged::new)
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
-                .withSlave(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
+                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
                 .build();
+
         MesosCluster cluster = new MesosCluster(clusterArchitecture);
+        cluster.setExposedHostPorts(true);
+
 
         final AtomicReference<ElasticsearchSchedulerContainer> schedulerReference = new AtomicReference<>(null);
 
