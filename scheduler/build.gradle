@@ -61,7 +61,7 @@ dependencies {
 
 jar {
     dependsOn "getElasticsearchTarball", "packageDependencies"
-    baseName = "elasticsearch-mesos-scheduler"
+    baseName = "scheduler"
     from files("build/internalClasses")
     manifest {
         attributes(
@@ -94,11 +94,18 @@ task taskCopyFilesForDocker(type: Copy) {
 }
 
 task copyJar(type: Copy) {
-    dependsOn "bootRepackage"
-    from "build/libs/elasticsearch-mesos-scheduler-${project.version}-withDependencies.jar"
+    from bootRepackage
     into "build/docker"
     rename { String fileName ->
-        fileName.replace("-${project.version}-withDependencies", "")
+        "mesos-elasticsearch-" + fileName.replace("-${project.version}-withDependencies", "")
+    }
+}
+
+task renameJarForRelease(type: Copy) {
+    from bootRepackage
+    into "build/release"
+    rename { String fileName ->
+        "mesos-elasticsearch-" + fileName.replace("-withDependencies", "")
     }
 }
 
@@ -119,4 +126,5 @@ distZip.enabled = false
 
 bootRepackage {
     classifier = "withDependencies"
+    finalizedBy renameJarForRelease
 }
