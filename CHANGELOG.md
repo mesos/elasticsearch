@@ -2,6 +2,14 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.1] - [23 March 2016]
+
+### Bugfixes
+- [Do not change ES binary group](https://github.com/mesos/elasticsearch/issues/524)
+- [Consistent filenames for releases](https://github.com/mesos/elasticsearch/issues/523)
+- [Null check resources](https://github.com/mesos/elasticsearch/issues/513)
+- [Extra information in DiscoveryInfo packet ](https://github.com/mesos/elasticsearch/issues/480)
+
 ## [1.0.0] - [01 March 2016]
 
 ### Breaking changes
