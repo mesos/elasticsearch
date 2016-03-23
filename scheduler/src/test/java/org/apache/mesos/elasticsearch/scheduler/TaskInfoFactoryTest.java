@@ -51,7 +51,7 @@ public class TaskInfoFactoryTest {
     public void before() {
         Protos.FrameworkID frameworkId = Protos.FrameworkID.newBuilder().setValue(UUID.randomUUID().toString()).build();
         when(frameworkState.getFrameworkID()).thenReturn(frameworkId);
-        when(configuration.getTaskName()).thenReturn("esdemo");
+        when(configuration.getTaskName()).thenReturn(Configuration.EXECUTOR_NAME);
         when(configuration.getMesosZKURL()).thenReturn("zk://zookeeper:2181/mesos");
         when(configuration.getExecutorImage()).thenReturn(Configuration.DEFAULT_EXECUTOR_IMAGE);
         when(configuration.getElasticsearchSettingsLocation()).thenReturn(Configuration.HOST_PATH_CONF);
