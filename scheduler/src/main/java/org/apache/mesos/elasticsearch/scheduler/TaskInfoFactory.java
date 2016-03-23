@@ -67,7 +67,7 @@ public class TaskInfoFactory {
     private Protos.TaskInfo buildNativeTask(Protos.Offer offer, Configuration configuration, Clock clock, Long elasticSearchNodeId) {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
-        final Protos.DiscoveryInfo discovery = getDiscovery(ports);
+        final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -89,7 +89,7 @@ public class TaskInfoFactory {
     private Protos.TaskInfo buildDockerTask(Protos.Offer offer, Configuration configuration, Clock clock, Long elasticSearchNodeId) {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
-        final Protos.DiscoveryInfo discovery = getDiscovery(ports);
+        final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -135,13 +135,14 @@ public class TaskInfoFactory {
         return acceptedResources;
     }
 
-    private Protos.DiscoveryInfo getDiscovery(List<Integer> ports) {
+    private Protos.DiscoveryInfo getDiscovery(List<Integer> ports, Configuration configuration) {
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME));
-        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME));
+        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME).setProtocol("TCP"));
+        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME).setProtocol("TCP"));
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
+        discovery.setName(configuration.getTaskName());
         return discovery.build();
     }
 
