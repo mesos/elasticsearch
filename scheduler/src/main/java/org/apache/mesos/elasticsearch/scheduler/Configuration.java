@@ -301,7 +301,7 @@ public class Configuration {
     public String nativeCommand(List<String> arguments) {
         String folders = getDataDir() + " " + HOST_SANDBOX;
         String mkdir = "mkdir -p " + folders + "; ";
-        String chown = "chown -R nobody:nogroup " + folders + "; ";
+        String chown = "chown -R nobody " + folders + "; ";
         return mkdir +
                 chown +
                 " su -s /bin/sh -c \""
