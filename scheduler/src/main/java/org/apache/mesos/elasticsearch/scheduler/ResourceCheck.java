@@ -25,7 +25,7 @@ public class ResourceCheck {
      */
     public Boolean isEnough(List<Protos.Resource> resourcesList, double requiredValue) {
         Protos.Resource resource = getResource(resourcesList);
-        return resource.getScalar().getValue() >= requiredValue;
+        return resource != null && resource.getScalar() != null && resource.getScalar().getValue() >= requiredValue;
     }
 
     private Protos.Resource getResource(List<Protos.Resource> resourcesList) {

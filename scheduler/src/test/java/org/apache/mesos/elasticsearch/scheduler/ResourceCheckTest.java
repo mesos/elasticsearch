@@ -6,7 +6,8 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for ResourceCheck
@@ -43,6 +44,13 @@ public class ResourceCheckTest {
         ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_CPUS);
         List<Protos.Resource> resourceList = new ArrayList<>();
         resourceList.add(Resources.cpus(0.1, "*"));
+        assertFalse(resourceCheck.isEnough(resourceList, 1));
+    }
+
+    @Test
+    public void shouldNotCrashWhenThereIsNoResource() {
+        ResourceCheck resourceCheck = new ResourceCheck(Resources.RESOURCE_CPUS);
+        List<Protos.Resource> resourceList = new ArrayList<>();
         assertFalse(resourceCheck.isEnough(resourceList, 1));
     }
 }
