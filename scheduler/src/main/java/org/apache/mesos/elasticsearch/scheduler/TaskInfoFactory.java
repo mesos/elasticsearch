@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
@@ -68,6 +69,7 @@ public class TaskInfoFactory {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
+        final Protos.Labels labels = getLabels(configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -82,6 +84,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
+                .setLabels(labels)
                 .setCommand(nativeCommand(configuration, args, elasticSearchNodeId))
                 .build();
     }
@@ -90,6 +93,7 @@ public class TaskInfoFactory {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
+        final Protos.Labels labels = getLabels(configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -106,6 +110,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
+                .setLabels(labels)
                 .setCommand(dockerCommand(configuration, args, elasticSearchNodeId))
                 .setContainer(containerInfo)
                 .build();
@@ -144,6 +149,21 @@ public class TaskInfoFactory {
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
         discovery.setName(configuration.getTaskName());
         return discovery.build();
+    }
+
+    private Protos.Labels getLabels(Configuration configuration) {
+      Protos.Labels.Builder builder = Protos.Labels.newBuilder();
+      Map<String, String> labels = configuration.getTaskLabels();
+      for (Map.Entry<String, String> kvp : labels.entrySet()) {
+        Protos.Label label = Protos.Label.newBuilder()
+          .setKey(kvp.getKey())
+          .setValue(kvp.getValue())
+          .build();
+
+        builder.addLabels(label);
+      }
+
+      return builder.build();
     }
 
     private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Long elasticSearchNodeId, Protos.SlaveID slaveID) {

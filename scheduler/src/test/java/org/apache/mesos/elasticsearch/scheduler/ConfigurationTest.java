@@ -11,6 +11,7 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -77,5 +78,21 @@ public class ConfigurationTest {
     public void shouldCreateVolumeName() {
         Configuration configuration = new Configuration(ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.FRAMEWORK_NAME, "test");
         assertEquals("test0data", configuration.dataVolumeName(0L));
+    }
+
+    @Test
+    public void shouldCreateTaskLabels() {
+        Configuration configuration = new Configuration(
+            ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "aa", Configuration.EXECUTOR_LABELS,
+              "foo=bar",
+              "incomplete",
+              "empty=",
+              "separator=values=are=joined");
+        Map<String, String> labels = configuration.getTaskLabels();
+
+        assertEquals("bar", labels.get("foo"));
+        assertFalse(labels.containsKey("incomplete"));
+        assertEquals("", labels.get("empty"));
+        assertEquals("values=are=joined", labels.get("separator"));
     }
 }
