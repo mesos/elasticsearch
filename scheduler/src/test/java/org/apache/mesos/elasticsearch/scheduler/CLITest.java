@@ -100,14 +100,6 @@ public class CLITest {
         new Configuration(args);
     }
 
-    @Test(expected = com.beust.jcommander.ParameterException.class)
-    public void orderingOfParametersIsImportant() {
-        String[] args = {
-                Configuration.EXECUTOR_TIMEOUT, "3000",
-                ZookeeperCLIParameter.ZOOKEEPER_MESOS_URL, "zk://dummyIPAddress:2181"};
-        new Configuration(args);
-    }
-    
     @Test
     public void shouldParseValidPorts() {
         String validPorts = "9200,9300";
