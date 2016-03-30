@@ -164,6 +164,9 @@ Usage: (Options preceded by an asterisk are required) [options]
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
+    --executorLabels
+       One or more labels given to the executor task. Example: 'environment=prod bananas=apples'
+       Default: <empty string>
     --externalVolumeDriver
        This defines the use of an external storage drivers to be used. By
        default, elasticsearch nodes will not be created with external volumes but rather
