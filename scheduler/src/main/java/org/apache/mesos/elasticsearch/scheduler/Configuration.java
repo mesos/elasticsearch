@@ -76,7 +76,7 @@ public class Configuration {
     private double disk = 1024;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports. [NOT RECOMMENDED]", validateWith = CLIValidators.NumericListOfSizeTwo.class)
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports (i.e. do not use random ports). Format `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required). [NOT RECOMMENDED]", validateWith = CLIValidators.NumericListOfSizeTwo.class)
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
@@ -111,9 +111,9 @@ public class Configuration {
     private Boolean isUseIpAddress = false;
 
     // **** External Volumes
-    @Parameter(names = {EXTERNAL_VOLUME_DRIVER}, description = "This defines the use of an external storage drivers to be used. By default, elastic serch nodes will not be created with external volumes but rather direct attached storage.")
+    @Parameter(names = {EXTERNAL_VOLUME_DRIVER}, description = "Use external volume storage driver. By default, nodes will use volumes on host.")
     private String externalVolumeDriver = "";
-    @Parameter(names = {EXTERNAL_VOLUME_OPTIONS}, description = "This describes how volumes are to be created.")
+    @Parameter(names = {EXTERNAL_VOLUME_OPTIONS}, description = "External volume driver options.")
     private String externalVolumeOption = "";
 
     // ****************** Runtime configuration **********************
