@@ -76,7 +76,7 @@ public class Configuration {
     private double disk = 1024;
     @Parameter(names = {WEB_UI_PORT}, description = "TCP port for web ui interface.", validateValueWith = CLIValidators.PositiveInteger.class)
     private int webUiPort = 31100; // Default is more likely to work on a default Mesos installation
-    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "User specified ES HTTP and transport ports (i.e. do not use random ports). Format `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required). [NOT RECOMMENDED]", validateWith = CLIValidators.NumericListOfSizeTwo.class)
+    @Parameter(names = {ELASTICSEARCH_PORTS}, description = "Override Mesos provided ES HTTP and transport ports. Format `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required).", validateWith = CLIValidators.NumericListOfSizeTwo.class)
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK

@@ -139,9 +139,8 @@ Usage: (Options preceded by an asterisk are required) [options]
        Number of elasticsearch instances.
        Default: 3
     --elasticsearchPorts
-       User specified ES HTTP and transport ports (i.e. do not use random
-       ports). Format `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required). [NOT
-       RECOMMENDED]
+       Override Mesos provided ES HTTP and transport ports. Format
+       `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required).
        Default: <empty string>
     --elasticsearchRam
        The amount of ram resource to allocate to the elasticsearch instance
