@@ -135,18 +135,13 @@ Usage: (Options preceded by an asterisk are required) [options]
        The elasticsearch docker image to use. E.g. 'elasticsearch:latest'
        [DOCKER MODE ONLY]
        Default: elasticsearch:latest
-    --elasticsearchExecutorCpu
-       The amount of CPU resource to allocate to the elasticsearch executor.
-       Default: 0.1
-    --elasticsearchExecutorRam
-       The amount of ram resource to allocate to the elasticsearch executor
-       (MB).
-       Default: 32.0
     --elasticsearchNodes
        Number of elasticsearch instances.
        Default: 3
     --elasticsearchPorts
-       User specified ES HTTP and transport ports. [NOT RECOMMENDED]
+       User specified ES HTTP and transport ports (i.e. do not use random
+       ports). Format `HTTP_PORT,TRANSPORT_PORT` (comma delimited, both required). [NOT
+       RECOMMENDED]
        Default: <empty string>
     --elasticsearchRam
        The amount of ram resource to allocate to the elasticsearch instance
@@ -165,12 +160,11 @@ Usage: (Options preceded by an asterisk are required) [options]
        The name given to the executor task.
        Default: elasticsearch-executor
     --externalVolumeDriver
-       This defines the use of an external storage drivers to be used. By
-       default, elasticsearch nodes will not be created with external volumes but rather
-       direct attached storage.
+       Use external volume storage driver. By default, nodes will use volumes on
+       host.
        Default: <empty string>
     --externalVolumeOptions
-       This describes how volumes are to be created.
+       External volume driver options.
        Default: <empty string>
     --frameworkFailoverTimeout
        The time before Mesos kills a scheduler and tasks if it has not recovered
