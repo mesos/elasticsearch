@@ -87,7 +87,7 @@ Create a Marathon file like the one below and fill in the IP addresses and other
 
 ```
 {
-  "id": "elasticsearch,
+  "id": "elasticsearch",
   "container": {
     "docker": {
       "image": "mesos/elasticsearch-scheduler",
