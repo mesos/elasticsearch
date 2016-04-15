@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
  * Tests TaskInfoFactory
  */
 @RunWith(MockitoJUnitRunner.class)
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
