@@ -21,6 +21,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * Factory for creating {@link Protos.TaskInfo}s
@@ -120,10 +121,14 @@ public class TaskInfoFactory {
 
     private List<Integer> getPorts(Protos.Offer offer, Configuration configuration) {
         List<Integer> ports;
-        if (configuration.getElasticsearchPorts().isEmpty()) {
+        List<Integer> elasticsearchPorts = configuration.getElasticsearchPorts();
+        if (elasticsearchPorts.isEmpty() || elasticsearchPorts.stream().allMatch(port -> port == 0)) {
+            //No ports requested by user or two random ports requested
             ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
-        } else {
-            ports = configuration.getElasticsearchPorts();
+        }
+        else {
+            //Replace a user requested port 0 with a random port
+            ports = elasticsearchPorts.stream().map(port -> port != 0 ?  port : Resources.selectOnePortFromRange(offer.getResourcesList())).collect(Collectors.toList());
         }
         return ports;
     }

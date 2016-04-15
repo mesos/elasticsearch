@@ -74,6 +74,14 @@ public class Resources {
         return ports;
     }
 
+    public static Integer selectOnePortFromRange(List<Protos.Resource> offeredResources) {
+
+        return offeredResources.stream().filter(resource -> resource.getType().equals(org.apache.mesos.Protos.Value.Type.RANGES))
+                .filter(resource -> resource.getRanges().getRangeList().size() > 0)
+                .findAny().flatMap(resource -> resource.getRanges().getRangeList().stream().findAny()).map(range -> (int) range.getBegin()).get();
+
+    }
+
     public static ArrayList<Protos.Resource> buildFrameworkResources(Configuration configuration) {
         Protos.Resource cpus = Resources.cpus(configuration.getCpus(), configuration.getFrameworkRole());
         Protos.Resource mem = Resources.mem(configuration.getMem(), configuration.getFrameworkRole());

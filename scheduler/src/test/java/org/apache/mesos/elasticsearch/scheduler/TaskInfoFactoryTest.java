@@ -30,6 +30,7 @@ import static org.mockito.Mockito.*;
  * Tests TaskInfoFactory
  */
 @RunWith(MockitoJUnitRunner.class)
+@SuppressWarnings({"PMD.TooManyMethods"})
 public class TaskInfoFactoryTest {
 
     private static final double EPSILON = 0.0001;
@@ -223,6 +224,37 @@ public class TaskInfoFactoryTest {
         assertTrue(taskInfo.toString().contains("123"));
         assertTrue(taskInfo.toString().contains("456"));
     }
+
+    @Test
+    public void shouldAllowUserRequestForRandomHttpAndTransportPorts() {
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(0, 0));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
+        assertTrue(taskInfo.isInitialized());
+        assertTrue(taskInfo.toString().contains("9200"));
+        assertTrue(taskInfo.toString().contains("9300"));
+    }
+
+    @Test
+    public void shouldAllowUserRequestForFixedHttpAndRandomTransportPort() {
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(123, 0));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
+        assertTrue(taskInfo.isInitialized());
+        assertTrue(taskInfo.toString().contains("123"));
+        assertTrue(taskInfo.toString().contains("9200"));
+    }
+
+    @Test
+    public void shouldAllowUserRequestForRandomHttpAndFixedTransportPort() {
+        when(configuration.getElasticsearchPorts()).thenReturn(Arrays.asList(0, 456));
+        TaskInfoFactory factory = new TaskInfoFactory(clusterState);
+        Protos.TaskInfo taskInfo = factory.createTask(configuration, frameworkState, getOffer(frameworkState.getFrameworkID()), new Clock());
+        assertTrue(taskInfo.isInitialized());
+        assertTrue(taskInfo.toString().contains("9200"));
+        assertTrue(taskInfo.toString().contains("456"));
+    }
+
 
     @Test
     public void shouldUseMesosProvidedPorts() {
