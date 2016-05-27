@@ -2,6 +2,11 @@
 All notable changes to this project will be documented in this file.
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+## [1.0.2] - [27 Mai 2016]
+
+### Bugfixes
+- [Network problem on DCOS - Executor elected the wrong interface for network_publish_host](https://github.com/mesos/elasticsearch/issues/565)
+
 ## [1.0.1] - [23 March 2016]
 
 ### Bugfixes

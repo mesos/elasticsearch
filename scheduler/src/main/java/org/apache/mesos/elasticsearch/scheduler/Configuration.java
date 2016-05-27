@@ -46,6 +46,7 @@ public class Configuration {
     public static final String EXECUTOR_BINARY = "--elasticsearchBinaryUrl";
     public static final String DEFAULT_EXECUTOR_IMAGE = "elasticsearch:latest";
     public static final String EXECUTOR_FORCE_PULL_IMAGE = "--executorForcePullImage";
+    public static final String EXECUTOR_NETWORK_PUBLISH_HOST = "--executorNetworkPublishHost";
     public static final String FRAMEWORK_PRINCIPAL = "--frameworkPrincipal";
     public static final String FRAMEWORK_SECRET_PATH = "--frameworkSecretPath";
     public static final String ES_TAR = "public/elasticsearch.tar.gz";
@@ -80,7 +81,7 @@ public class Configuration {
     private String elasticsearchPorts = ""; // Defaults to Mesos specified ports.
 
     // **** FRAMEWORK
-    private String version = "1.0.1";
+    private String version = "1.0.2";
     @Parameter(names = {FRAMEWORK_NAME}, description = "The name given to the framework.", validateWith = CLIValidators.NotEmptyString.class)
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
@@ -98,6 +99,8 @@ public class Configuration {
     private String executorBinary = "";
     @Parameter(names = {EXECUTOR_FORCE_PULL_IMAGE}, arity = 1, description = "Option to force pull the executor image. [DOCKER MODE ONLY]")
     private Boolean executorForcePullImage = false;
+    @Parameter(names = {EXECUTOR_NETWORK_PUBLISH_HOST}, description = "Option to change the executor network.publish.host parameter.")
+    private String executorNetworkPublishHost = "_non_loopback:ipv4_";
     @Parameter(names = {FRAMEWORK_PRINCIPAL}, description = "The principal to use when registering the framework (username).")
     private String frameworkPrincipal = "";
     @Parameter(names = {FRAMEWORK_SECRET_PATH}, description = "The path to the file which contains the secret for the principal (password). Password in file must not have a newline.")
@@ -194,6 +197,10 @@ public class Configuration {
 
     public Boolean getExecutorForcePullImage() {
         return executorForcePullImage;
+    }
+    
+    public String getExecutorNetworkPublishHost() {
+        return executorNetworkPublishHost;
     }
 
     public Boolean getIsUseIpAddress() {
@@ -325,7 +332,7 @@ public class Configuration {
         }
         args.add("--default.bootstrap.mlockall=true");
         args.add("--default.network.bind_host=0.0.0.0");
-        args.add("--default.network.publish_host=_non_loopback:ipv4_");
+        args.add("--default.network.publish_host=" + getExecutorNetworkPublishHost());
         args.add("--default.gateway.recover_after_nodes=1");
         args.add("--default.gateway.expected_nodes=1");
         args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
