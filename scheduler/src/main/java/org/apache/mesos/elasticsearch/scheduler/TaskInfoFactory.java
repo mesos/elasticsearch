@@ -125,8 +125,7 @@ public class TaskInfoFactory {
         if (elasticsearchPorts.isEmpty() || elasticsearchPorts.stream().allMatch(port -> port == 0)) {
             //No ports requested by user or two random ports requested
             ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
-        }
-        else {
+        } else {
             //Replace a user requested port 0 with a random port
             ports = elasticsearchPorts.stream().map(port -> port != 0 ?  port : Resources.selectOnePortFromRange(offer.getResourcesList())).collect(Collectors.toList());
         }
