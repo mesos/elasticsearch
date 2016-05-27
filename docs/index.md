@@ -158,6 +158,9 @@ Usage: (Options preceded by an asterisk are required) [options]
     --executorName
        The name given to the executor task.
        Default: elasticsearch-executor
+    --executorNetworkPublishHost
+       Option to change the executor network.publish.host parameter.
+       Default: _non_loopback:ipv4_
     --externalVolumeDriver
        Use external volume storage driver. By default, nodes will use volumes on
        host.
