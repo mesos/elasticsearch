@@ -6,7 +6,7 @@
 
 ## Support
 
-Get in touch with the Elasticsearch Mesos framework developers via [mesos-es@container-solutions.com](mesos-es@container-solutions.com)
+Get in touch with the Mesos Elasticsearch framework developers and community via the [Mesos Elasticsearch Google Group](https://groups.google.com/forum/#!forum/mesos-elasticsearch)
 
 ## Sponsors
 
