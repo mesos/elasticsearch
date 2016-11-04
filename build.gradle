@@ -24,7 +24,7 @@ ext {
     jsonVersion = "20160212"
     junitVersion = "4.12"
     log4jVersion = "1.2.17"
-    mesosVer = "0.25.0"
+    mesosVer = "0.28.2"
     minimesosVersion = "0.7.1"
     springBootVersion = "1.2.5.RELEASE" // Bumping SB version causes Jackson incompatabilities with Docker-Java
     unirestVersion = "1.4.8"
@@ -61,7 +61,7 @@ buildscript {
     classpath "org.ajoberstar:grgit:1.3.0"
     classpath 'com.bmuschko:gradle-docker-plugin:2.4.1'
     classpath "com.github.zafarkhaja:java-semver:0.9.0"
-    classpath 'org.springframework.boot:spring-boot:1.2.5.RELEASE' 
+    classpath 'org.springframework.boot:spring-boot:1.2.5.RELEASE'
   }
 }
 
