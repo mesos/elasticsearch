@@ -9,12 +9,12 @@
         </layout>
     </appender>
 
-    <category name="com.containersol.minimesos">
+    <logger name="com.containersol.minimesos">
         <level value="INFO"/>
-    </category>
-    <category name="org.apache.mesos.elasticsearch">
+    </logger>
+    <logger name="org.apache.mesos.elasticsearch.systemTest">
         <level value="INFO"/>
-    </category>
+    </logger>
     <root>
         <level value="INFO"/>
         <appender-ref ref="console" />

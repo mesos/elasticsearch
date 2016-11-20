@@ -1,0 +1,21 @@
+{
+  "id": "elasticsearch",
+  "container": {
+    "docker": {
+      "image": "mesos/elasticsearch-scheduler:latest",
+      "network": "BRIDGE"
+    }
+  },
+  "args": [
+    "--zookeeperMesosUrl", "${MINIMESOS_ZOOKEEPER}",
+    "--useIpAddress", "true",
+    "--frameworkUseDocker", "false",
+    "--elasticsearchNodes", "3"
+  ],
+  "cpus": 0.2,
+  "mem": 512.0,
+  "env": {
+    "JAVA_OPTS": "-Xms128m -Xmx256m"
+  },
+  "instances": 1
+}

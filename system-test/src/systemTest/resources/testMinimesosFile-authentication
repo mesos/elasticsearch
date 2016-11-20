@@ -1,0 +1,83 @@
+minimesos {
+    clusterName = "test"
+    loggingLevel = "INFO"
+    mapAgentSandboxVolume = true
+    mesosVersion = "1.0.0"
+    timeout = 30
+
+    agent {
+        resources {
+            cpu {
+                role = "testRole*"
+                value = 0.2
+            }
+            disk {
+                role = "testRole"
+                value = 200
+            }
+            mem {
+                role = "testRole"
+                value = 256
+            }
+            ports {
+                role = "testRole"
+                value = "[9200-9200,9300-9300]"
+            }
+        }
+    }
+    agent {
+        resources {
+            cpu {
+                role = "testRole"
+                value = 0.2
+            }
+            disk {
+                role = "testRole"
+                value = 200
+            }
+            mem {
+                role = "testRole"
+                value = 256
+            }
+            ports {
+                role = "testRole"
+                value = "[9201-9201,9301-9301]"
+            }
+        }
+    }
+
+    agent {
+        resources {
+            cpu {
+                role = "testRole"
+                value = 0.2
+            }
+            disk {
+                role = "testRole"
+                value = 200
+            }
+            mem {
+                role = "testRole"
+                value = 256
+            }
+            ports {
+                role = "testRole"
+                value = "[9202-9202,9302-9302]"
+            }
+        }
+    }
+
+    marathon {
+
+    }
+
+    master {
+        authentication = "true"
+
+    }
+
+    zookeeper {
+
+    }
+
+}

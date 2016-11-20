@@ -20,14 +20,17 @@ dependencies {
     compile "com.github.docker-java:docker-java:${dockerJavaVersion}"
     compile "com.mashape.unirest:unirest-java:${unirestVersion}"
     compile "com.jayway.awaitility:awaitility:${awaitilityVersion}"
-    compile "com.github.ContainerSolutions:minimesos:${minimesosVersion}"
+    compile ("com.github.containersolutions.minimesos:minimesos:${minimesosVersion}") {
+        exclude group: 'ch.qos.logback'
+    }
 
     systemTestCompile project(":scheduler")
     systemTestCompile "junit:junit:${junitVersion}"
     systemTestCompile "com.github.docker-java:docker-java:${dockerJavaVersion}"
     systemTestCompile "com.mashape.unirest:unirest-java:${unirestVersion}"
     systemTestCompile "com.jayway.awaitility:awaitility:${awaitilityVersion}"
-    systemTestCompile "com.github.ContainerSolutions:minimesos:${minimesosVersion}"
+    systemTestCompile "com.github.containersolutions.minimesos:minimesos:${minimesosVersion}"
+
 }
 
 task main(type: JavaExec, dependsOn: "compileJava") {

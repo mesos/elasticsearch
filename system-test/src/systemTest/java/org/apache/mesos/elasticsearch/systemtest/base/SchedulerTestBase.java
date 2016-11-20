@@ -1,5 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest.base;
 
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.core.DockerClientBuilder;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.ESTasks;
 import org.apache.mesos.elasticsearch.systemtest.TasksResponse;
@@ -20,8 +23,10 @@ public abstract class SchedulerTestBase extends TestBase {
     public static void startScheduler() throws Exception {
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
-        CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        DockerClient dockerClient = DockerClientFactory.build();
+
+        scheduler = new ElasticsearchSchedulerContainer(dockerClient, CLUSTER.getZooKeeper().getIpAddress());
+        CLUSTER.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 

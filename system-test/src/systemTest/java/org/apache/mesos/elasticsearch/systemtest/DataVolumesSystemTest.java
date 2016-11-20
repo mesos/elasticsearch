@@ -10,6 +10,7 @@ import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesRes
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -23,6 +24,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests data volumes
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class DataVolumesSystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(DataVolumesSystemTest.class);
 
@@ -31,8 +33,8 @@ public class DataVolumesSystemTest extends TestBase {
         ElasticsearchSchedulerContainer schedulerContainer = startScheduler(Configuration.DEFAULT_HOST_DATA_DIR);
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(CLUSTER_ARCHITECTURE.dockerClient, Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
+        AlpineContainer dataContainer = new AlpineContainer(getDockerClient(), Configuration.DEFAULT_HOST_DATA_DIR, Configuration.DEFAULT_HOST_DATA_DIR, "sleep", "9999");
+        CLUSTER.addAndStartProcess(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(1L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), Configuration.DEFAULT_HOST_DATA_DIR));
         stopScheduler(schedulerContainer);
@@ -45,8 +47,8 @@ public class DataVolumesSystemTest extends TestBase {
 
         // Start a data container
         // When running on a mac, it is difficult to do an ls on the docker-machine VM. So instead, we mount a folder into another container and check the container.
-        AlpineContainer dataContainer = new AlpineContainer(CLUSTER_ARCHITECTURE.dockerClient, dataDirectory, dataDirectory, new String[]{"sleep", "9999"});
-        CLUSTER.addAndStartContainer(dataContainer, TEST_CONFIG.getClusterTimeout());
+        AlpineContainer dataContainer = new AlpineContainer(getDockerClient(), dataDirectory, dataDirectory, "sleep", "9999");
+        CLUSTER.addAndStartProcess(dataContainer, TEST_CONFIG.getClusterTimeout());
 
         Awaitility.await().atMost(1L, TimeUnit.MINUTES).pollInterval(2L, TimeUnit.SECONDS).until(new DataInDirectory(dataContainer.getContainerId(), dataDirectory));
         stopScheduler(schedulerContainer);
@@ -55,8 +57,8 @@ public class DataVolumesSystemTest extends TestBase {
     public ElasticsearchSchedulerContainer startScheduler(String dataDir) {
         LOGGER.info("Starting Elasticsearch scheduler");
 
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER, dataDir);
-        CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(getDockerClient(), CLUSTER.getZooKeeper().getIpAddress(), dataDir);
+        CLUSTER.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
 
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
@@ -71,8 +73,8 @@ public class DataVolumesSystemTest extends TestBase {
 
     private void stopScheduler(ElasticsearchSchedulerContainer schedulerContainer) {
         schedulerContainer.remove();
-        CLUSTER.getContainers().remove(schedulerContainer);
-        new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient).killAllExecutors();
+        CLUSTER.getMemberProcesses().remove(schedulerContainer);
+        new DockerUtil(getDockerClient()).killAllExecutors();
     }
 
     private static class DataInDirectory implements Callable<Boolean> {
@@ -87,13 +89,13 @@ public class DataVolumesSystemTest extends TestBase {
 
         @Override
         public Boolean call() throws Exception {
-            ExecCreateCmdResponse execResponse = CLUSTER_ARCHITECTURE.dockerClient.execCreateCmd(containerId)
+            ExecCreateCmdResponse execResponse = getDockerClient().execCreateCmd(containerId)
                     .withCmd("ls", "-R", dataDirectory)
                     .withTty(true)
-                    .withAttachStdout()
-                    .withAttachStderr()
+                    .withAttachStdout(true)
+                    .withAttachStderr(true)
                     .exec();
-            try (InputStream inputstream = CLUSTER_ARCHITECTURE.dockerClient.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
+            try (InputStream inputstream = getDockerClient().execStartCmd(containerId).withTty(true).withExecId(execResponse.getId()).exec(null)) {
                 String contents = IOUtils.toString(inputstream, Charset.defaultCharset()).replaceAll("\\p{C}", "");
                 LOGGER.info("Contents of " + dataDirectory + ": " + contents);
                 return contents.contains("S0") && contents.contains("S1") && contents.contains("S2");

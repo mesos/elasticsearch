@@ -1,0 +1,109 @@
+minimesos {
+    clusterName = "elasticsearch-main"
+    loggingLevel = "INFO"
+    mapAgentSandboxVolume = true
+    mesosVersion = "0.25.0"
+    timeout = 30
+
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[9200-9200,9300-9300]"
+            }
+        }
+    }
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[9201-9201,9301-9301]"
+            }
+        }
+    }
+
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[9202-9202,9302-9302]"
+            }
+        }
+    }
+
+
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[37000-38000]"
+            }
+        }
+    }
+
+    marathon {
+        // Add 'app { marathonJson = "<path or URL to JSON file>" }' for every task you want to execute
+        app {
+            marathonJson = "weave-scope.json"
+        }
+        app {
+            marathonJson = "es.json"
+        }
+    }
+
+    master {
+
+    }
+
+    zookeeper {
+    }
+
+}

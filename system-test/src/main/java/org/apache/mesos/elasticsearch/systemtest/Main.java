@@ -1,39 +1,37 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.containersol.minimesos.cluster.MesosCluster;
-import com.containersol.minimesos.mesos.ClusterArchitecture;
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.containersol.minimesos.mesos.MesosClusterContainersFactory;
+import com.github.dockerjava.api.DockerClient;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 
+import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Main app to run Mesos Elasticsearch with Mini Mesos.
+ * Main app to run Mesos Elasticsearch on minimesos.
  */
-public class Main {
+public class Main implements Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
     public static final Configuration TEST_CONFIG = new Configuration();
 
-    private static ClusterArchitecture clusterArchitecture;
+    private static DockerClient dockerClient;
 
-    public static void main(String[] args) throws InterruptedException {
+    private volatile boolean keepRunning = true;
 
-        clusterArchitecture = new ClusterArchitecture.Builder()
-                .withZooKeeper()
-                .withMaster(MesosMasterTagged::new)
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
-                .build();
+    @Override
+    public void run() {
+        dockerClient = DockerClientFactory.build();
 
-        MesosCluster cluster = new MesosCluster(clusterArchitecture);
-        cluster.setExposedHostPorts(true);
+        MesosClusterContainersFactory factory = new MesosClusterContainersFactory();
 
+        MesosCluster mesosCluster = factory.createMesosCluster("src/main/resources/minimesosFile");
+        mesosCluster.setMapPortsToHost(true);
 
         final AtomicReference<ElasticsearchSchedulerContainer> schedulerReference = new AtomicReference<>(null);
 
@@ -44,25 +42,42 @@ public class Main {
                     schedulerReference.get().remove();
                 }
 
-                cluster.stop();
-                new DockerUtil(clusterArchitecture.dockerClient).killAllExecutors();
+                mesosCluster.destroy(factory);
+                new DockerUtil(dockerClient).killAllExecutors();
             }
         });
-        cluster.start(TEST_CONFIG.getClusterTimeout());
-        IpTables.apply(clusterArchitecture.dockerClient, cluster, TEST_CONFIG);
+        mesosCluster.start(30);
+        IpTables.apply(dockerClient, mesosCluster, TEST_CONFIG);
 
         LOGGER.info("Starting scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(clusterArchitecture.dockerClient, cluster.getZkContainer().getIpAddress(), cluster);
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(dockerClient, mesosCluster.getZooKeeper().getIpAddress());
         schedulerReference.set(scheduler);
-        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        mesosCluster.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
 
-        seedData(cluster, scheduler);
+        seedData(mesosCluster, scheduler);
 
         LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
-        LOGGER.info("Type CTRL-C to quit");
-        while (true) {
-            Thread.sleep(1000);
+        LOGGER.info("Type 'q' to quit");
+
+        while (keepRunning) {
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                LOGGER.info("Shutting down...");
+            }
         }
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        Main main = new Main();
+        Thread thread = new Thread(main);
+        thread.start();
+
+        Scanner s = new Scanner(System.in);
+        while (!s.next().equals("q"));
+
+        main.keepRunning = false;
+        thread.interrupt();
     }
 
     private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
@@ -74,9 +89,8 @@ public class Main {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());
         }
-        SeedDataContainer seedData = new SeedDataContainer(clusterArchitecture.dockerClient, "http://" + taskHttpAddress);
-        cluster.addAndStartContainer(seedData, TEST_CONFIG.getClusterTimeout());
+        SeedDataContainer seedData = new SeedDataContainer(dockerClient, "http://" + taskHttpAddress);
+        cluster.addAndStartProcess(seedData, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Elasticsearch node " + taskHttpAddress + " seeded with data");
     }
-
 }

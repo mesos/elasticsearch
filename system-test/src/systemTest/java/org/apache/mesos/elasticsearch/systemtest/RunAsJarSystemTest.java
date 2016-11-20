@@ -1,14 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.containersol.minimesos.cluster.MesosCluster;
+import com.containersol.minimesos.cluster.ZooKeeper;
+import com.containersol.minimesos.config.ContainerConfigBlock;
 import com.containersol.minimesos.container.AbstractContainer;
-import com.containersol.minimesos.mesos.ClusterArchitecture;
-import com.containersol.minimesos.mesos.ClusterContainers;
-import com.containersol.minimesos.mesos.DockerClientFactory;
-import com.containersol.minimesos.mesos.ZooKeeper;
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.containersol.minimesos.mesos.MesosClusterContainersFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
-import com.github.dockerjava.api.model.*;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
@@ -16,12 +15,11 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.scheduler.Configuration;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.AlpineContainer;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.json.JSONObject;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
@@ -31,7 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.stream.IntStream;
 
 import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0AdaptorIpAddress;
 import static org.junit.Assert.assertEquals;
@@ -59,6 +56,7 @@ import static org.junit.Assert.assertTrue;
  * </p>
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class RunAsJarSystemTest {
     private static final Logger LOG = LoggerFactory.getLogger(RunAsJarSystemTest.class);
     protected static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
@@ -77,11 +75,13 @@ public class RunAsJarSystemTest {
     private static ESTasks esTasks;
     private static ElasticsearchNodesResponse nodesResponse;
 
+    private static MesosClusterContainersFactory factory = new MesosClusterContainersFactory();
+
     @Rule
     public final TestWatcher watcher = new TestWatcher() {
         @Override
         protected void failed(Throwable e, Description description) {
-            cluster.stop();
+            cluster.destroy(factory);
         }
     };
 
@@ -95,16 +95,8 @@ public class RunAsJarSystemTest {
         ymlWrite.start(TEST_CONFIG.getClusterTimeout());
         ymlWrite.remove();
 
-        ClusterArchitecture.Builder builder = new ClusterArchitecture.Builder()
-                .withZooKeeper()
-                .withMaster(MesosMasterTagged::new)
-                .withContainer(zkContainer -> new JarScheduler(dockerClient, zkContainer, zkContainer.getClusterId()), ClusterContainers.Filter.zooKeeper());
-        scheduler = (JarScheduler) builder.getContainers().getOne(container -> container instanceof JarScheduler).get();
-        IntStream.range(0, NUMBER_OF_TEST_TASKS).forEach(number ->
-                        builder.withAgent(zooKeeper -> new MesosSlaveWithSchedulerLink(zooKeeper, scheduler, number))
-        );
-        cluster = new MesosCluster(builder.build());
-        cluster.setExposedHostPorts(true);
+        MesosCluster mesosCluster = factory.createMesosCluster("src/main/resources/testMinimesosFile");
+        mesosCluster.setMapPortsToHost(true);
 
         cluster.start(TEST_CONFIG.getClusterTimeout());
 
@@ -117,7 +109,7 @@ public class RunAsJarSystemTest {
 
     @AfterClass
     public static void killAllContainers() {
-        cluster.stop();
+        cluster.destroy(factory);
         new DockerUtil(dockerClient).killAllSchedulers();
         new DockerUtil(dockerClient).killAllExecutors();
     }
@@ -154,7 +146,7 @@ public class RunAsJarSystemTest {
         private String docker0AdaptorIpAddress;
 
         protected JarScheduler(DockerClient dockerClient, ZooKeeper zooKeeperContainer, String clusterId) {
-            super(dockerClient);
+            super(new ContainerConfigBlock("elasticsearch-scheduler", "latest"));
             this.zooKeeperContainer = zooKeeperContainer;
             this.clusterId = clusterId;
             docker0AdaptorIpAddress = getDocker0AdaptorIpAddress();
@@ -193,39 +185,39 @@ public class RunAsJarSystemTest {
         }
     }
 
-    private static class MesosSlaveWithSchedulerLink extends MesosSlaveTagged {
-
-        private final JarScheduler scheduler;
-        private final Integer slaveNumber;
-
-        protected MesosSlaveWithSchedulerLink(ZooKeeper zooKeeperContainer, JarScheduler scheduler, Integer slaveNumber) {
-            super(zooKeeperContainer, "ports(*):[" + httpPort(slaveNumber) + "-" + httpPort(slaveNumber) + "," + transportPort(slaveNumber) + "-" + transportPort(slaveNumber) + "]; cpus(*):0.2; mem(*):256; disk(*):200");
-            this.scheduler = scheduler;
-            this.slaveNumber = slaveNumber;
-        }
-
-        private static Integer httpPort(Integer slaveNumber) {
-            return 31000 + slaveNumber;
-        }
-
-        private static Integer transportPort(Integer slaveNumber) {
-            return 31100 + slaveNumber;
-        }
-
-        @Override
-        protected CreateContainerCmd dockerCommand() {
-            CreateContainerCmd createContainerCmd = super.dockerCommand();
-
-            Ports ports = new Ports();
-            ports.bind(ExposedPort.tcp(httpPort(slaveNumber)), Ports.Binding(httpPort(slaveNumber)));
-            createContainerCmd
-                    .withHostName("hostnamehack") // Hack to get past offer refusal
-                    .withLinks(new Link(scheduler.getContainerId(), scheduler.getContainerId()))
-                    .withExposedPorts(new ExposedPort(httpPort(slaveNumber)), new ExposedPort(5051))
-                    .withBinds(new Bind(CUSTOM_CONFIG_PATH, new Volume(CUSTOM_CONFIG_PATH))) // For custom config
-                    .withPortBindings(ports)
-                    ;
-            return createContainerCmd;
-        }
-    }
+//    private static class MesosSlaveWithSchedulerLink extends MesosSlaveTagged {
+//
+//        private final JarScheduler scheduler;
+//        private final Integer slaveNumber;
+//
+//        protected MesosSlaveWithSchedulerLink(ZooKeeper zooKeeperContainer, JarScheduler scheduler, Integer slaveNumber) {
+//            super("ports(*):[" + httpPort(slaveNumber) + "-" + httpPort(slaveNumber) + "," + transportPort(slaveNumber) + "-" + transportPort(slaveNumber) + "]; cpus(*):0.2; mem(*):256; disk(*):200");
+//            this.scheduler = scheduler;
+//            this.slaveNumber = slaveNumber;
+//        }
+//
+//        private static Integer httpPort(Integer slaveNumber) {
+//            return 31000 + slaveNumber;
+//        }
+//
+//        private static Integer transportPort(Integer slaveNumber) {
+//            return 31100 + slaveNumber;
+//        }
+//
+//        @Override
+//        protected CreateContainerCmd dockerCommand() {
+//            CreateContainerCmd createContainerCmd = super.dockerCommand();
+//
+//            Ports ports = new Ports();
+//            ports.bind(ExposedPort.tcp(httpPort(slaveNumber)), Ports.Binding(httpPort(slaveNumber)));
+//            createContainerCmd
+//                    .withHostName("hostnamehack") // Hack to get past offer refusal
+//                    .withLinks(new Link(scheduler.getContainerId(), scheduler.getContainerId()))
+//                    .withExposedPorts(new ExposedPort(httpPort(slaveNumber)), new ExposedPort(5051))
+//                    .withBinds(new Bind(CUSTOM_CONFIG_PATH, new Volume(CUSTOM_CONFIG_PATH))) // For custom config
+//                    .withPortBindings(ports)
+//                    ;
+//            return createContainerCmd;
+//        }
+//    }
 }

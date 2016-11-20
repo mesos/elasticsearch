@@ -9,6 +9,7 @@ import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.LogContainerTestCallback;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -20,9 +21,12 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the main method.
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class SchedulerMainSystemTest extends TestBase {
+
     private static final Logger LOGGER = Logger.getLogger(SchedulerMainSystemTest.class);
-    private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
+
+    private DockerUtil dockerUtil = new DockerUtil(getDockerClient());
 
     @Test
     public void ensureMainFailsIfNoHeap() throws Exception {
@@ -53,7 +57,7 @@ public class SchedulerMainSystemTest extends TestBase {
     }
 
     private CreateContainerCmd getCreateContainerCmd(String heapString) {
-        return CLUSTER_ARCHITECTURE.dockerClient
+        return getDockerClient()
                 .createContainerCmd(getTestConfig().getSchedulerImageName())
                 .withEnv("JAVA_OPTS=" + heapString)
                 .withCmd(
@@ -62,13 +66,13 @@ public class SchedulerMainSystemTest extends TestBase {
     }
 
     private String containerLog(String containerId) throws Exception {
-        return CLUSTER_ARCHITECTURE.dockerClient.logContainerCmd(containerId).withStdOut().withStdErr().withFollowStream().exec(new LogContainerTestCallback()).awaitCompletion().toString();
+        return getDockerClient().logContainerCmd(containerId).withStdOut(true).withStdErr(true).withFollowStream(true).exec(new LogContainerTestCallback()).awaitCompletion().toString();
     }
 
     private String startContainer(CreateContainerCmd createCommand) {
         CreateContainerResponse r = createCommand.exec();
         String containerId = r.getId();
-        CLUSTER_ARCHITECTURE.dockerClient.startContainerCmd(containerId).exec();
+        getDockerClient().startContainerCmd(containerId).exec();
         return containerId;
     }
 

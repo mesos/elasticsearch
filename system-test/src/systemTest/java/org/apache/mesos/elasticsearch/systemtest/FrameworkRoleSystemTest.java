@@ -19,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Tests configuration of framework roles
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class FrameworkRoleSystemTest extends TestBase {
     public static final Logger LOGGER = Logger.getLogger(FrameworkRoleSystemTest.class);
 
@@ -36,12 +37,11 @@ public class FrameworkRoleSystemTest extends TestBase {
 
     private void testMiniMesosReportsFrameworkRole(String role) throws UnirestException, JsonParseException, JsonMappingException {
         LOGGER.info("Starting Elasticsearch scheduler with framework role: " + role);
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(
-                CLUSTER_ARCHITECTURE.dockerClient,
-                CLUSTER.getZkContainer().getIpAddress(),
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(getDockerClient(),
+                CLUSTER.getZooKeeper().getIpAddress(),
                 role,
-                CLUSTER, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
-        CLUSTER.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+                org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
+        CLUSTER.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
         LOGGER.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + getTestConfig().getSchedulerGuiPort());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());

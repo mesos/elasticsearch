@@ -1,0 +1,87 @@
+minimesos {
+    clusterName = "test"
+    loggingLevel = "INFO"
+    mapAgentSandboxVolume = false
+    mesosVersion = "1.0.0"
+    mapPortsToHost = true
+    timeout = 30
+
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[31000-32000]"
+            }
+        }
+    }
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[33000-34000]"
+            }
+        }
+    }
+
+    agent {
+        resources {
+            cpu {
+                role = "*"
+                value = 2
+            }
+            disk {
+                role = "*"
+                value = 20000
+            }
+            mem {
+                role = "*"
+                value = 4096
+            }
+            ports {
+                role = "*"
+                value = "[35000-36000]"
+            }
+        }
+    }
+
+    marathon {
+
+        app {
+            marathonJson = "src/systemTest/resources/elasticsearch.json"
+        }
+
+    }
+
+    master {
+
+    }
+
+    zookeeper {
+
+    }
+
+}

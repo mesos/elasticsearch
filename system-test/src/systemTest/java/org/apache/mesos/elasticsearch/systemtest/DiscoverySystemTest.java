@@ -6,6 +6,7 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.net.MalformedURLException;
@@ -15,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Given the wrong ES settings, the cluster will not discover each other. This test ensures it can.
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class DiscoverySystemTest extends SchedulerTestBase {
 
     @Test
