@@ -18,6 +18,7 @@ public class ExecutorEnvironmentalVariables {
     private static final String CONTAINER_PATH_SETTINGS = "/tmp/config";
     
     public static final String JAVA_OPTS = "JAVA_OPTS";
+    public static final String ES_JAVA_OPTS = "ES_JAVA_OPTS";
     public static final String ES_HEAP = "ES_HEAP_SIZE";
     public static final int EXTERNAL_VOLUME_NOT_CONFIGURED = -1;
     public static final String ELASTICSEARCH_NODE_ID = "ELASTICSEARCH_NODE_ID";
@@ -67,6 +68,7 @@ public class ExecutorEnvironmentalVariables {
         if (configuration.isFrameworkUseDocker()) {
             addToList(native_mesos_library_key, native_mesos_library_path);
         }
+        addToList(ES_JAVA_OPTS, getHeapSpaceString(configuration));
     }
 
     private void populateEnvMapForMesos(Configuration configuration, Long nodeId) {
