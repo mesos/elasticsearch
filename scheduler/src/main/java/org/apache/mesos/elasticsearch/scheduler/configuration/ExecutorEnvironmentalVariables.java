@@ -68,7 +68,7 @@ public class ExecutorEnvironmentalVariables {
         if (configuration.isFrameworkUseDocker()) {
             addToList(native_mesos_library_key, native_mesos_library_path);
         }
-        addToList(ES_JAVA_OPTS, getHeapSpaceString(configuration));
+        addToList(ES_JAVA_OPTS, getHeapSpaceString(configuration, 192));
     }
 
     private void populateEnvMapForMesos(Configuration configuration, Long nodeId) {
@@ -112,5 +112,16 @@ public class ExecutorEnvironmentalVariables {
     private String getHeapSpaceString(Configuration configuration) {
         int osRam = (int) Math.min(256.0, configuration.getMem() / 4.0);
         return "" + ((int) configuration.getMem() - osRam) + "m";
+    }
+
+    /**
+     * Gets the heap space settings. Will set minimum heap space as 256, minimum or available/4, whichever is smaller. Max heap will be available space.
+     * @param configuration The mesos cluster configuration
+     * @param min The minimum heap space; used if smaller than 256 and smaller than available/4
+     * @return A string representing the java heap space.
+     */
+    private String getHeapSpaceString(Configuration configuration, int min) {
+        int osRam = (int) Math.min(256.0, min, configuration.getMem() / 4.0);
+        return "-Xms" + osRam + "m -Xmx"+ configuration.getMem() + "m";
     }
 }
