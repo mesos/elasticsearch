@@ -71,6 +71,30 @@ public class ZKAddressParserTest {
     }
 
     @Test
+    public void shouldAcceptIfSingleZKAddressWithSubpath() {
+        String add = "zk://192.168.0.1:2182/mesos/subpath";
+        List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
+        assertZKEquals(zk.get(0), "", "", "192.168.0.1", "2182", "mesos/subpath");
+    }
+
+    @Test
+    public void shouldAcceptIfMultiZKAddressWithSubpath() {
+        String add = "zk://192.168.0.1:2182,10.4.52.3:1234/mesos/sub_path";
+        List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
+        assertZKEquals(zk.get(0), "", "", "192.168.0.1", "2182", "");
+        assertZKEquals(zk.get(1), "", "", "10.4.52.3", "1234", "mesos/sub_path");
+    }
+
+    @Test
+    public void shouldAcceptIfMultiZKAddressWithMultiSubpath() {
+        String add = "zk://192.168.0.1:2182/mesos/sub_path1,10.4.52.3:1234/mesos/sub_path2";
+        List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
+        assertZKEquals(zk.get(0), "", "", "192.168.0.1", "2182", "mesos/sub_path1");
+        assertZKEquals(zk.get(1), "", "", "10.4.52.3", "1234", "mesos/sub_path2");
+    }
+
+
+    @Test
     public void shouldAcceptIfSpacesInPath() {
         String add = "zk://192.168.0.1:2182, 10.4.52.3:1234/mesos";
         List<ZKAddress> zk = new ZKAddressParser().validateZkUrl(add);
