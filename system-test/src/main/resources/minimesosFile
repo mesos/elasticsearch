@@ -90,13 +90,7 @@ minimesos {
     }
 
     marathon {
-        // Add 'app { marathonJson = "<path or URL to JSON file>" }' for every task you want to execute
-        app {
-            marathonJson = "weave-scope.json"
-        }
-        app {
-            marathonJson = "es.json"
-        }
+
     }
 
     master {

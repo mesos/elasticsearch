@@ -4,11 +4,14 @@ import com.containersol.minimesos.cluster.MesosCluster;
 import com.containersol.minimesos.docker.DockerClientFactory;
 import com.containersol.minimesos.mesos.MesosClusterContainersFactory;
 import com.github.dockerjava.api.DockerClient;
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -18,9 +21,10 @@ import java.util.concurrent.atomic.AtomicReference;
 public class Main implements Runnable {
 
     public static final Logger LOGGER = Logger.getLogger(Main.class);
-    public static final Configuration TEST_CONFIG = new Configuration();
 
-    private static DockerClient dockerClient;
+    public final Configuration TEST_CONFIG = new Configuration();
+
+    private DockerClient dockerClient;
 
     private volatile boolean keepRunning = true;
 
@@ -49,14 +53,13 @@ public class Main implements Runnable {
         mesosCluster.start(30);
         IpTables.apply(dockerClient, mesosCluster, TEST_CONFIG);
 
-        LOGGER.info("Starting scheduler");
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(dockerClient, mesosCluster.getZooKeeper().getIpAddress());
-        schedulerReference.set(scheduler);
-        mesosCluster.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
+        try (InputStreamReader reader = new InputStreamReader(new FileInputStream("src/main/resources/elasticsearch.json"), "UTF-8")) {
+            mesosCluster.getMarathon().deployApp(IOUtils.toString(reader));
+        } catch (Exception e) {
+            e.printStackTrace();
+            LOGGER.error("Could not deploy Mesos Elasticsearch via Marathon");
+        }
 
-        seedData(mesosCluster, scheduler);
-
-        LOGGER.info("Scheduler started at http://" + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
         LOGGER.info("Type 'q' to quit");
 
         while (keepRunning) {
@@ -70,27 +73,21 @@ public class Main implements Runnable {
 
     public static void main(String[] args) throws InterruptedException {
         Main main = new Main();
-        Thread thread = new Thread(main);
-        thread.start();
-
-        Scanner s = new Scanner(System.in);
-        while (!s.next().equals("q"));
-
-        main.keepRunning = false;
-        thread.interrupt();
+        main.runMainThread();
     }
 
-    private static void seedData(MesosCluster cluster, ElasticsearchSchedulerContainer schedulerContainer) {
-        String taskHttpAddress;
-        try {
-            ESTasks esTasks = new ESTasks(TEST_CONFIG, schedulerContainer.getIpAddress());
-            new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount(), "TASK_RUNNING");
-            taskHttpAddress = esTasks.getEsHttpAddressList().get(0);
-        } catch (Exception e) {
-            throw new RuntimeException(e.getMessage());
+    @SuppressWarnings("PMD.EmptyWhileStmt")
+    private void runMainThread() throws InterruptedException {
+        Main framework = new Main();
+        Thread frameworkThread = new Thread(framework);
+        frameworkThread.start();
+
+        Scanner s = new Scanner(System.in, "UTF-8");
+        while (!s.next().equals("q")) {
+            Thread.sleep(1000);
         }
-        SeedDataContainer seedData = new SeedDataContainer(dockerClient, "http://" + taskHttpAddress);
-        cluster.addAndStartProcess(seedData, TEST_CONFIG.getClusterTimeout());
-        LOGGER.info("Elasticsearch node " + taskHttpAddress + " seeded with data");
+
+        framework.keepRunning = false;
+        frameworkThread.interrupt();
     }
 }
