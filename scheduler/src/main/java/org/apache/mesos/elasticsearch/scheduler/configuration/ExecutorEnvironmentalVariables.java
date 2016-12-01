@@ -115,13 +115,16 @@ public class ExecutorEnvironmentalVariables {
     }
 
     /**
-     * Gets the heap space settings. Will set minimum heap space as 256, minimum or available/4, whichever is smaller. Max heap will be available space.
-     * @param configuration The mesos cluster configuration
-     * @param min The minimum heap space; used if smaller than 256 and smaller than available/4
-     * @return A string representing the java heap space.
+     * Creates a heap space string. Will set minimum heap space to 256, or available / 4, whichever is smaller.
+     * Max heap will be available space.
+     * .
+     * @param configuration The Mesos cluster configuration
+     * @param minimumHeapSpace The minimum heap space; used if smaller than 256 and smaller than available / 4
+     *
+     * @return String representing the java heap space.
      */
-    private String getHeapSpaceString(Configuration configuration, int min) {
-        int osRam = (int) Math.min(256.0, min, configuration.getMem() / 4.0);
-        return "-Xms" + osRam + "m -Xmx"+ configuration.getMem() + "m";
+    private String getHeapSpaceString(Configuration configuration, int minimumHeapSpace) {
+        int osRam = (int) Math.min(minimumHeapSpace, configuration.getMem() / 4.0);
+        return "-Xms" + osRam + "m -Xmx" + configuration.getMem() + "m";
     }
 }
