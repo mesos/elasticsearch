@@ -74,8 +74,6 @@ public class TaskInfoFactory {
 
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
-        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
-
         return Protos.TaskInfo.newBuilder()
                 .setName(configuration.getTaskName())
                 .setData(toData(offer.getHostname(), hostAddress, clock.nowUTC()))
@@ -83,7 +81,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(nativeCommand(configuration, args, elasticSearchNodeId))
+                .setCommand(nativeCommand(configuration, new List<String>(), elasticSearchNodeId))
                 .build();
     }
 
@@ -97,7 +95,6 @@ public class TaskInfoFactory {
         LOGGER.info("Creating Elasticsearch task with resources: " + resources.toString());
 
         final Protos.TaskID taskId = Protos.TaskID.newBuilder().setValue(taskId(offer, clock)).build();
-        final List<String> args = configuration.esArguments(clusterState, discovery, offer.getSlaveId());
         final Protos.ContainerInfo containerInfo = getContainer(configuration, taskId, elasticSearchNodeId, offer.getSlaveId());
 
         return Protos.TaskInfo.newBuilder()
@@ -107,7 +104,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
-                .setCommand(dockerCommand(configuration, args, elasticSearchNodeId))
+                .setCommand(dockerCommand(configuration, new List<String>(), elasticSearchNodeId))
                 .setContainer(containerInfo)
                 .build();
     }

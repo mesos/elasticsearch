@@ -296,49 +296,6 @@ public class Configuration {
                 + "\" nobody";
     }
 
-    public List<String> esArguments(ClusterState clusterState, Protos.DiscoveryInfo discoveryInfo, Protos.SlaveID slaveID) {
-        List<String> args = new ArrayList<>();
-        List<Protos.TaskInfo> taskList = clusterState.getTaskList();
-        String hostAddress = "";
-        if (taskList.size() > 0) {
-            Protos.TaskInfo taskInfo = taskList.get(0);
-            String taskId = taskInfo.getTaskId().getValue();
-            InetSocketAddress transportAddress = clusterState.getGuiTaskList().get(taskId).getTransportAddress();
-            hostAddress = NetworkUtils.addressToString(transportAddress, getIsUseIpAddress()).replace("http://", "");
-        }
-        addIfNotEmpty(args, "--default.discovery.zen.ping.unicast.hosts", hostAddress);
-        args.add("--default.http.port=" + discoveryInfo.getPorts().getPorts(Discovery.CLIENT_PORT_INDEX).getNumber());
-        args.add("--default.transport.tcp.port=" + discoveryInfo.getPorts().getPorts(Discovery.TRANSPORT_PORT_INDEX).getNumber());
-        args.add("--default.cluster.name=" + getElasticsearchClusterName());
-        args.add("--default.node.master=true");
-        args.add("--default.node.data=true");
-        args.add("--default.node.local=false");
-        args.add("--default.index.number_of_replicas=0");
-        args.add("--default.index.auto_expand_replicas=0-all");
-        if (!isFrameworkUseDocker()) {
-            String taskSpecificDataDir = taskSpecificHostDir(slaveID);
-            args.add("--path.home=" + HOST_PATH_HOME); // Cannot be overidden
-            args.add("--default.path.data=" + taskSpecificDataDir);
-            args.add("--path.conf=" + HOST_PATH_CONF); // Cannot be overidden
-        } else {
-            args.add("--path.data=" + CONTAINER_PATH_DATA); // Cannot be overidden
-        }
-        args.add("--default.bootstrap.mlockall=true");
-        args.add("--default.network.bind_host=0.0.0.0");
-        args.add("--default.network.publish_host=_non_loopback:ipv4_");
-        args.add("--default.gateway.recover_after_nodes=1");
-        args.add("--default.gateway.expected_nodes=1");
-        args.add("--default.indices.recovery.max_bytes_per_sec=100mb");
-        args.add("--default.discovery.type=zen");
-        args.add("--default.discovery.zen.fd.ping_timeout=30s");
-        args.add("--default.discovery.zen.fd.ping_interval=1s");
-        args.add("--default.discovery.zen.fd.ping_retries=30");
-        args.add("--default.discovery.zen.ping.multicast.enabled=false");
-
-
-        return args;
-    }
-
     public String taskSpecificHostDir(Protos.SlaveID slaveID) {
         return getDataDir() + "/" + getElasticsearchClusterName() + "/" + slaveID.getValue();
     }
