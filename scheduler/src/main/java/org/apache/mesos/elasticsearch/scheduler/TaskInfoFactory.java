@@ -147,8 +147,8 @@ public class TaskInfoFactory {
     private Protos.DiscoveryInfo getDiscovery(List<Integer> ports, Configuration configuration) {
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME).setProtocol("TCP"));
-        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME).setProtocol("TCP"));
+        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME).setProtocol("tcp"));
+        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME).setProtocol("tcp"));
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
         discovery.setName(configuration.getTaskName());
