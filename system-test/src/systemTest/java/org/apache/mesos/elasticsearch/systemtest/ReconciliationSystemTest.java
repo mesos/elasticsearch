@@ -1,10 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.github.dockerjava.api.DockerClient;
 import org.apache.mesos.elasticsearch.systemtest.base.TestBase;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
 import org.apache.mesos.elasticsearch.systemtest.util.ContainerLifecycleManagement;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.After;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestWatcher;
@@ -20,13 +23,15 @@ import static org.junit.Assert.assertEquals;
  * Tests CLUSTER state monitoring and reconciliation.
  */
 @SuppressWarnings({"PMD.TooManyMethods"})
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class ReconciliationSystemTest extends TestBase {
     private static final int TIMEOUT = 120;
     private static final ContainerLifecycleManagement CONTAINER_MANAGER = new ContainerLifecycleManagement();
-    private DockerUtil dockerUtil = new DockerUtil(CLUSTER_ARCHITECTURE.dockerClient);
+    private static DockerClient dockerClient = DockerClientFactory.build();
+    private DockerUtil dockerUtil = new DockerUtil(dockerClient);
 
     private static ElasticsearchSchedulerContainer startSchedulerContainer() {
-        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(CLUSTER_ARCHITECTURE.dockerClient, CLUSTER.getZkContainer().getIpAddress(), CLUSTER);
+        ElasticsearchSchedulerContainer scheduler = new ElasticsearchSchedulerContainer(dockerClient, CLUSTER.getZooKeeper().getIpAddress());
         CONTAINER_MANAGER.addAndStart(scheduler, TEST_CONFIG.getClusterTimeout());
         return scheduler;
     }

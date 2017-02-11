@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Collectors;
@@ -69,6 +70,7 @@ public class TaskInfoFactory {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
+        final Protos.Labels labels = getLabels(configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -83,6 +85,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
+                .setLabels(labels)
                 .setCommand(nativeCommand(configuration, args, elasticSearchNodeId))
                 .build();
     }
@@ -91,6 +94,7 @@ public class TaskInfoFactory {
         final List<Integer> ports = getPorts(offer, configuration);
         final List<Protos.Resource> resources = getResources(configuration, ports);
         final Protos.DiscoveryInfo discovery = getDiscovery(ports, configuration);
+        final Protos.Labels labels = getLabels(configuration);
 
         final String hostAddress = resolveHostAddress(offer, ports);
 
@@ -107,6 +111,7 @@ public class TaskInfoFactory {
                 .setSlaveId(offer.getSlaveId())
                 .addAllResources(resources)
                 .setDiscovery(discovery)
+                .setLabels(labels)
                 .setCommand(dockerCommand(configuration, args, elasticSearchNodeId))
                 .setContainer(containerInfo)
                 .build();
@@ -125,8 +130,7 @@ public class TaskInfoFactory {
         if (elasticsearchPorts.isEmpty() || elasticsearchPorts.stream().allMatch(port -> port == 0)) {
             //No ports requested by user or two random ports requested
             ports = Resources.selectTwoPortsFromRange(offer.getResourcesList());
-        }
-        else {
+        } else {
             //Replace a user requested port 0 with a random port
             ports = elasticsearchPorts.stream().map(port -> port != 0 ?  port : Resources.selectOnePortFromRange(offer.getResourcesList())).collect(Collectors.toList());
         }
@@ -143,12 +147,27 @@ public class TaskInfoFactory {
     private Protos.DiscoveryInfo getDiscovery(List<Integer> ports, Configuration configuration) {
         Protos.DiscoveryInfo.Builder discovery = Protos.DiscoveryInfo.newBuilder();
         Protos.Ports.Builder discoveryPorts = Protos.Ports.newBuilder();
-        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME).setProtocol("TCP"));
-        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME).setProtocol("TCP"));
+        discoveryPorts.addPorts(Discovery.CLIENT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(0)).setName(Discovery.CLIENT_PORT_NAME).setProtocol("tcp"));
+        discoveryPorts.addPorts(Discovery.TRANSPORT_PORT_INDEX, Protos.Port.newBuilder().setNumber(ports.get(1)).setName(Discovery.TRANSPORT_PORT_NAME).setProtocol("tcp"));
         discovery.setPorts(discoveryPorts);
         discovery.setVisibility(Protos.DiscoveryInfo.Visibility.EXTERNAL);
         discovery.setName(configuration.getTaskName());
         return discovery.build();
+    }
+
+    private Protos.Labels getLabels(Configuration configuration) {
+      Protos.Labels.Builder builder = Protos.Labels.newBuilder();
+      Map<String, String> labels = configuration.getTaskLabels();
+      for (Map.Entry<String, String> kvp : labels.entrySet()) {
+        Protos.Label label = Protos.Label.newBuilder()
+          .setKey(kvp.getKey())
+          .setValue(kvp.getValue())
+          .build();
+
+        builder.addLabels(label);
+      }
+
+      return builder.build();
     }
 
     private Protos.ContainerInfo getContainer(Configuration configuration, Protos.TaskID taskID, Long elasticSearchNodeId, Protos.SlaveID slaveID) {

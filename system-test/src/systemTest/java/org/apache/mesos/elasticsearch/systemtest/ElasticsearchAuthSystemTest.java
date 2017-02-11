@@ -1,9 +1,9 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.containersol.minimesos.cluster.MesosCluster;
-import com.containersol.minimesos.mesos.ClusterArchitecture;
-import com.containersol.minimesos.mesos.DockerClientFactory;
-import com.containersol.minimesos.mesos.ZooKeeper;
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.containersol.minimesos.junit.MesosClusterTestRule;
+import com.containersol.minimesos.mesos.MesosClusterContainersFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.github.dockerjava.api.command.CreateContainerResponse;
@@ -14,16 +14,11 @@ import org.apache.mesos.elasticsearch.common.cli.ElasticsearchCLIParameter;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.*;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import java.io.FileNotFoundException;
-import java.util.TreeMap;
 
 import static org.junit.Assert.assertTrue;
 
@@ -31,14 +26,21 @@ import static org.junit.Assert.assertTrue;
  * Test Auth.
  * This currently tests authentication and roles. It does not test ACL's yet.
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class ElasticsearchAuthSystemTest {
     protected static final Configuration TEST_CONFIG = new Configuration();
     public static final String FRAMEWORKPASSWD = "frameworkpasswd";
     public static final String SECRET = "mesospasswd";
     public static final String SECRET_FOLDER = "/tmp/test/";
     public static final String ALPINE = "alpine";
-    private MesosCluster cluster;
+
     private static DockerClient dockerClient = DockerClientFactory.build();
+    private static MesosClusterContainersFactory factory = new MesosClusterContainersFactory();
+
+    @ClassRule
+    public static final MesosClusterTestRule RULE = MesosClusterTestRule.fromFile("src/systemTest/resources/testMinimesosFile-authentication");
+
+    public static final MesosCluster CLUSTER = RULE.getMesosCluster();
 
     @BeforeClass
     public static void prepareCleanDockerEnvironment() {
@@ -46,28 +48,11 @@ public class ElasticsearchAuthSystemTest {
         new DockerUtil(dockerClient).killAllExecutors();
     }
 
-    @Rule
-    public final TestWatcher watcher = new TestWatcher() {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            cluster.stop();
-        }
-    };
-
     @Before
     public void before() throws FileNotFoundException {
         writePasswordFileToVM();
-        ClusterArchitecture architecture = new ClusterArchitecture.Builder()
-                .withZooKeeper()
-                .withMaster(SimpleAuthMaster::new)
-                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9200-9200,9300-9300]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9201-9201,9301-9301]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .withAgent(zooKeeper -> new SimpleAuthSlave(zooKeeper, "ports(testRole):[9202-9202,9302-9302]; cpus(testRole):0.2; mem(testRole):256; disk(testRole):200"))
-                .build();
-        cluster = new MesosCluster(architecture);
-        cluster.setExposedHostPorts(true);
-        cluster.start(TEST_CONFIG.getClusterTimeout());
-        IpTables.apply(architecture.dockerClient, cluster, TEST_CONFIG);
+
+        IpTables.apply(dockerClient, CLUSTER, TEST_CONFIG);
     }
 
     /**
@@ -97,8 +82,8 @@ public class ElasticsearchAuthSystemTest {
 
     @After
     public void stopContainer() {
-        if (cluster != null) {
-            cluster.stop();
+        if (CLUSTER != null) {
+            CLUSTER.destroy(factory);
         }
     }
 
@@ -110,8 +95,8 @@ public class ElasticsearchAuthSystemTest {
 
     @Test
     public void shouldStartFrameworkWithRole() {
-        SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), "testRole", cluster);
-        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        SmallerCPUScheduler scheduler = new SmallerCPUScheduler(dockerClient, CLUSTER.getZooKeeper().getIpAddress(), "testRole", CLUSTER);
+        CLUSTER.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
         new TasksResponse(esTasks, TEST_CONFIG.getElasticsearchNodesCount());
@@ -120,41 +105,45 @@ public class ElasticsearchAuthSystemTest {
         assertTrue("Elasticsearch nodes did not discover each other within 5 minutes", nodesResponse.isDiscoverySuccessful());
     }
 
-    /**
-     * Only the role "testRole" can start frameworks.
-     */
-    private static class SimpleAuthMaster extends MesosMasterTagged {
-        protected SimpleAuthMaster(ZooKeeper zooKeeperContainer) {
-            super(zooKeeperContainer, envVars());
-        }
+    // TODO (Frank) Add this to minimesosFile
 
-        private static TreeMap<String, String> envVars() {
-            TreeMap<String, String> envVars = new TreeMap<>();
-            envVars.put("MESOS_ROLES", "testRole");
-            envVars.put("MESOS_CREDENTIALS",  SECRET_FOLDER + SECRET);
-            envVars.put("MESOS_AUTHENTICATE", "true");
-            return envVars;
-        }
-
-        @Override
-        protected CreateContainerCmd dockerCommand() {
-            CreateContainerCmd createContainerCmd = super.dockerCommand();
-            createContainerCmd.withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER)));
-            return createContainerCmd;
-        }
-    }
-
-    private static class SimpleAuthSlave extends MesosSlaveTagged {
-
-        protected SimpleAuthSlave(ZooKeeper zooKeeperContainer, String resources) {
-            super(zooKeeperContainer, resources);
-        }
-    }
-
+//    /**
+//     * Only the role "testRole" can start frameworks.
+//     */
+//    private static class SimpleAuthMaster extends MesosMasterContainer {
+//
+//        public SimpleAuthMaster(MesosCluster cluster, String uuid, String containerId) {
+//            super(cluster, uuid, containerId);
+//        }
+//
+//
+//        private static TreeMap<String, String> envVars() {
+//            TreeMap<String, String> envVars = new TreeMap<>();
+//            envVars.put("MESOS_ROLES", "testRole");
+//            envVars.put("MESOS_CREDENTIALS",  SECRET_FOLDER + SECRET);
+//            envVars.put("MESOS_AUTHENTICATE", "true");
+//            return envVars;
+//        }
+//
+//        @Override
+//        protected CreateContainerCmd dockerCommand() {
+//            CreateContainerCmd createContainerCmd = super.dockerCommand();
+//            createContainerCmd.withBinds(new Bind(SECRET_FOLDER, new Volume(SECRET_FOLDER)));
+//            return createContainerCmd;
+//        }
+//    }
+//
+//    private static class SimpleAuthSlave extends MesosSlaveTagged {
+//
+//        protected SimpleAuthSlave(ZooKeeper zooKeeperContainer, String resources) {
+//            super(resources);
+//        }
+//    }
+//
     private static class SmallerCPUScheduler extends ElasticsearchSchedulerContainer {
 
         public SmallerCPUScheduler(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster) {
-            super(dockerClient, zkIp, frameworkRole, cluster, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
+            super(dockerClient, zkIp, frameworkRole, org.apache.mesos.elasticsearch.scheduler.Configuration.DEFAULT_HOST_DATA_DIR);
         }
 
         @Override

@@ -1,8 +1,8 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
 import com.containersol.minimesos.cluster.MesosCluster;
-import com.containersol.minimesos.mesos.ClusterArchitecture;
-import com.containersol.minimesos.mesos.DockerClientFactory;
+import com.containersol.minimesos.docker.DockerClientFactory;
+import com.containersol.minimesos.mesos.MesosClusterContainersFactory;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
 import com.jayway.awaitility.Awaitility;
@@ -11,12 +11,11 @@ import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.mesos.elasticsearch.common.cli.ZookeeperCLIParameter;
 import org.apache.mesos.elasticsearch.systemtest.callbacks.ElasticsearchNodesResponse;
 import org.apache.mesos.elasticsearch.systemtest.containers.ElasticsearchSchedulerContainer;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosMasterTagged;
-import org.apache.mesos.elasticsearch.systemtest.containers.MesosSlaveTagged;
 import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.apache.mesos.elasticsearch.systemtest.util.IpTables;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,29 +31,26 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests that we can run different versions of ES
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class DifferentESVersionSystemTest {
     private static final Logger LOG = LoggerFactory.getLogger(DifferentESVersionSystemTest.class);
     public static final String ES_VERSION = "2.0.2";
     public static final String ES_IMAGE = "elasticsearch:" + ES_VERSION;
     public static final String ES_BINARY = "https://download.elasticsearch.org/elasticsearch/release/org/elasticsearch/distribution/tar/elasticsearch/" + ES_VERSION + "/elasticsearch-" + ES_VERSION + ".tar.gz";
     protected static final Configuration TEST_CONFIG = new Configuration();
-    private final DockerClient dockerClient = DockerClientFactory.build();
+    private static final DockerClient dockerClient = DockerClientFactory.build();
     private final DockerUtil dockerUtil = new DockerUtil(dockerClient);
     private MesosCluster cluster;
+    private static MesosClusterContainersFactory factory = new MesosClusterContainersFactory();
 
     @Before
     public void before() {
         dockerUtil.killAllSchedulers();
         dockerUtil.killAllExecutors();
-        final ClusterArchitecture clusterArchitecture = new ClusterArchitecture.Builder()
-                .withZooKeeper()
-                .withMaster(MesosMasterTagged::new)
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(0)))
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(1)))
-                .withAgent(zooKeeper -> new MesosSlaveTagged(zooKeeper, TEST_CONFIG.getPortRanges().get(2)))
-                .build();
-        cluster = new MesosCluster(clusterArchitecture);
-        cluster.setExposedHostPorts(true);
+
+        MesosCluster mesosCluster = factory.createMesosCluster("src/main/resources/testMinimesosFile");
+        mesosCluster.setMapPortsToHost(true);
+
         cluster.start(TEST_CONFIG.getClusterTimeout());
     }
 
@@ -63,7 +59,7 @@ public class DifferentESVersionSystemTest {
         dockerUtil.killAllSchedulers();
         dockerUtil.killAllExecutors();
         if (cluster != null) {
-            cluster.stop();
+            cluster.destroy(factory);
         }
     }
 
@@ -72,8 +68,8 @@ public class DifferentESVersionSystemTest {
     public void shouldStartDockerImage() {
         IpTables.apply(dockerClient, cluster, TEST_CONFIG); // Only forward docker traffic
 
-        final DockerESVersionScheduler scheduler = new DockerESVersionScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), cluster, ES_IMAGE);
-        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        final DockerESVersionScheduler scheduler = new DockerESVersionScheduler(dockerClient, cluster.getZooKeeper().getIpAddress(), cluster, ES_IMAGE);
+        cluster.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
         LOG.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
@@ -97,8 +93,8 @@ public class DifferentESVersionSystemTest {
     @Test
     public void shouldStartJar() {
         // Don't forward traffic. Jars are actually running on the slaves
-        final JarESVersionScheduler scheduler = new JarESVersionScheduler(dockerClient, cluster.getZkContainer().getIpAddress(), cluster, ES_BINARY);
-        cluster.addAndStartContainer(scheduler, TEST_CONFIG.getClusterTimeout());
+        final JarESVersionScheduler scheduler = new JarESVersionScheduler(dockerClient, cluster.getZooKeeper().getIpAddress(), cluster, ES_BINARY);
+        cluster.addAndStartProcess(scheduler, TEST_CONFIG.getClusterTimeout());
         LOG.info("Started Elasticsearch scheduler on " + scheduler.getIpAddress() + ":" + TEST_CONFIG.getSchedulerGuiPort());
 
         ESTasks esTasks = new ESTasks(TEST_CONFIG, scheduler.getIpAddress());
@@ -127,7 +123,7 @@ public class DifferentESVersionSystemTest {
         private final String image;
 
         public DockerESVersionScheduler(DockerClient dockerClient, String zkIp, MesosCluster cluster, String image) {
-            super(dockerClient, zkIp, cluster);
+            super(dockerClient, zkIp);
             this.image = image;
         }
 
@@ -161,7 +157,7 @@ public class DifferentESVersionSystemTest {
         private final String binaryUrl;
 
         public JarESVersionScheduler(DockerClient dockerClient, String zkIp, MesosCluster cluster, String binaryUrl) {
-            super(dockerClient, zkIp, cluster);
+            super(dockerClient, zkIp);
             this.binaryUrl = binaryUrl;
         }
 

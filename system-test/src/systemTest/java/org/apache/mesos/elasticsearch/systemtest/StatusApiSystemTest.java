@@ -3,6 +3,7 @@ package org.apache.mesos.elasticsearch.systemtest;
 import org.apache.mesos.elasticsearch.common.elasticsearch.ElasticsearchParser;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
 import org.json.JSONObject;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static org.apache.mesos.elasticsearch.systemtest.util.SystemTestMatchers.isValidAddress;
@@ -14,6 +15,7 @@ import static org.junit.Assert.assertThat;
 /**
  * Tests scheduler APIs
  */
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class StatusApiSystemTest extends SchedulerTestBase {
 
     @Test

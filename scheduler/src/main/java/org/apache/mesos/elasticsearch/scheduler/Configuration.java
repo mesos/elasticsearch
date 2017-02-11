@@ -19,6 +19,8 @@ import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
@@ -36,6 +38,7 @@ public class Configuration {
     public static final String WEB_UI_PORT = "--webUiPort";
     public static final String FRAMEWORK_NAME = "--frameworkName";
     public static final String EXECUTOR_NAME = "--executorName";
+    public static final String EXECUTOR_LABELS = "--executorLabels";
     public static final String DATA_DIR = "--dataDir";
     public static final String DEFAULT_HOST_DATA_DIR = "/var/lib/mesos/slave/elasticsearch";
     // DCOS Certification requirement 01
@@ -85,6 +88,9 @@ public class Configuration {
     private String frameworkName = "elasticsearch";
     @Parameter(names = {EXECUTOR_NAME}, description = "The name given to the executor task.", validateWith = CLIValidators.NotEmptyString.class)
     private String executorName = "elasticsearch-executor";
+    @Parameter(names = {EXECUTOR_LABELS}, description = "One or more labels given to the executor task." +
+        "E.g. 'environment=prod bananas=apples'", variableArity = true)
+    private List<String> executorLabels = new ArrayList<>();
     @Parameter(names = {DATA_DIR}, description = "The host data directory used by Docker volumes in the executors. [DOCKER MODE ONLY]")
     private String dataDir = DEFAULT_HOST_DATA_DIR;
     @Parameter(names = {FRAMEWORK_FAILOVER_TIMEOUT}, description = "The time before Mesos kills a scheduler and tasks if it has not recovered (ms).", validateValueWith = CLIValidators.PositiveDouble.class)
@@ -174,6 +180,18 @@ public class Configuration {
 
     public String getTaskName() {
         return executorName;
+    }
+
+    public Map<String, String> getTaskLabels() {
+        HashMap<String, String> map = new HashMap<>();
+        for (String keyValue : executorLabels) {
+            String[] kvp = keyValue.split("=", 2);
+            if (kvp.length == 2) {
+              map.put(kvp[0], kvp[1]);
+            }
+        }
+
+        return map;
     }
 
     public String getDataDir() {

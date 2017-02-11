@@ -27,7 +27,9 @@ dependencies {
 
     compile project(":commons")
 
-    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}")
+    compile("org.springframework.boot:spring-boot-starter-web:${springBootVersion}") {
+        exclude group: 'com.fasterxml.jackson.core', module: 'jackson-databind'
+    }
     compile("org.springframework.boot:spring-boot-starter-log4j:${springBootVersion}")
     compile "commons-io:commons-io:${commonsIOVersion}"
     compile "org.apache.commons:commons-collections4:${commonsCollectionsVersion}"

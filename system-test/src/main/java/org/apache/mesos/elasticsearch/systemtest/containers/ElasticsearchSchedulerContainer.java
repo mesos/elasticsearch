@@ -1,6 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest.containers;
 
-import com.containersol.minimesos.cluster.MesosCluster;
+import com.containersol.minimesos.config.ContainerConfigBlock;
 import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
@@ -18,28 +18,31 @@ import static org.apache.mesos.elasticsearch.systemtest.Configuration.getDocker0
 public class ElasticsearchSchedulerContainer extends AbstractContainer {
 
     private static final org.apache.mesos.elasticsearch.systemtest.Configuration TEST_CONFIG = new org.apache.mesos.elasticsearch.systemtest.Configuration();
+
     protected final String docker0AdaptorIpAddress;
+
+    private final DockerClient dockerClient;
 
     private final String zkIp;
 
     private String frameworkRole;
-    private final MesosCluster cluster;
+
     private final String dataDirectory;
 
-    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, MesosCluster cluster) {
-        this(dockerClient, zkIp, "*", cluster, Configuration.DEFAULT_HOST_DATA_DIR);
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp) {
+        this(dockerClient, zkIp, "*", Configuration.DEFAULT_HOST_DATA_DIR);
     }
 
-    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, MesosCluster cluster, String dataDirectory) {
-        this(dockerClient, zkIp, "*", cluster, dataDirectory);
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String dataDirectory) {
+        this(dockerClient, zkIp, "*", dataDirectory);
     }
 
-    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole, MesosCluster cluster, String dataDir) {
-        super(dockerClient);
+    public ElasticsearchSchedulerContainer(DockerClient dockerClient, String zkIp, String frameworkRole, String dataDir) {
+        super(new ContainerConfigBlock(TEST_CONFIG.getSchedulerName(), "latest"));
         this.zkIp = zkIp;
         this.frameworkRole = frameworkRole;
-        this.cluster = cluster;
         this.dataDirectory = dataDir;
+        this.dockerClient = dockerClient;
 
         docker0AdaptorIpAddress = getDocker0AdaptorIpAddress();
     }

@@ -1,5 +1,6 @@
 package org.apache.mesos.elasticsearch.systemtest.containers;
 
+import com.containersol.minimesos.config.ContainerConfigBlock;
 import com.containersol.minimesos.container.AbstractContainer;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.command.CreateContainerCmd;
@@ -14,19 +15,21 @@ import java.security.SecureRandom;
 public class AlpineContainer extends AbstractContainer {
 
     public static final String ALPINE_IMAGE_NAME = "alpine";
+    private DockerClient dockerClient;
     private final String hostVolume;
     private final String containerVolume;
     private final String[] cmd;
 
     public AlpineContainer(DockerClient dockerClient, String hostVolume, String containerVolume, String... cmd) {
-        super(dockerClient);
+        super(new ContainerConfigBlock("alpine", "latest"));
+        this.dockerClient = dockerClient;
         this.hostVolume = hostVolume;
         this.containerVolume = containerVolume;
         this.cmd = cmd;
     }
 
     @Override
-    protected void pullImage() {
+    public void pullImage() {
         pullImage(ALPINE_IMAGE_NAME, "latest");
     }
 

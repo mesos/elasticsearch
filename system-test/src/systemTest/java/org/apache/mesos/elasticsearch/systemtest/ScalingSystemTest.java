@@ -1,15 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest;
 
-import com.containersol.minimesos.mesos.DockerClientFactory;
-import com.github.dockerjava.api.DockerClient;
 import com.jayway.awaitility.Awaitility;
 import com.mashape.unirest.http.JsonNode;
 import com.mashape.unirest.http.Unirest;
 import com.mashape.unirest.http.exceptions.UnirestException;
 import org.apache.log4j.Logger;
 import org.apache.mesos.elasticsearch.systemtest.base.SchedulerTestBase;
-import org.apache.mesos.elasticsearch.systemtest.util.DockerUtil;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -20,12 +18,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * Tests the scaling capabilities. To run multiple times, uncomment the code below.
  */
 //@RunWith(Parameterized.class)
+@Ignore("This test has to be merged into DeploymentSystemTest. See https://github.com/mesos/elasticsearch/issues/591")
 public class ScalingSystemTest extends SchedulerTestBase {
     private static final Logger LOGGER = Logger.getLogger(ScalingSystemTest.class);
     public static final int WEBUI_PORT = 31100;
     public static final int NUM_TEST_DOCS = 10;
-    private static DockerClient dockerClient = DockerClientFactory.build();
-    private DockerUtil dockerUtil = new DockerUtil(dockerClient);
     private String ipAddress;
     private ESTasks esTasks;
 

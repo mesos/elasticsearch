@@ -1,17 +1,13 @@
 package org.apache.mesos.elasticsearch.systemtest.util;
 
+import com.containersol.minimesos.cluster.MesosAgent;
 import com.containersol.minimesos.cluster.MesosCluster;
-import com.containersol.minimesos.mesos.MesosAgent;
 import com.github.dockerjava.api.DockerClient;
-import com.github.dockerjava.api.command.ExecCreateCmdResponse;
 import com.jayway.awaitility.Awaitility;
-import org.apache.commons.io.IOUtils;
 import org.apache.mesos.elasticsearch.systemtest.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -46,23 +42,31 @@ public class IpTables implements Callable<Boolean> {
                         "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.client() + " -j DNAT --to-destination " + Configuration.getDocker0AdaptorIpAddress() + ":" + ports.client() + " && " +
                         "sudo iptables -t nat -A PREROUTING -p tcp --dport " + ports.transport() + " -j DNAT --to-destination " + Configuration.getDocker0AdaptorIpAddress() + ":" + ports.transport() + " && "
         ).collect(Collectors.joining(" "));
-        ExecCreateCmdResponse execResponse = client.execCreateCmd(containerId)
-                .withAttachStdout()
-                .withAttachStderr()
+        client.execCreateCmd(containerId)
+                .withAttachStdout(true)
+                .withAttachStderr(true)
                 .withTty(true)
                 .withCmd("sh", "-c", "" +
                                 "echo 1 > /proc/sys/net/ipv4/ip_forward && " +
                                 iptablesRoute +
                                 "sudo iptables -t nat -A POSTROUTING -j MASQUERADE  && " +
-                                "echo " + IPTABLES_FINISHED_FLAG
-                ).exec();
-        try (InputStream inputStream = client.execStartCmd(containerId).withTty().withExecId(execResponse.getId()).exec()) {
-            String log = IOUtils.toString(inputStream, "UTF-8");
-            LOGGER.info("Install iptables log: " + log);
-            return log.contains(IPTABLES_FINISHED_FLAG);
-        } catch (IOException e) {
-            LOGGER.error("Could not read log. Retrying.");
-            return false;
-        }
+                                "echo " + IPTABLES_FINISHED_FLAG)
+                .exec();
+
+//        final List<String> logs = new ArrayList<>();
+//        try {
+//            client.execStartCmd(containerId).withTty(true).withExecId(execResponse.getId()).exec(new LogContainerResultCallback() {
+//                @Override
+//                public void onNext(Frame item) {
+//                    LOGGER.info("Install iptables log: " + item.toString());
+//                    logs.add(item.toString());
+//                }
+//            });
+//        } catch (Exception e) {
+//            LOGGER.error("Could not read log. Retrying.");
+//            return false;
+//        }
+
+        return true;
     }
 }
