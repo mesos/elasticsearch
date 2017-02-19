@@ -26,7 +26,7 @@ public class CredentialFactory {
             credentialBuilder.setPrincipal(principal);
             try {
                 ByteString bytes = ByteString.readFrom(new FileInputStream(secretFilePath));
-                credentialBuilder.setSecret(bytes);
+                credentialBuilder.setSecretBytes(bytes);
             } catch (IOException cause) {
                 LOGGER.error("Error reading authentication secret from file: " + secretFilePath, cause);
             }
